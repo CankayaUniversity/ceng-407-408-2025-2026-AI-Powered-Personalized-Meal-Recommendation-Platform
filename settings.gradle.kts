@@ -1,1 +1,0 @@
-rootProject.name = "AI-Powered-Personalized-Meal-Recommendation-Platform"
