@@ -1,4 +1,4 @@
-package com.mealapp.domain.recommendation.model.dto;
+package com.mealapp.app.model.dto;
 
 import lombok.Data;
 import java.util.List;

@@ -1,0 +1,10 @@
+package com.mealapp.app.exception;
+
+import org.junit.jupiter.api.Test;
+
+class ApiErrorResponseTest {
+    @Test
+    void placeholder() {
+        // TODO: implement tests
+    }
+}
