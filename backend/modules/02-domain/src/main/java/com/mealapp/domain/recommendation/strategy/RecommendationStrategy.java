@@ -1,8 +1,10 @@
 package com.mealapp.domain.recommendation.strategy;
 
-import com.mealapp.domain.recommendation.model.dto.RecommendationResponse;
-import com.mealapp.domain.recommendation.model.dto.RecommendationRequest;
+import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.user.entity.User;
+import com.mealapp.domain.inventory.entity.Inventory;
+import java.util.List;
 
 public interface RecommendationStrategy {
-    RecommendationResponse recommend(RecommendationRequest request);
+    List<Recipe> recommend(User user, List<Inventory> currentInventory);
 }
