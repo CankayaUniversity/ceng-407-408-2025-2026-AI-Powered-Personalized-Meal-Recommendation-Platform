@@ -2,6 +2,7 @@
 build/
 backend/.gradle/
 backend/build/
+backend/modules/**/build/
 frontend/node_modules/
 frontend/build/
 !backend/gradle/wrapper/gradle-wrapper.jar
@@ -10,16 +11,18 @@ frontend/build/
 .kotlin
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+
+### Local configuration ###
+# Hassas bilgiler (şifre vb.) içerdiği için yerel yml dosyalarını hariç tutuyoruz.
+# Diğer geliştiriciler için application.yml.example dosyası referans olarak bırakılmıştır.
+backend/modules/03-application/src/main/resources/application.yml
 
 ### Eclipse ###
 .apt_generated

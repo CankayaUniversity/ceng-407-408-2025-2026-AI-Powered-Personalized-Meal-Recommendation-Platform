@@ -4,11 +4,10 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/backend" />
-        <option name="gradleHome" value="" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$/backend" />
+            <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/backend/modules/01-infrastructure" />
             <option value="$PROJECT_DIR$/backend/modules/02-domain" />
             <option value="$PROJECT_DIR$/backend/modules/03-application" />

@@ -37,5 +37,35 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 - `frontend/`: React-based frontend application
 - `docs/`: Architecture and AI design documentation
 
+## Development and Deployment (Backend)
+
+### Prerequisites
+- Docker (for PostgreSQL)
+- Java 21+
+
+### Local Setup
+1. Create `backend/modules/03-application/src/main/resources/application.yml` using the `.example` file.
+2. Ensure your PostgreSQL is running (e.g., in Docker at port 54320).
+3. (Optional) Set `app.seed.enabled: true` in your `application.yml` for initial sample data.
+
+### Build and Package
+To build the entire project and generate an executable JAR:
+```bash
+./gradlew clean build
+```
+The executable "Fat JAR" will be located at:
+`backend/modules/03-application/build/libs/03-application-1.0-SNAPSHOT.jar`
+
+To build the package quickly without running tests:
+```bash
+./gradlew clean bootJar -x test
+```
+
+### Running the Application
+```bash
+java -jar backend/modules/03-application/build/libs/03-application-1.0-SNAPSHOT.jar
+```
+
+
 ## Project Scope
-This project is developed as a senior graduation project (CENG 407) and focuses on software architecture, system design, and applied AI integration rather than large-scale data science or model training.
+This project is developed as a senior graduation project (CENG 407 & CENG 408) and focuses on software architecture, system design, and applied AI integration rather than large-scale data science or model training.
