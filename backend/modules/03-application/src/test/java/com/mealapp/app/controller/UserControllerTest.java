@@ -4,13 +4,10 @@ import com.mealapp.app.model.dto.user.UserDto;
 import com.mealapp.app.model.mapper.user.UserMapper;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mealapp.infrastructure.test.AbstractMockMvcTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
 
@@ -20,20 +17,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UserController.class)
-class UserControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
+class UserControllerTest extends AbstractMockMvcTest {
 
     @MockitoBean
     private UserService userService;
 
     @MockitoBean
     private UserMapper userMapper;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @Test
     void shouldUpsertUser() throws Exception {

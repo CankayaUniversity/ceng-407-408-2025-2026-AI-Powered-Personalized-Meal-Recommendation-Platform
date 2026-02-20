@@ -30,6 +30,7 @@ subprojects {
     dependencies {
         implementation("org.projectlombok:lombok:1.18.30")
         annotationProcessor("org.projectlombok:lombok:1.18.30")
+        testImplementation("org.springframework.boot:spring-boot-starter-test")
         testImplementation("org.junit.jupiter:junit-jupiter")
         testImplementation("org.mockito:mockito-junit-jupiter")
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")

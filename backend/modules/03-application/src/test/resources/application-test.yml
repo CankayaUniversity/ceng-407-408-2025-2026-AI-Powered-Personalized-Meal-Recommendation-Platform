@@ -1,0 +1,13 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    org.flywaydb: DEBUG
+    org.hibernate: INFO
