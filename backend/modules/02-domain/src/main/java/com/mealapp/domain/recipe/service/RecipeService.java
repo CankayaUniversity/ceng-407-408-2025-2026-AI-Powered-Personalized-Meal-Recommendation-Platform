@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Yemek tarifleri ile ilgili iş mantığını yöneten servis.
@@ -16,6 +17,13 @@ import java.util.List;
 public class RecipeService {
 
     private final RecipeRepository recipeRepository;
+
+    /**
+     * ID'ye göre tarif detaylarını getirir.
+     */
+    public Optional<Recipe> findById(Long id) {
+        return recipeRepository.findById(id);
+    }
 
     /**
      * Tüm tarifleri getirir.
