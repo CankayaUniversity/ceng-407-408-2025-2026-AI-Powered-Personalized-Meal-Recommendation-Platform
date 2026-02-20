@@ -1,6 +1,6 @@
-package com.mealapp.app.model.mapper;
+package com.mealapp.app.model.mapper.user;
 
-import com.mealapp.app.model.dto.UserDto;
+import com.mealapp.app.model.dto.user.UserDto;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.util.CalorieCalculator;
 import org.springframework.stereotype.Component;

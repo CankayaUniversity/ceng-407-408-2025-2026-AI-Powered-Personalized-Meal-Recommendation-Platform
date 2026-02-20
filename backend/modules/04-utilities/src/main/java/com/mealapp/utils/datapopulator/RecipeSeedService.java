@@ -3,6 +3,8 @@ package com.mealapp.utils.datapopulator;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.repository.InventoryRepository;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.Ingredient;
+import java.util.ArrayList;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.repository.UserRepository;
@@ -74,30 +76,50 @@ public class RecipeSeedService implements CommandLineRunner {
         // 2. Örnek Tarifler
         Recipe mercimek = Recipe.builder()
                 .title("Klasik Mercimek Çorbası")
-                .ingredients(List.of("Kırmızı Mercimek", "Soğan", "Havuç", "Patates", "Zeytinyağı"))
                 .instructions("1. Sebzeleri doğrayın. 2. Mercimekle birlikte haşlayın. 3. Blenderdan geçirin.")
                 .preparationTimeMinutes(30)
                 .difficulty(Recipe.Difficulty.EASY)
                 .calories(250)
                 .build();
 
+        List<Ingredient> mercimekIngr = new ArrayList<>();
+        mercimekIngr.add(Ingredient.builder().name("Kırmızı Mercimek").amount(1.0).unit(null).recipe(mercimek).build());
+        mercimekIngr.add(Ingredient.builder().name("Soğan").amount(1.0).unit(null).recipe(mercimek).build());
+        mercimekIngr.add(Ingredient.builder().name("Havuç").amount(1.0).unit(null).recipe(mercimek).build());
+        mercimekIngr.add(Ingredient.builder().name("Patates").amount(1.0).unit(null).recipe(mercimek).build());
+        mercimekIngr.add(Ingredient.builder().name("Zeytinyağı").amount(1.0).unit(null).recipe(mercimek).build());
+        mercimek.setIngredients(mercimekIngr);
+
         Recipe tavukluPilav = Recipe.builder()
                 .title("Tavuklu Pilav")
-                .ingredients(List.of("Pirinç", "Tavuk Göğsü", "Tereyağı", "Nohut"))
                 .instructions("1. Tavuğu haşlayın. 2. Pirinci kavurun. 3. Tavuk suyuyla pişirin.")
                 .preparationTimeMinutes(45)
                 .difficulty(Recipe.Difficulty.MEDIUM)
                 .calories(450)
                 .build();
 
+        List<Ingredient> pilavIngr = new ArrayList<>();
+        pilavIngr.add(Ingredient.builder().name("Pirinç").amount(1.0).unit(null).recipe(tavukluPilav).build());
+        pilavIngr.add(Ingredient.builder().name("Tavuk Göğsü").amount(1.0).unit(null).recipe(tavukluPilav).build());
+        pilavIngr.add(Ingredient.builder().name("Tereyağı").amount(1.0).unit(null).recipe(tavukluPilav).build());
+        pilavIngr.add(Ingredient.builder().name("Nohut").amount(1.0).unit(null).recipe(tavukluPilav).build());
+        tavukluPilav.setIngredients(pilavIngr);
+
         Recipe kinoaSalatasi = Recipe.builder()
                 .title("Kinoa Salatası")
-                .ingredients(List.of("Kinoa", "Domates", "Salatalık", "Maydanoz", "Limon"))
                 .instructions("1. Kinoayı haşlayın. 2. Sebzeleri doğrayın. 3. Soslayıp karıştırın.")
                 .preparationTimeMinutes(20)
                 .difficulty(Recipe.Difficulty.EASY)
                 .calories(320)
                 .build();
+
+        List<Ingredient> kinoaIngr = new ArrayList<>();
+        kinoaIngr.add(Ingredient.builder().name("Kinoa").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
+        kinoaIngr.add(Ingredient.builder().name("Domates").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
+        kinoaIngr.add(Ingredient.builder().name("Salatalık").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
+        kinoaIngr.add(Ingredient.builder().name("Maydanoz").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
+        kinoaIngr.add(Ingredient.builder().name("Limon").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
+        kinoaSalatasi.setIngredients(kinoaIngr);
 
         recipeRepository.saveAll(List.of(mercimek, tavukluPilav, kinoaSalatasi));
 

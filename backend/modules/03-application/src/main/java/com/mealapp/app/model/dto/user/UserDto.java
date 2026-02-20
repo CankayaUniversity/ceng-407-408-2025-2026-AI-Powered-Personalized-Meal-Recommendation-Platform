@@ -1,4 +1,4 @@
-package com.mealapp.app.model.dto;
+package com.mealapp.app.model.dto.user;
 
 import com.mealapp.domain.user.entity.User;
 import lombok.Data;

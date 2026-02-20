@@ -1,4 +1,4 @@
-package com.mealapp.app.model.dto;
+package com.mealapp.app.model.dto.consumption;
 
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import lombok.Data;

@@ -1,8 +1,8 @@
 package com.mealapp.app.service;
 
-import com.mealapp.app.model.dto.RecommendationRequest;
-import com.mealapp.app.model.dto.RecommendationResponse;
-import com.mealapp.app.model.mapper.RecommendationMapper;
+import com.mealapp.app.model.dto.recommendation.RecommendationRequest;
+import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
+import com.mealapp.app.model.mapper.recommendation.RecommendationMapper;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.recipe.entity.Recipe;
