@@ -1,7 +1,7 @@
 package com.mealapp.app.controller;
 
-import com.mealapp.app.model.dto.RecommendationRequest;
-import com.mealapp.app.model.dto.RecommendationResponse;
+import com.mealapp.app.model.dto.recommendation.RecommendationRequest;
+import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
 import com.mealapp.app.service.RecommendationAppService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
