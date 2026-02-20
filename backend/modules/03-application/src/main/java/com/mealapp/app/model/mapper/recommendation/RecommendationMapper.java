@@ -1,6 +1,6 @@
-package com.mealapp.app.model.mapper;
+package com.mealapp.app.model.mapper.recommendation;
 
-import com.mealapp.app.model.dto.RecommendationResponse;
+import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
 import com.mealapp.domain.recipe.entity.Recipe;
 import org.springframework.stereotype.Component;
 

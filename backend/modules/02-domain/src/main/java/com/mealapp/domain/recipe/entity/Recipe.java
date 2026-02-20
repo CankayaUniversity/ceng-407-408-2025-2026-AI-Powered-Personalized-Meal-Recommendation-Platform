@@ -27,10 +27,8 @@ public class Recipe {
     /**
      * Tarifin içeriğindeki malzemeler listesi.
      */
-    @ElementCollection
-    @CollectionTable(name = "recipe_ingredients", joinColumns = @JoinColumn(name = "recipe_id"))
-    @Column(name = "ingredient")
-    private List<String> ingredients;
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Ingredient> ingredients;
 
     /**
      * Adım adım hazırlama talimatları.

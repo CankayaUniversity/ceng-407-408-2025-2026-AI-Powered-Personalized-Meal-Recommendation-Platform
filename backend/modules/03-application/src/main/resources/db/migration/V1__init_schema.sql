@@ -29,10 +29,13 @@ CREATE TABLE recipes (
     calories INTEGER
 );
 
-CREATE TABLE recipe_ingredients (
-    recipe_id BIGINT NOT NULL,
-    ingredient VARCHAR(255),
-    CONSTRAINT fk_recipe_ingredients_recipe FOREIGN KEY (recipe_id) REFERENCES recipes (id)
+CREATE TABLE ingredients (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    amount DOUBLE PRECISION NOT NULL,
+    unit VARCHAR(50),
+    recipe_id BIGINT,
+    CONSTRAINT fk_ingredients_recipe FOREIGN KEY (recipe_id) REFERENCES recipes (id)
 );
 
 CREATE TABLE inventories (
