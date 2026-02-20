@@ -1,7 +1,7 @@
 package com.mealapp.app.controller;
 
-import com.mealapp.app.model.dto.UserDto;
-import com.mealapp.app.model.mapper.UserMapper;
+import com.mealapp.app.model.dto.user.UserDto;
+import com.mealapp.app.model.mapper.user.UserMapper;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
