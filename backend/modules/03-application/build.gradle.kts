@@ -15,5 +15,5 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation(testFixtures(project(":01-infrastructure")))
+    testImplementation(project(":01-infrastructure:infrastructure-test"))
 }

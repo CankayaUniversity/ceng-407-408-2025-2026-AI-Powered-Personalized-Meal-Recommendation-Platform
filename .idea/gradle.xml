@@ -9,6 +9,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/backend/modules/01-infrastructure" />
+            <option value="$PROJECT_DIR$/backend/modules/01-infrastructure/infrastructure-core" />
+            <option value="$PROJECT_DIR$/backend/modules/01-infrastructure/infrastructure-test" />
             <option value="$PROJECT_DIR$/backend/modules/02-domain" />
             <option value="$PROJECT_DIR$/backend/modules/03-application" />
             <option value="$PROJECT_DIR$/backend/modules/04-utilities" />
