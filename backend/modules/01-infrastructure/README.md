@@ -1,33 +1,24 @@
-# 🏗️ 01-Infrastructure Modülü
+# 🏗️ 01-Infrastructure Modülleri
 
-Bu modül, uygulamanın dış dünyaya açılan teknik pencerelerini ve altyapı detaylarını yönetir. **Domain** katmanının "ne yapılması gerektiğini" bildiği durumlarda, bu modül "nasıl yapılacağını" teknik olarak çözer.
+Bu dizin, uygulamanın teknik altyapısını ve test araçlarını içeren iki ayrı bağımsız modül barındırır. Eski `testFixtures` yapısından tam modüler yapıya geçilmiştir.
 
-## 📂 Klasör Yapısı (Tek Modül Altında Ayrışım)
-- `infrastructure-core/`: Üretim (prod) kodları
-  - `src/main/java/...`
-- `infrastructure-test/`: Paylaşılan test altyapısı (yalnızca test sırasında diğer modüller tarafından tüketilir)
-  - `src/main/java/...`
+## 📂 Modüller
 
-Gradle `sourceSets` ile:
-- `main.java.srcDirs = [ "infrastructure-core/src/main/java" ]`
-- `testFixtures.java.srcDirs = [ "infrastructure-test/src/main/java" ]`
+### 1. `infrastructure-core`
+Üretim (prod) ortamında kullanılan çekirdek altyapı bileşenlerini içerir.
+- **Sorumluluklar:**
+  - **AI Prompt Engine:** Yapay zeka modelleri için prompt yönetimi.
+  - **External Clients:** OpenAI, Gemini vb. dış servisler için ağ iletişimi.
+  - **Persistence:** Veritabanı sürücüleri ve Flyway geçişleri.
+- **Kullanım:** Diğer modüllerde `implementation(project(":infrastructure-core"))` olarak eklenir.
 
-Diğer modüller (ör. `:03-application`) paylaşılan test altyapısını şöyle kullanır:
-```
-testImplementation(testFixtures(project(":01-infrastructure")))
-```
+### 2. `infrastructure-test`
+Tüm projenin paylaşılan test altyapısını sağlar.
+- **Sorumluluklar:**
+  - `PostgresSingleton`: Testcontainers ile paylaşımlı DB yönetimi.
+  - `AbstractSpringTest`: Entegrasyon testleri için temel sınıf.
+  - `AbstractMockMvcTest`: Web katmanı testleri için ortak araçlar.
+- **Kullanım:** Diğer modüllerde `testImplementation(project(":infrastructure-test"))` olarak eklenir.
 
-## 📦 Sorumluluklar (Core)
-- **AI Prompt Engine:** Yapay zeka modellerine gönderilecek promptların şablonlanması ve yönetimi.
-- **External Clients:** OpenAI, Gemini gibi dış servislerle HTTP iletişimi.
-- **Persistence:** Veritabanı sürücüleri ve göç (Flyway) gibi altyapı kütüphaneleri.
-
-## 🧪 Paylaşılan Test Altyapısı (infrastructure-test)
-- `PostgresSingleton`: Testcontainers ile tek seferde PostgreSQL konteyneri açar ve tüm testler boyunca paylaşır.
-- `TestDataSourceConfig`: `JdbcConnectionDetails` üzerinden Spring'e konteyner JDBC bilgilerini enjekte eder.
-- `AbstractSpringTest`: Entegrasyon testleri için temel sınıf; `@SpringBootTest`, `@ActiveProfiles("test")` ve Testcontainers entegrasyonu içerir.
-- `AbstractMockMvcTest`: Web katmanı testleri için ortak `MockMvc`/`ObjectMapper` kurulumu ve filtreleri içerir.
-
-## 🔗 Bağımlılıklar
-- Core: `spring-boot-starter-data-jpa`, `postgresql`, `flyway-core`, `flyway-database-postgresql`, (gerekiyorsa) `spring-boot-starter-webflux`
-- Test (fixtures): `spring-boot-starter-test`, `spring-boot-starter-web`, `testcontainers-junit-jupiter`, `testcontainers-postgresql`
+## 🔗 Bağımlılık Yönetimi
+Artık `testFixtures(project(":01-infrastructure"))` kullanımı **geçersizdir**. Her iki modül de kendi `build.gradle.kts` dosyasına sahiptir ve birbirinden izole edilmiştir.

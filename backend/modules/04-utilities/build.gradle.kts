@@ -6,5 +6,5 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation(project(":01-infrastructure:infrastructure-test"))
+    testImplementation(project(":infrastructure-test"))
 }

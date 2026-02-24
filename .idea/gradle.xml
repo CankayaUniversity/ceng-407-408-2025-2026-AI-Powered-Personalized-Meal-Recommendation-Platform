@@ -4,11 +4,10 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/backend" />
         <option name="modules">
           <set>
-            <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/backend/modules/01-infrastructure" />
+            <option value="$PROJECT_DIR$/backend" />
             <option value="$PROJECT_DIR$/backend/modules/01-infrastructure/infrastructure-core" />
             <option value="$PROJECT_DIR$/backend/modules/01-infrastructure/infrastructure-test" />
             <option value="$PROJECT_DIR$/backend/modules/02-domain" />

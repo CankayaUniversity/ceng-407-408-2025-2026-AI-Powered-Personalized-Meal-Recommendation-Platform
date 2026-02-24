@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":01-infrastructure:infrastructure-core"))
+    implementation(project(":infrastructure-core"))
 
     // Spring Boot & Test
     implementation("org.springframework.boot:spring-boot-starter-test")
@@ -20,4 +20,11 @@ dependencies {
 
     // DB Sürücüleri
     implementation("org.postgresql:postgresql")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("com.zaxxer:HikariCP")
+
+    // JSON & Web (MockMvc için gerekli)
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("org.springframework.boot:spring-boot-starter-web")
 }
