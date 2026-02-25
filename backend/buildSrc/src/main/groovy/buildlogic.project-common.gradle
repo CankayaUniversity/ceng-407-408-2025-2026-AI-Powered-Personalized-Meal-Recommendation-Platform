@@ -1,0 +1,10 @@
+// TOML'dan değerleri al
+def springBootVersion = libs.versions.spring.boot.get()
+def querydslVersion = libs.versions.querydsl.get()
+
+// Diğer dosyalarda project.springBootVersion şeklinde kullanabilmek için aktarıyoruz
+project.getExtensions().getExtraProperties().set('springBootVersion', springBootVersion)
+project.getExtensions().getExtraProperties().set('querydslVersion', querydslVersion)
+
+def targetEnvironment = hasProperty('targetEnvironment') ? property('targetEnvironment') : 'local'
+project.getExtensions().getExtraProperties().set('targetEnvironment', targetEnvironment)

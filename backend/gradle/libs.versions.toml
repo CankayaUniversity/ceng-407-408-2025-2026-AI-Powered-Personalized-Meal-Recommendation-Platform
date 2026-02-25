@@ -1,0 +1,15 @@
+[versions]
+# Define versions here
+spring-boot="3.5.4"
+spring-gradle="1.1.7"
+zalando-problem="0.27.1"
+zalando-problem-spring="0.29.1"
+zalando-logbook="3.11.0"
+logstash-logback="8.1"
+querydsl="5.1.0"
+
+[libraries]
+# Define dependencies here
+
+[plugins]
+# Define plugins here

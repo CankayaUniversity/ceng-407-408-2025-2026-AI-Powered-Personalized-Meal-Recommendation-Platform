@@ -1,0 +1,50 @@
+//file:noinspection GrUnresolvedAccess
+plugins {
+    id 'buildlogic.project-common'
+    id 'java'
+    id 'idea'
+    id 'io.spring.dependency-management'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url = 'https://plugins.gradle.org/m2/'
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        mavenBom 'org.testcontainers:testcontainers-bom:2.0.3'
+    }
+
+    dependencies {
+        dependency 'org.projectlombok:lombok:1.18.30'
+        dependency 'org.apache.commons:commons-compress:1.27.1'
+        // Sorguladığın QueryDSL ve diğerleri burada merkezi yönetilebilir
+    }
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-json'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Testlerde ortak lazım olanlar
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+test {
+    useJUnitPlatform()
+    def dockerSocket = "unix:///Users/berkmemis/.docker/run/docker.sock"
+    environment "DOCKER_HOST", dockerSocket
+    systemProperty "DOCKER_HOST", dockerSocket
+}

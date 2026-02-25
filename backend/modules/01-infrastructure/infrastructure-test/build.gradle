@@ -1,0 +1,26 @@
+plugins {
+    id 'buildlogic.java-common'
+    id 'java-library'
+}
+
+dependencies {
+    // Kendi core modülün
+    implementation project(':modules:01-infrastructure:infrastructure-core')
+
+    // Spring Test (Versiyon yazmıyoruz, java-common'daki BOM'dan geliyor)
+    implementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.security:spring-security-test'
+    implementation 'org.springframework.security:spring-security-oauth2-jose'
+
+    // Web ve Veritabanı (Abstract sınıflarındaki kırmızılıklar için)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Testcontainers (Hata aldığın yer - Artık BOM sayesinde versiyonu bulacak)
+    implementation 'org.springframework.boot:spring-boot-testcontainers'
+    implementation 'org.testcontainers:testcontainers-junit-jupiter'
+    implementation 'org.testcontainers:testcontainers-postgresql'
+
+    // macOS Özel Fix
+    implementation 'com.github.docker-java:docker-java-transport-zerodep:3.4.0'
+}

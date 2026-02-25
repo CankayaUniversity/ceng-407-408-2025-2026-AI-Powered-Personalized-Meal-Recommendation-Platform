@@ -1,0 +1,12 @@
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.10.0'
+}
+
+rootProject.name = 'AI-Powered-Meal-App'
+
+include 'modules:01-infrastructure'
+include 'modules:01-infrastructure:infrastructure-core'
+include 'modules:01-infrastructure:infrastructure-test'
+include 'modules:02-domain'
+include 'modules:03-application'
+include 'modules:04-utilities'
