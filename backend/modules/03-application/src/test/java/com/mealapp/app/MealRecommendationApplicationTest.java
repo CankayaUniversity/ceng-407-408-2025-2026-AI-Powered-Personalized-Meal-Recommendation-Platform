@@ -1,12 +1,16 @@
 package com.mealapp.app;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import com.mealapp.infrastructure.test.AbstractSpringTest;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class MealRecommendationApplicationTest extends AbstractSpringTest {
+@Tag("integration")
+@SpringBootTest
+public class MealRecommendationApplicationTest extends AbstractSpringTest {
 
     @Autowired(required = false) // Veritabanı yoksa bile hata verme, testi patlatma
     private JdbcTemplate jdbcTemplate;

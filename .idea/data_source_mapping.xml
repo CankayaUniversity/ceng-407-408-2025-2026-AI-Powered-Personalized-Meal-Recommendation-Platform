@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/backend/modules/03-application/src/main/resources/db/migration/V1__init_schema.sql" value="550f0cfe-6db4-409f-ae1a-c196d6440947" />
+    <file url="file://$PROJECT_DIR$/backend/modules/03-application/src/main/resources/db/migration/V2__create_recipe_ratings_table.sql" value="550f0cfe-6db4-409f-ae1a-c196d6440947" />
+    <file url="file://$PROJECT_DIR$/backend/modules/03-application/src/main/resources/db/migration/V3__refactor_ingredients_entity.sql" value="550f0cfe-6db4-409f-ae1a-c196d6440947" />
     <file url="file://$PROJECT_DIR$/backend/modules/03-application/src/test/java/com/mealapp/app/MealRecommendationApplicationTest.java" value="550f0cfe-6db4-409f-ae1a-c196d6440947" />
     <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/550f0cfe-6db4-409f-ae1a-c196d6440947/console.sql" value="550f0cfe-6db4-409f-ae1a-c196d6440947" />
   </component>

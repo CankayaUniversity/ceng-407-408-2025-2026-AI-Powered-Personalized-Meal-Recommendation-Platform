@@ -5,6 +5,18 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+
+com:
+  mealapp:
+    infrastructure:
+      storage:
+        bucket:
+          name: meal-app-test-bucket
+        minio:
+          endpoint: http://localhost:9000
+          access-key: minioadmin
+          secret-key: minioadmin
+
 logging:
   level:
     root: INFO

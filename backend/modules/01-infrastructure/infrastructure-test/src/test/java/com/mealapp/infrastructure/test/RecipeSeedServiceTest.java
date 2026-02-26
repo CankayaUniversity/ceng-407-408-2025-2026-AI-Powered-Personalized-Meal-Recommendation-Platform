@@ -1,4 +1,4 @@
-package com.mealapp.utils.datapopulator;
+package com.mealapp.infrastructure.test;
 
 import org.junit.jupiter.api.Test;
 

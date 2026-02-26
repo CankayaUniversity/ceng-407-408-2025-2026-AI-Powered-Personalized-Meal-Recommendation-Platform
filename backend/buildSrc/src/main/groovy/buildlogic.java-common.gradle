@@ -1,9 +1,12 @@
 //file:noinspection GrUnresolvedAccess
+
 plugins {
     id 'buildlogic.project-common'
     id 'java'
     id 'idea'
     id 'io.spring.dependency-management'
+    id 'org.sonarqube'
+    id 'jacoco'
 }
 
 repositories {
@@ -21,30 +24,197 @@ dependencyManagement {
 
     dependencies {
         dependency 'org.projectlombok:lombok:1.18.30'
+
+        dependency 'jakarta.servlet:jakarta.servlet-api:6.1.0'
+
+        dependency 'com.nimbusds:content-type:2.3'
+        dependency 'com.nimbusds:oauth2-oidc-sdk:11.27'
+
+        dependency 'commons-codec:commons-codec:1.19.0'
+        dependency 'commons-io:commons-io:2.20.0'
         dependency 'org.apache.commons:commons-compress:1.27.1'
-        // Sorguladığın QueryDSL ve diğerleri burada merkezi yönetilebilir
+        dependency 'org.apache.commons:commons-collections4:4.5.0'
+        dependency 'com.google.guava:guava:33.4.8-jre'
+
+        dependency "org.zalando:logbook-spring-boot-starter:${zalandoLogbookVersion}"
+        dependency "org.zalando:logbook-core:${zalandoLogbookVersion}"
+        dependency "org.zalando:logbook-logstash:${zalandoLogbookVersion}"
+        dependency "net.logstash.logback:logstash-logback-encoder:${logstashLogbackVersion}"
+        dependency 'com.github.ksuid:ksuid:1.1.3'
+
+        dependency "org.zalando:problem:${zalandoProblemVersion}"
+        dependency "org.zalando:problem-spring-web:${zalandoProblemSpringVersion}"
+        dependency "org.zalando:jackson-datatype-problem:${zalandoProblemVersion}"
+
+        dependency 'org.jobrunr:jobrunr-spring-boot-3-starter:8.0.1'
+
+        dependency 'org.openapitools:jackson-databind-nullable:0.2.7'
+
+        dependency 'io.minio:minio:8.6.0'
+
+        dependencySet(group: 'io.swagger.core.v3', version: '2.2.30') {
+            entry 'swagger-core'
+            entry 'swagger-annotations'
+        }
+
+        dependency 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+        dependency 'org.springdoc:springdoc-openapi-ui:1.8.0'
+        dependency 'org.springdoc:springdoc-openapi-security:1.8.0'
     }
+}
+
+if (hasProperty('deploymentBuild')) {
+    configurations {
+        implementation {
+            exclude group: 'org.springframework.boot', module: 'spring-boot-devtools'
+        }
+    }
+
+    def pathExcluded = { path -> path.endsWith('-local.yaml') || path.endsWith('-localprod.yaml') }
+
+    jar {
+        exclude {
+            el -> pathExcluded(el.file.getAbsolutePath())
+        }
+    }
+}
+
+configurations {
+    mockitoAgent
 }
 
 dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'
+
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.springframework.boot:spring-boot-starter-json'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    // Testlerde ortak lazım olanlar
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'jakarta.annotation:jakarta.annotation-api'
+    implementation 'jakarta.persistence:jakarta.persistence-api'
+    implementation "com.querydsl:querydsl-core:${querydslVersion}"
+    implementation "com.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
+    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.9.9'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    implementation 'org.springframework.retry:spring-retry'
+
+    implementation 'org.jobrunr:jobrunr-spring-boot-3-starter'
+
+    implementation 'com.google.guava:guava'
+    implementation 'org.apache.commons:commons-lang3'
+    implementation 'org.apache.commons:commons-collections4'
+    implementation 'org.threeten:threeten-extra:1.8.0'
+
+    implementation 'org.zalando:problem'
+
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.junit.platform:junit-platform-suite'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation 'org.mockito:mockito-core'
+    mockitoAgent('org.mockito:mockito-core') {
+        transitive = false
+    }
+
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
+    testImplementation 'org.testcontainers:testcontainers-minio'
+
+    // Testlerde Servlet API'ını kullanan sınıflar derleme zamanında ihtiyaç duyuyor
+    testImplementation 'jakarta.servlet:jakarta.servlet-api'
+    testRuntimeOnly 'jakarta.servlet:jakarta.servlet-api'
+
+    testRuntimeOnly 'org.postgresql:postgresql'
+    testRuntimeOnly 'org.flywaydb:flyway-core'
+    testRuntimeOnly 'org.flywaydb:flyway-database-postgresql'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 }
 
 java {
-    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+    sourceCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+def jacocoExcludes = [
+    '**/*$Proxy*',
+    '**/*CGLIB*',
+    '**/*EnhancerBy*',
+    '**/*HibernateProxy*',
+]
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-parameters']
 }
 
 test {
-    useJUnitPlatform()
-    def dockerSocket = "unix:///Users/berkmemis/.docker/run/docker.sock"
-    environment "DOCKER_HOST", dockerSocket
-    systemProperty "DOCKER_HOST", dockerSocket
+    useJUnitPlatform {
+        if (System.getenv("RUN_INTEGRATION_TESTS") == "true") {
+            includeTags 'integration'
+        } else {
+            excludeTags 'integration'
+        }
+    }
+
+    maxParallelForks = 1
+    jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+    }
+
+    filter {
+        includeTestsMatching "*Test"
+        excludeTestsMatching "*ManualTest"
+    }
+
+    jacoco {
+        enabled = true
+        excludes = jacocoExcludes
+    }
+
+    //noinspection GroovyAssignabilityCheck
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.13" // Use the latest version of JaCoCo
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true // Required for SonarQube integration
+        html.required = true
+        csv.required = false
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco')
+    }
+    classDirectories.setFrom(
+        fileTree(dir: layout.buildDirectory.dir('classes/java/main'), exclude: jacocoExcludes)
+    )
+}
+
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.0 // Start with a low threshold and gradually increase
+            }
+        }
+    }
 }

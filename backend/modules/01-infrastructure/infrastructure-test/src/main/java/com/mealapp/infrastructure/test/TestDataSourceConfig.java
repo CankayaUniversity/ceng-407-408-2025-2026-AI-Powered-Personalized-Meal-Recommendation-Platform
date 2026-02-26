@@ -1,6 +1,7 @@
 package com.mealapp.infrastructure.test;
 
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.jdbc.JdbcConnectionDetails;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -15,7 +16,7 @@ public class TestDataSourceConfig {
 
     @Bean
     JdbcConnectionDetails sharedPostgresDetails() {
-        var database = PostgresSingleton.INSTANCE;
+        var database = PostgresSingleton.INSTANCE; // Projene uygun singleton
 
         return new JdbcConnectionDetails() {
             @Override
@@ -42,19 +43,26 @@ public class TestDataSourceConfig {
 
     @Bean
     @Primary
-    DataSource dataSource(JdbcConnectionDetails details, Environment env) {
+    DataSource loggingDataSource(JdbcConnectionDetails details, Environment env) {
         String jdbcUrl = details.getJdbcUrl();
+        String rawUrl = StringUtils.substringAfter(jdbcUrl, "jdbc:");
         String username = details.getUsername();
         String password = details.getPassword();
 
-        // Eğer jdbcdslog veya özel logging proxy gerekiyorsa burası güncellenebilir.
-        // Şimdilik standart HikariDataSource döndürüyoruz.
+        String schema = env.getProperty("database.schema");
+        if (schema != null && !schema.isBlank() && !rawUrl.contains("currentSchema")) {
+            rawUrl = rawUrl + (rawUrl.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        }
+
+        String loggingUrl = "jdbc:jdbcdslog:" + rawUrl + ";targetDriver=org.postgresql.Driver";
+
         return DataSourceBuilder.create()
             .type(HikariDataSource.class)
-            .driverClassName("org.postgresql.Driver")
-            .url(jdbcUrl)
+            .driverClassName("org.jdbcdslog.DriverLoggingProxy")
+            .url(loggingUrl)
             .username(username)
             .password(password)
             .build();
     }
+
 }

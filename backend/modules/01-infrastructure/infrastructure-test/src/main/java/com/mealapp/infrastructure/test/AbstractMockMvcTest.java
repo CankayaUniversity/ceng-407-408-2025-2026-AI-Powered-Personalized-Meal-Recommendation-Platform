@@ -3,12 +3,15 @@ package com.mealapp.infrastructure.test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder;
 
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @AutoConfigureMockMvc
 public abstract class AbstractMockMvcTest extends AbstractSpringTest {
@@ -19,9 +22,23 @@ public abstract class AbstractMockMvcTest extends AbstractSpringTest {
     protected ObjectMapper objectMapper;
 
     @Autowired
-    protected void setMockMvc(WebApplicationContext webApplicationContext) {
-        this.mockMvc = webAppContextSetup(webApplicationContext)
-                .addFilters(new ThrowingOutputStreamFilter())
-                .build();
+    protected void setMockMvc(DefaultMockMvcBuilder mockMvcBuilder) {
+        this.mockMvc = mockMvcBuilder
+            .addFilters(new ThrowingOutputStreamFilter())
+            .defaultRequest(get("/").with(systemJwt()))
+            .build();
     }
+
+    protected SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor systemJwt() {
+        Jwt.Builder jwtBuilder = Jwt.withTokenValue("token")
+            .header("alg", "none")
+            .claim(JwtClaimNames.SUB, "system-user")
+            .claim("name", "System")
+            .claim("email", "system@mealapp.local");
+
+        return jwt()
+            .jwt(jwtBuilder.build())
+            .authorities(new SimpleGrantedAuthority("ROLE_USER"));   // Rolü test amaçlı ekliyorum ileriye dönük
+    }
+
 }

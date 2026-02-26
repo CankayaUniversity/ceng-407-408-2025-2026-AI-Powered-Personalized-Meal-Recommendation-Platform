@@ -1,10 +1,10 @@
+//file:noinspection GrUnresolvedAccess
 plugins {
     id 'buildlogic.java-common'
     id 'java-library'
 }
 
 dependencies {
-    // Senin hiyerarşik modül yolların
     implementation project(':modules:01-infrastructure:infrastructure-core')
     testImplementation project(':modules:01-infrastructure:infrastructure-test')
 }

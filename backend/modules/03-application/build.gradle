@@ -1,14 +1,11 @@
 plugins {
     id 'buildlogic.java-application'
+    id 'java-library'
 }
 
 dependencies {
     implementation project(':modules:02-domain')
     implementation project(':modules:04-utilities')
-
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     testImplementation project(':modules:01-infrastructure:infrastructure-test')
 }

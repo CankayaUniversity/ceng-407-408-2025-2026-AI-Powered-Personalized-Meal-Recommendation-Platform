@@ -1,5 +1,7 @@
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.10.0'
+    id "org.sonarqube" version "4.3.0.3225" apply false
+
 }
 
 rootProject.name = 'AI-Powered-Meal-App'
