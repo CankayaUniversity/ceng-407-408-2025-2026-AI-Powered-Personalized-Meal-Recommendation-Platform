@@ -18,6 +18,10 @@ frontend/build/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+# IDEA database configuration files
+.idea/dataSources.xml
+.idea/dataSources.local.xml
+.idea/data_source_mapping.xml
 
 ### Local configuration ###
 # Hassas bilgiler (şifre vb.) içerdiği için yerel yml dosyalarını hariç tutuyoruz.
@@ -48,3 +52,13 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Others ###
+output.txt
+*.log
+*.tmp
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

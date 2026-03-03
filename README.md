@@ -14,10 +14,15 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 
 ## Technology Stack
 ### Backend
-- Java
-- Spring Boot
+- Java 21
+- Spring Boot 3.4.3
+- Gradle 8.14 (Wrapper), 8.14.3 (SDKMAN) (buildSrc yapısı ile merkezi yönetim ve libs.versions.toml desteği)
 - RESTful API architecture
-- Maven / Gradle for build management
+- PostgreSQL (Veritabanı)
+- MinIO (Nesne Depolama)
+- Keycloak (Kimlik Yönetimi)
+- JaCoCo & SonarQube (Kod Kalitesi ve Test Kapsamı)
+- Testcontainers (PostgreSQL, MinIO, Keycloak entegrasyon testleri için)
 
 ### Frontend
 - React.js
@@ -33,15 +38,20 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 - All prompt construction and result processing are handled in the backend
 
 ## Project Structure
-- `backend/`: Java Spring Boot backend application
+- `backend/`: Java Spring Boot backend application (Multi-module Architecture)
+  - `buildSrc/`: Merkezi Gradle yapılandırması ve bağımlılık yönetimi
+  - `modules/01-infrastructure/`: Teknik altyapı, harici servis istemcileri ve test araçları
+  - `modules/02-domain/`: İş mantığı, entityler ve repository arayüzleri
+  - `modules/03-application/`: API katmanı, konfigürasyon ve uygulama girişi
 - `frontend/`: React-based frontend application
 - `docs/`: Architecture and AI design documentation
 
 ## Development and Deployment (Backend)
 
 ### Prerequisites
-- Docker (for PostgreSQL)
-- Java 21+
+- Docker (PostgreSQL, MinIO ve Keycloak için gerekli)
+- Java 21 (SDKMAN önerilir: `.sdkmanrc` mevcut)
+- Gradle 8.14 Wrapper / 8.14.3 SDKMAN (Wrapper dahil edilmiştir)
 
 ### Local Setup
 1. Create `backend/modules/03-application/src/main/resources/application.yml` using the `.example` file.

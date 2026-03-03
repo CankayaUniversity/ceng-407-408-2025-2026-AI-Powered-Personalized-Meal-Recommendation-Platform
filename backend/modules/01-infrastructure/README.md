@@ -1,6 +1,6 @@
 # 🏗️ 01-Infrastructure Modülleri
 
-Bu dizin, uygulamanın teknik altyapısını ve test araçlarını içeren iki ayrı bağımsız modül barındırır. Eski `testFixtures` yapısından tam modüler yapıya geçilmiştir.
+Bu dizin, uygulamanın teknik altyapısını ve test araçlarını içeren iki ayrı bağımsız modül barındırır. Modüler yapı sayesinde üretim ve test kodları birbirinden ayrılmıştır.
 
 ## 📂 Modüller
 
@@ -13,12 +13,12 @@ Bu dizin, uygulamanın teknik altyapısını ve test araçlarını içeren iki a
 - **Kullanım:** Diğer modüllerde `implementation(project(":infrastructure-core"))` olarak eklenir.
 
 ### 2. `infrastructure-test`
-Tüm projenin paylaşılan test altyapısını sağlar.
+Tüm projenin paylaşılan test altyapısını ve Testcontainers yapılandırmasını sağlar.
 - **Sorumluluklar:**
-  - `PostgresSingleton`: Testcontainers ile paylaşımlı DB yönetimi.
-  - `AbstractSpringTest`: Entegrasyon testleri için temel sınıf.
-  - `AbstractMockMvcTest`: Web katmanı testleri için ortak araçlar.
-- **Kullanım:** Diğer modüllerde `testImplementation(project(":infrastructure-test"))` olarak eklenir.
+  - `PostgresSingleton`, `MinioInitConfig`, `KeycloakSingleton`: Testcontainers ile veritabanı, depolama ve kimlik yönetimi servislerini tekil (singleton) olarak yönetir.
+  - `AbstractSpringTest`: Entegrasyon testleri için temel yapılandırmayı sağlar.
+  - `RecipeSeedService`: Test verisi hazırlama servisidir.
+- **Kullanım:** Diğer modüllerde `testImplementation project(":modules:01-infrastructure:infrastructure-test")` olarak eklenir.
 
 ## 🔗 Bağımlılık Yönetimi
-Artık `testFixtures(project(":01-infrastructure"))` kullanımı **geçersizdir**. Her iki modül de kendi `build.gradle.kts` dosyasına sahiptir ve birbirinden izole edilmiştir.
+Her iki modül de kendi `build.gradle` dosyasına sahiptir ve birbirinden izole edilmiştir. Modüller, sorumluluklarına göre `implementation` veya `testImplementation` olarak projenin diğer kısımlarına dahil edilir.
