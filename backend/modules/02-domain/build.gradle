@@ -5,7 +5,8 @@ plugins {
 dependencies {
 
     implementation 'jakarta.persistence:jakarta.persistence-api'
-    // MapStruct ayarları
-    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    // MapStruct ayarları - Versiyon TOML üzerinden yönetiliyor
+    implementation "org.mapstruct:mapstruct:${libs.versions.mapstruct.get()}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${libs.versions.mapstruct.get()}"
+    annotationProcessor 'org.projectlombok:lombok'
 }

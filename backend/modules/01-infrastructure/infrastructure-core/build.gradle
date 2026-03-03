@@ -19,7 +19,7 @@ dependencies {
     implementation 'org.springframework.security:spring-security-oauth2-jose'
     implementation 'org.apache.httpcomponents.client5:httpclient5'
 
-    // Lombok
-    compileOnly 'org.projectlombok:lombok:1.18.30'
-    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    // Lombok - versiyonlar java-common veya dependencyManagement tarafından yönetiliyor
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
 }

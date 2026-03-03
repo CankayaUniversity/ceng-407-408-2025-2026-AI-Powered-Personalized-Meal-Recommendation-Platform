@@ -21,19 +21,20 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     // Testcontainers
-    implementation 'org.testcontainers:testcontainers-junit-jupiter'
-    implementation 'org.testcontainers:testcontainers-postgresql'
-    implementation 'org.testcontainers:testcontainers-minio'
+    implementation 'org.testcontainers:testcontainers'
+    implementation 'org.testcontainers:junit-jupiter'
+    implementation 'org.testcontainers:postgresql'
+    implementation 'org.testcontainers:minio'
 
     // MinIO Java SDK
     implementation 'io.minio:minio'
 
-    // Keycloak Testcontainer (dasniko)
-    implementation 'com.github.dasniko:testcontainers-keycloak:3.6.0'
+    // Keycloak Testcontainer (dasniko) - Versiyon TOML üzerinden yönetiliyor
+    implementation "com.github.dasniko:testcontainers-keycloak:${libs.versions.keycloak.testcontainer.get()}"
 
-    //TestDataSourceConfig - logları detaylandırma
-    implementation 'com.googlecode.usc:jdbcdslog:1.0.6.2'
+    //TestDataSourceConfig - logları detaylandırma - Versiyon TOML üzerinden yönetiliyor
+    implementation "com.googlecode.usc:jdbcdslog:${libs.versions.jdbcdslog.get()}"
 
-    // macOS / Docker özel fix
-    implementation 'com.github.docker-java:docker-java-transport-zerodep:3.4.0'
+    // macOS / Docker özel fix - Versiyon TOML üzerinden yönetiliyor
+    implementation "com.github.docker-java:docker-java-transport-zerodep:${libs.versions.docker.java.zerodep.get()}"
 }

@@ -1,12 +1,29 @@
 [versions]
 # Define versions here
-spring-boot="3.5.4"
+spring-boot="3.4.3"
 spring-gradle="1.1.7"
 zalando-problem="0.27.1"
 zalando-problem-spring="0.29.1"
 zalando-logbook="3.11.0"
 logstash-logback="8.1"
 querydsl="5.1.0"
+lombok="1.18.30"
+mapstruct="1.5.5.Final"
+minio="8.5.14"
+testcontainers="1.21.4"
+jacoco="0.8.13"
+jdbcdslog="1.0.6.2"
+keycloak-testcontainer="3.6.0"
+hypersistence="3.9.9"
+springdoc="2.8.5"
+threeten-extra="1.8.0"
+jobrunr="8.0.1"
+guava="33.4.8-jre"
+commons-codec="1.19.0"
+commons-io="2.20.0"
+commons-compress="1.27.1"
+commons-collections="4.5.0"
+docker-java-zerodep="3.4.0"
 
 [libraries]
 # Define dependencies here

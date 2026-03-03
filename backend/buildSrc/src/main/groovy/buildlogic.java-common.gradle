@@ -19,22 +19,22 @@ repositories {
 dependencyManagement {
     imports {
         mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
-        mavenBom 'org.testcontainers:testcontainers-bom:2.0.3'
+        mavenBom "org.testcontainers:testcontainers-bom:${testcontainersVersion}"
     }
 
     dependencies {
-        dependency 'org.projectlombok:lombok:1.18.30'
+        dependency "org.projectlombok:lombok:${lombokVersion}"
 
         dependency 'jakarta.servlet:jakarta.servlet-api:6.1.0'
 
         dependency 'com.nimbusds:content-type:2.3'
         dependency 'com.nimbusds:oauth2-oidc-sdk:11.27'
 
-        dependency 'commons-codec:commons-codec:1.19.0'
-        dependency 'commons-io:commons-io:2.20.0'
-        dependency 'org.apache.commons:commons-compress:1.27.1'
-        dependency 'org.apache.commons:commons-collections4:4.5.0'
-        dependency 'com.google.guava:guava:33.4.8-jre'
+        dependency "commons-codec:commons-codec:${libs.versions.commons.codec.get()}"
+        dependency "commons-io:commons-io:${libs.versions.commons.io.get()}"
+        dependency "org.apache.commons:commons-compress:${libs.versions.commons.compress.get()}"
+        dependency "org.apache.commons:commons-collections4:${libs.versions.commons.collections.get()}"
+        dependency "com.google.guava:guava:${libs.versions.guava.get()}"
 
         dependency "org.zalando:logbook-spring-boot-starter:${zalandoLogbookVersion}"
         dependency "org.zalando:logbook-core:${zalandoLogbookVersion}"
@@ -46,11 +46,11 @@ dependencyManagement {
         dependency "org.zalando:problem-spring-web:${zalandoProblemSpringVersion}"
         dependency "org.zalando:jackson-datatype-problem:${zalandoProblemVersion}"
 
-        dependency 'org.jobrunr:jobrunr-spring-boot-3-starter:8.0.1'
+        dependency "org.jobrunr:jobrunr-spring-boot-3-starter:${jobrunrVersion}"
 
         dependency 'org.openapitools:jackson-databind-nullable:0.2.7'
 
-        dependency 'io.minio:minio:8.6.0'
+        dependency "io.minio:minio:${minioVersion}"
 
         dependencySet(group: 'io.swagger.core.v3', version: '2.2.30') {
             entry 'swagger-core'
@@ -99,9 +99,12 @@ dependencies {
     implementation 'jakarta.persistence:jakarta.persistence-api'
     implementation "com.querydsl:querydsl-core:${querydslVersion}"
     implementation "com.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
-    implementation 'io.hypersistence:hypersistence-utils-hibernate-63:3.9.9'
+    annotationProcessor "com.querydsl:querydsl-apt:${querydslVersion}:jakarta"
+    implementation "io.hypersistence:hypersistence-utils-hibernate-63:${libs.versions.hypersistence.get()}"
 
     annotationProcessor 'org.springframework.boot:spring-boot-starter-data-jpa'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
 
     implementation 'org.springframework.retry:spring-retry'
 
@@ -128,9 +131,10 @@ dependencies {
     }
 
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
-    testImplementation 'org.testcontainers:testcontainers-postgresql'
-    testImplementation 'org.testcontainers:testcontainers-minio'
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:minio'
 
     // Testlerde Servlet API'ını kullanan sınıflar derleme zamanında ihtiyaç duyuyor
     testImplementation 'jakarta.servlet:jakarta.servlet-api'
@@ -193,7 +197,7 @@ test {
 }
 
 jacoco {
-    toolVersion = "0.8.13" // Use the latest version of JaCoCo
+    toolVersion = jacocoVersion // TOML'dan gelen versiyonu kullanıyoruz
 }
 
 jacocoTestReport {
