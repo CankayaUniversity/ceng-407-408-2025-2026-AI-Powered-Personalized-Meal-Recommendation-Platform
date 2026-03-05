@@ -19,15 +19,29 @@ public class Ingredient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(nullable = false)
-    private Double amount;
+    /**
+     * Malzeme kategorisi (Örn: Sebze, Meyve, Baharat).
+     */
+    @Enumerated(EnumType.STRING)
+    private Category category;
 
-    private String unit;
+    @OneToOne(mappedBy = "ingredient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private IngredientNutrition nutrition;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipe_id")
-    private Recipe recipe;
+    @OneToMany(mappedBy = "ingredient")
+    private java.util.List<RecipeIngredient> recipeIngredients;
+
+    public enum Category {
+        MEAT,
+        VEGETABLE,
+        FRUIT,
+        DAIRY,
+        GRAIN,
+        SPICE,
+        OIL,
+        OTHER
+    }
 }

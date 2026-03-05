@@ -12,6 +12,5 @@ import lombok.*;
 public class IngredientDTO {
     private Long id;
     private String name;
-    private Double amount;
-    private String unit;
+    private String category;
 }

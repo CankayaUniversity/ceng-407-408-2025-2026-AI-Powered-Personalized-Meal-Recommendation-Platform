@@ -28,7 +28,7 @@ public class Recipe {
      * Tarifin içeriğindeki malzemeler listesi.
      */
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Ingredient> ingredients;
+    private List<RecipeIngredient> recipeIngredients;
 
     /**
      * Adım adım hazırlama talimatları.
@@ -42,15 +42,15 @@ public class Recipe {
     private Integer preparationTimeMinutes;
 
     /**
+     * Kişi sayısı.
+     */
+    private Integer servings;
+
+    /**
      * Zorluk seviyesi (KOLAY, ORTA, ZOR).
      */
     @Enumerated(EnumType.STRING)
     private Difficulty difficulty;
-
-    /**
-     * Besin değerleri (Kalori, Karbonhidrat vb. - JSON veya ayrı alanlar olarak tutulabilir).
-     */
-    private Integer calories;
 
     public enum Difficulty {
         EASY, MEDIUM, HARD

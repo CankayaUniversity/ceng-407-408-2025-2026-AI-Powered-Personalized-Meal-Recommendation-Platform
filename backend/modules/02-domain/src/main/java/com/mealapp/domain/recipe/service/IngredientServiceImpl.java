@@ -5,7 +5,6 @@ import com.mealapp.domain.recipe.repository.IngredientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -17,12 +16,6 @@ public class IngredientServiceImpl implements IngredientService {
     @Override
     public Ingredient save(Ingredient ingredient) {
         return ingredientRepository.save(ingredient);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Ingredient> findByRecipeId(Long recipeId) {
-        return ingredientRepository.findByRecipeId(recipeId);
     }
 
     @Override

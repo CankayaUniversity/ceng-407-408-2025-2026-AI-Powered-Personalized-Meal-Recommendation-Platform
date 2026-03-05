@@ -13,10 +13,10 @@ import java.util.Optional;
 @Repository
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     
-    @Query("SELECT r FROM Recipe r LEFT JOIN FETCH r.ingredients WHERE r.id = :id")
+    @Query("SELECT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient WHERE r.id = :id")
     Optional<Recipe> findByIdWithIngredients(Long id);
 
-    @Query("SELECT DISTINCT r FROM Recipe r LEFT JOIN FETCH r.ingredients")
+    @Query("SELECT DISTINCT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient")
     List<Recipe> findAllWithIngredients();
 
     /**
@@ -26,8 +26,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     /**
      * Belirli malzemeleri içeren tarifleri bulmak için temel metod.
-     * Not: Daha karmaşık eşleşmeler (AI veya Vektör arama) servis katmanında yönetilecektir.
      */
-    @Query("SELECT DISTINCT r FROM Recipe r JOIN r.ingredients i WHERE i.name IN :ingredients")
+    @Query("SELECT DISTINCT r FROM Recipe r JOIN r.recipeIngredients ri JOIN ri.ingredient i WHERE i.name IN :ingredients")
     List<Recipe> findByIngredientNamesIn(List<String> ingredients);
 }

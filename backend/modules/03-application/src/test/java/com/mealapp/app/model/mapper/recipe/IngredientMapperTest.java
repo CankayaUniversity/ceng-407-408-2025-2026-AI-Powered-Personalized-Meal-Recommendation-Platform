@@ -13,8 +13,7 @@ class IngredientMapperTest {
         Ingredient entity = Ingredient.builder()
                 .id(1L)
                 .name("Salt")
-                .amount(5.0)
-                .unit("g")
+                .category(Ingredient.Category.SPICE)
                 .build();
 
         IngredientDTO dto = mapper.toDTO(entity);
@@ -22,8 +21,7 @@ class IngredientMapperTest {
         assertNotNull(dto);
         assertEquals(1L, dto.getId());
         assertEquals("Salt", dto.getName());
-        assertEquals(5.0, dto.getAmount());
-        assertEquals("g", dto.getUnit());
+        assertEquals("SPICE", dto.getCategory());
     }
 
     @Test
@@ -31,8 +29,7 @@ class IngredientMapperTest {
         IngredientDTO dto = IngredientDTO.builder()
                 .id(1L)
                 .name("Pepper")
-                .amount(2.0)
-                .unit("mg")
+                .category("SPICE")
                 .build();
 
         Ingredient entity = mapper.toEntity(dto);
@@ -40,8 +37,7 @@ class IngredientMapperTest {
         assertNotNull(entity);
         assertEquals(1L, entity.getId());
         assertEquals("Pepper", entity.getName());
-        assertEquals(2.0, entity.getAmount());
-        assertEquals("mg", entity.getUnit());
+        assertEquals(Ingredient.Category.SPICE, entity.getCategory());
     }
 
     @Test

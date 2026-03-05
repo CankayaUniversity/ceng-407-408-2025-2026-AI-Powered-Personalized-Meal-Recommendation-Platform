@@ -16,8 +16,7 @@ public class IngredientMapper {
         return IngredientDTO.builder()
                 .id(ingredient.getId())
                 .name(ingredient.getName())
-                .amount(ingredient.getAmount())
-                .unit(ingredient.getUnit())
+                .category(ingredient.getCategory() != null ? ingredient.getCategory().name() : null)
                 .build();
     }
 
@@ -27,8 +26,7 @@ public class IngredientMapper {
         return Ingredient.builder()
                 .id(dto.getId())
                 .name(dto.getName())
-                .amount(dto.getAmount())
-                .unit(dto.getUnit())
+                .category(dto.getCategory() != null ? Ingredient.Category.valueOf(dto.getCategory()) : null)
                 .build();
     }
 }

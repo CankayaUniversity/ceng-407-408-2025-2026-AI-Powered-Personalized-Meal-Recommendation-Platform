@@ -4,8 +4,11 @@ import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.repository.InventoryRepository;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.Ingredient;
+import com.mealapp.domain.recipe.entity.RecipeIngredient;
+import com.mealapp.domain.recipe.entity.IngredientNutrition;
 import java.util.ArrayList;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
+import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,7 @@ public class RecipeSeedService implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final RecipeRepository recipeRepository;
+    private final IngredientRepository ingredientRepository;
     private final InventoryRepository inventoryRepository;
 
     @Override
@@ -73,57 +77,100 @@ public class RecipeSeedService implements CommandLineRunner {
 
         userRepository.saveAll(List.of(berk, ayse));
 
-        // 2. Örnek Tarifler
+        // 2. Örnek Malzemeler (Global Sözlük)
+        Ingredient mercimekIng = Ingredient.builder().name("Kırmızı Mercimek").category(Ingredient.Category.GRAIN).build();
+        mercimekIng.setNutrition(IngredientNutrition.builder().ingredient(mercimekIng).calories(341.0).protein(24.6).carbs(52.7).fat(1.1).build());
+
+        Ingredient sogan = Ingredient.builder().name("Soğan").category(Ingredient.Category.VEGETABLE).build();
+        sogan.setNutrition(IngredientNutrition.builder().ingredient(sogan).calories(40.0).protein(1.1).carbs(9.3).fat(0.1).build());
+
+        Ingredient havuc = Ingredient.builder().name("Havuç").category(Ingredient.Category.VEGETABLE).build();
+        havuc.setNutrition(IngredientNutrition.builder().ingredient(havuc).calories(41.0).protein(0.9).carbs(9.6).fat(0.2).build());
+
+        Ingredient patates = Ingredient.builder().name("Patates").category(Ingredient.Category.VEGETABLE).build();
+        patates.setNutrition(IngredientNutrition.builder().ingredient(patates).calories(77.0).protein(2.0).carbs(17.5).fat(0.1).build());
+
+        Ingredient zeytinyagi = Ingredient.builder().name("Zeytinyağı").category(Ingredient.Category.OIL).build();
+        zeytinyagi.setNutrition(IngredientNutrition.builder().ingredient(zeytinyagi).calories(884.0).protein(0.0).carbs(0.0).fat(100.0).build());
+
+        Ingredient pirincIng = Ingredient.builder().name("Pirinç").category(Ingredient.Category.GRAIN).build();
+        pirincIng.setNutrition(IngredientNutrition.builder().ingredient(pirincIng).calories(130.0).protein(2.7).carbs(28.2).fat(0.3).build());
+
+        Ingredient tavuk = Ingredient.builder().name("Tavuk Göğsü").category(Ingredient.Category.MEAT).build();
+        tavuk.setNutrition(IngredientNutrition.builder().ingredient(tavuk).calories(165.0).protein(31.0).carbs(0.0).fat(3.6).build());
+
+        Ingredient tereyagi = Ingredient.builder().name("Tereyağı").category(Ingredient.Category.DAIRY).build();
+        tereyagi.setNutrition(IngredientNutrition.builder().ingredient(tereyagi).calories(717.0).protein(0.9).carbs(0.1).fat(81.0).build());
+
+        Ingredient nohut = Ingredient.builder().name("Nohut").category(Ingredient.Category.GRAIN).build();
+        nohut.setNutrition(IngredientNutrition.builder().ingredient(nohut).calories(164.0).protein(8.9).carbs(27.4).fat(2.6).build());
+
+        Ingredient kinoa = Ingredient.builder().name("Kinoa").category(Ingredient.Category.GRAIN).build();
+        kinoa.setNutrition(IngredientNutrition.builder().ingredient(kinoa).calories(120.0).protein(4.4).carbs(21.3).fat(1.9).build());
+
+        Ingredient domates = Ingredient.builder().name("Domates").category(Ingredient.Category.VEGETABLE).build();
+        domates.setNutrition(IngredientNutrition.builder().ingredient(domates).calories(18.0).protein(0.9).carbs(3.9).fat(0.2).build());
+
+        Ingredient salatalik = Ingredient.builder().name("Salatalık").category(Ingredient.Category.VEGETABLE).build();
+        salatalik.setNutrition(IngredientNutrition.builder().ingredient(salatalik).calories(15.0).protein(0.7).carbs(3.6).fat(0.1).build());
+
+        Ingredient maydanoz = Ingredient.builder().name("Maydanoz").category(Ingredient.Category.VEGETABLE).build();
+        maydanoz.setNutrition(IngredientNutrition.builder().ingredient(maydanoz).calories(36.0).protein(3.0).carbs(6.3).fat(0.8).build());
+
+        Ingredient limon = Ingredient.builder().name("Limon").category(Ingredient.Category.FRUIT).build();
+        limon.setNutrition(IngredientNutrition.builder().ingredient(limon).calories(29.0).protein(1.1).carbs(9.3).fat(0.3).build());
+
+        ingredientRepository.saveAll(List.of(
+                mercimekIng, sogan, havuc, patates, zeytinyagi, 
+                pirincIng, tavuk, tereyagi, nohut, 
+                kinoa, domates, salatalik, maydanoz, limon
+        ));
+
+        // 3. Örnek Tarifler
         Recipe mercimek = Recipe.builder()
                 .title("Klasik Mercimek Çorbası")
                 .instructions("1. Sebzeleri doğrayın. 2. Mercimekle birlikte haşlayın. 3. Blenderdan geçirin.")
                 .preparationTimeMinutes(30)
                 .difficulty(Recipe.Difficulty.EASY)
-                .calories(250)
+                .recipeIngredients(new ArrayList<>())
                 .build();
 
-        List<Ingredient> mercimekIngr = new ArrayList<>();
-        mercimekIngr.add(Ingredient.builder().name("Kırmızı Mercimek").amount(1.0).unit(null).recipe(mercimek).build());
-        mercimekIngr.add(Ingredient.builder().name("Soğan").amount(1.0).unit(null).recipe(mercimek).build());
-        mercimekIngr.add(Ingredient.builder().name("Havuç").amount(1.0).unit(null).recipe(mercimek).build());
-        mercimekIngr.add(Ingredient.builder().name("Patates").amount(1.0).unit(null).recipe(mercimek).build());
-        mercimekIngr.add(Ingredient.builder().name("Zeytinyağı").amount(1.0).unit(null).recipe(mercimek).build());
-        mercimek.setIngredients(mercimekIngr);
+        mercimek.getRecipeIngredients().add(RecipeIngredient.builder().recipe(mercimek).ingredient(mercimekIng).grams(200.0).build());
+        mercimek.getRecipeIngredients().add(RecipeIngredient.builder().recipe(mercimek).ingredient(sogan).grams(100.0).build());
+        mercimek.getRecipeIngredients().add(RecipeIngredient.builder().recipe(mercimek).ingredient(havuc).grams(50.0).build());
+        mercimek.getRecipeIngredients().add(RecipeIngredient.builder().recipe(mercimek).ingredient(patates).grams(100.0).build());
+        mercimek.getRecipeIngredients().add(RecipeIngredient.builder().recipe(mercimek).ingredient(zeytinyagi).grams(20.0).build());
 
         Recipe tavukluPilav = Recipe.builder()
                 .title("Tavuklu Pilav")
                 .instructions("1. Tavuğu haşlayın. 2. Pirinci kavurun. 3. Tavuk suyuyla pişirin.")
                 .preparationTimeMinutes(45)
                 .difficulty(Recipe.Difficulty.MEDIUM)
-                .calories(450)
+                .recipeIngredients(new ArrayList<>())
                 .build();
 
-        List<Ingredient> pilavIngr = new ArrayList<>();
-        pilavIngr.add(Ingredient.builder().name("Pirinç").amount(1.0).unit(null).recipe(tavukluPilav).build());
-        pilavIngr.add(Ingredient.builder().name("Tavuk Göğsü").amount(1.0).unit(null).recipe(tavukluPilav).build());
-        pilavIngr.add(Ingredient.builder().name("Tereyağı").amount(1.0).unit(null).recipe(tavukluPilav).build());
-        pilavIngr.add(Ingredient.builder().name("Nohut").amount(1.0).unit(null).recipe(tavukluPilav).build());
-        tavukluPilav.setIngredients(pilavIngr);
+        tavukluPilav.getRecipeIngredients().add(RecipeIngredient.builder().recipe(tavukluPilav).ingredient(pirincIng).grams(300.0).build());
+        tavukluPilav.getRecipeIngredients().add(RecipeIngredient.builder().recipe(tavukluPilav).ingredient(tavuk).grams(250.0).build());
+        tavukluPilav.getRecipeIngredients().add(RecipeIngredient.builder().recipe(tavukluPilav).ingredient(tereyagi).grams(30.0).build());
+        tavukluPilav.getRecipeIngredients().add(RecipeIngredient.builder().recipe(tavukluPilav).ingredient(nohut).grams(50.0).build());
 
         Recipe kinoaSalatasi = Recipe.builder()
                 .title("Kinoa Salatası")
                 .instructions("1. Kinoayı haşlayın. 2. Sebzeleri doğrayın. 3. Soslayıp karıştırın.")
                 .preparationTimeMinutes(20)
                 .difficulty(Recipe.Difficulty.EASY)
-                .calories(320)
+                .recipeIngredients(new ArrayList<>())
                 .build();
 
-        List<Ingredient> kinoaIngr = new ArrayList<>();
-        kinoaIngr.add(Ingredient.builder().name("Kinoa").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
-        kinoaIngr.add(Ingredient.builder().name("Domates").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
-        kinoaIngr.add(Ingredient.builder().name("Salatalık").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
-        kinoaIngr.add(Ingredient.builder().name("Maydanoz").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
-        kinoaIngr.add(Ingredient.builder().name("Limon").amount(1.0).unit(null).recipe(kinoaSalatasi).build());
-        kinoaSalatasi.setIngredients(kinoaIngr);
+        kinoaSalatasi.getRecipeIngredients().add(RecipeIngredient.builder().recipe(kinoaSalatasi).ingredient(kinoa).grams(150.0).build());
+        kinoaSalatasi.getRecipeIngredients().add(RecipeIngredient.builder().recipe(kinoaSalatasi).ingredient(domates).grams(100.0).build());
+        kinoaSalatasi.getRecipeIngredients().add(RecipeIngredient.builder().recipe(kinoaSalatasi).ingredient(salatalik).grams(100.0).build());
+        kinoaSalatasi.getRecipeIngredients().add(RecipeIngredient.builder().recipe(kinoaSalatasi).ingredient(maydanoz).grams(30.0).build());
+        kinoaSalatasi.getRecipeIngredients().add(RecipeIngredient.builder().recipe(kinoaSalatasi).ingredient(limon).grams(20.0).build());
 
         recipeRepository.saveAll(List.of(mercimek, tavukluPilav, kinoaSalatasi));
 
-        // 3. Örnek Envanter (Berk'in dolabı)
+        // 4. Örnek Envanter (Berk'in dolabı)
         Inventory pirinc = Inventory.builder()
                 .user(berk)
                 .ingredientName("Pirinç")

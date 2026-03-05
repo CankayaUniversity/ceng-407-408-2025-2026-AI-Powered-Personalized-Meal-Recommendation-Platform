@@ -1,57 +1,51 @@
--- Flyway Migration: V2__refactor_ingredients_entity.sql
--- Purpose: Introduce normalized ingredients table and migrate data from legacy recipe_ingredients if present.
+-- Flyway Migration: V3__refactor_ingredients_entity.sql
+-- Purpose: Normalize ingredients, add nutrition model, and create many-to-many join table.
 
--- 1) Create new ingredients table if it doesn't exist
-CREATE TABLE IF NOT EXISTS ingredients (
+-- 1) First, clean up existing ingredients table to make it a global dictionary
+-- In V1, it was tied to recipes. We drop it and recreate it.
+DROP TABLE IF EXISTS ingredients CASCADE;
+
+CREATE TABLE ingredients (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    amount DOUBLE PRECISION NOT NULL DEFAULT 1.0,
-    unit VARCHAR(50),
-    recipe_id BIGINT,
-    CONSTRAINT fk_ingredients_recipe FOREIGN KEY (recipe_id) REFERENCES recipes (id)
+    name VARCHAR(255) NOT NULL UNIQUE,
+    category VARCHAR(50)
 );
 
--- 2) Optional indexes to improve performance
+-- 2) Create ingredient_nutrition table (1-to-1 with Ingredient)
+CREATE TABLE IF NOT EXISTS ingredient_nutrition (
+    id BIGSERIAL PRIMARY KEY,
+    ingredient_id BIGINT NOT NULL UNIQUE,
+    calories DOUBLE PRECISION NOT NULL,
+    protein DOUBLE PRECISION NOT NULL,
+    carbs DOUBLE PRECISION NOT NULL,
+    fat DOUBLE PRECISION NOT NULL,
+    CONSTRAINT fk_nutrition_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients (id) ON DELETE CASCADE
+);
+
+-- 3) Create recipe_ingredients table (Many-to-Many Join Table)
+-- We ensure this table exists and has the correct structure.
+DROP TABLE IF EXISTS recipe_ingredients CASCADE;
+
+CREATE TABLE recipe_ingredients (
+    id BIGSERIAL PRIMARY KEY,
+    recipe_id BIGINT NOT NULL,
+    ingredient_id BIGINT NOT NULL,
+    grams DOUBLE PRECISION NOT NULL,
+    CONSTRAINT fk_ri_recipe FOREIGN KEY (recipe_id) REFERENCES recipes (id) ON DELETE CASCADE,
+    CONSTRAINT fk_ri_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients (id) ON DELETE RESTRICT
+);
+
+-- 4) Add indexes for performance
+CREATE INDEX IF NOT EXISTS idx_ingredients_name ON ingredients (name);
+CREATE INDEX IF NOT EXISTS idx_ri_recipe_id ON recipe_ingredients (recipe_id);
+CREATE INDEX IF NOT EXISTS idx_ri_ingredient_id ON recipe_ingredients (ingredient_id);
+
+-- 5) Update recipes table
+ALTER TABLE recipes DROP COLUMN IF EXISTS calories;
+
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c
-        JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relname = 'idx_ingredients_recipe_id' AND n.nspname = 'public'
-    ) THEN
-        CREATE INDEX idx_ingredients_recipe_id ON ingredients (recipe_id);
-    END IF;
-
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_class c
-        JOIN pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relname = 'idx_ingredients_name' AND n.nspname = 'public'
-    ) THEN
-        CREATE INDEX idx_ingredients_name ON ingredients (name);
-    END IF;
-END$$;
-
--- 3) Migrate legacy data from recipe_ingredients (if table exists)
---    Assumptions: legacy table shape => recipe_ingredients(recipe_id BIGINT NOT NULL, ingredient VARCHAR(255))
---    Using EXECUTE to avoid static analysis errors (unresolved table) if table is missing.
-DO $$
-BEGIN
-    IF EXISTS (
-        SELECT 1 FROM information_schema.tables 
-        WHERE table_schema = 'public' AND table_name = 'recipe_ingredients'
-    ) THEN
-        EXECUTE 'INSERT INTO ingredients (name, amount, unit, recipe_id)
-        SELECT ri.ingredient AS name,
-               1.0 AS amount,
-               NULL AS unit,
-               ri.recipe_id
-        FROM recipe_ingredients ri
-        WHERE NOT EXISTS (
-            SELECT 1 FROM ingredients i
-            WHERE i.recipe_id = ri.recipe_id AND i.name = ri.ingredient
-        )';
-
-        -- Drop legacy table after successful migration
-        EXECUTE 'DROP TABLE IF EXISTS recipe_ingredients';
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='recipes' AND column_name='servings') THEN
+        ALTER TABLE recipes ADD COLUMN servings INTEGER;
     END IF;
 END$$;

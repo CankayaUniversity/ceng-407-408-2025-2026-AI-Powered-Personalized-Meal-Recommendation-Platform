@@ -9,21 +9,25 @@ class RecipeTest {
     void recipeShouldHandleIngredients() {
         Recipe recipe = Recipe.builder()
                 .title("Test Recipe")
-                .ingredients(new ArrayList<>())
+                .recipeIngredients(new ArrayList<>())
                 .build();
 
         Ingredient ingredient = Ingredient.builder()
                 .name("Salt")
-                .amount(1.0)
-                .unit("tsp")
-                .recipe(recipe)
+                .category(Ingredient.Category.SPICE)
                 .build();
 
-        recipe.getIngredients().add(ingredient);
+        RecipeIngredient recipeIngredient = RecipeIngredient.builder()
+                .recipe(recipe)
+                .ingredient(ingredient)
+                .grams(5.0)
+                .build();
 
-        assertEquals(1, recipe.getIngredients().size());
-        assertEquals("Salt", recipe.getIngredients().getFirst().getName());
-        assertEquals(recipe, recipe.getIngredients().getFirst().getRecipe());
+        recipe.getRecipeIngredients().add(recipeIngredient);
+
+        assertEquals(1, recipe.getRecipeIngredients().size());
+        assertEquals("Salt", recipe.getRecipeIngredients().getFirst().getIngredient().getName());
+        assertEquals(recipe, recipe.getRecipeIngredients().getFirst().getRecipe());
     }
 
     @Test
