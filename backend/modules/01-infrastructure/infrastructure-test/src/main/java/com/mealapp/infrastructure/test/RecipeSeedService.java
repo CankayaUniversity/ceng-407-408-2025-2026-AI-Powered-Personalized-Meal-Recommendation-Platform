@@ -173,14 +173,14 @@ public class RecipeSeedService implements CommandLineRunner {
         // 4. Örnek Envanter (Berk'in dolabı)
         Inventory pirinc = Inventory.builder()
                 .user(berk)
-                .ingredientName("Pirinç")
+                .ingredient(pirincIng)
                 .quantity(1000.0)
                 .unit("GRAM")
                 .build();
 
         Inventory mercimekInv = Inventory.builder()
                 .user(berk)
-                .ingredientName("Kırmızı Mercimek")
+                .ingredient(mercimekIng)
                 .quantity(500.0)
                 .unit("GRAM")
                 .build();

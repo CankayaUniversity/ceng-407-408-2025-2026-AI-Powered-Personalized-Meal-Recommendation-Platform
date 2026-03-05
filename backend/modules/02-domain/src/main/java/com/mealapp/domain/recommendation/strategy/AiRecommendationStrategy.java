@@ -20,7 +20,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     @Override
     public List<Recipe> recommend(User user, List<Inventory> currentInventory) {
         String ingredients = currentInventory.stream()
-                .map(Inventory::getIngredientName)
+                .map(inv -> inv.getIngredient().getName())
                 .collect(Collectors.joining(", "));
 
         String prompt = aiPromptEngine.generatePrompt(

@@ -6,6 +6,7 @@ import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -25,7 +26,7 @@ public class UserController {
      * - Body'deki fiziksel verilerden günlük kalori hedefi sunucu tarafında hesaplanır.
      */
     @PostMapping
-    public UserDto upsert(@RequestBody UserDto request) {
+    public UserDto upsert(@Valid @RequestBody UserDto request) {
         User toSave = userMapper.toEntity(request); // dailyCalorieTarget burada hesaplanır
         User saved = userService.save(toSave);
         return userMapper.toDto(saved);

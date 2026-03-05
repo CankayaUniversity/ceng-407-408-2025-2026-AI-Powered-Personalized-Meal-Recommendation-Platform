@@ -3,7 +3,9 @@ package com.mealapp.app.service;
 import com.mealapp.app.model.dto.recommendation.RecommendationRequest;
 import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
 import com.mealapp.app.model.mapper.recommendation.RecommendationMapper;
+import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.recommendation.service.RecommendationService;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
@@ -29,6 +31,8 @@ class RecommendationAppServiceTest {
     @Mock
     private UserService userService;
     @Mock
+    private IngredientRepository ingredientRepository;
+    @Mock
     private RecommendationMapper recommendationMapper;
 
     @InjectMocks
@@ -42,6 +46,7 @@ class RecommendationAppServiceTest {
 
         User user = User.builder().id(1L).build();
         when(userService.findById(1L)).thenReturn(Optional.of(user));
+        when(ingredientRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
         when(recommendationService.getRecommendations(any(), anyList())).thenReturn(List.of(new Recipe()));
         when(recommendationMapper.toResponse(anyList())).thenReturn(new RecommendationResponse());
 

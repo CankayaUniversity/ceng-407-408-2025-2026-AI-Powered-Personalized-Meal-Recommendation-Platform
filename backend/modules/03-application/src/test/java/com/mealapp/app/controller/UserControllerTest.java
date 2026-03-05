@@ -29,6 +29,12 @@ class UserControllerTest extends AbstractMockMvcTest {
     void shouldUpsertUser() throws Exception {
         UserDto userDto = new UserDto();
         userDto.setName("Test User");
+        userDto.setEmail("test@example.com");
+        userDto.setWeight(70.0);
+        userDto.setHeight(175.0);
+        userDto.setAge(25);
+        userDto.setGender(User.Gender.MALE);
+        userDto.setActivityLevel(User.ActivityLevel.MODERATELY_ACTIVE);
 
         when(userMapper.toEntity(any())).thenReturn(new User());
         when(userService.save(any())).thenReturn(new User());

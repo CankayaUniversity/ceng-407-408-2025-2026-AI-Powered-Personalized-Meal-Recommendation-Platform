@@ -1,5 +1,6 @@
 package com.mealapp.domain.inventory.entity;
 
+import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,8 +30,9 @@ public class Inventory {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
-    private String ingredientName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ingredient_id", nullable = false)
+    private Ingredient ingredient;
 
     private Double quantity;
 

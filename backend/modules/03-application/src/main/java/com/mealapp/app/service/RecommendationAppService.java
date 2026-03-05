@@ -5,6 +5,8 @@ import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
 import com.mealapp.app.model.mapper.recommendation.RecommendationMapper;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.inventory.entity.Inventory;
+import com.mealapp.domain.recipe.entity.Ingredient;
+import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recommendation.service.RecommendationService;
 import com.mealapp.domain.user.entity.User;
@@ -23,9 +25,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class RecommendationAppService {
-
     private final RecommendationService recommendationService;
     private final UserService userService;
+    private final IngredientRepository ingredientRepository;
     private final RecommendationMapper recommendationMapper;
 
     /**
@@ -38,10 +40,17 @@ public class RecommendationAppService {
 
         // 2. İstekteki malzemeleri geçici Inventory nesnelerine çevir (Dinamik envanter)
         List<Inventory> dynamicInventory = request.getAvailableIngredients().stream()
-                .map(ingredient -> Inventory.builder()
-                        .ingredientName(ingredient)
-                        .user(user)
-                        .build())
+                .map(ingredientName -> {
+                    Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(ingredientName)
+                            .orElseGet(() -> Ingredient.builder()
+                                    .name(ingredientName)
+                                    .category(Ingredient.Category.OTHER)
+                                    .build());
+                    return Inventory.builder()
+                            .ingredient(ingredient)
+                            .user(user)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         // 3. Domain servisinden önerileri al
