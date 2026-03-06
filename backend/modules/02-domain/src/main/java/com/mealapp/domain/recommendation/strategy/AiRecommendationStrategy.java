@@ -1,9 +1,9 @@
 package com.mealapp.domain.recommendation.strategy;
 
+import com.mealapp.domain.common.ai.PromptEngine;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.user.entity.User;
-import com.mealapp.infrastructure.ai.promptengine.AiPromptEngine;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AiRecommendationStrategy implements RecommendationStrategy {
 
-    private final AiPromptEngine aiPromptEngine;
+    private final PromptEngine promptEngine;
 
     @Override
     public List<Recipe> recommend(User user, List<Inventory> currentInventory) {
@@ -23,7 +23,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 .map(inv -> inv.getIngredient().getName())
                 .collect(Collectors.joining(", "));
 
-        String prompt = aiPromptEngine.generatePrompt(
+        String prompt = promptEngine.generatePrompt(
                 "Recommend recipes for user %s with diet %s and ingredients: %s",
                 user.getName(), user.getDietType(), ingredients);
 

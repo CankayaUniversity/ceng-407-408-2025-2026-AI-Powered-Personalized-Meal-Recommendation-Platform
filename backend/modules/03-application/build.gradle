@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    implementation project(':modules:01-infrastructure:infrastructure-core')
     implementation project(':modules:02-domain')
     implementation project(':modules:04-utilities')
 

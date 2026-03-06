@@ -20,13 +20,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // Testcontainers
+    // Testcontainers (versiyonlar buildlogic.java-common / toml tarafından yönetiliyor)
     implementation 'org.testcontainers:testcontainers'
     implementation 'org.testcontainers:junit-jupiter'
     implementation 'org.testcontainers:postgresql'
     implementation 'org.testcontainers:minio'
 
-    // MinIO Java SDK
+    // MinIO Java SDK (versiyon buildlogic.java-common / toml tarafından yönetiliyor)
     implementation 'io.minio:minio'
 
     // Keycloak Testcontainer (dasniko) - Versiyon TOML üzerinden yönetiliyor
