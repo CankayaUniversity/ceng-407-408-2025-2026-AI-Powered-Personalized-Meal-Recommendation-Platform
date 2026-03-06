@@ -21,7 +21,8 @@ CREATE TABLE users (
 -- 2. User Allergies
 CREATE TABLE user_allergies (
     user_id BIGINT NOT NULL,
-    allergy VARCHAR(255),
+    allergy VARCHAR(255) NOT NULL,
+    PRIMARY KEY (user_id, allergy),
     CONSTRAINT fk_user_allergies_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
@@ -59,7 +60,8 @@ CREATE TABLE recipe_ingredients (
     ingredient_id BIGINT NOT NULL,
     grams DOUBLE PRECISION NOT NULL,
     CONSTRAINT fk_ri_recipe FOREIGN KEY (recipe_id) REFERENCES recipes (id) ON DELETE CASCADE,
-    CONSTRAINT fk_ri_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients (id) ON DELETE RESTRICT
+    CONSTRAINT fk_ri_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients (id) ON DELETE RESTRICT,
+    CONSTRAINT unique_recipe_ingredient UNIQUE (recipe_id, ingredient_id)
 );
 
 -- 7. Inventories Table
@@ -70,7 +72,8 @@ CREATE TABLE inventories (
     quantity DOUBLE PRECISION,
     unit VARCHAR(50),
     CONSTRAINT fk_inventory_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_inventories_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients (id) ON DELETE CASCADE
+    CONSTRAINT fk_inventories_ingredient FOREIGN KEY (ingredient_id) REFERENCES ingredients (id) ON DELETE CASCADE,
+    CONSTRAINT unique_inventory UNIQUE (user_id, ingredient_id)
 );
 
 -- 8. Daily Consumptions Table
@@ -102,6 +105,7 @@ CREATE TABLE recipe_ratings (
 );
 
 -- 10. Indexes for Performance
+CREATE INDEX idx_recipes_title ON recipes (title);
 CREATE INDEX idx_ingredients_name ON ingredients (name);
 CREATE INDEX idx_ri_recipe_id ON recipe_ingredients (recipe_id);
 CREATE INDEX idx_ri_ingredient_id ON recipe_ingredients (ingredient_id);

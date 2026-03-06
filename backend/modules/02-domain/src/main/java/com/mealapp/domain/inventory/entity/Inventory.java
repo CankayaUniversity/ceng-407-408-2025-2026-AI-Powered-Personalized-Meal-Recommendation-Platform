@@ -11,7 +11,7 @@ import java.time.LocalDate;
  * Malzeme adı, miktar, birim ve son kullanma tarihi gibi temel bilgileri tutar.
  */
 @Entity
-@Table(name = "inventories")
+@Table(name = "inventories", uniqueConstraints = @UniqueConstraint(name = "unique_inventory", columnNames = {"user_id", "ingredient_id"}))
 @Getter
 @Setter
 @NoArgsConstructor

@@ -9,7 +9,7 @@ import java.util.List;
  * AI tarafından önerilen veya sistemde kayıtlı olan tariflerin detaylarını tutar.
  */
 @Entity
-@Table(name = "recipes")
+@Table(name = "recipes", indexes = @Index(name = "idx_recipes_title", columnList = "title"))
 @Getter
 @Setter
 @NoArgsConstructor

@@ -16,22 +16,20 @@ import lombok.*;
 public class IngredientNutrition {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    @MapsId
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
 
     @Column(nullable = false)
-    private Double calories;
+    private Double caloriesPer100g;
 
     @Column(nullable = false)
-    private Double protein;
+    private Double proteinPer100g;
 
     @Column(nullable = false)
-    private Double carbs;
+    private Double carbsPer100g;
 
     @Column(nullable = false)
-    private Double fat;
+    private Double fatPer100g;
 }

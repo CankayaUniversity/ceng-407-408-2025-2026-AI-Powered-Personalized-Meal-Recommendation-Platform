@@ -79,46 +79,46 @@ public class RecipeSeedService implements CommandLineRunner {
 
         // 2. Örnek Malzemeler (Global Sözlük)
         Ingredient mercimekIng = Ingredient.builder().name("Kırmızı Mercimek").category(Ingredient.Category.GRAIN).build();
-        mercimekIng.setNutrition(IngredientNutrition.builder().ingredient(mercimekIng).calories(341.0).protein(24.6).carbs(52.7).fat(1.1).build());
+        mercimekIng.setNutrition(IngredientNutrition.builder().ingredient(mercimekIng).caloriesPer100g(341.0).proteinPer100g(24.6).carbsPer100g(52.7).fatPer100g(1.1).build());
 
         Ingredient sogan = Ingredient.builder().name("Soğan").category(Ingredient.Category.VEGETABLE).build();
-        sogan.setNutrition(IngredientNutrition.builder().ingredient(sogan).calories(40.0).protein(1.1).carbs(9.3).fat(0.1).build());
+        sogan.setNutrition(IngredientNutrition.builder().ingredient(sogan).caloriesPer100g(40.0).proteinPer100g(1.1).carbsPer100g(9.3).fatPer100g(0.1).build());
 
         Ingredient havuc = Ingredient.builder().name("Havuç").category(Ingredient.Category.VEGETABLE).build();
-        havuc.setNutrition(IngredientNutrition.builder().ingredient(havuc).calories(41.0).protein(0.9).carbs(9.6).fat(0.2).build());
+        havuc.setNutrition(IngredientNutrition.builder().ingredient(havuc).caloriesPer100g(41.0).proteinPer100g(0.9).carbsPer100g(9.6).fatPer100g(0.2).build());
 
         Ingredient patates = Ingredient.builder().name("Patates").category(Ingredient.Category.VEGETABLE).build();
-        patates.setNutrition(IngredientNutrition.builder().ingredient(patates).calories(77.0).protein(2.0).carbs(17.5).fat(0.1).build());
+        patates.setNutrition(IngredientNutrition.builder().ingredient(patates).caloriesPer100g(77.0).proteinPer100g(2.0).carbsPer100g(17.5).fatPer100g(0.1).build());
 
         Ingredient zeytinyagi = Ingredient.builder().name("Zeytinyağı").category(Ingredient.Category.OIL).build();
-        zeytinyagi.setNutrition(IngredientNutrition.builder().ingredient(zeytinyagi).calories(884.0).protein(0.0).carbs(0.0).fat(100.0).build());
+        zeytinyagi.setNutrition(IngredientNutrition.builder().ingredient(zeytinyagi).caloriesPer100g(884.0).proteinPer100g(0.0).carbsPer100g(0.0).fatPer100g(100.0).build());
 
         Ingredient pirincIng = Ingredient.builder().name("Pirinç").category(Ingredient.Category.GRAIN).build();
-        pirincIng.setNutrition(IngredientNutrition.builder().ingredient(pirincIng).calories(130.0).protein(2.7).carbs(28.2).fat(0.3).build());
+        pirincIng.setNutrition(IngredientNutrition.builder().ingredient(pirincIng).caloriesPer100g(130.0).proteinPer100g(2.7).carbsPer100g(28.2).fatPer100g(0.3).build());
 
         Ingredient tavuk = Ingredient.builder().name("Tavuk Göğsü").category(Ingredient.Category.MEAT).build();
-        tavuk.setNutrition(IngredientNutrition.builder().ingredient(tavuk).calories(165.0).protein(31.0).carbs(0.0).fat(3.6).build());
+        tavuk.setNutrition(IngredientNutrition.builder().ingredient(tavuk).caloriesPer100g(165.0).proteinPer100g(31.0).carbsPer100g(0.0).fatPer100g(3.6).build());
 
         Ingredient tereyagi = Ingredient.builder().name("Tereyağı").category(Ingredient.Category.DAIRY).build();
-        tereyagi.setNutrition(IngredientNutrition.builder().ingredient(tereyagi).calories(717.0).protein(0.9).carbs(0.1).fat(81.0).build());
+        tereyagi.setNutrition(IngredientNutrition.builder().ingredient(tereyagi).caloriesPer100g(717.0).proteinPer100g(0.9).carbsPer100g(0.1).fatPer100g(81.0).build());
 
         Ingredient nohut = Ingredient.builder().name("Nohut").category(Ingredient.Category.GRAIN).build();
-        nohut.setNutrition(IngredientNutrition.builder().ingredient(nohut).calories(164.0).protein(8.9).carbs(27.4).fat(2.6).build());
+        nohut.setNutrition(IngredientNutrition.builder().ingredient(nohut).caloriesPer100g(164.0).proteinPer100g(8.9).carbsPer100g(27.4).fatPer100g(2.6).build());
 
         Ingredient kinoa = Ingredient.builder().name("Kinoa").category(Ingredient.Category.GRAIN).build();
-        kinoa.setNutrition(IngredientNutrition.builder().ingredient(kinoa).calories(120.0).protein(4.4).carbs(21.3).fat(1.9).build());
+        kinoa.setNutrition(IngredientNutrition.builder().ingredient(kinoa).caloriesPer100g(120.0).proteinPer100g(4.4).carbsPer100g(21.3).fatPer100g(1.9).build());
 
         Ingredient domates = Ingredient.builder().name("Domates").category(Ingredient.Category.VEGETABLE).build();
-        domates.setNutrition(IngredientNutrition.builder().ingredient(domates).calories(18.0).protein(0.9).carbs(3.9).fat(0.2).build());
+        domates.setNutrition(IngredientNutrition.builder().ingredient(domates).caloriesPer100g(18.0).proteinPer100g(0.9).carbsPer100g(3.9).fatPer100g(0.2).build());
 
         Ingredient salatalik = Ingredient.builder().name("Salatalık").category(Ingredient.Category.VEGETABLE).build();
-        salatalik.setNutrition(IngredientNutrition.builder().ingredient(salatalik).calories(15.0).protein(0.7).carbs(3.6).fat(0.1).build());
+        salatalik.setNutrition(IngredientNutrition.builder().ingredient(salatalik).caloriesPer100g(15.0).proteinPer100g(0.7).carbsPer100g(3.6).fatPer100g(0.1).build());
 
         Ingredient maydanoz = Ingredient.builder().name("Maydanoz").category(Ingredient.Category.VEGETABLE).build();
-        maydanoz.setNutrition(IngredientNutrition.builder().ingredient(maydanoz).calories(36.0).protein(3.0).carbs(6.3).fat(0.8).build());
+        maydanoz.setNutrition(IngredientNutrition.builder().ingredient(maydanoz).caloriesPer100g(36.0).proteinPer100g(3.0).carbsPer100g(6.3).fatPer100g(0.8).build());
 
         Ingredient limon = Ingredient.builder().name("Limon").category(Ingredient.Category.FRUIT).build();
-        limon.setNutrition(IngredientNutrition.builder().ingredient(limon).calories(29.0).protein(1.1).carbs(9.3).fat(0.3).build());
+        limon.setNutrition(IngredientNutrition.builder().ingredient(limon).caloriesPer100g(29.0).proteinPer100g(1.1).carbsPer100g(9.3).fatPer100g(0.3).build());
 
         ingredientRepository.saveAll(List.of(
                 mercimekIng, sogan, havuc, patates, zeytinyagi, 

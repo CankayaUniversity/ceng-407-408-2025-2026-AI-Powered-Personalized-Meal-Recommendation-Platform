@@ -7,7 +7,7 @@ import lombok.*;
  * Recipe and Ingredient relationship entity with quantity in grams.
  */
 @Entity
-@Table(name = "recipe_ingredients")
+@Table(name = "recipe_ingredients", uniqueConstraints = @UniqueConstraint(name = "unique_recipe_ingredient", columnNames = {"recipe_id", "ingredient_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
