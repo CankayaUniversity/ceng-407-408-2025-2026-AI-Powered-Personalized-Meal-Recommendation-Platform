@@ -12,6 +12,7 @@ Uygulamanın **kalbi** ve iş zekasının bulunduğu merkezdir. Saf Java/Kotlin 
 Her iş birimi (Domain) kendi içinde şunları barındırır:
 - `entity/`: İş nesneleri.
 - `repository/`: Veri erişim tanımları.
+- `common/storage/`: Dosya depolama arayüzleri (`FileStorageService`). Altyapıdan bağımsız dosya yönetimi sağlar.
 - `service/`: İş mantığını koordine eden Domain Servisleri.
 
 ## 🔗 Bağımlılıklar

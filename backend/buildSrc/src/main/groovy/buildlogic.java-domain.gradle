@@ -5,6 +5,5 @@ plugins {
 }
 
 dependencies {
-    implementation project(':modules:01-infrastructure:infrastructure-core')
     testImplementation project(':modules:01-infrastructure:infrastructure-test')
 }
