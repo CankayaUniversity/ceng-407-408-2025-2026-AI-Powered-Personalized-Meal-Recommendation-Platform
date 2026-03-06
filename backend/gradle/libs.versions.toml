@@ -1,6 +1,7 @@
 [versions]
 # Define versions here
 spring-boot="3.4.3"
+spring-security="6.4.2"
 spring-gradle="1.1.7"
 zalando-problem="0.27.1"
 zalando-problem-spring="0.29.1"

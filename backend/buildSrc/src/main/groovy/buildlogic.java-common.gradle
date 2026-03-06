@@ -27,6 +27,9 @@ dependencyManagement {
 
         dependency 'jakarta.servlet:jakarta.servlet-api:6.1.0'
 
+        dependency "org.springframework.boot:spring-boot-starter-security:${springBootVersion}"
+        dependency "org.springframework.boot:spring-boot-starter-oauth2-resource-server:${springBootVersion}"
+
         dependency 'com.nimbusds:content-type:2.3'
         dependency 'com.nimbusds:oauth2-oidc-sdk:11.27'
 
@@ -88,6 +91,9 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     compileOnly 'jakarta.servlet:jakarta.servlet-api'
+
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
