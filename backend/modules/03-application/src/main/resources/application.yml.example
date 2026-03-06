@@ -1,9 +1,20 @@
+server:
+  port: 8081
+
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://127.0.0.1:8080/realms/meal-app-realm}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://127.0.0.1:8080/realms/meal-app-realm/protocol/openid-connect/certs}
+
   datasource:
-    # Docker üzerindeki PostgreSQL URL'niz (Örn: jdbc:postgresql://localhost:5432/meal_app_db)
-    url: jdbc:postgresql://localhost:5432/meal_app_db
+    # Docker ortamı için: jdbc:postgresql://postgres-db:5432/meal_app_db
+    # Yerel ortam (Docker port yönlendirmesi) için: jdbc:postgresql://localhost:54320/meal_app_db
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:54320/meal_app_db}
     username: postgres
-    password: YOUR_PASSWORD_HERE
+    password: postgres
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -18,13 +29,9 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    clean-on-validation-error: false
+    clean-disabled: true
     locations: classpath:db/migration
-
-# Seed servisini yalnızca istediğinizde etkinleştirin.
-# true yaptığınızda ve veritabanı boşsa örnek kullanıcı/tarif/envanter verileri yüklenecektir.
-app:
-  seed:
-    enabled: false
 
 com:
   mealapp:
@@ -33,6 +40,8 @@ com:
         bucket:
           name: meal-app-bucket
         minio:
+          # Docker ortamı için: http://minio-server:9000
+          # Yerel ortam için: http://localhost:9000
           endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
           access-key: ${MINIO_ACCESS_KEY:minioadmin}
           secret-key: ${MINIO_SECRET_KEY:minioadmin}

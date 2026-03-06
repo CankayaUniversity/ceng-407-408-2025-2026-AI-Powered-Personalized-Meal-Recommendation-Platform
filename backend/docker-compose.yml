@@ -1,0 +1,62 @@
+services:
+  # PostgreSQL Veritabanı
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: meal-app-db
+    environment:
+      POSTGRES_DB: meal_app_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "54320:5432"
+    networks:
+      - meal-network
+
+  # MinIO Nesne Depolama
+  minio-server:
+    image: minio/minio
+    container_name: minio-server
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    networks:
+      - meal-network
+
+  # Keycloak Kimlik Doğrulama
+  keycloak-auth:
+    image: quay.io/keycloak/keycloak:22.0.1
+    container_name: keycloak-auth
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    networks:
+      - meal-network
+
+  # Meal App Uygulaması (Backend)
+  meal-backend:
+    build: .
+    container_name: meal-backend
+    ports:
+      - "8081:8081"
+    environment:
+      # Docker ağı içinde servis isimlerini kullanarak bağlantı kuruyoruz
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/meal_app_db
+      KEYCLOAK_ISSUER_URI: http://keycloak-auth:8080/realms/meal-app-realm
+      MINIO_ENDPOINT: http://minio-server:9000
+    depends_on:
+      - postgres-db
+      - minio-server
+      - keycloak-auth
+    networks:
+      - meal-network
+
+networks:
+  meal-network:
+    driver: bridge
