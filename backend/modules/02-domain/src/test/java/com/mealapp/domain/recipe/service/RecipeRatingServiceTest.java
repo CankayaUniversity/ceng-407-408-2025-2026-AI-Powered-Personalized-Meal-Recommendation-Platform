@@ -41,14 +41,14 @@ class RecipeRatingServiceTest {
 
     @BeforeEach
     void setUp() {
-        user = User.builder().id(1L).name("Test User").build();
+        user = User.builder().id("user-1").name("Test User").build();
         recipe = Recipe.builder().id(1L).title("Test Recipe").build();
     }
 
     @Test
     void rateRecipe_WhenNewRating_ShouldSave() {
         // Given
-        Long userId = 1L;
+        String userId = "user-1";
         Long recipeId = 1L;
         Integer ratingValue = 8;
         String comment = "Harika!";
@@ -74,20 +74,20 @@ class RecipeRatingServiceTest {
     void rateRecipe_WhenInvalidRating_ShouldThrowException() {
         // When & Then
         assertThrows(IllegalArgumentException.class, () -> 
-            recipeRatingService.rateRecipe(1L, 1L, 11, "Çok iyi")
+            recipeRatingService.rateRecipe("user-1", 1L, 11, "Çok iyi")
         );
         
         assertThrows(IllegalArgumentException.class, () -> 
-            recipeRatingService.rateRecipe(1L, 1L, 0, "Kötü")
+            recipeRatingService.rateRecipe("user-1", 1L, 0, "Kötü")
         );
     }
 
     @Test
     void rateRecipe_WhenUserNotFound_ShouldThrowException() {
-        when(userService.findById(1L)).thenReturn(Optional.empty());
+        when(userService.findById("user-1")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> 
-            recipeRatingService.rateRecipe(1L, 1L, 5, "Not")
+            recipeRatingService.rateRecipe("user-1", 1L, 5, "Not")
         );
     }
 

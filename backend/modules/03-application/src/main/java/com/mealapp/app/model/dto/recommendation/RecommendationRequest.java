@@ -5,6 +5,6 @@ import java.util.List;
 
 @Data
 public class RecommendationRequest {
-    private Long userId;
+    private String userId;
     private List<String> availableIngredients;
 }

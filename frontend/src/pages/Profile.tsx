@@ -1,15 +1,58 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../infrastructure/auth/AuthContext';
-import { User as UserIcon, Mail, Shield, Bell, Settings, LogOut, Camera, ChevronRight } from 'lucide-react';
+import { User as UserIcon, Mail, Shield, Bell, Settings, LogOut, Camera, ChevronRight, Loader2 } from 'lucide-react';
+import { useUserService } from '../services/userService';
 
 const Profile: React.FC = () => {
   const { user, logout } = useAuth();
+  const userService = useUserService();
+  const [dbUser, setDbUser] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const [isSynced, setIsMounted] = useState(false); // Senkronizasyon kontrolü için bayrak
+
+  useEffect(() => {
+    let mounted = true;
+
+    const syncUser = async () => {
+      // Eğer kullanıcı ID'si varsa ve henüz senkronize edilmediyse çalış
+      if (user?.id && !dbUser && !isSynced) {
+        setLoading(true);
+        try {
+          const response = await userService.upsertUser({
+            id: user.id,
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email
+          });
+          
+          if (mounted) {
+            setDbUser(response.data);
+            setIsMounted(true); // Başarılı olduktan sonra bayrağı kaldır
+          }
+        } catch (error: any) {
+          console.error("User sync error:", error);
+          // 409 hatası olsa bile veriyi bir şekilde çekmeyi dene (belki sadece GET ile)
+          if (error.response?.status === 409) {
+             setIsMounted(true); 
+          }
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      }
+    };
+
+    syncUser();
+    return () => { mounted = false; };
+  }, [user?.id, userService, dbUser, isSynced]);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-900">Profil Ayarları</h1>
-        <p className="text-gray-500 mt-1">Kişisel bilgilerinizi ve uygulama tercihlerini yönetin.</p>
+      <header className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Profil Ayarları</h1>
+          <p className="text-gray-500 mt-1">Kişisel bilgilerinizi ve uygulama tercihlerini yönetin.</p>
+        </div>
+        {loading && <Loader2 className="animate-spin text-orange-500" size={24} />}
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -32,14 +75,16 @@ const Profile: React.FC = () => {
                <p className="text-gray-500 text-sm">@{user?.username}</p>
             </div>
             <div className="mt-6 pt-6 border-t border-gray-50 flex justify-around">
-               <div>
-                  <div className="text-lg font-bold text-gray-900">12</div>
-                  <div className="text-xs text-gray-400 font-medium uppercase tracking-tighter">Tariflerim</div>
+               <div className="text-center">
+                  <div className="text-lg font-bold text-gray-900">
+                    {dbUser?.dailyCalorieTarget || '0'}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Hedef Kalori</div>
                </div>
                <div className="border-l border-gray-100"></div>
-               <div>
+               <div className="text-center">
                   <div className="text-lg font-bold text-gray-900">4.9</div>
-                  <div className="text-xs text-gray-400 font-medium uppercase tracking-tighter">Puanım</div>
+                  <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Puanım</div>
                </div>
             </div>
           </div>
@@ -66,13 +111,13 @@ const Profile: React.FC = () => {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Adınız</label>
-                <div className="p-3 bg-gray-50 rounded-xl text-gray-700 font-medium border border-transparent focus-within:border-orange-500 focus-within:bg-white transition-all">
+                <div className="p-3 bg-gray-50 rounded-xl text-gray-700 font-medium border border-transparent">
                    {user?.firstName}
                 </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Soyadınız</label>
-                <div className="p-3 bg-gray-50 rounded-xl text-gray-700 font-medium border border-transparent focus-within:border-orange-500 focus-within:bg-white transition-all">
+                <div className="p-3 bg-gray-50 rounded-xl text-gray-700 font-medium border border-transparent">
                    {user?.lastName}
                 </div>
               </div>
@@ -83,6 +128,14 @@ const Profile: React.FC = () => {
                    {user?.email}
                 </div>
               </div>
+              {dbUser?.id && (
+                <div className="md:col-span-2 space-y-1">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sistem Kayıt ID</label>
+                  <div className="p-3 bg-gray-50 rounded-xl text-xs text-gray-500 font-mono break-all">
+                    {user?.id}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

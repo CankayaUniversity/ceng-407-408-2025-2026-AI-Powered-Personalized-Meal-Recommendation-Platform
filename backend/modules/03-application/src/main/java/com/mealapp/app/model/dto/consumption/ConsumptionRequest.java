@@ -8,7 +8,7 @@ import lombok.Data;
  */
 @Data
 public class ConsumptionRequest {
-    private Long userId;
+    private String userId;
     private String foodName;
     private DailyConsumption.MealType mealType;
     private DailyConsumption.PortionSize portionSize;

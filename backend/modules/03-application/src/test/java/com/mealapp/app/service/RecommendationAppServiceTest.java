@@ -41,11 +41,11 @@ class RecommendationAppServiceTest {
     @Test
     void shouldGetRecommendations() {
         RecommendationRequest request = new RecommendationRequest();
-        request.setUserId(1L);
+        request.setUserId("user-1");
         request.setAvailableIngredients(List.of("Tomato", "Onion"));
 
-        User user = User.builder().id(1L).build();
-        when(userService.findById(1L)).thenReturn(Optional.of(user));
+        User user = User.builder().id("user-1").build();
+        when(userService.findById("user-1")).thenReturn(Optional.of(user));
         when(ingredientRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
         when(recommendationService.getRecommendations(any(), anyList())).thenReturn(List.of(new Recipe()));
         when(recommendationMapper.toResponse(anyList())).thenReturn(new RecommendationResponse());

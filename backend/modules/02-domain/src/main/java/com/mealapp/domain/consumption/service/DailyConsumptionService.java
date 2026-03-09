@@ -31,7 +31,7 @@ public class DailyConsumptionService {
     /**
      * Kullanıcının belirli bir gündeki toplam tahmini kalori tüketimini döner.
      */
-    public int getTotalCaloriesForDate(Long userId, LocalDate date) {
+    public int getTotalCaloriesForDate(String userId, LocalDate date) {
         LocalDateTime start = date.atStartOfDay();
         LocalDateTime end = date.atTime(LocalTime.MAX);
         List<DailyConsumption> items = dailyConsumptionRepository.findByUserIdAndConsumedAtBetween(userId, start, end);
@@ -46,7 +46,7 @@ public class DailyConsumptionService {
      * Kullanıcının son X gün içindeki ortalama kalori tüketimini hesaplar.
      * Bu, devamlılık analizi ve akıllı öneriler için kullanılır.
      */
-    public double getAverageCaloriesForLastDays(Long userId, int days) {
+    public double getAverageCaloriesForLastDays(String userId, int days) {
         LocalDateTime start = LocalDateTime.now().minusDays(days);
         LocalDateTime end = LocalDateTime.now();
         List<DailyConsumption> items = dailyConsumptionRepository.findByUserIdAndConsumedAtBetween(userId, start, end);

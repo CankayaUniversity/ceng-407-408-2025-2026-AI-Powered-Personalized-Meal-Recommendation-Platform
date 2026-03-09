@@ -26,11 +26,12 @@ public class CalorieCalculator {
         double tdee = bmr * getActivityMultiplier(user.getActivityLevel());
 
         // Hedefe göre kalori ayarlama
+        if (user.getDietaryGoal() == null) return (int) tdee;
+        
         return switch (user.getDietaryGoal()) {
             case LOSE_WEIGHT -> (int) (tdee - 500);
             case GAIN_WEIGHT, BUILD_MUSCLE -> (int) (tdee + 500);
             case MAINTAIN_WEIGHT -> (int) tdee;
-            default -> (int) tdee;
         };
     }
 

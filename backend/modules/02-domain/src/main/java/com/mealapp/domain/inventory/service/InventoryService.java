@@ -20,14 +20,14 @@ public class InventoryService {
     /**
      * Kullanıcının güncel envanterini getirir.
      */
-    public List<Inventory> getUserInventory(Long userId) {
+    public List<Inventory> getUserInventory(String userId) {
         return inventoryRepository.findByUserId(userId);
     }
 
     /**
      * Envantere yeni malzemeler ekler veya mevcutları günceller.
      */
-    public void updateInventory(Long userId, List<Inventory> newItems) {
+    public void updateInventory(String userId, List<Inventory> newItems) {
         // TODO: Mevcut stokları kontrol edip güncelleme veya ekleme mantığı.
     }
 }

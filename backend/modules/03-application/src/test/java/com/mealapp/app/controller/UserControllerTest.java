@@ -48,7 +48,7 @@ class UserControllerTest extends AbstractMockMvcTest {
 
     @Test
     void shouldGetUser() throws Exception {
-        when(userService.findById(1L)).thenReturn(Optional.of(new User()));
+        when(userService.findById("1")).thenReturn(Optional.of(new User()));
         when(userMapper.toDto(any())).thenReturn(new UserDto());
 
         mockMvc.perform(get("/api/v1/users/1"))

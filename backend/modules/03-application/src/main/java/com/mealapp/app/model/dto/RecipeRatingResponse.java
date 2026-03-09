@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Builder
 public class RecipeRatingResponse {
     private Long id;
-    private Long userId;
+    private String userId;
     private Long recipeId;
     private String recipeTitle;
     private Integer rating;

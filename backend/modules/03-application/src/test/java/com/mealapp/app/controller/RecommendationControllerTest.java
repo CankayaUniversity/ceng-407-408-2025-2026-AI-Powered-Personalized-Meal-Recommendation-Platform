@@ -23,7 +23,7 @@ class RecommendationControllerTest extends AbstractMockMvcTest {
     @Test
     void shouldGetRecommendations() throws Exception {
         RecommendationRequest request = new RecommendationRequest();
-        request.setUserId(1L);
+        request.setUserId("user-1");
         request.setAvailableIngredients(List.of("Tomato"));
 
         when(recommendationAppService.getRecommendations(any())).thenReturn(new RecommendationResponse());

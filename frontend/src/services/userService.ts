@@ -3,9 +3,10 @@ import { useService } from '../infrastructure/di';
 import { HttpClientKey } from '../infrastructure/services';
 
 export const getUserService = (api: AxiosInstance) => ({
-  getCurrentUser: () => api.get('/users/me'),
-  updateProfile: (data: any) => api.put('/users/me', data),
-  getDailyConsumption: () => api.get('/consumption/daily'),
+  getCurrentUser: () => api.get('/v1/users/me'),
+  getUserById: (id: string | number) => api.get(`/v1/users/${id}`),
+  upsertUser: (data: any) => api.post('/v1/users', data),
+  getDailyConsumption: () => api.get('/v1/consumption/daily'),
 });
 
 export const useUserService = () => {

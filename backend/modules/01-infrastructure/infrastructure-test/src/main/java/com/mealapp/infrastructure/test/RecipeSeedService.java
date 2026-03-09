@@ -50,6 +50,7 @@ public class RecipeSeedService implements CommandLineRunner {
     private void seedData() {
         // 1. Örnek Kullanıcılar
         User berk = User.builder()
+                .id("berk-keycloak-id")
                 .name("Berk Memis")
                 .email("berk@example.com")
                 .age(25)
@@ -63,6 +64,7 @@ public class RecipeSeedService implements CommandLineRunner {
                 .build();
 
         User ayse = User.builder()
+                .id("ayse-keycloak-id")
                 .name("Ayşe Yılmaz")
                 .email("ayse@example.com")
                 .age(28)

@@ -4,50 +4,59 @@ Bu proje, kullanıcıların tercihlerine ve elindeki malzemelere göre yapay zek
 
 ## 🛠️ Teknolojiler
 
-- **Java 21 (Azul Zulu)**
+- **Java 17+ (Spring Boot 3.4.x uyumlu)**
 - **Spring Boot 3.x**
-- **PostgreSQL** (Veritabanı)
-- **Keycloak** (Kimlik Doğrulama ve Yetkilendirme)
-- **MinIO** (Nesne Depolama)
+- **PostgreSQL** (Port: `54320`)
+- **Keycloak** (OIDC Resource Server, Port: `8080`)
+- **MinIO** (Port: `9000/9001`)
 - **Docker & Docker Compose**
+
+## 🏗️ Mimari ve Önemli Özellikler
+
+Proje, kurumsal standartlara uygun **Multi-module** mimari ile geliştirilmiştir. Yapılan son güncellemelerle birlikte:
+
+- **Keycloak Senkronizasyonu:** Kullanıcı ID'leri Keycloak `sub` değeri üzerinden `String` (UUID) tipinde merkezi olarak yönetilir.
+- **Otomatik Profil Yönetimi:** Kullanıcı ilk giriş yaptığında bilgileri otomatik olarak backend veritabanı ile senkronize edilir.
+- **Güvenli API:** Tüm uç noktalar JWT tabanlı kimlik doğrulaması ile korunmaktadır.
+- **Tip Güvenliği:** Backend ve test kodları, Keycloak entegrasyonuyla tam uyumlu hale getirilmiştir.
 
 ## 🚀 Hızlı Başlangıç (Docker ile)
 
-Projeyi tüm bağımlılıkları ile birlikte ayağa kaldırmak için bilgisayarınızda sadece **Docker** yüklü olması yeterlidir.
+Projeyi tüm bağımlılıkları (Veritabanı, Keycloak, MinIO ve Backend) ile birlikte tek komutla ayağa kaldırabilirsiniz. Yapılan son güncelleme ile **Keycloak yapılandırması (Realm ve Client) otomatik olarak içe aktarılmaktadır.**
 
-1.  Projeyi klonlayın.
-2.  Terminalde projenin kök dizinine gidin.
-3.  Aşağıdaki komutu çalıştırın:
+1.  Terminalde projenin kök dizinine gidin.
+2.  Aşağıdaki komutu çalıştırın:
 
 ```bash
 docker-compose up --build -d
 ```
 
 Bu komut şunları yapar:
-- PostgreSQL veritabanını başlatır (`54320` portu).
-- MinIO nesne depolama sunucusunu başlatır (`9000` API, `9001` Console portu).
-- Keycloak kimlik doğrulama sunucusunu başlatır (`8080` portu).
-- Spring Boot backend uygulamasını derler ve başlatır (`8081` portu).
+- **PostgreSQL (54320):** Veritabanını başlatır.
+- **MinIO (9000/9001):** Depolama servisini başlatır.
+- **Keycloak 26.1 (8080):** Başlatılır ve `keycloak/meal-app-realm.json` dosyasındaki ayarları otomatik yükler.
+- **Backend (8081):** Uygulamayı derler ve Docker ağında çalıştırır.
 
 ## 💻 Yerel Geliştirme Ortamı Kurulumu
 
-Eğer uygulamayı IDE (IntelliJ IDEA vb.) üzerinden çalıştırmak isterseniz:
+Eğer backend kodlarını IDE üzerinden (IntelliJ vb.) koşturmak isterseniz:
 
-1.  **Java Sürümü:** Azul Zulu JDK 21 kullanılması önerilir. (`.sdkmanrc` dosyasında belirtilmiştir).
-2.  **Bağımlı Servisler:** Sadece veritabanı ve diğer servisleri Docker ile başlatmak için:
+1.  **Sadece Bağımlı Servisleri Başlatın:**
     ```bash
     docker-compose up -d postgres-db minio-server keycloak-auth
     ```
-3.  **Yapılandırma:** `modules/03-application/src/main/resources/application.yml` dosyasındaki ayarların yerel ortamınıza uygun olduğundan emin olun. (Varsayılan olarak Docker port yönlendirmelerine göre ayarlanmıştır).
+2.  **Backend'i IDE'den Çalıştırın:**
+    - `03-application` modülündeki `MealRecommendationApplication` sınıfını çalıştırın.
+    - Uygulama `localhost:8080` üzerindeki Keycloak'a ve `54320` portundaki DB'ye otomatik bağlanacaktır.
 
 ## 🏗️ Proje Yapısı
 
-Proje çok modüllü (multi-module) bir Gradle yapısına sahiptir:
+Proje 4 ana modülden oluşmaktadır:
 
-- **01-infrastructure:** Teknik altyapı (DB, Storage, Test araçları).
-- **02-domain:** İş mantığı, entity'ler ve servis arayüzleri.
-- **03-application:** REST API, DTO'lar ve orkestrasyon katmanı.
-- **04-utilities:** Ortak yardımcı sınıflar.
+- **01-infrastructure:** Veritabanı, Minio ve AI servis entegrasyonları.
+- **02-domain:** İş kuralları, Entity tanımları ve kullanıcı ID yönetimi (String ID).
+- **03-application:** REST API (Controller), DTO'lar ve MapStruct dönüşümleri.
+- **04-utilities:** Ortak yardımcı araçlar.
 
 ## 🔐 Kimlik Doğrulama (Keycloak)
 
@@ -55,8 +64,16 @@ Uygulama güvenliği için Keycloak kullanılmaktadır.
 - **URL:** http://localhost:8080
 - **Admin Paneli:** admin / admin
 - **Realm:** `meal-app-realm`
+- **Frontend-Backend Uyumu:** JWT issuer ve cert URL'leri `localhost` üzerinden optimize edilmiştir.
 
-Detaylı kurulum ve realm import işlemleri için `modules/03-application/README.md` dosyasını inceleyebilirsiniz.
+## 📡 API Uç Noktaları (Özet)
+
+| Endpoint | Açıklama |
+| :--- | :--- |
+| `POST /api/v1/users` | Kullanıcı kaydı ve profil senkronizasyonu (Upsert). |
+| `GET /api/v1/users/{id}` | Profil detaylarını getirme. |
+| `GET /api/v1/recommendations` | AI destekli yemek önerileri. |
+| `POST /api/v1/consumption` | Günlük kalori ve tüketim takibi. |
 
 ## 📦 Paketleme ve Dağıtım
 

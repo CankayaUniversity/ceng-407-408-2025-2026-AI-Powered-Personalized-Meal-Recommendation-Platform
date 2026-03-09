@@ -1,0 +1,1 @@
+{"realm": "meal-app-realm", "enabled": true, "clients": [{"clientId": "meal-app-backend", "enabled": true, "publicClient": true, "directAccessGrantsEnabled": true, "standardFlowEnabled": true, "redirectUris": ["http://localhost:3000/*"], "webOrigins": ["*"]}]}

@@ -25,16 +25,23 @@ public class UserService {
     }
 
     /**
+     * E-posta adresine göre kullanıcı bulur.
+     */
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    /**
      * ID'ye göre kullanıcı detaylarını getirir.
      */
-    public Optional<User> findById(Long id) {
+    public Optional<User> findById(String id) {
         return userRepository.findById(id);
     }
 
     /**
      * Kullanıcının diyet tercihlerini veya alerjilerini günceller.
      */
-    public User updatePreferences(Long id, User.DietType dietType, java.util.List<String> allergies) {
+    public User updatePreferences(String id, User.DietType dietType, java.util.List<String> allergies) {
         // TODO: İş mantığı (Kullanıcı var mı kontrolü vb.) eklenecek.
         return null;
     }
