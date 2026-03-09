@@ -27,7 +27,7 @@ public class RecipeRatingService {
      * Yeni bir değerlendirme kaydeder veya mevcut olanı günceller.
      */
     @Transactional
-    public RecipeRating rateRecipe(Long userId, Long recipeId, Integer rating, String comment) {
+    public RecipeRating rateRecipe(String userId, Long recipeId, Integer rating, String comment) {
         if (rating < 1 || rating > 10) {
             throw new IllegalArgumentException("Puan 1 ile 10 arasında olmalıdır.");
         }
@@ -62,7 +62,7 @@ public class RecipeRatingService {
     /**
      * Belirli bir kullanıcının yaptığı değerlendirmeleri listeler.
      */
-    public List<RecipeRating> getRatingsByUser(Long userId) {
+    public List<RecipeRating> getRatingsByUser(String userId) {
         return recipeRatingRepository.findByUserId(userId);
     }
 }

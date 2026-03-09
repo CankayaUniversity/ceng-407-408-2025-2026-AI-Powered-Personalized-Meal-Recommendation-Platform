@@ -48,7 +48,7 @@ public class RecipeRatingController {
      * Belirli bir kullanıcının yaptığı tüm değerlendirmeleri getirir.
      */
     @GetMapping("/user/{userId}")
-    public List<RecipeRatingResponse> getRatingsByUser(@PathVariable Long userId) {
+    public List<RecipeRatingResponse> getRatingsByUser(@PathVariable String userId) {
         List<RecipeRating> ratings = recipeRatingService.getRatingsByUser(userId);
         return recipeRatingMapper.toResponseList(ratings);
     }

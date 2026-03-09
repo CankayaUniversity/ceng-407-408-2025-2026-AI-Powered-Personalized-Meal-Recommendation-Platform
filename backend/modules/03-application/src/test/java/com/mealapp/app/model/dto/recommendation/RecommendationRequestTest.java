@@ -8,15 +8,15 @@ class RecommendationRequestTest {
     @Test
     void testRecommendationRequestLombok() {
         RecommendationRequest request = new RecommendationRequest();
-        request.setUserId(1L);
+        request.setUserId("user-1");
         request.setAvailableIngredients(List.of("Tomato", "Onion"));
 
-        assertEquals(1L, request.getUserId());
+        assertEquals("user-1", request.getUserId());
         assertEquals(2, request.getAvailableIngredients().size());
         assertTrue(request.getAvailableIngredients().contains("Tomato"));
         
         RecommendationRequest request2 = new RecommendationRequest();
-        request2.setUserId(1L);
+        request2.setUserId("user-1");
         request2.setAvailableIngredients(List.of("Tomato", "Onion"));
         
         assertEquals(request, request2);

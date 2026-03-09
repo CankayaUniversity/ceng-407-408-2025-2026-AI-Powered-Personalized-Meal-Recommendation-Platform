@@ -9,7 +9,7 @@ class UserDtoTest {
     @Test
     void testUserDtoLombok() {
         UserDto userDto = new UserDto();
-        userDto.setId(1L);
+        userDto.setId("user-1");
         userDto.setName("John Doe");
         userDto.setEmail("john@example.com");
         userDto.setAllergies(List.of("Nuts", "Dairy"));
@@ -22,7 +22,7 @@ class UserDtoTest {
         userDto.setActivityLevel(User.ActivityLevel.MODERATELY_ACTIVE);
         userDto.setDailyCalorieTarget(2000);
 
-        assertEquals(1L, userDto.getId());
+        assertEquals("user-1", userDto.getId());
         assertEquals("John Doe", userDto.getName());
         assertEquals("john@example.com", userDto.getEmail());
         assertEquals(2, userDto.getAllergies().size());
@@ -36,7 +36,7 @@ class UserDtoTest {
         assertEquals(2000, userDto.getDailyCalorieTarget());
         
         UserDto userDto2 = new UserDto();
-        userDto2.setId(1L);
+        userDto2.setId("user-1");
         userDto2.setName("John Doe");
         userDto2.setEmail("john@example.com");
         userDto2.setAllergies(List.of("Nuts", "Dairy"));

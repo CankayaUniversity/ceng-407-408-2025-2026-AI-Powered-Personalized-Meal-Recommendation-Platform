@@ -17,5 +17,5 @@ public interface DailyConsumptionRepository extends JpaRepository<DailyConsumpti
     /**
      * Belirli bir kullanıcıya ait, verilen tarih aralığındaki tüketimleri getirir.
      */
-    List<DailyConsumption> findByUserIdAndConsumedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
+    List<DailyConsumption> findByUserIdAndConsumedAtBetween(String userId, LocalDateTime start, LocalDateTime end);
 }

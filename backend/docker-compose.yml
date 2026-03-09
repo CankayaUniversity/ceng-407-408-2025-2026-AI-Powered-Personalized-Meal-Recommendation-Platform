@@ -28,14 +28,18 @@ services:
 
   # Keycloak Kimlik Doğrulama
   keycloak-auth:
-    image: quay.io/keycloak/keycloak:22.0.1
+    image: quay.io/keycloak/keycloak:26.1
     container_name: keycloak-auth
-    command: start-dev
+    command: start-dev --import-realm
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+      KC_HOSTNAME_STRICT: "false"
     ports:
       - "8080:8080"
+    volumes:
+      - ./keycloak/meal-app-realm.json:/opt/keycloak/data/import/meal-app-realm.json
     networks:
       - meal-network
 
@@ -48,8 +52,12 @@ services:
     environment:
       # Docker ağı içinde servis isimlerini kullanarak bağlantı kuruyoruz
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/meal_app_db
-      KEYCLOAK_ISSUER_URI: http://keycloak-auth:8080/realms/meal-app-realm
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/meal-app-realm
       MINIO_ENDPOINT: http://minio-server:9000
+    extra_hosts:
+      - "localhost:host-gateway"
     depends_on:
       - postgres-db
       - minio-server

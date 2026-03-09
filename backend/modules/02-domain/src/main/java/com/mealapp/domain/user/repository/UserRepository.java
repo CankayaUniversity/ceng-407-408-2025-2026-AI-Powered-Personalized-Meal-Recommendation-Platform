@@ -10,7 +10,7 @@ import java.util.Optional;
  * Spring Data JPA sayesinde temel CRUD işlemleri otomatik olarak sağlanır.
  */
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, String> {
     
     /**
      * E-posta adresine göre kullanıcı bulur.

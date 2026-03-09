@@ -30,7 +30,7 @@ class UserMapperTest {
     @Test
     void toDtoShouldMapFields() {
         User entity = User.builder()
-                .id(1L)
+                .id("user-1")
                 .name("Entity User")
                 .dailyCalorieTarget(2500)
                 .build();
@@ -38,7 +38,7 @@ class UserMapperTest {
         UserDto dto = mapper.toDto(entity);
 
         assertNotNull(dto);
-        assertEquals(1L, dto.getId());
+        assertEquals("user-1", dto.getId());
         assertEquals("Entity User", dto.getName());
         assertEquals(2500, dto.getDailyCalorieTarget());
     }
