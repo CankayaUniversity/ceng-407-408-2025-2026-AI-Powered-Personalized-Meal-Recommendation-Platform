@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "url": "http://localhost:8080",
+  "realm": "meal-app-realm",
+  "clientId": "meal-app-backend",
+  "logging": true
+}

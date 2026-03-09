@@ -1,5 +1,5 @@
 import React from 'react';
-import { useKeycloak } from '@react-keycloak/web';
+import { useAuth } from '../infrastructure/auth/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 
 interface PrivateRouteProps {
@@ -7,26 +7,19 @@ interface PrivateRouteProps {
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-  const { keycloak, initialized } = useKeycloak();
+  const { authenticated, initialized, login } = useAuth();
   const location = useLocation();
 
-  console.log('PrivateRoute - initialized:', initialized, 'authenticated:', keycloak.authenticated, 'at:', location.pathname);
+  console.log('PrivateRoute - initialized:', initialized, 'authenticated:', authenticated, 'at:', location.pathname);
 
   if (!initialized) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-500">Oturum bilgileri doğrulanıyor... ({location.pathname})</p>
-        </div>
-      </div>
-    );
+    return null; // AuthGate will handle the global loading state
   }
 
-  if (!keycloak.authenticated) {
+  if (!authenticated) {
     const handleLogin = () => {
       console.log('Login button clicked in PrivateRoute');
-      keycloak.login({ redirectUri: 'http://localhost:3000' + location.pathname });
+      login();
     };
 
     console.log('Not authenticated, showing login prompt for:', location.pathname);
