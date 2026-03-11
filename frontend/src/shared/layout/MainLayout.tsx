@@ -95,7 +95,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     {children}
                 </main>
                 <footer className="px-8 py-6 border-t border-gray-200 text-center text-gray-500 text-sm bg-white">
-                    &copy; 2024 AI Meal Recommendation Platform. Tüm hakları saklıdır.
+                    &copy; 2026 AI Meal Recommendation Platform. Tüm hakları saklıdır.
                 </footer>
             </div>
         </div>

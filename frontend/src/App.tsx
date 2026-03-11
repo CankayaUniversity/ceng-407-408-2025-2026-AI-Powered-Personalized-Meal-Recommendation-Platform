@@ -11,10 +11,10 @@ import { AuthContextProvider } from './infrastructure/auth/AuthContextProvider';
 import AuthGate from './infrastructure/auth/AuthGate';
 import PrivateRoute from './components/PrivateRoute';
 import MainLayout from './shared/layout/MainLayout';
-import LandingPage from './pages/LandingPage';
-import Dashboard from './pages/Dashboard';
-import RecipeList from './pages/RecipeList';
-import Profile from './pages/Profile';
+import LandingPage from './features/landing-page/LandingPage';
+import Dashboard from './features/dashboard/Dashboard';
+import RecipeList from './features/recipes/RecipeList';
+import Profile from './features/profile/Profile';
 import keycloakConfig from './keycloak-config.json';
 import type { AuthService } from './infrastructure/services/auth/AuthService';
 
