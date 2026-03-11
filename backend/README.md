@@ -59,7 +59,7 @@ The project consists of 4 main modules:
 - **01-infrastructure:** Database, MinIO, and AI service integrations.
 - **02-domain:** Business rules, Entity definitions, and user ID management (String ID).
 - **03-application:** REST API (Controller), DTOs, and MapStruct transformations.
-- **04-utilities:** Common utility tools.
+- **04-utilities:** Common utility tools and data population.
 
 ### 🔐 Authentication (Keycloak)
 Keycloak is used for application security.
@@ -140,7 +140,7 @@ Proje 4 ana modülden oluşmaktadır:
 - **01-infrastructure:** Veritabanı, Minio ve AI servis entegrasyonları.
 - **02-domain:** İş kuralları, Entity tanımları ve kullanıcı ID yönetimi (String ID).
 - **03-application:** REST API (Controller), DTO'lar ve MapStruct dönüşümleri.
-- **04-utilities:** Ortak yardımcı araçlar.
+- **04-utilities:** Ortak yardımcı araçlar ve veri popülasyonu.
 
 ### 🔐 Kimlik Doğrulama (Keycloak)
 Uygulama güvenliği için Keycloak kullanılmaktadır.

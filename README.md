@@ -100,6 +100,7 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
   - `modules/01-infrastructure/`: Technical infrastructure, external service clients, and test utilities
   - `modules/02-domain/`: Business logic, entities, and repository interfaces
   - `modules/03-application/`: API layer, configuration, and application entry point
+  - `modules/04-utilities/`: Common utility tools and data population
 - `frontend/`: React-based frontend application (Modular Architecture with DI)
   - `src/infrastructure/`: Core services (DI, Auth, API clients)
   - `src/features/`: Functional modules (Dashboard, Recipes, etc.)
@@ -243,6 +244,7 @@ Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtr
   - `modules/01-infrastructure/`: Teknik altyapı, harici servis istemcileri ve test araçları
   - `modules/02-domain/`: İş mantığı, entity'ler ve repository arayüzleri
   - `modules/03-application/`: API katmanı, yapılandırma ve uygulama giriş noktası
+  - `modules/04-utilities/`: Ortak yardımcı araçlar ve veri popülasyonu
 - `frontend/`: React tabanlı frontend uygulaması (DI ile Modüler Mimari)
   - `src/infrastructure/`: Çekirdek servisler (DI, Auth, API istemcileri)
   - `src/features/`: Fonksiyonel modüller (Dashboard, Tarifler vb.)
