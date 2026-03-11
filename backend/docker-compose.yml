@@ -54,7 +54,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/meal_app_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/meal-app-realm
+      KEYCLOAK_ISSUER_URI: http://keycloak-auth:8080/realms/meal-app-realm
       MINIO_ENDPOINT: http://minio-server:9000
     extra_hosts:
       - "localhost:host-gateway"

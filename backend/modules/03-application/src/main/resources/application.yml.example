@@ -6,25 +6,26 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://127.0.0.1:8080/realms/meal-app-realm}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://127.0.0.1:8080/realms/meal-app-realm/protocol/openid-connect/certs}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/meal-app-realm}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/meal-app-realm/protocol/openid-connect/certs}
+  # Keycloak Client Secret (Rehberdeki değerle aynı: 2Kk9655lvRibJVxXpqxxVYxNkrW1DO8y)
 
   datasource:
     # Docker ortamı için: jdbc:postgresql://postgres-db:5432/meal_app_db
     # Yerel ortam (Docker port yönlendirmesi) için: jdbc:postgresql://localhost:54320/meal_app_db
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:54320/meal_app_db}
-    username: postgres
-    password: postgres
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres} # Buraya kendi şifrenizi yazınız
     driver-class-name: org.postgresql.Driver
   
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: true
+      ddl-auto: update
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: false
 
   flyway:
     enabled: true
