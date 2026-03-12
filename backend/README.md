@@ -12,7 +12,7 @@ This project is a platform that provides AI-powered personalized meal recommenda
 ### 🛠️ Technologies
 - **Java 21 (Spring Boot 3.4.x)**
 - **Spring Boot 3.x**
-- **PostgreSQL** (Port: `54320`)
+- **PostgreSQL** (Port: `5432`)
 - **Keycloak** (OIDC Resource Server, Port: `8080`)
 - **MinIO** (Port: `9000/9001`)
 - **Docker & Docker Compose**
@@ -30,12 +30,12 @@ You can start the project with all its dependencies (Database, Keycloak, MinIO, 
 1. Go to the project root directory in your terminal.
 2. Run the following command:
    ```bash
-   docker-compose up --build -d
+   docker compose up --build -d
    ```
 This command does the following:
-- **PostgreSQL (54320):** Starts the database.
-- **MinIO (9000/9001):** Starts the storage service.
-- **Keycloak 26.1 (8080):** Starts and automatically loads settings from `keycloak/meal-app-realm.json`.
+- **PostgreSQL (5432):** Starts the `meal-app-db` container for this project.
+- **MinIO (9000/9001):** Starts the storage service with persistent volumes.
+- **Keycloak 26.1 (8080):** Starts and automatically loads settings from `keycloak/meal-app-realm.json`, using `keycloak_db` inside the main Postgres container.
 - **Backend (8081):** Compiles the application and runs it in the Docker network. (Note: Backend accesses Keycloak via `http://keycloak-auth:8080` when running inside Docker.)
 
 ### 💻 Local Development Environment Setup
@@ -48,11 +48,11 @@ This command does the following:
 If you want to run the backend code through an IDE (IntelliJ, etc.):
 1. **Start Only Dependency Services:**
    ```bash
-   docker-compose up -d postgres-db minio-server keycloak-auth
+   docker compose up -d postgres-db minio-server keycloak-auth
    ```
 2. **Run Backend from IDE:**
    - Run the `MealRecommendationApplication` class in the `03-application` module.
-   - The application will automatically connect to Keycloak on `localhost:8080` and the DB on port `54320` (with default `application.yml` settings).
+   - The application will automatically connect to Keycloak on `localhost:8080` and the DB on port `5432` (with default `application.yml` settings).
 
 ### 🏗️ Project Structure
 The project consists of 4 main modules:
@@ -93,7 +93,7 @@ Bu proje, kullanıcıların tercihlerine ve elindeki malzemelere göre yapay zek
 ### 🛠️ Teknolojiler
 - **Java 21 (Spring Boot 3.4.x uyumlu)**
 - **Spring Boot 3.x**
-- **PostgreSQL** (Port: `54320`)
+- **PostgreSQL** (Port: `5432`)
 - **Keycloak** (OIDC Resource Server, Port: `8080`)
 - **MinIO** (Port: `9000/9001`)
 - **Docker & Docker Compose**
@@ -111,12 +111,12 @@ Projeyi tüm bağımlılıkları (Veritabanı, Keycloak, MinIO ve Backend) ile b
 1. Terminalde projenin kök dizinine gidin.
 2. Aşağıdaki komutu çalıştırın:
    ```bash
-   docker-compose up --build -d
+   docker compose up --build -d
    ```
 Bu komut şunları yapar:
-- **PostgreSQL (54320):** Veritabanını başlatır.
-- **MinIO (9000/9001):** Depolama servisini başlatır.
-- **Keycloak 26.1 (8080):** Başlatılır ve `keycloak/meal-app-realm.json` dosyasındaki ayarları otomatik yükler.
+- **PostgreSQL (5432):** Projeye ait `meal-app-db` konteynerini başlatır.
+- **MinIO (9000/9001):** Kalıcı veri alanları (volumes) ile depolama servisini başlatır.
+- **Keycloak 26.1 (8080):** Başlatılır ve `keycloak/meal-app-realm.json` dosyasındaki ayarları otomatik yükler. Veritabanı olarak ana Postgres konteynerindeki `keycloak_db`'yi kullanır.
 - **Backend (8081):** Uygulamayı derler ve Docker ağında çalıştırır. (Not: Backend Docker içinde çalışırken Keycloak'a `http://keycloak-auth:8080` üzerinden erişir.)
 
 ### 💻 Yerel Geliştirme Ortamı Kurulumu
@@ -129,11 +129,11 @@ Bu komut şunları yapar:
 Eğer backend kodlarını IDE üzerinden (IntelliJ vb.) koşturmak isterseniz:
 1. **Sadece Bağımlı Servisleri Başlatın:**
    ```bash
-   docker-compose up -d postgres-db minio-server keycloak-auth
+   docker compose up -d postgres-db minio-server keycloak-auth
    ```
 2. **Backend'i IDE'den Çalıştırın:**
    - `03-application` modülündeki `MealRecommendationApplication` sınıfını çalıştırın.
-   - Uygulama `localhost:8080` üzerindeki Keycloak'a ve `54320` portundaki DB'ye otomatik bağlanacaktır (Varsayılan `application.yml` ayarları ile).
+   - Uygulama `localhost:8080` üzerindeki Keycloak'a ve `5432` portundaki DB'ye otomatik bağlanacaktır (Varsayılan `application.yml` ayarları ile).
 
 ### 🏗️ Proje Yapısı
 Proje 4 ana modülden oluşmaktadır:

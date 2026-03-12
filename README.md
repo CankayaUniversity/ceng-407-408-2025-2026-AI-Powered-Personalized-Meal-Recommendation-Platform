@@ -19,11 +19,11 @@ If you are new to the project, follow these steps to get everything running on y
    cd AI-Powered-Personalized-Meal-Recommendation-Platform
    ```
 
-2. **Setup Infrastructure (Docker):**
-   Ensure Docker is running, then start the required services (DB, Keycloak, MinIO):
+2. **Setup Infrastructure & Backend (Docker):**
+   Ensure Docker is running, then start all services (DB, Keycloak, MinIO, Backend) with automatic build:
    ```bash
    cd backend
-   docker-compose up -d
+   docker compose up --build -d
    ```
 
 3. **Configure Backend:**
@@ -51,6 +51,7 @@ If you are new to the project, follow these steps to get everything running on y
    - **Frontend:** [http://localhost:5173](http://localhost:5173)
    - **Backend API:** [http://localhost:8081](http://localhost:8081)
    - **Keycloak:** [http://localhost:8080](http://localhost:8080) (Admin: `admin/admin`)
+   - **Database (Project):** `localhost:5432`
 
 ---
 
@@ -109,7 +110,7 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 
 ### Development and Deployment
 #### Prerequisites
-- Docker & Docker Compose (Required for DB, MinIO, and Keycloak)
+- Docker & Docker Compose
 - Java 21 (SDKMAN recommended: `.sdkmanrc` available)
 - Gradle 8.14 (Wrapper) / 8.14.3 (SDKMAN) (Wrapper is included)
 - Node.js 18+ & npm (For frontend development)
@@ -117,10 +118,10 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 #### Local Setup (Full Stack with Docker)
 Follow the **"🚀 Quick Start for Developers"** section above for a fast setup. Alternatively, manual steps are:
 
-1. Start Docker services in the root directory:
+1. Start all services in the root directory:
    ```bash
    cd backend
-   docker-compose up -d
+   docker compose up --build -d
    ```
 2. Create `application.yml` for the backend (copy from example):
    `backend/modules/03-application/src/main/resources/application.yml`
@@ -163,11 +164,11 @@ Projeye yeniyseniz, her şeyi yerel makinenizde çalıştırmak için şu adıml
    cd AI-Powered-Personalized-Meal-Recommendation-Platform
    ```
 
-2. **Altyapıyı Kurun (Docker):**
-   Docker'ın çalıştığından emin olun, ardından gerekli servisleri (DB, Keycloak, MinIO) başlatın:
+2. **Altyapıyı ve Backend'i Kurun (Docker):**
+   Docker'ın çalıştığından emin olun, ardından tüm servisleri (DB, Keycloak, MinIO, Backend) otomatik build ile başlatın:
    ```bash
    cd backend
-   docker-compose up -d
+   docker compose up --build -d
    ```
 
 3. **Backend'i Yapılandırın:**
@@ -195,6 +196,7 @@ Projeye yeniyseniz, her şeyi yerel makinenizde çalıştırmak için şu adıml
    - **Frontend:** [http://localhost:5173](http://localhost:5173)
    - **Backend API:** [http://localhost:8081](http://localhost:8081)
    - **Keycloak:** [http://localhost:8080](http://localhost:8080) (Admin: `admin/admin`)
+   - **Veritabanı (Bu Proje):** `localhost:5432`
 
 ---
 
@@ -253,7 +255,7 @@ Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtr
 
 ### Geliştirme ve Dağıtım
 #### Ön Koşullar
-- Docker & Docker Compose (DB, MinIO ve Keycloak için gereklidir)
+- Docker & Docker Compose
 - Java 21 (SDKMAN önerilir: `.sdkmanrc` mevcuttur)
 - Gradle 8.14 (Wrapper) / 8.14.3 (SDKMAN) (Wrapper dahildir)
 - Node.js 18+ & npm (Frontend geliştirme için)
@@ -261,10 +263,10 @@ Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtr
 #### Yerel Kurulum (Docker ile Tam Yığın)
 Hızlı kurulum için yukarıdaki **"🚀 Geliştiriciler İçin Hızlı Başlangıç"** bölümünü takip edin. Alternatif olarak, manuel adımlar şunlardır:
 
-1. Kök dizinde Docker servislerini başlatın:
+1. Kök dizinde tüm servisleri başlatın:
    ```bash
    cd backend
-   docker-compose up -d
+   docker compose up --build -d
    ```
 2. Backend için `application.yml` dosyasını oluşturun (örnekten kopyalayarak):
    `backend/modules/03-application/src/main/resources/application.yml`

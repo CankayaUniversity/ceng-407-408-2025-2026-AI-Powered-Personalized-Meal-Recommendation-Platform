@@ -11,9 +11,9 @@ spring:
   # Keycloak Client Secret (Rehberdeki değerle aynı: 2Kk9655lvRibJVxXpqxxVYxNkrW1DO8y)
 
   datasource:
-    # Docker ortamı için: jdbc:postgresql://postgres-db:5432/meal_app_db
-    # Yerel ortam (Docker port yönlendirmesi) için: jdbc:postgresql://localhost:54320/meal_app_db
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:54320/meal_app_db}
+    # Docker ortamı için DB_HOST ve DB_PORT değişkenleri kullanılır.
+    # Varsayılan (localhost:5432) ayarlar yerel geliştirme içindir.
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/meal_app_db
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres} # Buraya kendi şifrenizi yazınız
     driver-class-name: org.postgresql.Driver

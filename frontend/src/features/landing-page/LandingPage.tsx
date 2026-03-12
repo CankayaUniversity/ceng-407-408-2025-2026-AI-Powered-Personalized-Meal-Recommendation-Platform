@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../infrastructure/auth/AuthContext';
+import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { ChefHat, Zap, ShoppingBag, BrainCircuit, Star, ArrowRight, Play, ShieldCheck } from 'lucide-react';
 
 const LandingPage: React.FC = () => {

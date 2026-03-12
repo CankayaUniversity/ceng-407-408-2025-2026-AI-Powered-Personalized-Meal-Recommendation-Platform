@@ -8,7 +8,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "54320:5432"
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - meal-network
 
@@ -23,6 +25,8 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
     networks:
       - meal-network
 
@@ -36,10 +40,19 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HTTP_PORT: 8080
       KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: "xforwarded"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak_db
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
     ports:
       - "8080:8080"
     volumes:
       - ./keycloak/meal-app-realm.json:/opt/keycloak/data/import/meal-app-realm.json
+    depends_on:
+      - postgres-db
     networks:
       - meal-network
 
@@ -54,7 +67,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/meal_app_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
-      KEYCLOAK_ISSUER_URI: http://keycloak-auth:8080/realms/meal-app-realm
+      DB_HOST: postgres-db
+      DB_PORT: 5432
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/meal-app-realm
+      KEYCLOAK_JWK_SET_URI: http://keycloak-auth:8080/realms/meal-app-realm/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/meal-app-realm
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-auth:8080/realms/meal-app-realm/protocol/openid-connect/certs
       MINIO_ENDPOINT: http://minio-server:9000
     extra_hosts:
       - "localhost:host-gateway"
@@ -68,3 +86,7 @@ services:
 networks:
   meal-network:
     driver: bridge
+
+volumes:
+  postgres-data:
+  minio-data:

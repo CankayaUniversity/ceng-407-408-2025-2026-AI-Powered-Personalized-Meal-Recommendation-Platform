@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../infrastructure/auth/AuthContext';
+import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { Utensils, Zap, TrendingUp, Clock, Star, Lock, ChefHat } from 'lucide-react';
 
 const Dashboard: React.FC = () => {

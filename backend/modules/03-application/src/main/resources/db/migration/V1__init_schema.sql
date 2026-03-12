@@ -1,11 +1,11 @@
--- V1: Initial Schema (Squashed Migrations V1-V6)
--- This file represents the consolidated state of the database schema.
+-- V1: Initial Schema (Keycloak Compatible)
+-- This file represents the consolidated state of the database schema with String IDs.
 
 -- 1. Users Table
 CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
     diet_type VARCHAR(50),
     dietary_goal VARCHAR(50),
     weight DOUBLE PRECISION,
@@ -20,7 +20,7 @@ CREATE TABLE users (
 
 -- 2. User Allergies
 CREATE TABLE user_allergies (
-    user_id BIGINT NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
     allergy VARCHAR(255) NOT NULL,
     PRIMARY KEY (user_id, allergy),
     CONSTRAINT fk_user_allergies_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
@@ -67,7 +67,7 @@ CREATE TABLE recipe_ingredients (
 -- 7. Inventories Table
 CREATE TABLE inventories (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
     ingredient_id BIGINT NOT NULL,
     quantity DOUBLE PRECISION,
     unit VARCHAR(50),
@@ -79,7 +79,7 @@ CREATE TABLE inventories (
 -- 8. Daily Consumptions Table
 CREATE TABLE daily_consumptions (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
     recipe_id BIGINT,
     food_name VARCHAR(255) NOT NULL,
     estimated_calories INTEGER,
@@ -94,7 +94,7 @@ CREATE TABLE daily_consumptions (
 -- 9. Recipe Ratings Table
 CREATE TABLE recipe_ratings (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
     recipe_id BIGINT NOT NULL,
     rating INTEGER NOT NULL,
     comment TEXT,

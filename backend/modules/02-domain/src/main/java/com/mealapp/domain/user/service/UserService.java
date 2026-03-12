@@ -5,6 +5,7 @@ import com.mealapp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 /**
@@ -13,6 +14,7 @@ import java.util.Optional;
  */
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserService {
 
     private final UserRepository userRepository;
@@ -36,6 +38,14 @@ public class UserService {
      */
     public Optional<User> findById(String id) {
         return userRepository.findById(id);
+    }
+
+    /**
+     * Kullanıcıyı siler ve değişiklikleri hemen yansıtır.
+     */
+    public void delete(User user) {
+        userRepository.delete(user);
+        userRepository.flush();
     }
 
     /**

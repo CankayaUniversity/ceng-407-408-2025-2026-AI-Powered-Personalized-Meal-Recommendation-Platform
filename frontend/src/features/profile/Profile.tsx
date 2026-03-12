@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../infrastructure/auth/AuthContext';
+import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { User as UserIcon, Mail, Shield, Bell, Settings, LogOut, Camera, ChevronRight, Loader2 } from 'lucide-react';
-import { useUserService } from '../services/userService';
+import { useUserService } from '../../services/userService';
 
 const Profile: React.FC = () => {
   const { user, logout } = useAuth();
@@ -30,10 +30,14 @@ const Profile: React.FC = () => {
             setIsMounted(true); // Başarılı olduktan sonra bayrağı kaldır
           }
         } catch (error: any) {
-          console.error("User sync error:", error);
-          // 409 hatası olsa bile veriyi bir şekilde çekmeyi dene (belki sadece GET ile)
-          if (error.response?.status === 409) {
+          // 409 (Conflict) hatası, e-posta çakışması veya ID uyuşmazlığı durumunda gelebilir.
+          // Backend artık bu durumu ele alıyor (silip yeniden oluşturuyor), 
+          // ancak bir yarış durumu (race condition) veya geçici hata durumunda döngüyü kırmalıyız.
+          if (error.response?.status === 409 || error.response?.status === 401) {
+             console.warn("User sync handled non-critical error:", error.response?.status);
              setIsMounted(true); 
+          } else {
+             console.error("User sync error:", error);
           }
         } finally {
           if (mounted) setLoading(false);

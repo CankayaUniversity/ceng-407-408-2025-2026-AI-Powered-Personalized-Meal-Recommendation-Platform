@@ -8,7 +8,10 @@ COPY gradle gradle
 COPY buildSrc buildSrc
 COPY build.gradle .
 COPY settings.gradle .
+
+# gradle.properties dosyasını kopyalayıp yerel Java pathini temizliyoruz (Docker içindeki Java kullanılacak)
 COPY gradle.properties .
+RUN sed -i '/org.gradle.java.home/d' gradle.properties
 
 # Tüm modülleri kopyala
 COPY modules modules
