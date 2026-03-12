@@ -8,7 +8,7 @@ spring:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/meal-app-realm}
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/meal-app-realm/protocol/openid-connect/certs}
-  # Keycloak Client Secret (Rehberdeki değerle aynı: 2Kk9655lvRibJVxXpqxxVYxNkrW1DO8y)
+  # Keycloak configuration
 
   datasource:
     # Docker ortamı için DB_HOST ve DB_PORT değişkenleri kullanılır.
