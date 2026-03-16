@@ -26,7 +26,7 @@ const Profile: React.FC = () => {
           });
           
           if (mounted) {
-            setDbUser(response.data);
+            setDbUser(response);
             setIsMounted(true); // Başarılı olduktan sonra bayrağı kaldır
           }
         } catch (error: any) {
