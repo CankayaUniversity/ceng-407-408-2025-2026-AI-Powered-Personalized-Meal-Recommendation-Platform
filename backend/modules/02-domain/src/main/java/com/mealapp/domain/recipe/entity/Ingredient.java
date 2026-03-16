@@ -42,6 +42,13 @@ public class Ingredient {
         GRAIN,
         SPICE,
         OIL,
+        SEAFOOD,
+        SAUCE,
+        NUT,
+        SWEETENER,
+        BEVERAGE,
+        EGG,
+        LEGUME,
         OTHER
     }
 }

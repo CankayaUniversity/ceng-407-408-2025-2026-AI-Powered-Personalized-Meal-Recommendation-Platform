@@ -27,7 +27,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true", matchIfMissing = false)
 public class RecipeSeedService implements CommandLineRunner {
 
     private final UserRepository userRepository;

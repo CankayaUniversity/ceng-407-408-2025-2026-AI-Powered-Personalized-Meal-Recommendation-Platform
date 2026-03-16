@@ -21,15 +21,15 @@ public class IngredientNutrition {
     @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
 
-    @Column(nullable = false)
+    @Column(name = "calories_per100g", nullable = false)
     private Double caloriesPer100g;
 
-    @Column(nullable = false)
+    @Column(name = "protein_per100g", nullable = false)
     private Double proteinPer100g;
 
-    @Column(nullable = false)
+    @Column(name = "carbs_per100g", nullable = false)
     private Double carbsPer100g;
 
-    @Column(nullable = false)
+    @Column(name = "fat_per100g", nullable = false)
     private Double fatPer100g;
 }
