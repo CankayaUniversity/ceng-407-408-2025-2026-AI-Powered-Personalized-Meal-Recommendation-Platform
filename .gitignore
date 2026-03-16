@@ -12,6 +12,8 @@ frontend/build/
 
 ### IntelliJ IDEA ###
 .idea/
+.idea/misc.xml
+.idea/dataSources.xml
 *.iws
 *.iml
 *.ipr
@@ -19,7 +21,6 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 # IDEA database configuration files
-.idea/dataSources.xml
 .idea/dataSources.local.xml
 .idea/data_source_mapping.xml
 
@@ -47,8 +48,29 @@ bin/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
-.vscode/
+### Python ###
+.venv/
+venv/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+*.xlsx
+!backend/modules/04-utilities/data-processor/python/final_food_database.xlsx
 
 ### Mac OS ###
 .DS_Store
