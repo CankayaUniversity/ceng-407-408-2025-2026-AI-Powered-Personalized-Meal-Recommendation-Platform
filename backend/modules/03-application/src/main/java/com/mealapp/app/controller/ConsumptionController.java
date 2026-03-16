@@ -1,7 +1,7 @@
 package com.mealapp.app.controller;
 
-import com.mealapp.app.model.dto.ConsumptionRequest;
-import com.mealapp.app.model.dto.ConsumptionResponse;
+import com.mealapp.app.model.dto.consumption.ConsumptionRequest;
+import com.mealapp.app.model.dto.consumption.ConsumptionResponse;
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;

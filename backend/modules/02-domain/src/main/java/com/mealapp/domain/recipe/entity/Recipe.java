@@ -9,7 +9,7 @@ import java.util.List;
  * AI tarafından önerilen veya sistemde kayıtlı olan tariflerin detaylarını tutar.
  */
 @Entity
-@Table(name = "recipes")
+@Table(name = "recipes", indexes = @Index(name = "idx_recipes_title", columnList = "title"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -27,10 +27,8 @@ public class Recipe {
     /**
      * Tarifin içeriğindeki malzemeler listesi.
      */
-    @ElementCollection
-    @CollectionTable(name = "recipe_ingredients", joinColumns = @JoinColumn(name = "recipe_id"))
-    @Column(name = "ingredient")
-    private List<String> ingredients;
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<RecipeIngredient> recipeIngredients;
 
     /**
      * Adım adım hazırlama talimatları.
@@ -44,15 +42,15 @@ public class Recipe {
     private Integer preparationTimeMinutes;
 
     /**
+     * Kişi sayısı.
+     */
+    private Integer servings;
+
+    /**
      * Zorluk seviyesi (KOLAY, ORTA, ZOR).
      */
     @Enumerated(EnumType.STRING)
     private Difficulty difficulty;
-
-    /**
-     * Besin değerleri (Kalori, Karbonhidrat vb. - JSON veya ayrı alanlar olarak tutulabilir).
-     */
-    private Integer calories;
 
     public enum Difficulty {
         EASY, MEDIUM, HARD

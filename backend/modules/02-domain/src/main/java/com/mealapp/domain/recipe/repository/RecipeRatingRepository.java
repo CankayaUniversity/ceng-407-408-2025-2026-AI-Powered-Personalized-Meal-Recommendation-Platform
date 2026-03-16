@@ -19,10 +19,10 @@ public interface RecipeRatingRepository extends JpaRepository<RecipeRating, Long
     /**
      * Belirli bir kullanıcıya ait tüm değerlendirmeleri getirir.
      */
-    List<RecipeRating> findByUserId(Long userId);
+    List<RecipeRating> findByUserId(String userId);
 
     /**
      * Bir kullanıcının belirli bir tarif için yaptığı değerlendirmeyi getirir.
      */
-    List<RecipeRating> findByUserIdAndRecipeId(Long userId, Long recipeId);
+    List<RecipeRating> findByUserIdAndRecipeId(String userId, Long recipeId);
 }

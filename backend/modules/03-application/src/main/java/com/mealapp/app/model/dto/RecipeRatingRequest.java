@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class RecipeRatingRequest {
-    private Long userId;
+    private String userId;
     private Long recipeId;
     private Integer rating;
     private String comment;

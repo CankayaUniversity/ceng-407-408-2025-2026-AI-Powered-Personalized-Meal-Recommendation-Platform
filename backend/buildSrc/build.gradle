@@ -1,0 +1,18 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+}
+
+// TOML'daki spring-boot ve spring-gradle versiyonlarını çekiyoruz
+def springBootVersion = libs.versions.spring.boot.get()
+def springGradleVersion = libs.versions.spring.gradle.get()
+
+dependencies {
+    implementation "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+    implementation "io.spring.gradle:dependency-management-plugin:${springGradleVersion}"
+    implementation 'io.freefair.gradle:lombok-plugin:8.14'
+}

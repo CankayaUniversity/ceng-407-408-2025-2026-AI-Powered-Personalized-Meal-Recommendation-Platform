@@ -1,0 +1,6 @@
+pandas
+openpyxl
+thefuzz
+python-Levenshtein
+sqlalchemy
+psycopg2-binary

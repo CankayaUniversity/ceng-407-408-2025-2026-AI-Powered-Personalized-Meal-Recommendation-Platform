@@ -1,0 +1,9 @@
+//file:noinspection GrUnresolvedAccess
+plugins {
+    id 'buildlogic.java-common'
+    id 'java-library'
+}
+
+dependencies {
+    testImplementation project(':modules:01-infrastructure:infrastructure-test')
+}

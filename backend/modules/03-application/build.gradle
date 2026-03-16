@@ -1,0 +1,12 @@
+plugins {
+    id 'buildlogic.java-application'
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':modules:01-infrastructure:infrastructure-core')
+    implementation project(':modules:02-domain')
+    implementation project(':modules:04-utilities')
+
+    testImplementation project(':modules:01-infrastructure:infrastructure-test')
+}

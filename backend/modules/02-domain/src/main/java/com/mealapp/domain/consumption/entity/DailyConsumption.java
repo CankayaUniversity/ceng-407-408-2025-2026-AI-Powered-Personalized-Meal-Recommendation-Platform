@@ -1,5 +1,6 @@
 package com.mealapp.domain.consumption.entity;
 
+import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,6 +32,13 @@ public class DailyConsumption {
      */
     @Column(nullable = false)
     private String foodName;
+
+    /**
+     * Eğer sistemdeki bir tarif tüketilmişse onunla olan bağlantı.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recipe_id")
+    private Recipe recipe;
 
     /**
      * Tahmini kalori değeri. 

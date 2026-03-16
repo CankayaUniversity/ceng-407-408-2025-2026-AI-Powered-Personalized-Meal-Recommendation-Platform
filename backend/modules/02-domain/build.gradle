@@ -1,0 +1,12 @@
+plugins {
+    id 'buildlogic.java-domain'
+}
+
+dependencies {
+
+    implementation 'jakarta.persistence:jakarta.persistence-api'
+    // MapStruct ayarları - Versiyon TOML üzerinden yönetiliyor
+    implementation "org.mapstruct:mapstruct:${libs.versions.mapstruct.get()}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${libs.versions.mapstruct.get()}"
+    annotationProcessor 'org.projectlombok:lombok'
+}

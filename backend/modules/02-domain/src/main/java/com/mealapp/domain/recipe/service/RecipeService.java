@@ -26,17 +26,17 @@ public class RecipeService {
     }
 
     /**
-     * Tüm tarifleri getirir.
+     * Tüm tarifleri malzemeleriyle birlikte getirir.
      */
     public List<Recipe> findAll() {
-        return recipeRepository.findAll();
+        return recipeRepository.findAllWithIngredients();
     }
 
     /**
      * Verilen malzemeleri içeren tarifleri filtreler.
      */
-    public List<Recipe> findByIngredients(List<String> ingredients) {
-        return recipeRepository.findByIngredientsIn(ingredients);
+    public List<Recipe> findByIngredients(List<String> ingredientNames) {
+        return recipeRepository.findByIngredientNamesIn(ingredientNames);
     }
 
     /**

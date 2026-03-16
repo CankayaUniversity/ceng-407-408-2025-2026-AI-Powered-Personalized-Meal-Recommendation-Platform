@@ -1,0 +1,138 @@
+name: meal-app
+
+services:
+  # PostgreSQL Veritabanı
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: meal-app-db
+    profiles: ["infra", "full"]
+    environment:
+      POSTGRES_DB: meal_app_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - meal-network
+
+  # MinIO Nesne Depolama
+  minio-server:
+    image: minio/minio
+    container_name: minio-server
+    profiles: ["infra", "full"]
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    networks:
+      - meal-network
+
+  # Keycloak Kimlik Doğrulama
+  keycloak-auth:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: keycloak-auth
+    profiles: ["infra", "full"]
+    # Keycloak'ın varsayılan entrypoint'ini ezerek kendi betiğimizi çalıştırıyoruz
+    entrypoint: ["/bin/bash", "-c"]
+    command: 
+      - |
+        /opt/keycloak/bin/kc.sh start-dev --import-realm &
+        PID=$$!;
+        echo "Waiting for Keycloak to start..."
+        while ! (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1; do
+          sleep 2
+        done
+        echo "Keycloak is up. Configuring master and meal-app realms..."
+        /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
+        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+        /opt/keycloak/bin/kcadm.sh update realms/meal-app-realm -s 'browserSecurityHeaders={"frameAncestors": "''self'' http://localhost:3030 http://localhost:3000"}'
+        echo "Realm configurations updated (SSL disabled and CSP frame-ancestors set)."
+        wait $$PID
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true" # Health check endpoint'ini aktif ediyoruz (curl kontrolü için)
+      KC_HTTP_PORT: 8080
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_URL: http://localhost:8080
+      KC_HOSTNAME_ADMIN_URL: http://localhost:8080
+      KC_PROXY: "none"
+      KC_SPI_REALM_REST_SSL_REQUIRED: "none"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak_db
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/meal-app-realm.json:/opt/keycloak/data/import/meal-app-realm.json
+    depends_on:
+      - postgres-db
+    networks:
+      - meal-network
+
+  # Meal App Uygulaması (Backend)
+  meal-backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: meal-backend
+    profiles: ["full"]
+    ports:
+      - "8081:8081"
+    environment:
+      # Docker ağı içinde servis isimlerini kullanarak bağlantı kuruyoruz
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/meal_app_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_FLYWAY_REPAIR_ON_MIGRATE: "true"
+      DB_HOST: postgres-db
+      DB_PORT: 5432
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/meal-app-realm
+      KEYCLOAK_JWK_SET_URI: http://keycloak-auth:8080/realms/meal-app-realm/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/meal-app-realm
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak-auth:8080/realms/meal-app-realm/protocol/openid-connect/certs
+      MINIO_ENDPOINT: http://minio-server:9000
+    extra_hosts:
+      - "localhost:host-gateway"
+      - "keycloak-auth:host-gateway"
+    depends_on:
+      - postgres-db
+      - minio-server
+      - keycloak-auth
+    networks:
+      - meal-network
+
+  # Meal App Uygulaması (Frontend - Nginx)
+  meal-frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: meal-frontend
+    profiles: ["full"]
+    ports:
+      - "3030:80"
+    depends_on:
+      - meal-backend
+      - keycloak-auth
+    networks:
+      - meal-network
+
+networks:
+  meal-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  minio-data:
