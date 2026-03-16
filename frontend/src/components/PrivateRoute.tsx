@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../infrastructure/auth/AuthContext';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 interface PrivateRouteProps {
   children: React.ReactElement;

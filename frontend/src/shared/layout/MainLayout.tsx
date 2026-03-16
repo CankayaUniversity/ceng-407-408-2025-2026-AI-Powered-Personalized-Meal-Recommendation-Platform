@@ -2,14 +2,11 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChefHat, LayoutDashboard, Utensils, User as UserIcon, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
-import { useService } from '../../infrastructure/di';
-import { LoggerServiceKey } from '../../infrastructure/services';
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { authenticated, user, logout, login } = useAuth();
     const [expanded, setExpanded] = React.useState(true);
     const location = useLocation();
-    const logger = useService(LoggerServiceKey);
 
     const menuItems = [
         { id: 'dashboard', text: 'Panel', icon: <LayoutDashboard size={20} />, route: '/dashboard' },
