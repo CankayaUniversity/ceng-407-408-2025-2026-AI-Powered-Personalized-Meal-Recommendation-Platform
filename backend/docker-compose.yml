@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - meal-network
 
@@ -67,6 +68,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/meal_app_db
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_FLYWAY_REPAIR_ON_MIGRATE: "true"
       DB_HOST: postgres-db
       DB_PORT: 5432
       KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/meal-app-realm
