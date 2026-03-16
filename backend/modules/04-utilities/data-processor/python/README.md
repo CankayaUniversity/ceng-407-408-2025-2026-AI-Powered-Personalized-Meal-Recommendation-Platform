@@ -86,8 +86,17 @@ Bu script, temizlenmiş ve genelleştirilmiş Excel dosyasındaki verileri Postg
 python scripts/import_data.py --file <final_excel_path.xlsx> --db-url "postgresql://user:pass@localhost:5432/dbname"
 ```
 
-- `--file`: Aktarılacak nihai Excel dosyası.
+- `--file`: Aktarılacak nihai Excel dosyası. (Varsayılan olarak bu dizindeki `final_food_database.xlsx` kullanılır).
 - `--db-url`: Veritabanı bağlantı adresi (Varsayılan: `postgresql://postgres:postgres@localhost:5432/meal_app_db`).
+
+### 4. Tek Tıkla Veri Aktarımı (Hızlı Başlangıç)
+Tüm hazırlıklar (sanal ortam ve DB bağlantısı) tamamlandıktan sonra verileri aktarmak için:
+```bash
+# Python dizinindeyken
+source .venv/bin/activate
+python scripts/import_data.py
+```
+Bu komut, projenin içindeki `final_food_database.xlsx` dosyasını kullanarak yerel veritabanınıza tüm malzemeleri ve tarifleri otomatik olarak yükleyecektir.
 
 ## İş Akışı Önerisi
 

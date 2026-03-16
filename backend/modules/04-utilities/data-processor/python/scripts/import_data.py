@@ -58,8 +58,12 @@ def import_data(file_path, db_url):
     print("Data import completed successfully.")
 
 if __name__ == "__main__":
+    # Scriptin bulunduğu dizine göre varsayılan dosya yolunu belirle
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_file = os.path.join(script_dir, "..", "final_food_database.xlsx")
+    
     parser = argparse.ArgumentParser(description='Import food database from Excel to PostgreSQL.')
-    parser.add_argument('--file', required=True, help='Path to the final Excel file')
+    parser.add_argument('--file', default=default_file, help=f'Path to the final Excel file (Default: {default_file})')
     parser.add_argument('--db-url', default='postgresql://postgres:postgres@localhost:5432/meal_app_db', help='Database connection URL')
     
     args = parser.parse_args()
