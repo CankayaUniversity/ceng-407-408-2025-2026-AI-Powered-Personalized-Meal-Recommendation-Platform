@@ -35,15 +35,34 @@ services:
   keycloak-auth:
     image: quay.io/keycloak/keycloak:26.1
     container_name: keycloak-auth
-    command: start-dev --import-realm
+    # Keycloak'ın varsayılan entrypoint'ini ezerek kendi betiğimizi çalıştırıyoruz
+    entrypoint: ["/bin/bash", "-c"]
+    command: 
+      - |
+        /opt/keycloak/bin/kc.sh start-dev --import-realm &
+        PID=$$!;
+        echo "Waiting for Keycloak to start..."
+        while ! (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1; do
+          sleep 2
+        done
+        echo "Keycloak is up. Configuring master realm..."
+        /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
+        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+        echo "Master realm SSL requirement disabled."
+        wait $$PID
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true" # Health check endpoint'ini aktif ediyoruz (curl kontrolü için)
       KC_HTTP_PORT: 8080
+      KC_HOSTNAME: localhost
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
-      KC_PROXY_HEADERS: "xforwarded"
+      KC_HOSTNAME_URL: http://localhost:8080
+      KC_HOSTNAME_ADMIN_URL: http://localhost:8080
+      KC_PROXY: "none"
+      KC_SPI_REALM_REST_SSL_REQUIRED: "none"
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak_db
       KC_DB_USERNAME: postgres
@@ -78,6 +97,7 @@ services:
       MINIO_ENDPOINT: http://minio-server:9000
     extra_hosts:
       - "localhost:host-gateway"
+      - "keycloak-auth:host-gateway"
     depends_on:
       - postgres-db
       - minio-server
