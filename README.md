@@ -19,39 +19,41 @@ If you are new to the project, follow these steps to get everything running on y
    cd AI-Powered-Personalized-Meal-Recommendation-Platform
    ```
 
-2. **Setup Infrastructure & Backend (Docker):**
-   Ensure Docker is running, then start all services (DB, Keycloak, MinIO, Backend) with automatic build:
+2. **Setup & Run Everything (Docker):**
+   Ensure Docker is running, then start all services (Frontend, Backend, DB, Keycloak, MinIO) with a single command:
    ```bash
-   cd backend
-   docker compose up --build -d
+   docker compose --profile full up --build -d
    ```
 
-3. **Configure Backend:**
-   Create your local `application.yml` by copying the example file:
-   ```bash
-   cp modules/03-application/src/main/resources/application.yml.example modules/03-application/src/main/resources/application.yml
-   ```
-   *(Note: You can update the passwords or keys in `application.yml` if necessary.)*
-
-4. **Run Backend:**
-   You can run it from your IDE (Run `MealRecommendationApplication`) or via terminal:
-   ```bash
-   ./gradlew :modules:03-application:bootRun
-   ```
-
-5. **Setup & Run Frontend:**
-   Open a new terminal window:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-6. **Access the App:**
-   - **Frontend:** [http://localhost:5173](http://localhost:5173)
+3. **Access the App:**
+   - **Frontend:** [http://localhost:3030](http://localhost:3030)
    - **Backend API:** [http://localhost:8081](http://localhost:8081)
    - **Keycloak:** [http://localhost:8080](http://localhost:8080) (Admin: `admin/admin`)
-   - **Database (Project):** `localhost:5432`
+   - **Database:** `localhost:5432`
+
+4. **Test Credentials:**
+   - **Username:** `user`
+   - **Password:** `password`
+
+---
+
+### 💻 Infrastructure-Only Setup (For Local Development)
+
+If you want to run the frontend or backend in **development mode** (Vite/IDE) while keeping the databases and auth server in Docker:
+
+1. **Start Infrastructure Services:**
+   ```bash
+   docker compose --profile infra up -d
+   ```
+   *This starts only: PostgreSQL, Keycloak, and MinIO.*
+
+2. **Run Backend (IDE):** Run `MealRecommendationApplication` from your IDE.
+3. **Run Frontend (Vite):**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   *The app will be available at [http://localhost:3000](http://localhost:3000).*
 
 ---
 
@@ -120,20 +122,19 @@ Follow the **"🚀 Quick Start for Developers"** section above for a fast setup.
 
 1. Start all services in the root directory:
    ```bash
-   cd backend
-   docker compose up --build -d
+   docker compose --profile full up --build -d
    ```
 2. Create `application.yml` for the backend (copy from example):
    `backend/modules/03-application/src/main/resources/application.yml`
 3. Start the Frontend:
    ```bash
-   cd ../frontend
+   cd frontend
    npm install
    npm run dev
    ```
 
 #### Backend Manual Run
-1. Ensure your infrastructure is running via Docker.
+1. Ensure your infrastructure is running via Docker (`docker compose --profile infra up -d`).
 2. Build and package:
 ```bash
 cd backend
@@ -164,39 +165,41 @@ Projeye yeniyseniz, her şeyi yerel makinenizde çalıştırmak için şu adıml
    cd AI-Powered-Personalized-Meal-Recommendation-Platform
    ```
 
-2. **Altyapıyı ve Backend'i Kurun (Docker):**
-   Docker'ın çalıştığından emin olun, ardından tüm servisleri (DB, Keycloak, MinIO, Backend) otomatik build ile başlatın:
+2. **Her Şeyi Kurun ve Çalıştırın (Docker):**
+   Docker'ın çalıştığından emin olun, ardından tüm servisleri (Frontend, Backend, DB, Keycloak, MinIO) tek bir komutla başlatın:
    ```bash
-   cd backend
-   docker compose up --build -d
+   docker compose --profile full up --build -d
    ```
 
-3. **Backend'i Yapılandırın:**
-   Örnek dosyayı kopyalayarak yerel `application.yml` dosyanızı oluşturun:
-   ```bash
-   cp modules/03-application/src/main/resources/application.yml.example modules/03-application/src/main/resources/application.yml
-   ```
-   *(Not: Gerekirse `application.yml` içindeki şifreleri veya anahtarları güncelleyebilirsiniz.)*
-
-4. **Backend'i Çalıştırın:**
-   IDE'nizden (`MealRecommendationApplication`'ı çalıştırın) veya terminal üzerinden çalıştırabilirsiniz:
-   ```bash
-   ./gradlew :modules:03-application:bootRun
-   ```
-
-5. **Frontend'i Kurun ve Çalıştırın:**
-   Yeni bir terminal penceresi açın:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-6. **Uygulamaya Erişin:**
-   - **Frontend:** [http://localhost:5173](http://localhost:5173)
+3. **Uygulamaya Erişin:**
+   - **Frontend:** [http://localhost:3030](http://localhost:3030)
    - **Backend API:** [http://localhost:8081](http://localhost:8081)
    - **Keycloak:** [http://localhost:8080](http://localhost:8080) (Admin: `admin/admin`)
-   - **Veritabanı (Bu Proje):** `localhost:5432`
+   - **Veritabanı:** `localhost:5432`
+
+4. **Test Kullanıcı Bilgileri:**
+   - **Kullanıcı Adı:** `user`
+   - **Şifre:** `password`
+
+---
+
+### 💻 Sadece Altyapı Kurulumu (Yerel Geliştirme İçin)
+
+Frontend veya backend'i **geliştirme modunda** (Vite/IDE) çalıştırırken veritabanı ve auth sunucusunu Docker'da tutmak isterseniz:
+
+1. **Altyapı Servislerini Başlatın:**
+   ```bash
+   docker compose --profile infra up -d
+   ```
+   *Bu sadece PostgreSQL, Keycloak ve MinIO bileşenlerini başlatır.*
+
+2. **Backend'i Çalıştırın (IDE):** IDE'nizden `MealRecommendationApplication` sınıfını çalıştırın.
+3. **Frontend'i Çalıştırın (Vite):**
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   *Uygulama [http://localhost:3000](http://localhost:3000) adresinde hazır olacaktır.*
 
 ---
 
@@ -265,20 +268,19 @@ Hızlı kurulum için yukarıdaki **"🚀 Geliştiriciler İçin Hızlı Başlan
 
 1. Kök dizinde tüm servisleri başlatın:
    ```bash
-   cd backend
-   docker compose up --build -d
+   docker compose --profile full up --build -d
    ```
 2. Backend için `application.yml` dosyasını oluşturun (örnekten kopyalayarak):
    `backend/modules/03-application/src/main/resources/application.yml`
 3. Frontend'i başlatın:
    ```bash
-   cd ../frontend
+   cd frontend
    npm install
    npm run dev
    ```
 
 #### Backend Manuel Çalıştırma
-1. Altyapınızın Docker üzerinden çalıştığından emin olun.
+1. Altyapınızın Docker üzerinden çalıştığından emin olun (`docker compose --profile infra up -d`).
 2. Derleyin ve paketleyin:
 ```bash
 cd backend
@@ -291,3 +293,5 @@ java -jar modules/03-application/build/libs/03-application-1.0-SNAPSHOT.jar
 
 ### Proje Kapsamı
 Bu proje, bir bitirme projesi (CENG 407 & CENG 408) olarak geliştirilmiştir ve büyük ölçekli veri bilimi veya model eğitiminden ziyade yazılım mimarisi, sistem tasarımı ve uygulamalı yapay zeka entegrasyonuna odaklanmaktadır.
+
+

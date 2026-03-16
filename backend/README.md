@@ -25,18 +25,19 @@ The project is developed using a **Multi-module** architecture in line with ente
 - **Type Safety:** Backend and test codes are fully compatible with Keycloak integration.
 
 ### 🚀 Quick Start (with Docker)
-You can start the project with all its dependencies (Database, Keycloak, MinIO, and Backend) using a single command. The **Keycloak configuration (Realm and Client) is automatically imported.**
+You can start the entire project (Frontend, Backend, Database, Keycloak, and MinIO) from the project root using a single command.
 
-1. Go to the project root directory in your terminal.
+1. Go to the project root directory.
 2. Run the following command:
    ```bash
-   docker compose up --build -d
+   docker compose --profile full up --build -d
    ```
 This command does the following:
-- **PostgreSQL (5432):** Starts the `meal-app-db` container for this project.
-- **MinIO (9000/9001):** Starts the storage service with persistent volumes.
-- **Keycloak 26.1 (8080):** Starts and automatically loads settings from `keycloak/meal-app-realm.json`, using `keycloak_db` inside the main Postgres container.
-- **Backend (8081):** Compiles the application and runs it in the Docker network. (Note: Backend accesses Keycloak via `http://keycloak-auth:8080` when running inside Docker.)
+- **Frontend (3030):** Serves the React application via Nginx.
+- **PostgreSQL (5432):** Starts the `meal-app-db` container.
+- **MinIO (9000/9001):** Starts the storage service.
+- **Keycloak 26.1 (8080):** Starts and automatically loads settings.
+- **Backend (8081):** Compiles and runs the Java application.
 
 ### 💻 Local Development Environment Setup
 #### Prerequisites
@@ -45,10 +46,10 @@ This command does the following:
 - **Docker & Docker Compose** (For infrastructure services)
 
 #### Setup Steps
-If you want to run the backend code through an IDE (IntelliJ, etc.):
-1. **Start Only Dependency Services:**
+If you want to run the backend code through an IDE (IntelliJ, etc.) while keeping databases in Docker:
+1. **Start Infrastructure Services (from root):**
    ```bash
-   docker compose up -d postgres-db minio-server keycloak-auth
+   docker compose --profile infra up -d
    ```
 2. **Run Backend from IDE:**
    - Run the `MealRecommendationApplication` class in the `03-application` module.
@@ -65,6 +66,7 @@ The project consists of 4 main modules:
 Keycloak is used for application security.
 - **URL:** http://localhost:8080
 - **Admin Panel:** admin / admin
+- **Test User:** user / password
 - **Realm:** `meal-app-realm`
 - **Frontend-Backend Compatibility:** JWT issuer and cert URLs are optimized for `localhost`.
 
@@ -106,18 +108,19 @@ Proje, kurumsal standartlara uygun **Multi-module** mimari ile geliştirilmişti
 - **Tip Güvenliği:** Backend ve test kodları, Keycloak entegrasyonuyla tam uyumlu hale getirilmiştir.
 
 ### 🚀 Hızlı Başlangıç (Docker ile)
-Projeyi tüm bağımlılıkları (Veritabanı, Keycloak, MinIO ve Backend) ile birlikte tek komutla ayağa kaldırabilirsiniz. Yapılan son güncelleme ile **Keycloak yapılandırması (Realm ve Client) otomatik olarak içe aktarılmaktadır.**
+Projeyi tüm bileşenleriyle (Frontend, Backend, Veritabanı, Keycloak ve MinIO) proje kök dizininden tek komutla ayağa kaldırabilirsiniz.
 
 1. Terminalde projenin kök dizinine gidin.
 2. Aşağıdaki komutu çalıştırın:
    ```bash
-   docker compose up --build -d
+   docker compose --profile full up --build -d
    ```
 Bu komut şunları yapar:
+- **Frontend (3030):** React uygulamasını Nginx üzerinden servis eder.
 - **PostgreSQL (5432):** Projeye ait `meal-app-db` konteynerini başlatır.
-- **MinIO (9000/9001):** Kalıcı veri alanları (volumes) ile depolama servisini başlatır.
-- **Keycloak 26.1 (8080):** Başlatılır ve `keycloak/meal-app-realm.json` dosyasındaki ayarları otomatik yükler. Veritabanı olarak ana Postgres konteynerindeki `keycloak_db`'yi kullanır.
-- **Backend (8081):** Uygulamayı derler ve Docker ağında çalıştırır. (Not: Backend Docker içinde çalışırken Keycloak'a `http://keycloak-auth:8080` üzerinden erişir.)
+- **MinIO (9000/9001):** Depolama servisini başlatır.
+- **Keycloak 26.1 (8080):** Başlatılır ve ayarları otomatik yükler.
+- **Backend (8081):** Java uygulamasını derler ve çalıştırır.
 
 ### 💻 Yerel Geliştirme Ortamı Kurulumu
 #### Ön Koşullar (Prerequisites)
@@ -126,10 +129,10 @@ Bu komut şunları yapar:
 - **Docker & Docker Compose** (Altyapı servisleri için)
 
 #### Kurulum Adımları
-Eğer backend kodlarını IDE üzerinden (IntelliJ vb.) koşturmak isterseniz:
-1. **Sadece Bağımlı Servisleri Başlatın:**
+Eğer backend kodlarını IDE üzerinden (IntelliJ vb.) koşturmak, veritabanlarını ise Docker'da tutmak isterseniz:
+1. **Altyapı Servislerini Başlatın (Kök dizinden):**
    ```bash
-   docker compose up -d postgres-db minio-server keycloak-auth
+   docker compose --profile infra up -d
    ```
 2. **Backend'i IDE'den Çalıştırın:**
    - `03-application` modülündeki `MealRecommendationApplication` sınıfını çalıştırın.
@@ -146,6 +149,7 @@ Proje 4 ana modülden oluşmaktadır:
 Uygulama güvenliği için Keycloak kullanılmaktadır.
 - **URL:** http://localhost:8080
 - **Admin Paneli:** admin / admin
+- **Test Kullanıcısı:** user / password
 - **Realm:** `meal-app-realm`
 - **Frontend-Backend Uyumu:** JWT issuer ve cert URL'leri `localhost` üzerinden optimize edilmiştir.
 

@@ -29,17 +29,29 @@ This folder contains the frontend structure of the AI-Powered Personalized Meal 
 - **Modern Layout:** Collapsible Sidebar, dynamic navigation, and enterprise-look `MainLayout`.
 
 ### Getting Started
-1. **Install dependencies:**
+1. **Setup via Docker (Recommended):**
+    The easiest way to run the frontend is using the main `docker-compose.yml` in the project root directory. This will serve the frontend via Nginx on port 3030.
     ```bash
-    npm install
+    docker compose --profile full up --build -d
     ```
-2. **Keycloak and Backend Settings:**
+    Access the app at: [http://localhost:3030](http://localhost:3030)
+
+2. **Local Development Mode:**
+    If you want to run the frontend separately for development (with Hot Module Replacement on port 3000):
+    1. **Start Infrastructure (from root):**
+       ```bash
+       docker compose --profile infra up -d
+       ```
+    2. **Run Vite:**
+       ```bash
+       npm install
+       npm run dev
+       ```
+    Default Vite port: [http://localhost:3000](http://localhost:3000) (Note: Proxy to backend is configured in `vite.config.ts`).
+
+3. **Keycloak and Backend Settings:**
     - Verify the server information in `src/keycloak-config.json` (Default: `http://localhost:8080`).
-    - Check `vite.config.ts` or relevant service configurations for the Backend API address (Default: `http://localhost:8081`).
-3. **Start the development server:**
-    ```bash
-    npm run dev
-    ```
+    - Backend API address is managed via Nginx in Docker or Vite proxy in local dev.
 
 ### Project Structure
 - `src/infrastructure/`: Core application services (DI, Auth, API Clients).
@@ -86,17 +98,29 @@ Bu klasör, AI-Powered Personalized Meal Recommendation Platform projesinin fron
 - **Modern Layout:** Daralabilir (collapsible) Sidebar, dinamik navigasyon ve kurumsal görünümlü `MainLayout`.
 
 ### Başlangıç
-1. **Bağımlılıkları yükleyin:**
+1. **Docker ile Kurulum (Önerilen):**
+    Frontend'i çalıştırmanın en kolay yolu, proje kök dizinindeki ana `docker-compose.yml` dosyasını kullanmaktır. Bu, frontend'i Nginx üzerinden 3030 portunda servis edecektir.
     ```bash
-    npm install
+    docker compose --profile full up --build -d
     ```
-2. **Keycloak ve Backend Ayarları:**
+    Uygulamaya şuradan erişebilirsiniz: [http://localhost:3030](http://localhost:3030)
+
+2. **Yerel Geliştirme Modu:**
+    Frontend'i geliştirme amacıyla (3000 portunda HMR desteği ile) ayrı çalıştırmak isterseniz:
+    1. **Altyapıyı Başlatın (Kök dizinden):**
+       ```bash
+       docker compose --profile infra up -d
+       ```
+    2. **Vite'i Çalıştırın:**
+       ```bash
+       npm install
+       npm run dev
+       ```
+    Varsayılan Vite portu: [http://localhost:3000](http://localhost:3000) (Not: Backend proxy ayarı `vite.config.ts` içinde yapılandırılmıştır).
+
+3. **Keycloak ve Backend Ayarları:**
     - `src/keycloak-config.json` dosyasındaki sunucu bilgilerinin doğruluğunu kontrol edin (Varsayılan: `http://localhost:8080`).
-    - Backend API adresi için `vite.config.ts` veya ilgili servis konfigürasyonlarını kontrol edin (Varsayılan: `http://localhost:8081`).
-3. **Geliştirme sunucusunu başlatın:**
-    ```bash
-    npm run dev
-    ```
+    - Backend API adresi, Docker'da Nginx üzerinden, yerel geliştirmede ise Vite proxy üzerinden yönetilir.
 
 ### Proje Yapısı
 - `src/infrastructure/`: Uygulamanın çekirdek servisleri (DI, Auth, API Clients).

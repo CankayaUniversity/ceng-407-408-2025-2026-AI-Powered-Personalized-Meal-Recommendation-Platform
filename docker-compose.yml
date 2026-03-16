@@ -1,8 +1,11 @@
+name: meal-app
+
 services:
   # PostgreSQL Veritabanı
   postgres-db:
     image: postgres:15-alpine
     container_name: meal-app-db
+    profiles: ["infra", "full"]
     environment:
       POSTGRES_DB: meal_app_db
       POSTGRES_USER: postgres
@@ -19,6 +22,7 @@ services:
   minio-server:
     image: minio/minio
     container_name: minio-server
+    profiles: ["infra", "full"]
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
@@ -35,6 +39,7 @@ services:
   keycloak-auth:
     image: quay.io/keycloak/keycloak:26.1
     container_name: keycloak-auth
+    profiles: ["infra", "full"]
     # Keycloak'ın varsayılan entrypoint'ini ezerek kendi betiğimizi çalıştırıyoruz
     entrypoint: ["/bin/bash", "-c"]
     command: 
@@ -45,10 +50,11 @@ services:
         while ! (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1; do
           sleep 2
         done
-        echo "Keycloak is up. Configuring master realm..."
+        echo "Keycloak is up. Configuring master and meal-app realms..."
         /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
         /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
-        echo "Master realm SSL requirement disabled."
+        /opt/keycloak/bin/kcadm.sh update realms/meal-app-realm -s 'browserSecurityHeaders={"frameAncestors": "''self'' http://localhost:3030 http://localhost:3000"}'
+        echo "Realm configurations updated (SSL disabled and CSP frame-ancestors set)."
         wait $$PID
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -78,8 +84,11 @@ services:
 
   # Meal App Uygulaması (Backend)
   meal-backend:
-    build: .
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: meal-backend
+    profiles: ["full"]
     ports:
       - "8081:8081"
     environment:
@@ -101,6 +110,21 @@ services:
     depends_on:
       - postgres-db
       - minio-server
+      - keycloak-auth
+    networks:
+      - meal-network
+
+  # Meal App Uygulaması (Frontend - Nginx)
+  meal-frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: meal-frontend
+    profiles: ["full"]
+    ports:
+      - "3030:80"
+    depends_on:
+      - meal-backend
       - keycloak-auth
     networks:
       - meal-network
