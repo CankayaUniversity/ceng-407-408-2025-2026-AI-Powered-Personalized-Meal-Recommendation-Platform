@@ -6,6 +6,7 @@ import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
+import com.mealapp.domain.user.util.CalorieCalculator;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -74,6 +75,7 @@ public class UserController {
         if (request.getDietType() != null) existing.setDietType(request.getDietType());
         if (request.getDietaryGoal() != null) existing.setDietaryGoal(request.getDietaryGoal());
         if (request.getAllergies() != null) existing.setAllergies(request.getAllergies());
+        existing.setDailyCalorieTarget(CalorieCalculator.calculateDailyTarget(existing));
     }
 
     /**
