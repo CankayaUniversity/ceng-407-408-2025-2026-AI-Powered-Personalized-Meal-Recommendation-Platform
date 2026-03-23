@@ -10,10 +10,14 @@
 The **heart** of the application and the center where business intelligence resides. It is written in pure Java/Kotlin and is completely isolated from technical details (JSON, HTTP, DB).
 
 ### 📦 Responsibilities
-- **Business Rules:** Meal recommendation, diet suitability, and inventory management rules.
-- **Entities:** Objects representing business concepts, not database tables (User, Recipe, Inventory).
-- **Repositories:** Interfaces for data access.
-- **Strategies:** Different recommendation algorithms (AI-based, Popularity-based).
+- **Business Logic:** Core logic for meal recommendations, diet suitability, and nutrient calculations.
+- **Inventory & Consumption:** Advanced logic for tracking food intake. Supports automatic ingredient deduction from inventory when "home-made" flag is set.
+- **Entities:** Pure business objects (User, Recipe, Inventory, DailyConsumption).
+- **Domain Services:**
+  - `UserService`: Calorie goal calculation based on physical profile and activity level.
+  - `DailyConsumptionService`: Coordination of consumption logs and inventory updates.
+  - `RecipeService`: Nutritional value aggregation and diet compatibility filtering.
+- **Strategies:** Pluggable recommendation algorithms (AI-based vs. Rule-based).
 
 ### 📂 Package Standard
 Each business unit (Domain) contains the following within itself:
@@ -33,10 +37,14 @@ This module **does not depend on any layer**. It is the innermost circle.
 Uygulamanın **kalbi** ve iş zekasının bulunduğu merkezdir. Saf Java/Kotlin ile yazılır, teknik detaylardan (JSON, HTTP, DB) tamamen izole edilmiştir.
 
 ### 📦 Sorumluluklar
-- **İş Kuralları (Business Rules):** Yemek önerisi, diyet uygunluğu ve envanter yönetimi kuralları.
-- **Entities:** Veritabanı tablolarını değil, iş kavramlarını temsil eden nesneler (User, Recipe, Inventory).
-- **Repositories:** Veri erişimi için arayüzler (Interface).
-- **Strategies:** Farklı öneri algoritmaları (AI-based, Popularity-based).
+- **İş Mantığı (Business Logic):** Yemek önerileri, diyet uygunluğu ve besin değeri hesaplamaları için temel mantık.
+- **Envanter ve Tüketim:** Gelişmiş öğün takip mantığı. "Ev yapımı" olarak işaretlenen öğünlerde malzemelerin envanterden otomatik düşülmesini destekler.
+- **Entities:** Saf iş nesneleri (User, Recipe, Inventory, DailyConsumption).
+- **Domain Servisleri:**
+  - `UserService`: Fiziksel profil ve aktivite seviyesine göre kalori hedefi hesaplama.
+  - `DailyConsumptionService`: Tüketim kayıtları ve envanter güncellemelerinin koordinasyonu.
+  - `RecipeService`: Besin değeri toplama ve diyet uyumluluk filtrelemesi.
+- **Strategies:** Değiştirilebilir öneri algoritmaları (AI-tabanlı vs. Kural-tabanlı).
 
 ### 📂 Paket Standartı
 Her iş birimi (Domain) kendi içinde şunları barındırır:

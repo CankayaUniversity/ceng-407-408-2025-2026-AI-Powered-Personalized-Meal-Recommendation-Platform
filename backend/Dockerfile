@@ -12,6 +12,7 @@ COPY gradle.properties .
 
 # gradle.properties dosyasını kopyalayıp yerel Java pathini temizliyoruz (Docker içindeki Java kullanılacak)
 RUN sed -i '/org.gradle.java.home/d' gradle.properties
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 
 # Gradle dağıtımını ve bağımlılıkları önceden indirmek için dummy bir adım
 # Bu sayede sadece build.gradle dosyaları değiştiğinde bu katman yeniden çalışır
