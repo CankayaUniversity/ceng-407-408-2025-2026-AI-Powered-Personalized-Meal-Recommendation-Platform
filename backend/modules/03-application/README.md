@@ -16,9 +16,10 @@ The entry point of the application and the communication layer with the outside 
 - **Orchestration:** Manages complex API flows by calling multiple Domain services.
 
 ### 📂 Key Components
-- `controller/`: API endpoints.
-- `model.dto/`: Request and Response objects.
-- `exception/`: Global error management.
+- `controller/`: REST API endpoints (Users, Recommendations, Consumptions, Storage).
+- `model.dto/`: Request and Response objects (e.g., `ConsumptionRequest`, `RecommendationResponse`).
+- `config/`: Application-wide configurations including Security, WebClient, and Swagger.
+- `exception/`: Global Exception Handling logic.
 
 ### 🔗 Dependencies
 This module uses the **Domain** and **Infrastructure** modules. It is the conductor of the system.
@@ -82,9 +83,10 @@ Uygulamanın giriş kapısı ve dış dünya ile iletişim katmanıdır. Spring 
 - **Orchestration:** Birden fazla Domain servisini çağırarak karmaşık API akışlarını yönetir.
 
 ### 📂 Önemli Birimler
-- `controller/`: API uç noktaları.
-- `model.dto/`: Request ve Response nesneleri.
-- `exception/`: Global hata yönetimi.
+- `controller/`: REST API uç noktaları (Users, Recommendations, Consumptions, Storage).
+- `model.dto/`: İstek ve Yanıt nesneleri (Örn: `ConsumptionRequest`, `RecommendationResponse`).
+- `config/`: Güvenlik, WebClient ve Swagger dahil uygulama genelindeki yapılandırmalar.
+- `exception/`: Global Hata Yönetimi mantığı.
 
 ### 🔗 Bağımlılıklar
 Bu modül **Domain** ve **Infrastructure** modüllerini kullanır. Sistemin orkestra şefidir.

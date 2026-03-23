@@ -5,6 +5,7 @@ import com.mealapp.domain.inventory.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
@@ -13,6 +14,7 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
@@ -25,9 +27,42 @@ public class InventoryService {
     }
 
     /**
-     * Envantere yeni malzemeler ekler veya mevcutları günceller.
+     * Envantere yeni malzemeler ekler veya mevcutları günceller (Upsert).
      */
     public void updateInventory(String userId, List<Inventory> newItems) {
-        // TODO: Mevcut stokları kontrol edip güncelleme veya ekleme mantığı.
+        for (Inventory item : newItems) {
+            if (item.getIngredient() == null) continue;
+            
+            inventoryRepository.findByUserIdAndIngredientId(userId, item.getIngredient().getId())
+                .ifPresentOrElse(
+                    existing -> {
+                        existing.setQuantity(item.getQuantity());
+                        existing.setUnit(item.getUnit());
+                        inventoryRepository.save(existing);
+                    },
+                    () -> {
+                        item.setId(null); // Yeni kayıt
+                        inventoryRepository.save(item);
+                    }
+                );
+        }
+    }
+
+    /**
+     * Verilen malzemeleri kullanıcının envanterinden düşer.
+     * Miktar eksiye düşerse, envanterden tamamen kaldırılabilir veya sıfıra çekilebilir.
+     */
+    @Transactional
+    public void consumeFromInventory(String userId, Long ingredientId, Double quantityToDeduct) {
+        inventoryRepository.findByUserIdAndIngredientId(userId, ingredientId)
+            .ifPresent(existing -> {
+                double newQuantity = existing.getQuantity() - quantityToDeduct;
+                if (newQuantity <= 0) {
+                    inventoryRepository.delete(existing);
+                } else {
+                    existing.setQuantity(newQuantity);
+                    inventoryRepository.save(existing);
+                }
+            });
     }
 }

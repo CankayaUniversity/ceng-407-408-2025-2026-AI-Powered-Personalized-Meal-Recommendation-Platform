@@ -5,6 +5,8 @@ import com.mealapp.app.model.dto.consumption.ConsumptionResponse;
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
+import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.service.RecipeService;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class ConsumptionController {
 
     private final DailyConsumptionService dailyConsumptionService;
     private final UserService userService;
+    private final RecipeService recipeService;
 
     /**
      * Günlük tüketim kaydı oluşturur.
@@ -30,13 +33,20 @@ public class ConsumptionController {
         User user = userService.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + request.getUserId()));
 
+        Recipe recipe = null;
+        if (request.getRecipeId() != null) {
+            recipe = recipeService.findById(request.getRecipeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı ID: " + request.getRecipeId()));
+        }
+
         DailyConsumption entity = DailyConsumption.builder()
                 .user(user)
                 .foodName(request.getFoodName())
+                .recipe(recipe)
                 .mealType(request.getMealType())
                 .portionSize(request.getPortionSize())
                 .isCustomEntry(Boolean.TRUE.equals(request.getIsCustomEntry()))
-                // estimatedCalories: sistem tariflerinde sabit, dış öğünlerde AI ile sonra hesaplanacak
+                .isFromInventory(Boolean.TRUE.equals(request.getIsFromInventory()))
                 .build();
 
         DailyConsumption saved = dailyConsumptionService.logConsumption(entity);

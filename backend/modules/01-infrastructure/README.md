@@ -14,10 +14,10 @@ This directory contains two separate independent modules including the technical
 #### 1. `infrastructure-core`
 Contains core infrastructure components used in the production (prod) environment.
 - **Responsibilities:**
-  - **AI Prompt Engine:** Prompt management for AI models.
-  - **External Clients:** Network communication for external services like OpenAI, Gemini, etc.
-  - **Persistence:** Database drivers and Flyway migrations.
-  - **Object Storage (MinIO):** File upload, deletion, and URL generation operations with `MinioFileStorageService`.
+  - **AI Service Client:** Robust OpenAI (GPT-4o) integration with **Spring Retry** (exponential backoff) and token usage tracking.
+  - **AI Prompt Engine:** Dynamic template-based prompt generation for personalized recommendations.
+  - **Object Storage (MinIO):** `MinioFileStorageService` for secure file uploads, deletions, and **7-day pre-signed URL** generation.
+  - **Persistence:** Database drivers, JPA configurations, and Flyway migrations.
 - **Usage:** Added as `implementation(project(":infrastructure-core"))` in other modules.
 
 #### 2. `infrastructure-test`
@@ -43,10 +43,10 @@ Bu dizin, uygulamanın teknik altyapısını ve test araçlarını içeren iki a
 #### 1. `infrastructure-core`
 Üretim (prod) ortamında kullanılan çekirdek altyapı bileşenlerini içerir.
 - **Sorumluluklar:**
-  - **AI Prompt Engine:** Yapay zeka modelleri için prompt yönetimi.
-  - **External Clients:** OpenAI, Gemini vb. dış servisler için ağ iletişimi.
-  - **Persistence:** Veritabanı sürücüleri ve Flyway geçişleri.
-  - **Object Storage (MinIO):** `MinioFileStorageService` ile dosya yükleme, silme ve URL oluşturma işlemleri.
+  - **AI Service Client:** **Spring Retry** (üstel geri çekilme) ve token kullanım takibi içeren dayanıklı OpenAI (GPT-4o) entegrasyonu.
+  - **AI Prompt Engine:** Kişiselleştirilmiş öneriler için şablon tabanlı dinamik prompt üretimi.
+  - **Object Storage (MinIO):** Güvenli dosya yükleme, silme ve **7 günlük pre-signed URL** oluşturma desteği sunan `MinioFileStorageService`.
+  - **Persistence:** Veritabanı sürücüleri, JPA yapılandırmaları ve Flyway geçişleri.
 - **Kullanım:** Diğer modüllerde `implementation(project(":infrastructure-core"))` olarak eklenir.
 
 #### 2. `infrastructure-test`

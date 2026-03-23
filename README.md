@@ -63,8 +63,12 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 ### Key Features
 - User profile management (diet goals, liked/disliked foods)
 - Ingredient-based recipe recommendations
+- Hybrid AI Recommendation Engine (SQL Filtering + Custom Scoring + LLM Refinement)
+- Daily Food Logging and Consumption Tracking (Flexible stock deduction: home-made vs external meals)
+- Dynamic Dataset Support (Efficiently handling 50,000+ recipes)
 - Nutritional value calculation (calories, protein, fat, carbohydrates)
-- AI-assisted personalized meal and diet suggestions
+- AI-assisted personalized meal and diet suggestions (Powered by OpenAI GPT-4o)
+- Integrated File Storage (MinIO) for recipe images and user uploads
 - Web-based, modular and extensible architecture
 
 ### Technology Stack
@@ -76,7 +80,8 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 - PostgreSQL (Database)
 - MinIO (Object Storage)
 - Keycloak (Identity Management)
-- JaCoCo & SonarClube (Code Quality and Test Coverage)
+- OpenAI API (GPT-4o integration with Spring Retry)
+- JaCoCo & SonarQube (Code Quality and Test Coverage)
 - Testcontainers (For PostgreSQL, MinIO, Keycloak integration tests)
 
 #### Frontend
@@ -93,9 +98,10 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 - Keycloak (Identity & Access Management)
 
 ### AI Integration
-- Prompt-based communication with an online AI service
-- AI is accessed via REST API
-- All prompt construction and result processing are handled in the backend
+- Prompt-based communication with OpenAI (GPT-4o)
+- Integrated with Spring Retry for robust connectivity
+- Token usage logging and monitoring
+- All prompt construction and result processing are handled in the backend (AiPromptEngine & AiServiceClient)
 
 ### Project Structure
 - `backend/`: Java Spring Boot backend application (Multi-module Architecture)
@@ -209,8 +215,12 @@ Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtr
 ### Temel Özellikler
 - Kullanıcı profil yönetimi (diyet hedefleri, sevilen/sevilmeyen yiyecekler)
 - Malzeme bazlı tarif önerileri
+- Hibrit AI Öneri Motoru (SQL Filtreleme + Özel Puanlama + LLM Rafine Etme)
+- Günlük Yemek Günlüğü ve Tüketim Takibi (Esnek stok düşümü: Evde yapım vs. dışarıdan tüketim)
+- Dinamik Veri Seti Desteği (50.000+ tarifin verimli yönetimi)
 - Besin değeri hesaplama (kalori, protein, yağ, karbonhidrat)
-- Yapay zeka destekli kişiselleştirilmiş yemek ve diyet önerileri
+- Yapay zeka destekli kişiselleştirilmiş yemek ve diyet önerileri (OpenAI GPT-4o Destekli)
+- Entegre Dosya Depolama (MinIO) - Tarif görselleri ve kullanıcı yüklemeleri için
 - Web tabanlı, modüler ve genişletilebilir mimari
 
 ### Teknoloji Yığını
@@ -222,6 +232,7 @@ Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtr
 - PostgreSQL (Veritabanı)
 - MinIO (Nesne Depolama)
 - Keycloak (Kimlik Yönetimi)
+- OpenAI API (GPT-4o entegrasyonu ve Spring Retry)
 - JaCoCo & SonarQube (Kod Kalitesi ve Test Kapsamı)
 - Testcontainers (PostgreSQL, MinIO, Keycloak entegrasyon testleri için)
 
@@ -239,9 +250,10 @@ Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtr
 - Keycloak (Kimlik ve Erişim Yönetimi)
 
 ### Yapay Zeka Entegrasyonu
-- Çevrimiçi bir yapay zeka servisi ile prompt tabanlı iletişim
-- Yapay zekaya REST API üzerinden erişim
-- Tüm prompt oluşturma ve sonuç işleme süreçleri backend tarafında yönetilir
+- OpenAI (GPT-4o) ile prompt tabanlı iletişim
+- Kesintisiz bağlantı için Spring Retry entegrasyonu
+- Token kullanım takibi ve loglama
+- Tüm prompt oluşturma ve sonuç işleme süreçleri backend (AiPromptEngine & AiServiceClient) tarafında yönetilir
 
 ### Proje Yapısı
 - `backend/`: Java Spring Boot backend uygulaması (Çok Modüllü Mimari)

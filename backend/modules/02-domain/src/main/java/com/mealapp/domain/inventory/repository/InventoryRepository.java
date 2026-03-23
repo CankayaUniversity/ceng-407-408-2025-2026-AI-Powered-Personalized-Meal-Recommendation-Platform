@@ -20,4 +20,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
      * Kullanıcının elindeki belirli bir malzemeyi bulur.
      */
     List<Inventory> findByUserIdAndIngredientNameContainingIgnoreCase(String userId, String ingredientName);
+
+    /**
+     * Kullanıcının elindeki belirli bir malzeme ID'sine göre envanter kaydını bulur.
+     */
+    java.util.Optional<Inventory> findByUserIdAndIngredientId(String userId, Long ingredientId);
 }
