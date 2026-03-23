@@ -57,7 +57,7 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .stream()
                 .map(error -> new ApiErrorResponse.ValidationError(error.getField(), error.getDefaultMessage()))
-                .collect(Collectors.toList());
+                .toList();
 
         ApiErrorResponse error = ApiErrorResponse.builder()
                 .message("Validasyon hatası oluştu.")

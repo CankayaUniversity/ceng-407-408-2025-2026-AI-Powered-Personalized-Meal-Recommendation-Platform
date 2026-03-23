@@ -52,6 +52,59 @@ public class Recipe {
     @Enumerated(EnumType.STRING)
     private Difficulty difficulty;
 
+    /**
+     * Tarifin ortalama puanı (Rating sistemi için).
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Double averageRating = 0.0;
+
+    /**
+     * Toplam değerlendirme sayısı.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer ratingCount = 0;
+
+    /**
+     * Toplam kalori miktarı (Tüm malzemeler bazında).
+     */
+    private Double totalCalories;
+
+    /**
+     * Toplam protein miktarı (Gram).
+     */
+    private Double totalProtein;
+
+    /**
+     * Toplam karbonhidrat miktarı (Gram).
+     */
+    private Double totalCarbs;
+
+    /**
+     * Toplam yağ miktarı (Gram).
+     */
+    private Double totalFat;
+
+    /**
+     * Tarifin görsel URL'si.
+     */
+    private String imageUrl;
+
+    /**
+     * Malzeme listesi veya miktarı değiştiğinde besin değerlerini yeniden hesaplamak için kullanılır.
+     * Bu işlem RecipeService üzerinden kontrollü bir şekilde tetiklenmelidir.
+     */
+    public void markAsUpdated() {
+        // Bu metot, gelecekte otomatik tetikleme mekanizmaları için kanca (hook) olarak kullanılabilir.
+    }
+
+    /**
+     * AI tarafından bu tarif için üretilen özel içgörü (Geçici/Dinamik).
+     */
+    @Transient
+    private String aiInsight;
+
     public enum Difficulty {
         EASY, MEDIUM, HARD
     }

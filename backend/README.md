@@ -19,10 +19,16 @@ This project is a platform that provides AI-powered personalized meal recommenda
 
 ### 🏗️ Architecture and Key Features
 The project is developed using a **Multi-module** architecture in line with enterprise standards. With the latest updates:
+- **Hybrid AI Recommendation Engine:** A sophisticated recommendation system that combines SQL-based filtering (allergens, diets), scoring (inventory match, ratings), and LLM-based (OpenAI GPT-4o, Google Gemini) refinement.
+- **Multi-Provider AI Support:** Flexible architecture supporting multiple AI engines (OpenAI, Gemini) with dynamic switching and fallback mechanisms.
+- **Flexible Consumption Tracking:** Users can log meals as "home-made" (deducts ingredients from Minio-backed inventory) or "external" (AI estimates nutritional values).
+- **Integrated Object Storage:** Full MinIO integration for managing recipe images and user-uploaded content with pre-signed URL support.
+- **Robust AI Client:** Multi-provider integration (OpenAI, Gemini) with Spring Retry for high availability and token usage monitoring.
 - **Keycloak Synchronization:** User IDs are centrally managed as `String` (UUID) type via the Keycloak `sub` value.
 - **Automatic Profile Management:** User information is automatically synchronized with the backend database upon first login.
 - **Secure API:** All endpoints are protected with JWT-based authentication.
 - **Type Safety:** Backend and test codes are fully compatible with Keycloak integration.
+- **Dynamic Dataset Support:** Handles 50,000+ recipes with real-time ranking and filtering capabilities.
 
 ### 🚀 Quick Start (with Docker)
 You can start the entire project (Frontend, Backend, Database, Keycloak, and MinIO) from the project root using a single command.
@@ -102,10 +108,16 @@ Bu proje, kullanıcıların tercihlerine ve elindeki malzemelere göre yapay zek
 
 ### 🏗️ Mimari ve Önemli Özellikler
 Proje, kurumsal standartlara uygun **Multi-module** mimari ile geliştirilmiştir. Yapılan son güncellemelerle birlikte:
-- **Keycloak Senkronizasyonu:** Kullanıcı ID'leri Keycloak `sub` değeri üzerinden `String` (UUID) tipinde merkezi olarak yönetilir.
-- **Otomatik Profil Yönetimi:** Kullanıcı ilk giriş yaptığında bilgileri otomatik olarak backend veritabanı ile senkronize edilir.
-- **Güvenli API:** Tüm uç noktalar JWT tabanlı kimlik doğrulaması ile korunmaktadır.
-- **Tip Güvenliği:** Backend ve test kodları, Keycloak entegrasyonuyla tam uyumlu hale getirilmiştir.
+- **Hibrit AI Öneri Motoru:** SQL tabanlı filtreleme (alerjen, diyet), puanlama (envanter uyumu, rating) ve LLM tabanlı (OpenAI GPT-4o, Google Gemini, Anthropic Claude) rafine etme işlemlerini birleştiren gelişmiş bir öneri sistemi.
+- **Çoklu AI Sağlayıcı Desteği:** OpenAI (ChatGPT), Google Gemini, Anthropic Claude ve OpenAI uyumlu diğer sağlayıcılar (Mistral, DeepSeek, Local LLM) üzerinden dinamik öneri alabilme.
+- **Esnek Tüketim Takibi:** Öğünler "ev yapımı" (envanterden otomatik malzeme düşer) veya "dışarıdan" (AI tarafından besin değeri tahmini yapılır) olarak kaydedilebilir.
+- **Entegre Nesne Depolama:** Tarif görselleri ve kullanıcı içerikleri için tam MinIO entegrasyonu ve geçici URL (pre-signed) desteği.
+- **Dayanıklı AI İstemcisi:** Spring Retry ile güçlendirilmiş, çoklu sağlayıcı (OpenAI, Gemini) destekli ve token kullanım takibi yapan AI entegrasyonu.
+- **Keycloak Senkronizasyonu:** Kullanıcı ID'leri, Keycloak `sub` değeri üzerinden merkezi olarak `String` (UUID) tipinde yönetilir.
+- **Otomatik Profil Yönetimi:** Kullanıcı bilgileri, ilk girişte backend veritabanı ile otomatik olarak senkronize edilir.
+- **Güvenli API:** Tüm uç noktalar JWT tabanlı kimlik doğrulama ile korunmaktadır.
+- **Tip Güvenliği:** Backend ve test kodları Keycloak entegrasyonu ile tam uyumludur.
+- **Dinamik Veri Seti Desteği:** 50.000+ tarif üzerinde gerçek zamanlı sıralama ve filtreleme yapabilen ölçeklenebilir yapı.
 
 ### 🚀 Hızlı Başlangıç (Docker ile)
 Projeyi tüm bileşenleriyle (Frontend, Backend, Veritabanı, Keycloak ve MinIO) proje kök dizininden tek komutla ayağa kaldırabilirsiniz.
