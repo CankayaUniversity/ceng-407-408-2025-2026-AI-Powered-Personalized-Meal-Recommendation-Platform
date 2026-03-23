@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import axios, { AxiosInstance } from 'axios';
 import { useService } from '../infrastructure/di';
 import { HttpClientKey } from '../infrastructure/services';
@@ -10,48 +9,6 @@ import {
   NotFoundError,
   ValidationError
 } from './errors';
-
-interface BackendValidationError {
-  field: string;
-  message: string;
-}
-
-interface BackendApiErrorResponse {
-  message?: string;
-  status?: number;
-  validationErrors?: BackendValidationError[];
-}
-
-const mapValidationErrors = (data: BackendApiErrorResponse | undefined): Record<string, string> | undefined => {
-  if (!data?.validationErrors?.length) {
-    return undefined;
-  }
-
-  return data.validationErrors.reduce<Record<string, string>>((acc, item) => {
-    if (item.field && !acc[item.field]) {
-      acc[item.field] = item.message;
-    }
-    return acc;
-  }, {});
-};
-
-const getApiErrorMeta = (
-  error: unknown,
-  fallbackMessage: string
-): { status?: number; message: string; fields?: Record<string, string>; data?: BackendApiErrorResponse } => {
-  if (!axios.isAxiosError(error)) {
-    return { message: fallbackMessage };
-  }
-
-  const data = error.response?.data as BackendApiErrorResponse | undefined;
-
-  return {
-    status: error.response?.status,
-    message: data?.message || fallbackMessage,
-    fields: mapValidationErrors(data),
-    data
-  };
-};
 
 /**
  * Kullanıcı servisi factory fonksiyonu
@@ -72,22 +29,29 @@ export const getUserService = (api: AxiosInstance) => ({
       const response = await api.get<User>(`/v1/users/${id}`);
       return response.data;
     } catch (error) {
-      if (axios.isAxiosError(error) && !error.response) {
-        throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+      if (axios.isAxiosError(error)) {
+        // Ağ hatası (sunucudan yanıt yok)
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Kullanıcı bilgileri alınamadı';
+
+        switch (status) {
+          case 401:
+            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          case 404:
+            throw new NotFoundError('Kullanıcı bulunamadı');
+          case 400:
+            throw new ValidationError(message);
+          default:
+            throw new ApiError(message, 'API_ERROR', status);
+        }
       }
 
-      const { status, message, fields, data } = getApiErrorMeta(error, 'Kullanıcı bilgileri alınamadı');
-
-      switch (status) {
-        case 401:
-          throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
-        case 404:
-          throw new NotFoundError('Kullanıcı bulunamadı');
-        case 400:
-          throw new ValidationError(message, fields);
-        default:
-          throw new ApiError(message, 'API_ERROR', status, data);
-      }
+      // Axios dışı hata
+      throw new ApiError('Beklenmeyen bir hata oluştu');
     }
   },
 
@@ -105,20 +69,28 @@ export const getUserService = (api: AxiosInstance) => ({
       const response = await api.post<User>('/v1/users', userData);
       return response.data;
     } catch (error) {
-      if (axios.isAxiosError(error) && !error.response) {
-        throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Kullanıcı kaydedilemedi';
+
+        switch (status) {
+          case 401:
+            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          case 400:
+            throw new ValidationError(
+              message,
+              error.response.data?.fields
+            );
+          default:
+            throw new ApiError(message, 'API_ERROR', status);
+        }
       }
 
-      const { status, message, fields, data } = getApiErrorMeta(error, 'Kullanıcı kaydedilemedi');
-
-      switch (status) {
-        case 401:
-          throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
-        case 400:
-          throw new ValidationError(message, fields);
-        default:
-          throw new ApiError(message, 'API_ERROR', status, data);
-      }
+      throw new ApiError('Beklenmeyen bir hata oluştu');
     }
   },
 
@@ -141,27 +113,33 @@ export const getUserService = (api: AxiosInstance) => ({
       });
       return response.data;
     } catch (error) {
-      if (axios.isAxiosError(error) && !error.response) {
-        throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Profil güncellenemedi';
+
+        switch (status) {
+          case 401:
+            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          case 404:
+            throw new NotFoundError('Kullanıcı bulunamadı');
+          case 400:
+            throw new ValidationError(
+              message,
+              error.response.data?.fields
+            );
+          default:
+            throw new ApiError(message, 'API_ERROR', status);
+        }
       }
 
-      const { status, message, fields, data } = getApiErrorMeta(error, 'Profil güncellenemedi');
-
-      switch (status) {
-        case 401:
-          throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
-        case 404:
-          throw new NotFoundError('Kullanıcı bulunamadı');
-        case 400:
-          throw new ValidationError(message, fields);
-        default:
-          throw new ApiError(message, 'API_ERROR', status, data);
-      }
+      throw new ApiError('Beklenmeyen bir hata oluştu');
     }
   }
 });
-
-export type UserService = ReturnType<typeof getUserService>;
 
 /**
  * DI üzerinden kullanıcı servisine erişim sağlayan React hook
@@ -169,5 +147,5 @@ export type UserService = ReturnType<typeof getUserService>;
  */
 export const useUserService = () => {
   const api = useService(HttpClientKey);
-  return useMemo(() => getUserService(api), [api]);
+  return getUserService(api);
 };
