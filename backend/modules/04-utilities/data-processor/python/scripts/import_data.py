@@ -147,8 +147,14 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
             print(f"       ✅ ingredient_nutrition: {len(df_nutrition_db):,} rows")
 
             # 3. Recipes
-            df_recipes[['id', 'title', 'instructions',
-                        'preparation_time_minutes', 'servings', 'difficulty']].to_sql(
+            recipe_cols = ['id', 'title', 'instructions', 'preparation_time_minutes', 'servings', 'difficulty']
+            df_recipes_db = df_recipes[recipe_cols].copy()
+            
+            # Eksik ama zorunlu kolonları doldur (average_rating, rating_count)
+            df_recipes_db['average_rating'] = 0.0
+            df_recipes_db['rating_count'] = 0
+            
+            df_recipes_db.to_sql(
                 'recipes', conn, if_exists='append', index=False)
             conn.execute(text(
                 "SELECT setval('recipes_id_seq', (SELECT COALESCE(MAX(id), 1) FROM recipes))"
