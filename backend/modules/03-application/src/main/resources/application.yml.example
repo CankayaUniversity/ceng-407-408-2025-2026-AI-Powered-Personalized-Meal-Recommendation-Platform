@@ -27,6 +27,11 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
 
+  cache:
+    type: caffeine
+    caffeine:
+      spec: expireAfterWrite=1h,maximumSize=500
+
   flyway:
     enabled: true
     repair-on-migrate: true
@@ -37,6 +42,27 @@ spring:
 
 com:
   mealapp:
+    ai:
+      provider-type: ${AI_PROVIDER_TYPE:OPENAI} # OPENAI, GEMINI, CLAUDE, MISTRAL, DEEPSEEK vb.
+      service:
+        openai:
+          api-key: ${OPENAI_API_KEY:your-key-here}
+          model: ${OPENAI_MODEL:gpt-4o-mini}
+          url: ${OPENAI_URL:https://api.openai.com/v1/chat/completions}
+        gemini:
+          api-key: ${GEMINI_API_KEY:your-key-here}
+          model: ${GEMINI_MODEL:gemini-1.5-flash}
+          url: ${GEMINI_URL:https://generativelanguage.googleapis.com/v1beta/models/}
+        claude:
+          api-key: ${CLAUDE_API_KEY:your-key-here}
+          model: ${CLAUDE_MODEL:claude-3-5-sonnet-20240620}
+          url: ${CLAUDE_URL:https://api.anthropic.com/v1/messages}
+          anthropic-version: ${ANTHROPIC_VERSION:2023-06-01}
+        generic:
+          api-key: ${GENERIC_AI_API_KEY:your-key-here}
+          model: ${GENERIC_AI_MODEL:default-model}
+          url: ${GENERIC_AI_URL:http://localhost:8080/v1/chat/completions}
+          provider-name: ${GENERIC_AI_PROVIDER_NAME:GENERIC}
     infrastructure:
       storage:
         bucket:

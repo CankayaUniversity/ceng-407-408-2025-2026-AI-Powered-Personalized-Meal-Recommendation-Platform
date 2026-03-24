@@ -24,8 +24,9 @@ class RecommendationMapperTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(List.of("Menemen", "Mercimek Çorbası"), response.getRecommendedRecipes());
-        assertEquals("AI önerileri başarıyla oluşturuldu.", response.getAiInsight());
+        assertEquals(2, response.getRecommendedRecipes().size());
+        assertEquals("Menemen", response.getRecommendedRecipes().get(0).getRecipeTitle());
+        assertEquals("Mercimek Çorbası", response.getRecommendedRecipes().get(1).getRecipeTitle());
     }
 
     @Test
@@ -37,6 +38,5 @@ class RecommendationMapperTest {
         assertNotNull(response);
         assertNotNull(response.getRecommendedRecipes());
         assertTrue(response.getRecommendedRecipes().isEmpty());
-        assertEquals("AI önerileri başarıyla oluşturuldu.", response.getAiInsight());
     }
 }

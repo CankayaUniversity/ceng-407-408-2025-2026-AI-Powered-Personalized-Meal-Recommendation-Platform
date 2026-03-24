@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Bu sınıf "Orchestrator" görevini üstlenir.
@@ -50,8 +49,8 @@ public class RecommendationAppService {
                             .ingredient(ingredient)
                             .user(user)
                             .build();
-                })
-                .collect(Collectors.toList());
+                    })
+                    .toList();
 
         // 3. Domain servisinden önerileri al
         List<Recipe> recommendedRecipes = recommendationService.getRecommendations(user, dynamicInventory);

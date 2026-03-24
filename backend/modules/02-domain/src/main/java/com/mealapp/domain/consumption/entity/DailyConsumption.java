@@ -41,10 +41,13 @@ public class DailyConsumption {
     private Recipe recipe;
 
     /**
-     * Tahmini kalori değeri. 
-     * Sistem tarifinden gelmişse sabit, dışarıdan girilmişse AI tarafından tahmin edilmiştir.
+     * Tahmini besin değerleri.
+     * Sistem tarifinden gelmişse hesaplanmış, dışarıdan girilmişse AI tarafından tahmin edilmiştir.
      */
     private Integer estimatedCalories;
+    private Double estimatedProtein; // gram
+    private Double estimatedCarbs;   // gram
+    private Double estimatedFat;     // gram
 
     /**
      * Öğün tipi (KAHVALTI, ÖĞLE, AKŞAM, ATIŞTIRMALIK).
@@ -68,6 +71,13 @@ public class DailyConsumption {
      * Bu yemek sistem dışı (manuel giriş) bir yemek mi?
      */
     private Boolean isCustomEntry;
+
+    /**
+     * Bu yemek kullanıcının kendi envanterinden mi (evde yapıldı/hazırlandı) tüketildi?
+     * Eğer true ise, ilgili tarifin malzemeleri kullanıcının stoklarından düşülür.
+     */
+    @Builder.Default
+    private Boolean isFromInventory = false;
 
     public enum MealType {
         BREAKFAST, LUNCH, DINNER, SNACK

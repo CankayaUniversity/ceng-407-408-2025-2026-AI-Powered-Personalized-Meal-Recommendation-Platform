@@ -5,6 +5,11 @@ import java.util.List;
 
 @Data
 public class RecommendationResponse {
-    private List<String> recommendedRecipes;
-    private String aiInsight;
+    private List<RecipeRecommendationDto> recommendedRecipes;
+
+    @Data
+    public static class RecipeRecommendationDto {
+        private String recipeTitle;
+        private String insight;
+    }
 }
