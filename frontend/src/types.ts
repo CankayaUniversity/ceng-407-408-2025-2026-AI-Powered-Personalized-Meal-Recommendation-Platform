@@ -79,10 +79,14 @@ export interface User {
 export interface Recipe {
   id: number;
   title: string;
-  instructions: string;
+  category?: string;
+  totalCalories?: number;
   preparationTimeMinutes: number;
   difficulty: Difficulty;
   servings: number;
+  averageRating?: number;
+  imageUrl?: string;
+  instructions: string;
   ingredients?: RecipeIngredient[];
   ratings?: RecipeRating[];
 }

@@ -1,6 +1,8 @@
 package com.mealapp.domain.recipe.repository;
 
 import com.mealapp.domain.recipe.entity.Recipe;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -13,15 +15,22 @@ import java.util.Optional;
 @Repository
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     
-    @Query("SELECT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient WHERE r.id = :id")
+    @Query("SELECT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient i LEFT JOIN FETCH i.nutrition WHERE r.id = :id")
     Optional<Recipe> findByIdWithIngredients(Long id);
 
-    @Query("SELECT DISTINCT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient")
+    @Query("SELECT r FROM Recipe r")
+    Page<Recipe> findAllWithIngredients(Pageable pageable);
+
+    @Query("SELECT DISTINCT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient i LEFT JOIN FETCH i.nutrition")
     List<Recipe> findAllWithIngredients();
 
     /**
      * Başlığa göre tarif araması yapar.
      */
+    @Query(value = "SELECT r FROM Recipe r WHERE LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))",
+           countQuery = "SELECT count(r) FROM Recipe r WHERE LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+    Page<Recipe> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+
     List<Recipe> findByTitleContainingIgnoreCase(String title);
 
     /**

@@ -50,11 +50,12 @@ public class UserController {
             return userMapper.toDto(saved);
         }
 
-        // 2. ID not found: Check if Email is already in use by another ID
-        User existingByEmail = userService.findByEmail(request.getEmail()).orElse(null);
-
-        if (existingByEmail != null) {
-            throw new MealAppDomainException("Bu e-posta adresi (" + request.getEmail() + ") başka bir hesapla ilişkilendirilmiş.");
+        // 2. ID not found: Check if Email is already in use by another ID (only if provided)
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            User existingByEmail = userService.findByEmail(request.getEmail()).orElse(null);
+            if (existingByEmail != null) {
+                throw new MealAppDomainException("Bu e-posta adresi (" + request.getEmail() + ") başka bir hesapla ilişkilendirilmiş.");
+            }
         }
 
         // 3. New user: Create with the ID from request
