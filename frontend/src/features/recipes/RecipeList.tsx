@@ -1,17 +1,62 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Search, Filter, Clock, Zap, Star, ChevronRight } from 'lucide-react';
+import { useRecipeService } from '../../services/recipeService';
+import { Recipe } from '../../types';
 
 const RecipeList: React.FC = () => {
+  const recipeService = useRecipeService();
   const [searchTerm, setSearchTerm] = useState('');
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const size = 12;
 
-  const recipes = [
-    { id: 1, name: 'Akdeniz Salatası', category: 'Salata', calories: 250, time: '10 dk', rating: 4.8, image: '🥗' },
-    { id: 2, name: 'Fırınlanmış Levrek', category: 'Deniz Ürünleri', calories: 420, time: '35 dk', rating: 4.9, image: '🐟' },
-    { id: 3, name: 'Mercimek Köftesi', category: 'Atıştırmalık', calories: 310, time: '45 dk', rating: 4.7, image: '🧆' },
-    { id: 4, name: 'Sebzeli Lazanya', category: 'Ana Yemek', calories: 580, time: '50 dk', rating: 4.6, image: '🍝' },
-    { id: 5, name: 'Avokadolu Tost', category: 'Kahvaltı', calories: 340, time: '12 dk', rating: 4.5, image: '🥑' },
-    { id: 6, name: 'Meyveli Yoğurt Kasesi', category: 'Tatlı', calories: 210, time: '5 dk', rating: 4.8, image: '🥣' },
-  ];
+  // Debounce edilmiş arama terimi
+  const debouncedSearch = useDebounce(searchTerm, 400);
+  // Aynı parametrelerle tekrarlı istekleri engellemek için son sorgu anahtarını tutar
+  const lastQueryRef = useRef<string>('');
+
+  useEffect(() => {
+    let mounted = true;
+    const abortController = new AbortController();
+
+    const fetchData = async () => {
+      const queryKey = `${debouncedSearch ?? ''}|${page}|${size}`;
+      // Aynı parametrelerle ardışık çağrıları önle
+      if (lastQueryRef.current === queryKey) {
+        return;
+      }
+      lastQueryRef.current = queryKey;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await recipeService.getRecipes({ 
+          title: debouncedSearch || undefined, 
+          page, 
+          size,
+          signal: abortController.signal
+        });
+        if (mounted) setRecipes(data);
+      } catch (e: any) {
+        if (mounted && e?.name !== 'CanceledError' && e?.name !== 'AbortError') {
+          setError(e?.message || 'Tarifler yüklenemedi');
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchData();
+    return () => {
+      mounted = false;
+      abortController.abort();
+    };
+  }, [debouncedSearch, page]); // recipeService bağımlılıktan çıkarıldı
+
+  // Arama değiştiğinde sayfayı sıfırla
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -59,34 +104,46 @@ const RecipeList: React.FC = () => {
 
       {/* Recipe Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {recipes.map((recipe) => (
+        {loading && (
+          <div className="col-span-full text-center text-gray-500">Yükleniyor...</div>
+        )}
+        {error && (
+          <div className="col-span-full text-center text-red-600">{error}</div>
+        )}
+        {!loading && !error && recipes.map((recipe) => (
           <div key={recipe.id} className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
             <div className="h-52 bg-orange-50 flex items-center justify-center text-6xl relative">
-               {recipe.image}
+               {/* Image or emoji fallback */}
+               {recipe.imageUrl ? (
+                 // eslint-disable-next-line @next/next/no-img-element
+                 <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover" />
+               ) : (
+                 <span role="img" aria-label="recipe">🍽️</span>
+               )}
                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-orange-600 shadow-sm">
-                 {recipe.category}
+                 {recipe.category || 'Genel'}
                </div>
                <button className="absolute bottom-4 right-4 p-2 bg-white rounded-full shadow-md text-gray-400 hover:text-red-500 transition-colors">
-                  <Star size={20} className={recipe.rating > 4.7 ? 'fill-yellow-500 text-yellow-500' : ''} />
+                  <Star size={20} className={((recipe.averageRating || 0) > 4.7) ? 'fill-yellow-500 text-yellow-500' : ''} />
                </button>
             </div>
             <div className="p-6">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold text-gray-900 group-hover:text-orange-500 transition-colors">{recipe.name}</h3>
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-orange-500 transition-colors">{recipe.title}</h3>
                 <div className="flex items-center gap-1 text-sm font-bold bg-green-50 text-green-700 px-2 py-1 rounded-lg">
                   <Star size={14} className="fill-green-700" />
-                  {recipe.rating}
+                  {recipe.averageRating ?? '-'}
                 </div>
               </div>
               
               <div className="flex items-center gap-4 text-sm text-gray-500 mt-4">
                 <div className="flex items-center gap-1">
                   <Clock size={16} />
-                  {recipe.time}
+                  {recipe.preparationTimeMinutes ? `${recipe.preparationTimeMinutes} dk` : '-'}
                 </div>
                 <div className="flex items-center gap-1 text-orange-600 font-semibold">
                   <Zap size={16} />
-                  {recipe.calories} kcal
+                  {recipe.totalCalories ? Math.round(recipe.totalCalories) : '-'} kcal
                 </div>
               </div>
 
@@ -100,8 +157,37 @@ const RecipeList: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-center gap-3 mt-4">
+        <button
+          className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50"
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={page === 0 || loading}
+        >
+          Önceki
+        </button>
+        <span className="text-sm text-gray-500">Sayfa {page + 1}</span>
+        <button
+          className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm disabled:opacity-50"
+          onClick={() => setPage((p) => p + 1)}
+          disabled={loading || (recipes.length < size)}
+        >
+          Sonraki
+        </button>
+      </div>
     </div>
   );
 };
+
+// Basit debounce hook'u
+function useDebounce<T>(value: T, delay = 300): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
 
 export default RecipeList;
