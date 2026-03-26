@@ -17,4 +17,14 @@ public class ConsumptionRequest {
      * Eğer dışarıda yenilen bir yemekse true. AI tahmini tetiklenecek.
      */
     private Boolean isCustomEntry;
+
+    /**
+     * Eğer evdeki malzemelerle yapıldıysa true. Stok düşülecek.
+     */
+    private Boolean isFromInventory;
+
+    /**
+     * Sistemdeki bir tarif tüketilirse ID'si gönderilir.
+     */
+    private Long recipeId;
 }

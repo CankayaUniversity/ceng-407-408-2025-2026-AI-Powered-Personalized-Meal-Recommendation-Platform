@@ -6,6 +6,7 @@ import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
+import com.mealapp.domain.user.util.CalorieCalculator;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -49,11 +50,12 @@ public class UserController {
             return userMapper.toDto(saved);
         }
 
-        // 2. ID not found: Check if Email is already in use by another ID
-        User existingByEmail = userService.findByEmail(request.getEmail()).orElse(null);
-
-        if (existingByEmail != null) {
-            throw new MealAppDomainException("Bu e-posta adresi (" + request.getEmail() + ") başka bir hesapla ilişkilendirilmiş.");
+        // 2. ID not found: Check if Email is already in use by another ID (only if provided)
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            User existingByEmail = userService.findByEmail(request.getEmail()).orElse(null);
+            if (existingByEmail != null) {
+                throw new MealAppDomainException("Bu e-posta adresi (" + request.getEmail() + ") başka bir hesapla ilişkilendirilmiş.");
+            }
         }
 
         // 3. New user: Create with the ID from request
@@ -74,6 +76,7 @@ public class UserController {
         if (request.getDietType() != null) existing.setDietType(request.getDietType());
         if (request.getDietaryGoal() != null) existing.setDietaryGoal(request.getDietaryGoal());
         if (request.getAllergies() != null) existing.setAllergies(request.getAllergies());
+        existing.setDailyCalorieTarget(CalorieCalculator.calculateDailyTarget(existing));
     }
 
     /**

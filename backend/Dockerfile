@@ -1,5 +1,5 @@
 # Projeyi derlemek için kullanılan aşama (Build Stage)
-FROM azul/zulu-openjdk:21-latest AS build
+FROM azul/zulu-openjdk-alpine:21 AS build
 WORKDIR /app
 
 # Gradle wrapper ve gerekli dosyaları kopyala
@@ -12,6 +12,7 @@ COPY gradle.properties .
 
 # gradle.properties dosyasını kopyalayıp yerel Java pathini temizliyoruz (Docker içindeki Java kullanılacak)
 RUN sed -i '/org.gradle.java.home/d' gradle.properties
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 
 # Gradle dağıtımını ve bağımlılıkları önceden indirmek için dummy bir adım
 # Bu sayede sadece build.gradle dosyaları değiştiğinde bu katman yeniden çalışır
@@ -22,16 +23,18 @@ COPY modules/02-domain/build.gradle modules/02-domain/
 COPY modules/03-application/build.gradle modules/03-application/
 
 # Sadece bağımlılıkları indir (kaynak kodlar henüz kopyalanmadı)
-RUN ./gradlew :modules:03-application:dependencies --no-daemon || true
+RUN --mount=type=cache,target=/root/.gradle ./gradlew :modules:03-application:dependencies --no-daemon || \
+    ./gradlew :modules:03-application:dependencies --no-daemon || true
 
 # Tüm modülleri (kaynak kodları) kopyala
 COPY modules modules
 
 # Projeyi derle ve JAR dosyasını oluştur (testleri atlıyoruz build süresini kısaltmak için)
-RUN ./gradlew :modules:03-application:bootJar -x test --no-daemon
+RUN --mount=type=cache,target=/root/.gradle ./gradlew :modules:03-application:bootJar -x test --no-daemon || \
+    ./gradlew :modules:03-application:bootJar -x test --no-daemon
 
 # Uygulamayı çalıştırmak için hafifletilmiş aşama (Run Stage)
-FROM azul/zulu-openjdk:21-jre-latest
+FROM azul/zulu-openjdk-alpine:21-jre
 WORKDIR /app
 
 # Sadece oluşan JAR dosyasını kopyala

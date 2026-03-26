@@ -32,7 +32,7 @@ public class User {
      * Kullanıcının sahip olduğu alerjiler. 
      * Basitlik adına String listesi olarak tutulmuştur, ileride ayrı bir Entity'ye dönüştürülebilir.
      */
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_allergies", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "allergy")
     private List<String> allergies;

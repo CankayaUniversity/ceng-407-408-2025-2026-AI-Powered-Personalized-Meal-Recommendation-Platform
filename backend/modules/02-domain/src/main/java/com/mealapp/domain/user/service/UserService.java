@@ -52,7 +52,12 @@ public class UserService {
      * Kullanıcının diyet tercihlerini veya alerjilerini günceller.
      */
     public User updatePreferences(String id, User.DietType dietType, java.util.List<String> allergies) {
-        // TODO: İş mantığı (Kullanıcı var mı kontrolü vb.) eklenecek.
-        return null;
+        return userRepository.findById(id)
+                .map(user -> {
+                    user.setDietType(dietType);
+                    user.setAllergies(allergies);
+                    return userRepository.save(user);
+                })
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + id));
     }
 }

@@ -1,19 +1,18 @@
 // Enums
 export enum DietType {
-  VEGAN = 'VEGAN',
+  NONE = 'NONE',
+  GLUTEN_FREE = 'GLUTEN_FREE',
   VEGETARIAN = 'VEGETARIAN',
-  PESCATARIAN = 'PESCATARIAN',
+  VEGAN = 'VEGAN',
   KETO = 'KETO',
-  PALEO = 'PALEO',
-  MEDITERRANEAN = 'MEDITERRANEAN',
-  NONE = 'NONE'
+  PALEO = 'PALEO'
 }
 
 export enum DietaryGoal {
-  WEIGHT_LOSS = 'WEIGHT_LOSS',
-  MUSCLE_GAIN = 'MUSCLE_GAIN',
-  MAINTENANCE = 'MAINTENANCE',
-  HEALTH_IMPROVEMENT = 'HEALTH_IMPROVEMENT'
+  LOSE_WEIGHT = 'LOSE_WEIGHT',
+  MAINTAIN_WEIGHT = 'MAINTAIN_WEIGHT',
+  GAIN_WEIGHT = 'GAIN_WEIGHT',
+  BUILD_MUSCLE = 'BUILD_MUSCLE'
 }
 
 export enum Gender {
@@ -27,7 +26,7 @@ export enum ActivityLevel {
   LIGHTLY_ACTIVE = 'LIGHTLY_ACTIVE',
   MODERATELY_ACTIVE = 'MODERATELY_ACTIVE',
   VERY_ACTIVE = 'VERY_ACTIVE',
-  EXTREMELY_ACTIVE = 'EXTREMELY_ACTIVE'
+  EXTRA_ACTIVE = 'EXTRA_ACTIVE'
 }
 
 export enum Difficulty {
@@ -62,28 +61,32 @@ export enum PortionSize {
 // Core Entities
 export interface User {
   id: string;
-  name: string;
-  email: string;
-  dietType?: DietType;
-  dietaryGoal?: DietaryGoal;
-  weight?: number;
-  height?: number;
-  age?: number;
-  gender?: Gender;
-  activityLevel?: ActivityLevel;
-  dailyCalorieTarget?: number;
-  allergies?: string[];
-  createdAt?: string;
-  updatedAt?: string;
+  name?: string | null;
+  email?: string | null;
+  allergies?: string[] | null;
+  dietType?: DietType | null;
+  dietaryGoal?: DietaryGoal | null;
+  weight?: number | null;
+  height?: number | null;
+  age?: number | null;
+  gender?: Gender | null;
+  activityLevel?: ActivityLevel | null;
+  dailyCalorieTarget?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface Recipe {
   id: number;
   title: string;
-  instructions: string;
+  category?: string;
+  totalCalories?: number;
   preparationTimeMinutes: number;
   difficulty: Difficulty;
   servings: number;
+  averageRating?: number;
+  imageUrl?: string;
+  instructions: string;
   ingredients?: RecipeIngredient[];
   ratings?: RecipeRating[];
 }
