@@ -53,8 +53,8 @@ services:
         echo "Keycloak is up. Configuring master and meal-app realms..."
         /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
         /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
-        /opt/keycloak/bin/kcadm.sh update realms/meal-app-realm -s 'browserSecurityHeaders={"frameAncestors": "''self'' http://localhost:3030 http://localhost:3000"}'
-        echo "Realm configurations updated (SSL disabled and CSP frame-ancestors set)."
+        /opt/keycloak/bin/kcadm.sh update realms/meal-app-realm -s 'browserSecurityHeaders={"frameAncestors": "''self'' http://localhost:3030 http://localhost:3000"}' -s loginTheme=meal-app
+        echo "Realm configurations updated (SSL disabled, CSP frame-ancestors and loginTheme set)."
         wait $$PID
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
