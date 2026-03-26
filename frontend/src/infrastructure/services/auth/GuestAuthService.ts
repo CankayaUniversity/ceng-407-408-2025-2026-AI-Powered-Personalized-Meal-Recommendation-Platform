@@ -56,6 +56,11 @@ export class GuestAuthService implements AuthService {
         if (redirectUri) window.location.href = redirectUri;
     }
 
+    async register(redirectUri?: string): Promise<void> {
+        // Guest mode'da register da login gibi davranabilir veya hiçbir şey yapmaz
+        await this.login(redirectUri);
+    }
+
     async logout(redirectUri?: string): Promise<void> {
         this.authenticated = false;
         if (redirectUri) {
