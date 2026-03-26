@@ -70,6 +70,7 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 - AI-assisted personalized meal and diet suggestions (Powered by OpenAI GPT-4o)
 - Integrated File Storage (MinIO) for recipe images and user uploads
 - Web-based, modular and extensible architecture
+- **Multi-language Support (i18n):** Full internationalization and localization support for both Backend and Frontend.
 
 ### Technology Stack
 #### Backend
@@ -222,6 +223,7 @@ Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtr
 - Yapay zeka destekli kişiselleştirilmiş yemek ve diyet önerileri (OpenAI GPT-4o Destekli)
 - Entegre Dosya Depolama (MinIO) - Tarif görselleri ve kullanıcı yüklemeleri için
 - Web tabanlı, modüler ve genişletilebilir mimari
+- **Çok Dilli Destek (i18n):** Backend ve Frontend için tam uluslararasılaştırma ve yerelleştirme desteği.
 
 ### Teknoloji Yığını
 #### Backend

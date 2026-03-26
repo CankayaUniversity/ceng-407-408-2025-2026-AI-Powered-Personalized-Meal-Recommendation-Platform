@@ -1,0 +1,5 @@
+ALTER TABLE daily_consumptions 
+ADD COLUMN estimated_protein DOUBLE PRECISION,
+ADD COLUMN estimated_carbs DOUBLE PRECISION,
+ADD COLUMN estimated_fat DOUBLE PRECISION,
+ADD COLUMN is_from_inventory BOOLEAN DEFAULT FALSE;

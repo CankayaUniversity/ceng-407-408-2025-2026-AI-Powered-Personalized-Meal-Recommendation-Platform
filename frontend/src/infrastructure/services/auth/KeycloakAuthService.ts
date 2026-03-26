@@ -61,7 +61,7 @@ export class KeycloakAuthService implements AuthService {
         try {
             const authenticated = await this.keycloak.init({
                 onLoad: 'check-sso',
-                silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
+                silentCheckSsoRedirectUri: (globalThis.location?.origin ?? '') + '/silent-check-sso.html',
                 pkceMethod: 'S256',
                 checkLoginIframe: false,
                 enableLogging: this.config.logging,
@@ -147,10 +147,67 @@ export class KeycloakAuthService implements AuthService {
         await this.keycloak.login({redirectUri});
     }
 
+    async register(redirectUri?: string): Promise<void> {
+        await this.keycloak.login({
+            redirectUri,
+            action: 'register'
+        });
+    }
+
+    /**
+     * Logout akışında cookie/storage temizliği
+     *
+     * Mevcut davranış (minimal ve güvenli):
+     * - Sadece auth ile ilişkili anahtarlar hedeflenir: localStorage('auth','user'), sessionStorage (tam temizlik).
+     * - Çerez tarafında best-effort silme yapılır (JSESSIONID, KC_RESTART ve mevcut origin altındaki diğer isimler için path=/ ve domain=host denemeleri).
+     * - Nihai bitiş Keycloak `logout()` ile sunucu tarafında session/token geçersizleştirmedir (HttpOnly çerezler tarayıcıdan silinemez; sunucu sonlandırır).
+     *
+     * İleride özelleştirme yapmanız gerekirse:
+     * - Hedefli sessionStorage temizliği: `sessionStorage.clear()` yerine yalnızca auth anahtarlarını kaldırın (örn. 'kc_token', 'kc_id_token').
+     * - Kullanıcı tercihlerini koruma: localStorage içinde tema/dil vb. için farklı adlandırma kullanın (örn. 'pref.theme','pref.lang') ve burada sadece 'auth','user' silinmeye devam edin.
+     * - Çerez listesi: Best-effort yerine yalnızca bilinen auth çerezlerini silmek için `COOKIE_WHITELIST` gibi bir sabit dizi tanımlayıp aşağıdaki döngüde sadece o isimleri deneyin.
+     * - Kurumsal ortamlar: Domain önekleri (örn. .example.com) ve farklı path’ler için ek varyasyonlar ekleyebilirsiniz.
+     * - Güvenlik: Silme operasyonlarında hata alınsa bile logout bloklanmaz; Keycloak `logout()` çağrısı mutlaka çalışır.
+     *
+     * Dikkat:
+     * - "Oturumu açık tut" davranışı logout ile kasıtlı olarak sonlandırılır; bu fonksiyonu etkilemek istemiyorsanız logout’u tetiklemeyin.
+     * - HttpOnly çerezler JS ile silinemez; temizliği sunucu tarafı yapar.
+     */
     async logout(redirectUri?: string): Promise<void> {
         this.authenticated = false;
+
+        // Minimal ve güvenli: Uygulama kapsamındaki storage ve temel çerezleri temizle
+        try {
+            // Local/Session storage temizliği (yalnızca mevcut origin için)
+            globalThis.sessionStorage?.clear();
+            // Uygulama verilerini korumak isterseniz burada belirli anahtarları seçerek de silebilirsiniz
+            globalThis.localStorage?.removeItem('auth');
+            globalThis.localStorage?.removeItem('user');
+        } catch (e) {
+            this.logger.warn?.('Storage clear failed (non-blocking)', e as Error);
+        }
+
+        try {
+            // Basit çerez temizliği: path ve domain varyasyonları için best-effort
+            const cookieStr = globalThis.document?.cookie ?? '';
+            const cookies = cookieStr ? cookieStr.split(';') : [];
+            for (const raw of cookies) {
+                const name = raw.split('=')[0]?.trim();
+                if (!name) continue;
+                // Uygulama ile ilişkili yaygın çerezleri hedefleyelim (genel temizlik)
+                const candidates = ['JSESSIONID', 'KC_RESTART', name];
+                for (const c of candidates) {
+                    if (globalThis.document) { globalThis.document.cookie = `${c}=; Max-Age=0; path=/;`; }
+                    // Domain varyasyonu (mevcut host)
+                    if (globalThis.document) { globalThis.document.cookie = `${c}=; Max-Age=0; path=/; domain=${globalThis.location?.hostname}`; }
+                }
+            }
+        } catch (e) {
+            this.logger.warn?.('Cookie clear failed (non-blocking)', e as Error);
+        }
+
         await this.keycloak.logout({
-            redirectUri: redirectUri || window.location.origin
+            redirectUri: redirectUri || globalThis.location?.origin
         });
     }
 

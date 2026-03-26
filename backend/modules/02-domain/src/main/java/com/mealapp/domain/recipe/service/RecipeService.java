@@ -5,6 +5,8 @@ import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,8 +81,25 @@ public class RecipeService {
     /**
      * Tüm tarifleri malzemeleriyle birlikte getirir.
      */
+    @Transactional(readOnly = true)
     public List<Recipe> findAll() {
         return recipeRepository.findAllWithIngredients();
+    }
+
+    /**
+     * Sayfalanmış tarif listesini getirir.
+     */
+    @Transactional(readOnly = true)
+    public Page<Recipe> findAll(Pageable pageable) {
+        return recipeRepository.findAllWithIngredients(pageable);
+    }
+
+    /**
+     * Başlığa göre sayfalanmış arama yapar.
+     */
+    @Transactional(readOnly = true)
+    public Page<Recipe> searchByTitle(String title, Pageable pageable) {
+        return recipeRepository.findByTitleContainingIgnoreCase(title, pageable);
     }
 
     /**

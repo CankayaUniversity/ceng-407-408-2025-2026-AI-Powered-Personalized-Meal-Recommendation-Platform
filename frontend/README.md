@@ -19,6 +19,17 @@ This folder contains the frontend structure of the AI-Powered Personalized Meal 
 - **Axios**: API management with custom HTTP interceptor support.
 - **React Router 6**: Advanced page routing and Private Route management.
 
+### 🌍 Internationalization (i18n)
+The project uses `i18next` and `react-i18next` for multi-language support.
+- **Configuration:** Initialized in `src/i18n/index.ts` and imported in `main.tsx`. It supports language detection from the browser.
+- **Usage:** Use the `useTranslation` hook in functional components:
+  ```tsx
+  const { t } = useTranslation();
+  return <h1>{t('welcome')}</h1>;
+  ```
+- **Language Switcher:** A language selector is integrated into the `MainLayout` sidebar for manual switching between English (EN) and Turkish (TR).
+- **Adding Translations:** Translation files are located in `public/locales/{{lng}}/translation.json`. Add new keys to both `en` and `tr` files to maintain consistency.
+
 ### Key Features & Architecture
 - **Dependency Injection (DI):** Services (Auth, Http, Logging) are managed through a central `ServiceRegistry`. Components access these services in a loosely coupled manner using the `useService` hook.
 - **Centralized Auth Management:** Keycloak integration is provided with `AuthService` and `AuthContextProvider`. Token refreshing is handled transparently with asynchronous interceptors.
@@ -87,6 +98,17 @@ Bu klasör, AI-Powered Personalized Meal Recommendation Platform projesinin fron
 - **Lucide React**: Modern ikon seti.
 - **Axios**: Özelleştirilmiş HTTP interceptor desteği ile API yönetimi.
 - **React Router 6**: Gelişmiş sayfa yönlendirme ve Private Route yönetimi.
+
+### 🌍 Uluslararasılaştırma (i18n)
+Proje, çok dilli destek için `i18next` ve `react-i18next` kütüphanelerini kullanır.
+- **Yapılandırma:** `src/i18n/index.ts` dosyasında yapılandırılmış ve `main.tsx` içinde içe aktarılmıştır. Tarayıcı dilini otomatik algılama desteği mevcuttur.
+- **Kullanım:** Fonksiyonel bileşenlerde `useTranslation` hook'u kullanılır:
+  ```tsx
+  const { t } = useTranslation();
+  return <h1>{t('welcome')}</h1>;
+  ```
+- **Dil Seçici:** `MainLayout` sidebar'ına entegre edilmiş bir dil seçici ile İngilizce (EN) ve Türkçe (TR) arasında manuel geçiş yapılabilir.
+- **Çeviri Ekleme:** Çeviri dosyaları `public/locales/{{lng}}/translation.json` dizininde yer alır. Yeni bir metin eklemek için hem `en` hem de `tr` klasöründeki JSON dosyalarına karşılık gelen anahtarları ekleyin.
 
 ### Öne Çıkan Özellikler & Mimari
 - **Dependency Injection (DI):** Servisler (Auth, Http, Logging) merkezi bir `ServiceRegistry` üzerinden yönetilir. Bileşenler `useService` hook'u ile bu servislere gevşek bağlı (loosely coupled) şekilde erişir.
