@@ -1,9 +1,11 @@
 package com.mealapp.app.exception;
 
+import com.mealapp.app.util.MessageUtil;
 import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -21,7 +23,10 @@ import java.util.List;
  */
 @ControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final MessageUtil messageUtil;
 
     /**
      * Kaynak bulunamadığında (404 Not Found) fırlatılan hata.
@@ -59,9 +64,8 @@ public class GlobalExceptionHandler {
                 .stream()
                 .map(error -> new ApiErrorResponse.ValidationError(error.getField(), error.getDefaultMessage()))
                 .toList();
-
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message("Validasyon hatası oluştu.")
+                .message(messageUtil.getMessage("error.bad_request"))
                 .status(HttpStatus.BAD_REQUEST.value())
                 .path(request.getRequestURI())
                 .validationErrors(validationErrors)
@@ -76,7 +80,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex, HttpServletRequest request) {
         log.error("Veri bütünlüğü hatası: ", ex);
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message("Veri bütünlüğü ihlali: Bu kayıt zaten mevcut olabilir veya ilişkili bir kayıt bulunmaktadır.")
+                .message(messageUtil.getMessage("error.conflict"))
                 .status(HttpStatus.CONFLICT.value())
                 .path(request.getRequestURI())
                 .build();
@@ -146,7 +150,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleGeneralException(Exception ex, HttpServletRequest request) {
         log.error("Beklenmeyen hata: ", ex);
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message("Sistemde beklenmeyen bir hata oluştu. Lütfen teknik destek ile iletişime geçin.")
+                .message(messageUtil.getMessage("error.internal_server_error"))
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .path(request.getRequestURI())
                 .build();

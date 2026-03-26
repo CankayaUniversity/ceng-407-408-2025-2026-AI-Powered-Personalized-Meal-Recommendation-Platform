@@ -1,0 +1,17 @@
+{
+  "welcome": "Welcome to AI-Powered Meal Recommendation Platform!",
+  "navigation": {
+    "home": "Home",
+    "recipes": "Recipes",
+    "recommendations": "Recommendations",
+    "profile": "Profile"
+  },
+  "actions": {
+    "login": "Login",
+    "logout": "Logout",
+    "changeLanguage": "Language"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  }
+}

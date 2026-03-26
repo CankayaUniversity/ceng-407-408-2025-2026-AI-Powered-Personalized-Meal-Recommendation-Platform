@@ -1,0 +1,17 @@
+{
+  "welcome": "Yapay Zeka Destekli Yemek Önerisi Platformuna Hoş Geldiniz!",
+  "navigation": {
+    "home": "Anasayfa",
+    "recipes": "Tarifler",
+    "recommendations": "Öneriler",
+    "profile": "Profil"
+  },
+  "actions": {
+    "login": "Giriş Yap",
+    "logout": "Çıkış Yap",
+    "changeLanguage": "Dil"
+  },
+  "footer": {
+    "rights": "Tüm hakları saklıdır."
+  }
+}
