@@ -147,6 +147,13 @@ export class KeycloakAuthService implements AuthService {
         await this.keycloak.login({redirectUri});
     }
 
+    async register(redirectUri?: string): Promise<void> {
+        await this.keycloak.login({
+            redirectUri,
+            action: 'register'
+        });
+    }
+
     /**
      * Logout akışında cookie/storage temizliği
      *

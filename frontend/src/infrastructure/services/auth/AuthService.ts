@@ -7,6 +7,7 @@ export interface AuthService {
     getAccessToken(): Promise<string | null>;
     getUser(): AuthUser | undefined;
     login(redirectUri?: string): Promise<void>;
+    register(redirectUri?: string): Promise<void>;
     logout(redirectUri?: string): Promise<void>;
     addAuthSuccessListener(listener: () => void): void;
     removeAuthSuccessListener(listener: () => void): void;

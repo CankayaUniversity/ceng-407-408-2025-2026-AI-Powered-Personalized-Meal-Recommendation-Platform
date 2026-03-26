@@ -3,7 +3,7 @@ import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { ChefHat, Zap, ShoppingBag, BrainCircuit, Star, ArrowRight, Play, ShieldCheck } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
 
   const features = [
     {
@@ -50,7 +50,7 @@ const LandingPage: React.FC = () => {
             Giriş Yap
           </button>
           <button 
-            onClick={() => login()}
+            onClick={() => register()}
             className="bg-gray-900 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-800 transition-all shadow-lg"
           >
             Hemen Katıl
@@ -73,7 +73,7 @@ const LandingPage: React.FC = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button 
-              onClick={() => login()}
+              onClick={() => register()}
               className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-2 group"
             >
               Hemen Ücretsiz Başla
