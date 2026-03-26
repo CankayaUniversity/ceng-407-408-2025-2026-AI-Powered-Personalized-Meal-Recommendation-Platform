@@ -64,9 +64,16 @@ If you want to run the backend code through an IDE (IntelliJ, etc.) while keepin
 ### 🏗️ Project Structure
 The project consists of 4 main modules:
 - **01-infrastructure:** Database, MinIO, and AI service integrations.
-- **02-domain:** Business rules, Entity definitions, and user ID management (String ID).
-- **03-application:** REST API (Controller), DTOs, and MapStruct transformations.
+- **02-domain:** Business rules, Entity definitions and user ID management (String ID).
+- **03-application:** REST API (Controller), DTOs, MapStruct transformations and **i18n configuration**.
 - **04-utilities:** Common utility tools and data population.
+
+### 🌍 Internationalization (i18n) & Localization (l10n)
+The project provides multi-language support using the Spring Boot `MessageSource` mechanism.
+- **Configuration:** Dynamic language selection is performed based on the `Accept-Language` header via the `I18nConfig` class. The default language is English.
+- **Usage:** Sensitive messages can be retrieved from the code by injecting the `MessageUtil` component.
+- **Error Messages:** `GlobalExceptionHandler` returns all system errors according to the client's language using `MessageUtil`.
+- **Translations:** New translations are defined by adding to the `messages.properties` (EN) and `messages_tr.properties` (TR) files under `src/main/resources`.
 
 ### 🔐 Authentication (Keycloak)
 Keycloak is used for application security.
@@ -154,8 +161,15 @@ Eğer backend kodlarını IDE üzerinden (IntelliJ vb.) koşturmak, veritabanlar
 Proje 4 ana modülden oluşmaktadır:
 - **01-infrastructure:** Veritabanı, Minio ve AI servis entegrasyonları.
 - **02-domain:** İş kuralları, Entity tanımları ve kullanıcı ID yönetimi (String ID).
-- **03-application:** REST API (Controller), DTO'lar ve MapStruct dönüşümleri.
+- **03-application:** REST API (Controller), DTO'lar, MapStruct dönüşümleri ve **i18n yapılandırması**.
 - **04-utilities:** Ortak yardımcı araçlar ve veri popülasyonu.
+
+### 🌍 Uluslararasılaştırma (i18n) ve Yerelleştirme (l10n)
+Proje, Spring Boot `MessageSource` mekanizmasını kullanarak çok dilli destek sunar.
+- **Yapılandırma:** `I18nConfig` sınıfı üzerinden `Accept-Language` header'ına göre dinamik dil seçimi yapılır. Varsayılan dil İngilizcedir.
+- **Kullanım:** `MessageUtil` bileşeni enjekte edilerek kod içerisinden dile duyarlı mesajlar alınabilir.
+- **Hata Mesajları:** `GlobalExceptionHandler` tüm sistem hatalarını `MessageUtil` kullanarak istemcinin diline göre döndürür.
+- **Çeviriler:** `src/main/resources` altındaki `messages.properties` (EN) ve `messages_tr.properties` (TR) dosyalarına ekleme yapılarak yeni çeviriler tanımlanır.
 
 ### 🔐 Kimlik Doğrulama (Keycloak)
 Uygulama güvenliği için Keycloak kullanılmaktadır.

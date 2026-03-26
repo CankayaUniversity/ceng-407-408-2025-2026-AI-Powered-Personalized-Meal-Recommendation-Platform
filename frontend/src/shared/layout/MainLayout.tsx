@@ -1,17 +1,23 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChefHat, LayoutDashboard, Utensils, User as UserIcon, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChefHat, LayoutDashboard, Utensils, User as UserIcon, LogOut, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { authenticated, user, logout, login } = useAuth();
     const [expanded, setExpanded] = React.useState(true);
     const location = useLocation();
+    const { t, i18n } = useTranslation();
+
+    const changeLanguage = (lng: string) => {
+        i18n.changeLanguage(lng);
+    };
 
     const menuItems = [
-        { id: 'dashboard', text: 'Panel', icon: <LayoutDashboard size={20} />, route: '/dashboard' },
-        { id: 'recipes', text: 'Tarifler', icon: <Utensils size={20} />, route: '/recipes', private: true },
-        { id: 'profile', text: 'Profil', icon: <UserIcon size={20} />, route: '/profile', private: true },
+        { id: 'dashboard', text: t('navigation.home'), icon: <LayoutDashboard size={20} />, route: '/dashboard' },
+        { id: 'recipes', text: t('navigation.recipes'), icon: <Utensils size={20} />, route: '/recipes', private: true },
+        { id: 'profile', text: t('navigation.profile'), icon: <UserIcon size={20} />, route: '/profile', private: true },
     ];
 
     const visibleItems = menuItems.filter(item => !item.private || authenticated);
@@ -56,6 +62,25 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </nav>
 
                 <div className="p-4 border-t border-gray-200">
+                    <div className="px-3 py-2 mb-2 flex items-center gap-2">
+                        <Globe size={18} className="text-gray-400" />
+                        {expanded && (
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => changeLanguage('en')}
+                                    className={`text-xs font-medium px-2 py-1 rounded ${i18n.language === 'en' ? 'bg-orange-100 text-orange-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                                >
+                                    EN
+                                </button>
+                                <button 
+                                    onClick={() => changeLanguage('tr')}
+                                    className={`text-xs font-medium px-2 py-1 rounded ${i18n.language === 'tr' ? 'bg-orange-100 text-orange-600' : 'text-gray-500 hover:bg-gray-100'}`}
+                                >
+                                    TR
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     {authenticated ? (
                         <div className="space-y-1">
                             {expanded && (
@@ -69,7 +94,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors`}
                             >
                                 <LogOut size={20} />
-                                {expanded && <span className="font-medium">Çıkış Yap</span>}
+                                {expanded && <span className="font-medium">{t('actions.logout')}</span>}
                             </button>
                         </div>
                     ) : (
@@ -79,7 +104,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors shadow-lg shadow-orange-100`}
                             >
                                 <UserIcon size={20} />
-                                {expanded && <span className="font-medium">Giriş Yap</span>}
+                                {expanded && <span className="font-medium">{t('actions.login')}</span>}
                             </button>
                         </div>
                     )}
@@ -92,7 +117,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     {children}
                 </main>
                 <footer className="px-8 py-6 border-t border-gray-200 text-center text-gray-500 text-sm bg-white">
-                    &copy; 2026 AI Meal Recommendation Platform. Tüm hakları saklıdır.
+                    &copy; 2026 AI Meal Recommendation Platform. {t('footer.rights')}
                 </footer>
             </div>
         </div>
