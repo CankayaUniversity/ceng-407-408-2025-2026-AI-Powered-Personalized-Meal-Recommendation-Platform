@@ -58,6 +58,10 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ch
         await authService.login(window.location.href);
     }, [authService]);
 
+    const register = useCallback(async () => {
+        await authService.register(window.location.href);
+    }, [authService]);
+
     const logout = useCallback(async () => {
         await authService.logout(window.location.origin);
     }, [authService]);
@@ -67,10 +71,11 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ch
         authenticated,
         user,
         login,
+        register,
         logout,
         error,
         authService
-    }), [initialized, authenticated, user, login, logout, error]);
+    }), [initialized, authenticated, user, login, register, logout, error]);
 
     return (
         <AuthContext.Provider value={value}>
