@@ -4,7 +4,7 @@ import { useService } from '../infrastructure/di';
 import { HttpClientKey } from '../infrastructure/services';
 import {
   Recipe,
-  Difficulty,
+  RecipeListItem,
   RecommendationRequest,
   RecommendationResponse,
   RecipeRatingRequest,
@@ -15,8 +15,19 @@ import {
   NetworkError,
   AuthenticationError,
   NotFoundError,
-  ValidationError
+  ValidationError,
+  extractValidationFields
 } from './errors';
+
+type RecipeListItemDto = {
+  id: number;
+  title: string;
+  category?: string;
+  calories?: number;
+  preparationTime?: number;
+  rating?: number;
+  imageUrl?: string;
+};
 
 /**
  * Tarif servisi factory fonksiyonu
@@ -24,13 +35,13 @@ import {
  */
 export const getRecipeService = (api: AxiosInstance) => {
   // In-flight request deduplication map (key -> Promise)
-  const inFlight = new Map<string, Promise<Recipe[]>>();
+  const inFlight = new Map<string, Promise<RecipeListItem[]>>();
 
   return ({
   /**
    * AI destekli yemek önerileri getirir
-   * @param request - Mevcut malzemeler ve diyet tercihleri
-   * @returns Önerilen tarifler listesi döndüren Promise
+   * @param request - Kullanıcı ID'si ve mevcut malzemeler
+   * @returns Backend recommendation DTO'sunu döndüren Promise
    * @throws {NetworkError} Ağ bağlantısı başarısız olduğunda
    * @throws {AuthenticationError} Kimlik doğrulama başarısız olduğunda (401)
    * @throws {ValidationError} Doğrulama başarısız olduğunda (400)
@@ -56,7 +67,7 @@ export const getRecipeService = (api: AxiosInstance) => {
           case 400:
             throw new ValidationError(
               message,
-              error.response.data?.fields
+              extractValidationFields(error.response.data)
             );
           default:
             throw new ApiError(message, 'API_ERROR', status);
@@ -70,7 +81,7 @@ export const getRecipeService = (api: AxiosInstance) => {
 
   /**
    * Tarif değerlendirmesi yapar veya günceller
-   * @param request - Tarif ID'si, puan ve yorum
+   * @param request - Kullanıcı ID'si, tarif ID'si, puan ve yorum
    * @returns Oluşturulan/güncellenen değerlendirme döndüren Promise
    * @throws {NetworkError} Ağ bağlantısı başarısız olduğunda
    * @throws {AuthenticationError} Kimlik doğrulama başarısız olduğunda (401)
@@ -95,11 +106,11 @@ export const getRecipeService = (api: AxiosInstance) => {
           case 401:
             throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
           case 404:
-            throw new NotFoundError('Tarif bulunamadı');
+            throw new NotFoundError(message);
           case 400:
             throw new ValidationError(
               message,
-              error.response.data?.fields
+              extractValidationFields(error.response.data)
             );
           default:
             throw new ApiError(message, 'API_ERROR', status);
@@ -111,12 +122,10 @@ export const getRecipeService = (api: AxiosInstance) => {
   },
 
   /**
-   * Tüm tarifleri getirir
-   * ⚠️ BACKEND ENDPOINT HAZIR DEĞİL
-   * Backend'de GET /api/v1/recipes endpoint'i implement edildiğinde aktif edilecek
-   * @throws {ApiError} Backend endpoint hazır olmadığı için hata fırlatır
+   * Tarif listesini backend'den getirir.
+   * Response doğrudan backend liste DTO'suna hizalanır.
    */
-  getRecipes: async (params?: { title?: string; page?: number; size?: number; signal?: AbortSignal }): Promise<Recipe[]> => {
+  getRecipes: async (params?: { title?: string; page?: number; size?: number; signal?: AbortSignal }): Promise<RecipeListItem[]> => {
     try {
       const { title, page = 0, size = 12, signal } = params || {};
       const key = `GET:/v1/recipes|${title ?? ''}|${page}|${size}`;
@@ -128,15 +137,7 @@ export const getRecipeService = (api: AxiosInstance) => {
       }
 
       const promise = (async () => {
-        const response = await api.get<Array<{
-        id: number;
-        title: string;
-        category?: string;
-        calories?: number;
-        preparationTime?: number;
-        rating?: number;
-        imageUrl?: string;
-      }>>('/v1/recipes', {
+        const response = await api.get<RecipeListItemDto[]>('/v1/recipes', {
         params: {
           page,
           size,
@@ -147,17 +148,14 @@ export const getRecipeService = (api: AxiosInstance) => {
       });
 
       // DTO -> UI tipi dönüştürme
-      const mapped: Recipe[] = response.data.map((r) => ({
+      const mapped: RecipeListItem[] = response.data.map((r) => ({
         id: r.id,
         title: r.title,
         category: r.category,
         totalCalories: r.calories,
-        preparationTimeMinutes: r.preparationTime ?? 0,
-        difficulty: Difficulty.EASY, // Backend DTO'da yok; liste ekranı için varsayılan
-        servings: 1, // DTO'da yok; gerekmiyor fakat tip gereği default
+        preparationTimeMinutes: r.preparationTime,
         averageRating: r.rating,
-        imageUrl: r.imageUrl,
-        instructions: ''
+        imageUrl: r.imageUrl
       }));
 
       return mapped; })().finally(() => { inFlight.delete(key); });
@@ -175,7 +173,7 @@ export const getRecipeService = (api: AxiosInstance) => {
           case 401:
             throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
           case 400:
-            throw new ValidationError(message, error.response.data?.fields);
+            throw new ValidationError(message, extractValidationFields(error.response.data));
           default:
             throw new ApiError(message, 'API_ERROR', status);
         }
@@ -185,14 +183,12 @@ export const getRecipeService = (api: AxiosInstance) => {
   },
 
   /**
-   * Arama parametrelerine göre tarifleri filtreler
-   * ⚠️ BACKEND ENDPOINT HAZIR DEĞİL
-   * Backend ekibi GET /api/v1/recipes/search endpoint'ini implement ettiğinde aktif edilecek
-   * @param _searchTerm - Aranacak kelime
+   * Başlığa göre tarif araması yapar.
+   * Backend'de ayrı bir search endpoint'i yerine mevcut liste endpoint'inin `title` filtresi kullanılır.
+   * @param searchTerm - Aranacak kelime
    * @param _category - Malzeme kategorisi (opsiyonel)
-   * @throws {ApiError} Backend endpoint hazır olmadığı için hata fırlatır
    */
-  searchRecipes: async (searchTerm: string, _category?: string): Promise<Recipe[]> => {
+  searchRecipes: async (searchTerm: string, _category?: string): Promise<RecipeListItem[]> => {
     return getRecipeService(api).getRecipes({ title: searchTerm, page: 0, size: 12 });
   },
 

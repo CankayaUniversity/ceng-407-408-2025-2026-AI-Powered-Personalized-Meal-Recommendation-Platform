@@ -1,168 +1,205 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
-import { ChefHat, Zap, ShoppingBag, BrainCircuit, Star, ArrowRight, Play, ShieldCheck } from 'lucide-react';
+import { useTheme } from '../../infrastructure/theme/ThemeContext';
+import { ChefHat, Target, BrainCircuit, Star, Play, ShieldCheck, Activity, Wind, Heart, Clock, Sun, Moon, Languages } from 'lucide-react';
 
 const LandingPage: React.FC = () => {
   const { login, register } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
+  const { i18n, t } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'tr' ? 'en' : 'tr';
+    i18n.changeLanguage(newLang);
+  };
 
   const features = [
     {
-      title: 'Yapay Zeka Destekli Öneriler',
-      desc: 'Envanterindeki malzemelere göre senin için en uygun ve besleyici tarifleri saniyeler içinde oluşturur.',
-      icon: <BrainCircuit className="text-orange-500" />,
-      color: 'bg-orange-50'
+      title: t('landing.features.items.ai.title'),
+      desc: t('landing.features.items.ai.desc'),
+      icon: <BrainCircuit className="text-terracotta" />,
+      color: 'bg-terracotta/10'
     },
     {
-      title: 'Akıllı Envanter Takibi',
-      desc: 'Eldeki malzemeleri kolayca yönet, son kullanma tarihlerini takip et ve israfı önle.',
-      icon: <ShoppingBag className="text-blue-500" />,
-      color: 'bg-blue-50'
+      title: t('landing.features.items.clinical.title'),
+      desc: t('landing.features.items.clinical.desc'),
+      icon: <ShieldCheck className="text-moss-sage" />,
+      color: 'bg-moss-sage/10'
     },
     {
-      title: 'Beslenme Analizi',
-      desc: 'Günlük aldığın kaloriyi, protein, karbonhidrat ve yağ dengesini detaylı grafiklerle takip et.',
-      icon: <Zap className="text-yellow-500" />,
-      color: 'bg-yellow-50'
+      title: t('landing.features.items.gourmet.title'),
+      desc: t('landing.features.items.gourmet.desc'),
+      icon: <Activity className="text-ochre-soft" />,
+      color: 'bg-ochre-soft/10'
     },
     {
-      title: 'Güvenli ve Kişisel',
-      desc: 'Verilerin Keycloak ile en yüksek güvenlik standartlarında korunur, tamamen sana özel bir deneyim sunulur.',
-      icon: <ShieldCheck className="text-green-500" />,
-      color: 'bg-green-50'
+      title: t('landing.features.items.inventory.title'),
+      desc: t('landing.features.items.inventory.desc'),
+      icon: <Wind className="text-moss-forest" />,
+      color: 'bg-moss-forest/10'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navbar (Minimal) */}
-      <nav className="flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="bg-orange-500 p-2 rounded-xl">
-            <ChefHat className="text-white" size={24} />
+    <div className="min-h-screen bg-alabaster dark:bg-[#1A1817] transition-colors duration-500 font-sans selection:bg-terracotta/20">
+      {/* Navbar (Minimal & Elegant) */}
+      <nav className="flex items-center justify-between px-10 py-8 max-w-7xl mx-auto relative z-50">
+        <div className="flex items-center gap-3 group cursor-pointer">
+          <div className="bg-terracotta p-2.5 rounded-2xl shadow-xl shadow-terracotta/20 transition-transform group-hover:scale-110">
+            <ChefHat className="text-white" size={26} strokeWidth={1.5} />
           </div>
-          <span className="text-xl font-bold tracking-tight text-gray-900">AI Meal</span>
+          <span className="text-2xl font-serif font-bold tracking-tight text-espresso-midnight dark:text-white">Chef AI</span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-8">
+          {/* Language Toggle Button */}
+          <button 
+            onClick={toggleLanguage}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-white/50 dark:bg-white/5 border border-espresso-midnight/5 dark:border-white/10 text-espresso-midnight dark:text-alabaster hover:text-terracotta dark:hover:text-terracotta transition-all shadow-sm"
+            aria-label="Toggle Language"
+          >
+            <Languages size={20} strokeWidth={1.5} />
+            <span className="text-xs font-black uppercase tracking-widest leading-none">
+              {i18n.language.startsWith('tr') ? 'TR' : 'EN'}
+            </span>
+          </button>
+
+          {/* Theme Toggle Button */}
+          <button 
+            onClick={toggleTheme}
+            className="p-2.5 rounded-2xl bg-white/50 dark:bg-white/5 border border-espresso-midnight/5 dark:border-white/10 text-espresso-midnight dark:text-alabaster hover:text-terracotta dark:hover:text-terracotta transition-all shadow-sm"
+            aria-label="Toggle Theme"
+          >
+            {isDark ? <Sun size={20} strokeWidth={1.5} /> : <Moon size={20} strokeWidth={1.5} />}
+          </button>
+          
           <button 
             onClick={() => login()}
-            className="text-gray-600 font-semibold hover:text-gray-900 transition-colors"
+            className="text-espresso-midnight/60 dark:text-alabaster/60 font-bold hover:text-terracotta dark:hover:text-terracotta transition-colors text-sm uppercase tracking-widest"
           >
-            Giriş Yap
+            {t('landing.nav.login')}
           </button>
           <button 
             onClick={() => register()}
-            className="bg-gray-900 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-800 transition-all shadow-lg"
+            className="bg-espresso-midnight dark:bg-terracotta text-white px-8 py-3.5 rounded-2xl font-bold hover:scale-105 transition-all shadow-2xl shadow-black/10 dark:shadow-terracotta/20 text-sm"
           >
-            Hemen Katıl
+            {t('landing.nav.join')}
           </button>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <header className="px-8 pt-16 pb-24 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-        <div className="space-y-8 animate-in slide-in-from-left duration-700">
-          <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-100 px-4 py-2 rounded-full text-orange-600 font-medium text-sm">
-            <Star size={16} className="fill-orange-500" />
-            <span>AI Destekli Kişisel Mutfak Asistanın</span>
+      {/* Hero Section - The "Digital Private Chef" Experience */}
+      <header className="px-10 pt-12 pb-32 max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center relative">
+        <div className="space-y-10 animate-in fade-in slide-in-from-left duration-1000">
+          <div className="inline-flex items-center gap-3 bg-white/50 dark:bg-white/5 backdrop-blur-md border border-espresso-midnight/5 dark:border-white/10 px-5 py-2.5 rounded-full text-moss-forest dark:text-moss-sage font-bold text-xs uppercase tracking-[0.2em]">
+            <Star size={14} className="fill-ochre-soft text-ochre-soft" />
+            <span>{t('landing.hero.badge')}</span>
           </div>
-          <h1 className="text-6xl font-black text-gray-900 leading-[1.1]">
-            Bugün Ne Pişireceğini <span className="text-orange-500 italic">Yapay Zeka</span> Karar Versin
+          
+          <h1 className="text-7xl font-serif font-bold text-espresso-midnight dark:text-white leading-[1.05]">
+            {t('landing.hero.title').split(t('landing.hero.title_italic'))[0]}
+            <span className="text-terracotta italic font-normal">{t('landing.hero.title_italic')}</span>
+            {t('landing.hero.title').split(t('landing.hero.title_italic'))[1]}
           </h1>
-          <p className="text-gray-500 text-xl leading-relaxed max-w-xl">
-            Mutfaktaki malzemelerini gir, damak tadını seç ve AI Meal senin için en sağlıklı ve lezzetli tarifleri anında hazırlasın.
+          
+          <p className="text-espresso-midnight/60 dark:text-alabaster/60 text-xl leading-relaxed max-w-xl font-medium italic border-l-4 border-terracotta/20 pl-6">
+            {t('landing.hero.subtitle')}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+          
+          <div className="flex flex-col sm:flex-row gap-6 pt-4">
             <button 
               onClick={() => register()}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-2 group"
+              className="bg-terracotta hover:bg-terracotta-spiced text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all shadow-2xl shadow-terracotta/30 flex items-center justify-center gap-3 group"
             >
-              Hemen Ücretsiz Başla
-              <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+              {t('landing.hero.cta_start')}
+              <Target size={22} className="group-hover:rotate-45 transition-transform" />
             </button>
-            <button className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-lg text-gray-700 hover:bg-gray-50 transition-all">
-              <div className="bg-white border border-gray-200 p-2 rounded-full shadow-sm text-orange-500">
-                <Play size={16} fill="currentColor" />
+            <button className="flex items-center justify-center gap-3 px-10 py-5 rounded-2xl font-bold text-lg text-espresso-midnight dark:text-alabaster hover:bg-white/50 dark:hover:bg-white/5 transition-all glass-card border-none">
+              <div className="bg-terracotta/10 p-2 rounded-full text-terracotta">
+                <Play size={18} fill="currentColor" />
               </div>
-              Nasıl Çalışır?
+              {t('landing.hero.cta_manifesto')}
             </button>
           </div>
           
-          <div className="flex items-center gap-6 pt-8 border-t border-gray-100">
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
-                  <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="User" />
-                </div>
-              ))}
-            </div>
-            <div className="text-sm text-gray-500">
-              <span className="font-bold text-gray-900">10,000+</span> kullanıcı tarafından seviliyor
-            </div>
+          <div className="flex items-center gap-8 pt-10 border-t border-espresso-midnight/5 dark:border-white/5">
+             <div className="flex -space-x-4">
+               {[1, 2, 3, 4].map(i => (
+                 <div key={i} className="w-12 h-12 rounded-full border-4 border-alabaster dark:border-[#1A1817] bg-espresso-midnight overflow-hidden shadow-lg">
+                   <img src={`https://i.pravatar.cc/100?img=${i+20}`} alt="User" />
+                 </div>
+               ))}
+             </div>
+             <div className="text-sm font-medium text-espresso-midnight/40 dark:text-alabaster/40">
+               <span className="font-black text-espresso-midnight dark:text-white text-lg block tracking-tight">{t('landing.hero.users_count')}</span>
+               {t('landing.hero.users_label')}
+             </div>
           </div>
         </div>
 
-        {/* Visual Preview / Placeholder */}
-        <div className="relative animate-in zoom-in duration-1000">
-          <div className="absolute -top-10 -right-10 w-64 h-64 bg-orange-100 rounded-full blur-3xl opacity-50 -z-10"></div>
-          <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-blue-100 rounded-full blur-3xl opacity-50 -z-10"></div>
+        {/* Visual Preview - Bento Grid Style Preview */}
+        <div className="relative animate-in zoom-in fade-in duration-1000">
+          <div className="absolute -top-20 -right-20 w-96 h-96 bg-terracotta/10 rounded-full blur-[120px] -z-10" />
+          <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-moss-sage/10 rounded-full blur-[120px] -z-10" />
           
-          <div className="bg-gray-50 rounded-[2.5rem] p-4 border border-gray-200 shadow-2xl relative overflow-hidden group">
-            <div className="bg-white rounded-[1.8rem] shadow-sm overflow-hidden aspect-[4/3] flex items-center justify-center relative">
-               <img 
-                 src="https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&q=80&w=800" 
-                 alt="App Preview" 
-                 className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700"
-               />
-               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-               <div className="absolute bottom-6 left-6 right-6">
-                 <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl flex items-center justify-between">
-                   <div>
-                     <h4 className="font-bold text-gray-900">Özel Tavuk Sote</h4>
-                     <p className="text-gray-500 text-xs flex items-center gap-1">
-                       <Zap size={12} className="text-orange-500 fill-orange-500" />
-                       345 kcal • 20 dk
-                     </p>
+          <div className="glass-card p-6 rounded-[3.5rem] shadow-2xl relative overflow-hidden group border-white/40 dark:border-white/5">
+             <div className="rounded-[2.5rem] overflow-hidden aspect-[4/5] relative">
+                <img 
+                  src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=1000" 
+                  alt="App Interface" 
+                  className="object-cover w-full h-full transition-transform duration-1000 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight/60 via-transparent to-transparent"></div>
+                
+                {/* Floatings Elements */}
+                <div className="absolute top-6 left-6 glass-card p-4 rounded-3xl animate-bounce duration-[3000ms]">
+                   <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-terracotta rounded-xl flex items-center justify-center text-white">
+                         <Activity size={16} />
+                      </div>
+                      <div className="pr-2">
+                         <p className="text-[10px] uppercase font-black text-white/50 tracking-tighter">Match Score</p>
+                         <p className="text-sm font-bold text-white">98% Perfect</p>
+                      </div>
                    </div>
-                   <div className="bg-orange-500 text-white p-2 rounded-xl">
-                     <ChefHat size={20} />
+                </div>
+
+                <div className="absolute bottom-8 left-8 right-8">
+                   <div className="glass-card p-6 rounded-3xl backdrop-blur-xl border-white/20">
+                      <h4 className="font-serif text-xl font-bold text-white mb-2">Roasted Mediterranean Salmon</h4>
+                      <div className="flex gap-2">
+                         <span className="medical-badge bg-white/10 text-white border-white/20">Keto</span>
+                         <span className="medical-badge bg-white/10 text-white border-white/20">Protein Focus</span>
+                      </div>
                    </div>
-                 </div>
-               </div>
-            </div>
-            {/* Floating UI Elements */}
-            <div className="absolute top-12 -right-4 bg-white p-4 rounded-2xl shadow-xl border border-gray-100 animate-bounce duration-[3000ms]">
-               <div className="flex items-center gap-3">
-                 <div className="bg-green-100 p-2 rounded-lg">
-                   <Star size={18} className="text-green-600 fill-green-600" />
-                 </div>
-                 <div>
-                   <p className="text-[10px] text-gray-400 font-medium">Günlük Puan</p>
-                   <p className="text-sm font-bold text-gray-900">9.4/10</p>
-                 </div>
-               </div>
-            </div>
+                </div>
+             </div>
           </div>
         </div>
       </header>
 
-      {/* Features Grid */}
-      <section className="bg-gray-50 py-24 px-8">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl font-bold text-gray-900">Mutfakta Yeni Bir Çağ</h2>
-            <p className="text-gray-500 max-w-2xl mx-auto text-lg">
-              Yemek yapma sürecini karmaşıklıktan kurtarıp keyifli bir deneyime dönüştürüyoruz.
+      {/* Bento Grid Features */}
+      <section className="bg-white/30 dark:bg-white/[0.02] py-32 px-10">
+        <div className="max-w-7xl mx-auto space-y-20">
+          <div className="max-w-3xl space-y-6">
+            <h2 className="text-5xl font-serif font-bold text-espresso-midnight dark:text-white tracking-tight">
+              {t('landing.features.title').split(t('landing.features.title_highlight'))[0]}
+              <span className="text-moss-sage italic font-normal text-4xl">{t('landing.features.title_highlight')}</span>
+              {t('landing.features.title').split(t('landing.features.title_highlight'))[1]}
+            </h2>
+            <p className="text-espresso-midnight/50 dark:text-alabaster/40 text-lg font-medium leading-relaxed italic">
+              {t('landing.features.subtitle')}
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 gap-6">
             {features.map((feature, i) => (
-              <div key={i} className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
-                <div className={`${feature.color} w-14 h-14 rounded-2xl flex items-center justify-center mb-6`}>
-                  {React.cloneElement(feature.icon as React.ReactElement, { size: 28 })}
+              <div key={i} className={`glass-card p-10 rounded-5xl border-white/40 dark:border-white/5 transition-all hover:-translate-y-2 group ${i === 0 || i === 3 ? 'md:col-span-1' : 'md:col-span-1'}`}>
+                <div className={`${feature.color} w-16 h-16 rounded-3xl flex items-center justify-center mb-8 group-hover:rotate-12 transition-transform`}>
+                  {React.cloneElement(feature.icon as React.ReactElement, { size: 32, strokeWidth: 1.5 })}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-500 leading-relaxed text-sm">
+                <h3 className="text-2xl font-serif font-bold text-espresso-midnight dark:text-white mb-4 leading-tight">{feature.title}</h3>
+                <p className="text-espresso-midnight/50 dark:text-alabaster/50 leading-relaxed text-sm font-medium italic">
                   {feature.desc}
                 </p>
               </div>
@@ -171,42 +208,66 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Social Proof / Numbers */}
-      <section className="py-24 px-8 max-w-7xl mx-auto border-b border-gray-100">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-          <div>
-            <p className="text-4xl font-black text-gray-900 mb-2">500+</p>
-            <p className="text-gray-500 font-medium">Kayıtlı Tarif</p>
-          </div>
-          <div>
-            <p className="text-4xl font-black text-gray-900 mb-2">12k</p>
-            <p className="text-gray-500 font-medium">Mutlu Kullanıcı</p>
-          </div>
-          <div>
-            <p className="text-4xl font-black text-gray-900 mb-2">99%</p>
-            <p className="text-gray-500 font-medium">AI Doğruluğu</p>
-          </div>
-          <div>
-            <p className="text-4xl font-black text-gray-900 mb-2">24/7</p>
-            <p className="text-gray-500 font-medium">Akıllı Destek</p>
-          </div>
+      {/* Data Precision Section (Stats) */}
+      <section className="py-32 px-10 max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-4 gap-16">
+          {[
+            { label: t('landing.stats.recipes'), val: '50k+', icon: <ChefHat className="text-terracotta" /> },
+            { label: t('landing.stats.members'), val: '12k', icon: <Heart className="text-moss-sage" /> },
+            { label: t('landing.stats.accuracy'), val: '99%', icon: <Activity className="text-ochre-soft" /> },
+            { label: t('landing.stats.speed'), val: '< 2sn', icon: <Clock className="text-moss-forest" /> },
+          ].map((stat, i) => (
+            <div key={i} className="space-y-4 border-l border-espresso-midnight/5 dark:border-white/5 pl-8">
+              <div className="flex items-center gap-3 text-espresso-midnight/30 dark:text-alabaster/20 uppercase tracking-widest text-[10px] font-black">
+                {stat.icon}
+                {stat.label}
+              </div>
+              <p className="text-6xl font-serif font-bold text-espresso-midnight dark:text-white leading-none">{stat.val}</p>
+            </div>
+          ))}
         </div>
       </section>
 
+      {/* CTA Section */}
+      <section className="px-10 pb-32 max-w-7xl mx-auto">
+         <div className="bg-espresso-midnight rounded-[4rem] p-20 text-center space-y-12 relative overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]">
+            <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
+               <div className="absolute top-10 left-10 w-96 h-96 bg-terracotta rounded-full blur-[150px]" />
+               <div className="absolute bottom-10 right-10 w-96 h-96 bg-moss-forest rounded-full blur-[150px]" />
+            </div>
+            
+            <div className="relative z-10 space-y-6">
+               <h2 className="text-5xl md:text-7xl font-serif font-bold text-white max-w-4xl mx-auto leading-tight">
+                  {t('landing.cta.title')}
+               </h2>
+               <p className="text-alabaster/40 text-xl max-w-2xl mx-auto italic font-medium">
+                  {t('landing.cta.subtitle')}
+               </p>
+            </div>
+            
+            <button 
+              onClick={() => login()}
+              className="relative z-10 bg-terracotta text-white px-16 py-6 rounded-3xl font-bold text-xl hover:scale-105 transition-all shadow-2xl shadow-terracotta/40"
+            >
+              {t('landing.cta.button')}
+            </button>
+         </div>
+      </section>
+
       {/* Footer */}
-      <footer className="py-12 px-8 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-gray-500 text-sm font-medium">
-        <div className="flex items-center gap-2">
-          <div className="bg-gray-100 p-1.5 rounded-lg">
-            <ChefHat size={18} className="text-gray-900" />
+      <footer className="py-20 px-10 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10 text-espresso-midnight/40 dark:text-alabaster/20 text-[10px] font-black uppercase tracking-[0.3em]">
+        <div className="flex items-center gap-4">
+          <div className="bg-espresso-midnight/5 dark:bg-white/5 p-2 rounded-xl transition-colors hover:bg-terracotta/10">
+            <ChefHat size={20} className="text-espresso-midnight dark:text-white" />
           </div>
-          <span className="text-gray-900 font-bold">AI Meal platform</span>
+          <span className="text-espresso-midnight dark:text-white text-lg font-serif normal-case tracking-tight font-bold">Chef AI Platform</span>
         </div>
-        <div className="flex gap-8">
-          <a href="#" className="hover:text-gray-900">Hakkımızda</a>
-          <a href="#" className="hover:text-gray-900">Gizlilik</a>
-          <a href="#" className="hover:text-gray-900">İletişim</a>
+        <div className="flex gap-12">
+          <a href="#" className="hover:text-terracotta transition-colors">{t('landing.footer.manifesto')}</a>
+          <a href="#" className="hover:text-terracotta transition-colors">{t('landing.footer.privacy')}</a>
+          <a href="#" className="hover:text-terracotta transition-colors">{t('landing.footer.connect')}</a>
         </div>
-        <p>© 2024 AI Powered Meal Platform. Tüm hakları saklıdır.</p>
+        <p>{t('landing.footer.rights')}</p>
       </footer>
     </div>
   );

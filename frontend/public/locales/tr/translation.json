@@ -1,4 +1,60 @@
 {
+  "landing": {
+    "nav": {
+      "login": "Giriş Yap",
+      "join": "Hemen Katıl"
+    },
+    "hero": {
+      "badge": "Kişisel Gastronomi Asistanın",
+      "title": "Mutfakta Yapay Zeka Hassasiyeti",
+      "title_italic": "Yapay Zeka",
+      "subtitle": "\"Sıradan bir yemek planlayıcı değil, verilerinizle beslenen bir Dijital Özel Şef deneyimi.\"",
+      "cta_start": "Deneyimi Başlat",
+      "cta_manifesto": "Manifesto",
+      "users_count": "12,000+",
+      "users_label": "Gourmet Üye"
+    },
+    "features": {
+      "title": "Veri ile Gurme Lezzeti Arasındaki Kusursuz Denge",
+      "title_highlight": "Kusursuz Denge",
+      "subtitle": "\"Klinik verileri, mutfak sanatıyla birleştiriyoruz. Alerjenleriniz artık birer engel değil, size özel tarifin parametreleridir.\"",
+      "items": {
+        "ai": {
+          "title": "Hassas Nutrisyon AI",
+          "desc": "Makro hedeflerine ve alerjenlerine göre %95 uyumlu tarifler üretir."
+        },
+        "clinical": {
+          "title": "Klinik Veri Hassasiyeti",
+          "desc": "Gluten-Free, Keto veya Yüksek Protein gibi \"User DNA\" filtreleri ile tam koruma."
+        },
+        "gourmet": {
+          "title": "Gastronomi Deneyimi",
+          "desc": "50.000+ gurme tarif ile sağlıklı beslenmeyi bir sanat formuna dönüştürür."
+        },
+        "inventory": {
+          "title": "Akıllı Envanter",
+          "desc": "Eldeki malzemeleri AI ile tarar, israfı önler ve sana özel menüler sunar."
+        }
+      }
+    },
+    "stats": {
+      "recipes": "Gurme Tarif",
+      "members": "Mutlu Üye",
+      "accuracy": "AI Doğruluğu",
+      "speed": "Hızlı Öneri"
+    },
+    "cta": {
+      "title": "Özel Şef Deneyiminize Bugün Başlayın.",
+      "subtitle": "\"Sadece yemek değil, verilerinizle kürate edilmiş bir yaşam tarzı.\"",
+      "button": "Hemen Katıl"
+    },
+    "footer": {
+      "manifesto": "Manifesto",
+      "privacy": "Gizlilik",
+      "connect": "İletişim",
+      "rights": "© 2026 AI Powered Private Chef. Gurmeler için tasarlandı."
+    }
+  },
   "welcome": "Yapay Zeka Destekli Yemek Önerisi Platformuna Hoş Geldiniz!",
   "navigation": {
     "home": "Anasayfa",
