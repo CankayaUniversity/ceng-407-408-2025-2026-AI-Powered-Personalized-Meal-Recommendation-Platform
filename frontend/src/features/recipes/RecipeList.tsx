@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Search, Filter, Clock, Zap, Star, ChevronRight } from 'lucide-react';
 import { useRecipeService } from '../../services/recipeService';
-import { Recipe } from '../../types';
+import type { RecipeListItem } from '../../types';
 
 const RecipeList: React.FC = () => {
   const recipeService = useRecipeService();
   const [searchTerm, setSearchTerm] = useState('');
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
