@@ -76,17 +76,20 @@ export interface User {
   updatedAt?: string | null;
 }
 
-export interface Recipe {
+export interface RecipeListItem {
   id: number;
   title: string;
-  category?: string;
-  totalCalories?: number;
-  preparationTimeMinutes: number;
-  difficulty: Difficulty;
-  servings: number;
-  averageRating?: number;
-  imageUrl?: string;
-  instructions: string;
+  category?: string | null;
+  totalCalories?: number | null;
+  preparationTimeMinutes?: number | null;
+  averageRating?: number | null;
+  imageUrl?: string | null;
+}
+
+export interface Recipe extends RecipeListItem {
+  difficulty?: Difficulty | null;
+  servings?: number | null;
+  instructions?: string | null;
   ingredients?: RecipeIngredient[];
   ratings?: RecipeRating[];
 }
@@ -146,37 +149,37 @@ export interface Inventory {
 
 // API DTOs
 export interface RecommendationRequest {
+  userId: string;
   availableIngredients: string[];
-  dietaryPreference?: DietType;
+}
+
+export interface RecommendedRecipe {
+  recipeTitle: string;
+  insight: string;
 }
 
 export interface RecommendationResponse {
-  recipes: Recipe[];
+  recommendedRecipes: RecommendedRecipe[];
 }
 
 export interface ConsumptionRequest {
+  userId: string;
   recipeId?: number;
   foodName: string;
-  estimatedCalories: number;
   mealType: MealType;
   portionSize: PortionSize;
-  consumedAt?: string;
-  isCustomEntry: boolean;
+  isCustomEntry?: boolean | null;
+  isFromInventory?: boolean | null;
 }
 
 export interface ConsumptionResponse {
   id: number;
-  userId: string;
-  recipeId?: number;
-  foodName: string;
-  estimatedCalories: number;
-  mealType: MealType;
-  portionSize: PortionSize;
+  estimatedCalories?: number | null;
   consumedAt: string;
-  isCustomEntry: boolean;
 }
 
 export interface RecipeRatingRequest {
+  userId: string;
   recipeId: number;
   rating: number;
   comment?: string;
@@ -186,7 +189,21 @@ export interface RecipeRatingResponse {
   id: number;
   userId: string;
   recipeId: number;
+  recipeTitle: string;
   rating: number;
   comment?: string;
   createdAt: string;
+}
+
+export interface ApiValidationErrorItem {
+  field: string;
+  message: string;
+}
+
+export interface ApiErrorResponse {
+  message: string;
+  status?: number;
+  path?: string;
+  validationErrors?: ApiValidationErrorItem[];
+  fields?: Record<string, string>;
 }

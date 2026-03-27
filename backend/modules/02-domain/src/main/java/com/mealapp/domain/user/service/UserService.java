@@ -41,6 +41,22 @@ public class UserService {
     }
 
     /**
+     * Keycloak subject değiştiğinde mevcut kullanıcı kaydını yeni subject ile ilişkilendirir.
+     */
+    public void relinkUserId(String oldId, String newId) {
+        if (oldId == null || newId == null || oldId.equals(newId)) {
+            return;
+        }
+
+        int updatedRows = userRepository.relinkUserId(oldId, newId);
+        if (updatedRows == 0) {
+            throw new IllegalArgumentException("Relink edilecek kullanıcı bulunamadı: " + oldId);
+        }
+
+        userRepository.flush();
+    }
+
+    /**
      * Kullanıcıyı siler ve değişiklikleri hemen yansıtır.
      */
     public void delete(User user) {
