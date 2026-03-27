@@ -1,3 +1,5 @@
+import type { ApiErrorResponse } from '../types';
+
 /**
  * Servis katmanı için hata yönetimi tipleri ve yardımcı fonksiyonlar
  * Bu hata sınıfları uygulama genelinde tip-güvenli hata yönetimi sağlar
@@ -53,6 +55,57 @@ export class ValidationError extends ApiError {
     }
   }
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+/**
+ * Backend'in `validationErrors` dizisini form alanı -> mesaj sözlüğüne çevirir.
+ * Geriye dönük uyumluluk için eski `fields` formatını da destekler.
+ */
+export const extractValidationFields = (
+  details: ApiErrorResponse | unknown
+): Record<string, string> | undefined => {
+  if (!isRecord(details)) {
+    return undefined;
+  }
+
+  const legacyFields = details.fields;
+  if (isRecord(legacyFields)) {
+    const mappedLegacyFields = Object.entries(legacyFields).reduce<Record<string, string>>((acc, [field, message]) => {
+      if (typeof message === 'string') {
+        acc[field] = message;
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(mappedLegacyFields).length > 0) {
+      return mappedLegacyFields;
+    }
+  }
+
+  const validationErrors = details.validationErrors;
+  if (!Array.isArray(validationErrors)) {
+    return undefined;
+  }
+
+  const mappedFields = validationErrors.reduce<Record<string, string>>((acc, item) => {
+    if (!isRecord(item)) {
+      return acc;
+    }
+
+    const field = item.field;
+    const message = item.message;
+
+    if (typeof field === 'string' && typeof message === 'string') {
+      acc[field] = message;
+    }
+
+    return acc;
+  }, {});
+
+  return Object.keys(mappedFields).length > 0 ? mappedFields : undefined;
+};
 
 /**
  * Kimlik doğrulama hatası - kimlik doğrulama başarısız olduğunda veya token süresi dolduğunda fırlatılır

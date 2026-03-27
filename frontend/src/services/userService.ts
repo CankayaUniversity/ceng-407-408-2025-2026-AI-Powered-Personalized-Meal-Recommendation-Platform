@@ -7,7 +7,8 @@ import {
   NetworkError,
   AuthenticationError,
   NotFoundError,
-  ValidationError
+  ValidationError,
+  extractValidationFields
 } from './errors';
 
 /**
@@ -42,9 +43,9 @@ export const getUserService = (api: AxiosInstance) => ({
           case 401:
             throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
           case 404:
-            throw new NotFoundError('Kullanıcı bulunamadı');
+            throw new NotFoundError(message);
           case 400:
-            throw new ValidationError(message);
+            throw new ValidationError(message, extractValidationFields(error.response.data));
           default:
             throw new ApiError(message, 'API_ERROR', status);
         }
@@ -83,7 +84,7 @@ export const getUserService = (api: AxiosInstance) => ({
           case 400:
             throw new ValidationError(
               message,
-              error.response.data?.fields
+              extractValidationFields(error.response.data)
             );
           default:
             throw new ApiError(message, 'API_ERROR', status);
@@ -125,11 +126,11 @@ export const getUserService = (api: AxiosInstance) => ({
           case 401:
             throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
           case 404:
-            throw new NotFoundError('Kullanıcı bulunamadı');
+            throw new NotFoundError(message);
           case 400:
             throw new ValidationError(
               message,
-              error.response.data?.fields
+              extractValidationFields(error.response.data)
             );
           default:
             throw new ApiError(message, 'API_ERROR', status);
