@@ -8,6 +8,7 @@ import { KeycloakAuthService } from './infrastructure/services/auth/KeycloakAuth
 import { GuestAuthService } from './infrastructure/services/auth/GuestAuthService';
 import { ConsoleLoggerService } from './infrastructure/services/logging/ConsoleLoggerService';
 import { AuthContextProvider } from './infrastructure/auth/AuthContextProvider';
+import { ThemeProvider } from './infrastructure/theme/ThemeContext';
 import AuthGate from './infrastructure/auth/AuthGate';
 import PrivateRoute from './components/PrivateRoute';
 import MainLayout from './shared/layout/MainLayout';
@@ -59,43 +60,45 @@ httpClient.interceptors.request.use(async (config) => {
 const App: React.FC = () => {
   return (
     <ServiceProvider registry={registry}>
-      <AuthContextProvider>
-        <AuthGate>
-          <Router>
-            <Routes>
-              <Route path="/" element={<HomeRedirect />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <MainLayout>
-                    <Dashboard />
-                  </MainLayout>
-                }
-              />
-              <Route
-                path="/recipes"
-                element={
-                  <PrivateRoute>
+      <ThemeProvider>
+        <AuthContextProvider>
+          <AuthGate>
+            <Router>
+              <Routes>
+                <Route path="/" element={<HomeRedirect />} />
+                <Route
+                  path="/dashboard"
+                  element={
                     <MainLayout>
-                      <RecipeList />
+                      <Dashboard />
                     </MainLayout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <PrivateRoute>
-                    <MainLayout>
-                      <Profile />
-                    </MainLayout>
-                  </PrivateRoute>
-                }
-              />
-            </Routes>
-          </Router>
-        </AuthGate>
-      </AuthContextProvider>
+                  }
+                />
+                <Route
+                  path="/recipes"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <RecipeList />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <Profile />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+              </Routes>
+            </Router>
+          </AuthGate>
+        </AuthContextProvider>
+      </ThemeProvider>
     </ServiceProvider>
   );
 };

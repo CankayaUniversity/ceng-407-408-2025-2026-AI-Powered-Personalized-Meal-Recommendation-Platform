@@ -1,4 +1,60 @@
 {
+  "landing": {
+    "nav": {
+      "login": "Login",
+      "join": "Join Now"
+    },
+    "hero": {
+      "badge": "Your Personal Gastronomy Assistant",
+      "title": "Artificial Intelligence Precision in the Kitchen",
+      "title_italic": "AI",
+      "subtitle": "\"Not just an ordinary meal planner, but a Digital Private Chef experience fed by your data.\"",
+      "cta_start": "Start Experience",
+      "cta_manifesto": "Manifesto",
+      "users_count": "12,000+",
+      "users_label": "Gourmet Members"
+    },
+    "features": {
+      "title": "The Perfect Balance Between Data and Gourmet Taste",
+      "title_highlight": "Perfect Balance",
+      "subtitle": "\"We combine clinical data with culinary art. Your allergens are no longer obstacles, but parameters for your personalized recipe.\"",
+      "items": {
+        "ai": {
+          "title": "Precision Nutrition AI",
+          "desc": "Generates 95% compatible recipes based on your macro goals and allergens."
+        },
+        "clinical": {
+          "title": "Clinical Data Precision",
+          "desc": "Full protection with \"User DNA\" filters like Gluten-Free, Keto, or High Protein."
+        },
+        "gourmet": {
+          "title": "Gastronomy Experience",
+          "desc": "Transforms healthy eating into an art form with 50,000+ gourmet recipes."
+        },
+        "inventory": {
+          "title": "Smart Inventory",
+          "desc": "Scans existing ingredients with AI, prevents waste, and offers you special menus."
+        }
+      }
+    },
+    "stats": {
+      "recipes": "Gourmet Recipes",
+      "members": "Happy Members",
+      "accuracy": "AI Accuracy",
+      "speed": "Fast Recommendation"
+    },
+    "cta": {
+      "title": "Start Your Private Chef Experience Today.",
+      "subtitle": "\"Not just food, but a lifestyle curated with your data.\"",
+      "button": "Join Now"
+    },
+    "footer": {
+      "manifesto": "Manifesto",
+      "privacy": "Privacy",
+      "connect": "Connect",
+      "rights": "© 2026 AI Powered Private Chef. Created for Gourmets."
+    }
+  },
   "welcome": "Welcome to AI-Powered Meal Recommendation Platform!",
   "navigation": {
     "home": "Home",
