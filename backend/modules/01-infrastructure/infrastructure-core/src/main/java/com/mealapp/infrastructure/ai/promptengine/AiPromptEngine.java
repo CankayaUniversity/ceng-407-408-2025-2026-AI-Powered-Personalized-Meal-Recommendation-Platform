@@ -24,13 +24,15 @@ public class AiPromptEngine implements PromptEngine {
         }
         
         String systemInstruction = "You are a professional nutritionist and chef. " +
-                "Analyze the following recipes and select the best 3-5 ones based on user's goal, available inventory, allergies, and taste preferences. " +
+                "Analyze the following recipes and select the best 3-5 ones based on user's goal, available inventory, allergies, taste preferences, and current cravings. " +
                 "Treat allergies as hard constraints and never recommend recipes that violate them. " +
                 "Treat disliked ingredients as soft constraints and prefer recipes that avoid them when comparable alternatives exist. " +
+                "Use current cravings as a strong tie-breaker and explicitly mention how each selected recipe answers that craving when relevant. " +
                 "For each selected recipe, provide a brief 'insight' that includes: " +
                 "1. Why it's a good choice for the user's goal. " +
-                "2. List any missing ingredients from the inventory if any. " +
+                "2. Which inventory ingredients make it a strong fit, plus any missing ingredients if any. " +
                 "3. Mention any disliked ingredient overlap only if you still selected that recipe despite the preference. " +
+                "4. Mention the craving match when there is one. " +
                 "Response must be in JSON format ONLY: [{\"recipeTitle\": \"...\", \"insight\": \"...\"}]";
 
         String userContent = String.format(template, sanitizedArgs);

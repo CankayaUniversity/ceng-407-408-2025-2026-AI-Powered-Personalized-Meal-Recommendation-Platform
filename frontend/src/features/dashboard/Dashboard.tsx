@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { Zap, TrendingUp, Clock, Star, Heart, Wind, ShieldCheck, Activity, Target } from 'lucide-react';
 import SmartConsumptionPanel from './SmartConsumptionPanel';
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user, authenticated, login } = useAuth();
 
   const dnaFilters = [
@@ -73,11 +75,18 @@ const Dashboard: React.FC = () => {
           </div>
           
           <button 
-            onClick={() => !authenticated && login()}
+            onClick={() => {
+              if (authenticated) {
+                navigate('/recommendations');
+                return;
+              }
+
+              void login();
+            }}
             className="bg-terracotta text-white px-8 py-4 rounded-2xl font-bold hover:scale-105 transition-transform shadow-xl shadow-terracotta/20 flex items-center gap-3"
           >
             <Target size={20} />
-            Generate My Plan
+            {authenticated ? 'Open Recommendation Engine' : 'Generate My Plan'}
           </button>
         </header>
 

@@ -7,5 +7,5 @@ import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import java.util.List;
 
 public interface RecommendationStrategy {
-    List<Recipe> recommend(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary);
+    List<Recipe> recommend(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary, String cravings);
 }

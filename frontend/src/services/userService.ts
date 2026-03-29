@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { useMemo } from 'react';
 import { useService } from '../infrastructure/di';
 import { HttpClientKey } from '../infrastructure/services';
 import { User } from '../types';
@@ -148,5 +149,5 @@ export const getUserService = (api: AxiosInstance) => ({
  */
 export const useUserService = () => {
   const api = useService(HttpClientKey);
-  return getUserService(api);
+  return useMemo(() => getUserService(api), [api]);
 };

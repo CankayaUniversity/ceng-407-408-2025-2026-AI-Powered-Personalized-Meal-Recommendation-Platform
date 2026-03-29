@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -46,6 +47,17 @@ public class GeminiProvider implements AiProvider {
                 .generationConfig(GeminiRequest.GenerationConfig.builder()
                         .temperature(0.7)
                         .responseMimeType("application/json")
+                        .responseJsonSchema(Map.of(
+                                "type", "array",
+                                "items", Map.of(
+                                        "type", "object",
+                                        "properties", Map.of(
+                                                "recipeTitle", Map.of("type", "string"),
+                                                "insight", Map.of("type", "string")
+                                        ),
+                                        "required", List.of("recipeTitle", "insight")
+                                )
+                        ))
                         .build())
                 .build();
 

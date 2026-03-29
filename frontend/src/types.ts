@@ -182,11 +182,23 @@ export interface RecommendationRequest {
   userId: string;
   availableIngredients: string[];
   dislikedIngredients?: string[] | null;
+  cravings?: string | null;
 }
 
 export interface RecommendedRecipe {
+  recipeId: number;
   recipeTitle: string;
   insight: string;
+  matchedIngredients: string[];
+  missingIngredients: string[];
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
+  preparationTimeMinutes?: number | null;
+  servings?: number | null;
+  averageRating?: number | null;
+  imageUrl?: string | null;
 }
 
 export interface RecommendationResponse {

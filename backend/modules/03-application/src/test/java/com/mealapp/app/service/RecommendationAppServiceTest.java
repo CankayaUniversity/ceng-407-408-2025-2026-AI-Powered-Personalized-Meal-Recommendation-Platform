@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,19 +48,20 @@ class RecommendationAppServiceTest {
         request.setUserId("user-1");
         request.setAvailableIngredients(List.of("Tomato", "Onion", "Tomato"));
         request.setDislikedIngredients(List.of("Cilantro", " cilantro "));
+        request.setCravings("Something spicy");
 
         User user = User.builder().id("user-1").build();
         when(userService.findById("user-1")).thenReturn(Optional.of(user));
         when(ingredientRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
-        when(recommendationService.getRecommendations(any(), anyList())).thenReturn(List.of(new Recipe()));
-        when(recommendationMapper.toResponse(anyList())).thenReturn(new RecommendationResponse());
+        when(recommendationService.getRecommendations(any(), anyList(), any())).thenReturn(List.of(new Recipe()));
+        when(recommendationMapper.toResponse(anyList(), anyList())).thenReturn(new RecommendationResponse());
 
         RecommendationResponse response = recommendationAppService.getRecommendations(request);
 
         assertNotNull(response);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(recommendationService).getRecommendations(userCaptor.capture(), anyList());
+        verify(recommendationService).getRecommendations(userCaptor.capture(), anyList(), eq("Something spicy"));
         assertEquals(List.of("Cilantro"), userCaptor.getValue().getDislikedIngredients());
     }
 }

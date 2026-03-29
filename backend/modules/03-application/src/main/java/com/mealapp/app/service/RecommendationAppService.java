@@ -41,6 +41,7 @@ public class RecommendationAppService {
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + request.getUserId()));
 
         user.setDislikedIngredients(resolveDislikedIngredients(user, request));
+        String normalizedCravings = normalizeValue(request.getCravings());
 
         // 2. İstekteki malzemeleri geçici Inventory nesnelerine çevir (Dinamik envanter)
         List<Inventory> dynamicInventory = normalizeValues(request.getAvailableIngredients()).stream()
@@ -58,10 +59,16 @@ public class RecommendationAppService {
                     .toList();
 
         // 3. Domain servisinden önerileri al
-        List<Recipe> recommendedRecipes = recommendationService.getRecommendations(user, dynamicInventory);
+        List<Recipe> recommendedRecipes = recommendationService.getRecommendations(user, dynamicInventory, normalizedCravings);
 
         // 4. Sonucu DTO'ya çevirip dön
-        return recommendationMapper.toResponse(recommendedRecipes);
+        return recommendationMapper.toResponse(
+                recommendedRecipes,
+                dynamicInventory.stream()
+                        .map(inventory -> inventory.getIngredient() != null ? inventory.getIngredient().getName() : null)
+                        .filter(name -> name != null && !name.isBlank())
+                        .toList()
+        );
     }
 
     private List<String> resolveDislikedIngredients(User user, RecommendationRequest request) {
@@ -84,5 +91,14 @@ public class RecommendationAppService {
                 .filter(value -> !value.isBlank())
                 .filter(value -> seen.add(value.toLowerCase(Locale.ROOT)))
                 .toList();
+    }
+
+    private String normalizeValue(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        return normalized.isBlank() ? null : normalized;
     }
 }

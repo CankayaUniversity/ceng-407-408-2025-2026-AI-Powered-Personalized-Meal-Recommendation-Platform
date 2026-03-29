@@ -93,7 +93,7 @@ class AiRecommendationStrategyTest {
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
 
         // When
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary);
+        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "spicy chicken");
 
         // Then
         assertFalse(recommendations.isEmpty());
@@ -120,7 +120,7 @@ class AiRecommendationStrategyTest {
 
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
 
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary);
+        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "comfort food");
 
         assertFalse(recommendations.isEmpty());
         assertEquals(2L, recommendations.get(0).getId());
@@ -146,7 +146,7 @@ class AiRecommendationStrategyTest {
 
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
 
-        strategy.recommend(user, inventory, dailySummary);
+        strategy.recommend(user, inventory, dailySummary, "garlic");
 
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
         verify(promptEngine).callAi(promptCaptor.capture());
@@ -154,8 +154,10 @@ class AiRecommendationStrategyTest {
         String finalPrompt = promptCaptor.getValue();
         assertTrue(finalPrompt.contains("Hard Constraints (Allergies)"));
         assertTrue(finalPrompt.contains("Soft Constraints (Disliked Ingredients)"));
+        assertTrue(finalPrompt.contains("Current Cravings"));
         assertTrue(finalPrompt.contains("Peanut"));
         assertTrue(finalPrompt.contains("Onion"));
+        assertTrue(finalPrompt.contains("garlic"));
         assertTrue(finalPrompt.contains("Disliked overlap"));
     }
 
