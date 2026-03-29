@@ -90,7 +90,11 @@ export interface RecipeListItem {
   title: string;
   category?: string | null;
   totalCalories?: number | null;
+  totalProtein?: number | null;
+  totalCarbs?: number | null;
+  totalFat?: number | null;
   preparationTimeMinutes?: number | null;
+  servings?: number | null;
   averageRating?: number | null;
   imageUrl?: string | null;
 }
@@ -139,12 +143,21 @@ export interface DailyConsumption {
   id: number;
   userId: string;
   recipeId?: number;
+  ingredientId?: number;
+  inventoryGroupId?: number;
   foodName: string;
   estimatedCalories: number;
+  estimatedProtein?: number | null;
+  estimatedCarbs?: number | null;
+  estimatedFat?: number | null;
   mealType: MealType;
   portionSize: PortionSize;
+  portionLabel?: string | null;
+  portionMultiplier?: number | null;
+  portionGrams?: number | null;
   consumedAt: string;
   isCustomEntry: boolean;
+  isFromInventory?: boolean;
 }
 
 export interface Inventory {
@@ -183,16 +196,30 @@ export interface RecommendationResponse {
 export interface ConsumptionRequest {
   userId: string;
   recipeId?: number;
+  ingredientId?: number;
+  inventoryGroupId?: number;
   foodName: string;
   mealType: MealType;
   portionSize: PortionSize;
+  portionLabel?: string | null;
+  portionMultiplier?: number | null;
+  portionGrams?: number | null;
   isCustomEntry?: boolean | null;
   isFromInventory?: boolean | null;
 }
 
 export interface ConsumptionResponse {
   id: number;
+  foodName: string;
+  recipeId?: number | null;
+  ingredientId?: number | null;
+  inventoryGroupId?: number | null;
+  portionLabel?: string | null;
   estimatedCalories?: number | null;
+  estimatedProtein?: number | null;
+  estimatedCarbs?: number | null;
+  estimatedFat?: number | null;
+  isFromInventory?: boolean | null;
   consumedAt: string;
 }
 

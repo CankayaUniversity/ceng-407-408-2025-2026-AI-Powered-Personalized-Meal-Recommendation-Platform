@@ -152,6 +152,14 @@ public class InventoryService {
     }
 
     /**
+     * Belirli bir lokasyonu doğrular ve döndürür.
+     */
+    @Transactional(readOnly = true)
+    public InventoryGroup getUserInventoryGroup(String userId, Long inventoryGroupId) {
+        return getRequiredGroup(userId, inventoryGroupId);
+    }
+
+    /**
      * Varsayılan lokasyona toplu envanter güncellemesi yapar.
      */
     public void updateInventory(String userId, List<Inventory> newItems) {
@@ -199,6 +207,30 @@ public class InventoryService {
                 break;
             }
         }
+    }
+
+    /**
+     * Verilen malzemeyi seçili lokasyondaki stoktan düşer.
+     */
+    public void consumeFromInventoryGroup(String userId, Long inventoryGroupId, Long ingredientId, Double quantityToDeduct) {
+        if (quantityToDeduct == null || quantityToDeduct <= 0) {
+            return;
+        }
+
+        getRequiredGroup(userId, inventoryGroupId);
+
+        inventoryRepository.findByUserIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
+                .ifPresent(existing -> {
+                    double currentQuantity = existing.getQuantity() != null ? existing.getQuantity() : 0.0;
+
+                    if (currentQuantity <= 0 || currentQuantity <= quantityToDeduct) {
+                        inventoryRepository.delete(existing);
+                        return;
+                    }
+
+                    existing.setQuantity(currentQuantity - quantityToDeduct);
+                    inventoryRepository.save(existing);
+                });
     }
 
     private InventoryGroup ensureUserHasDefaultGroup(String userId) {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { Zap, TrendingUp, Clock, Star, Heart, Wind, ShieldCheck, Activity, Target } from 'lucide-react';
+import SmartConsumptionPanel from './SmartConsumptionPanel';
 
 const Dashboard: React.FC = () => {
   const { user, authenticated, login } = useAuth();
@@ -79,6 +80,8 @@ const Dashboard: React.FC = () => {
             Generate My Plan
           </button>
         </header>
+
+        {authenticated && <SmartConsumptionPanel />}
 
         {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

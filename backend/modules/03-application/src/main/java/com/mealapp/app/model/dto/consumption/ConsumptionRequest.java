@@ -1,6 +1,8 @@
 package com.mealapp.app.model.dto.consumption;
 
 import com.mealapp.domain.consumption.entity.DailyConsumption;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 /**
@@ -8,11 +10,18 @@ import lombok.Data;
  */
 @Data
 public class ConsumptionRequest {
+    /**
+     * Legacy istemciler için korunur. Kimlik doğrulanmış isteklerde JWT subject önceliklidir.
+     */
     private String userId;
+
     private String foodName;
+
+    @NotNull(message = "Öğün tipi zorunludur")
     private DailyConsumption.MealType mealType;
+
     private DailyConsumption.PortionSize portionSize;
-    
+
     /**
      * Eğer dışarıda yenilen bir yemekse true. AI tahmini tetiklenecek.
      */
@@ -27,4 +36,31 @@ public class ConsumptionRequest {
      * Sistemdeki bir tarif tüketilirse ID'si gönderilir.
      */
     private Long recipeId;
+
+    /**
+     * Doğrudan bir malzeme tüketimi girildiyse ID'si gönderilir.
+     */
+    private Long ingredientId;
+
+    /**
+     * Ev/Ofis gibi seçilen stok lokasyonu.
+     */
+    private Long inventoryGroupId;
+
+    /**
+     * Household unit etiketi (örn: 1 bowl, 1 slice, 1 piece).
+     */
+    private String portionLabel;
+
+    /**
+     * Tarif kayıtlarında uygulanacak porsiyon katsayısı.
+     */
+    @Positive(message = "Porsiyon katsayısı sıfırdan büyük olmalıdır")
+    private Double portionMultiplier;
+
+    /**
+     * Malzeme kayıtlarında household unit'in yaklaşık gram karşılığı.
+     */
+    @Positive(message = "Gram karşılığı sıfırdan büyük olmalıdır")
+    private Double portionGrams;
 }

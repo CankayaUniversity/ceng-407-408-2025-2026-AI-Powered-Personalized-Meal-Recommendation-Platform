@@ -24,7 +24,11 @@ type RecipeListItemDto = {
   title: string;
   category?: string;
   calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   preparationTime?: number;
+  servings?: number;
   rating?: number;
   imageUrl?: string;
 };
@@ -153,7 +157,11 @@ export const getRecipeService = (api: AxiosInstance) => {
         title: r.title,
         category: r.category,
         totalCalories: r.calories,
+        totalProtein: r.protein,
+        totalCarbs: r.carbs,
+        totalFat: r.fat,
         preparationTimeMinutes: r.preparationTime,
+        servings: r.servings,
         averageRating: r.rating,
         imageUrl: r.imageUrl
       }));
