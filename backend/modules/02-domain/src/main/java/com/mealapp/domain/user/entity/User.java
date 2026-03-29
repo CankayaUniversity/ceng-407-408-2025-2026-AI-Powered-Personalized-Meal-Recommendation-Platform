@@ -1,5 +1,6 @@
 package com.mealapp.domain.user.entity;
 
+import com.mealapp.domain.inventory.entity.InventoryGroup;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -28,6 +29,9 @@ public class User {
     @Column(unique = true, nullable = true)
     private String email;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InventoryGroup> inventoryGroups;
+
     /**
      * Kullanıcının sahip olduğu alerjiler. 
      * Basitlik adına String listesi olarak tutulmuştur, ileride ayrı bir Entity'ye dönüştürülebilir.
@@ -36,6 +40,15 @@ public class User {
     @CollectionTable(name = "user_allergies", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "allergy")
     private List<String> allergies;
+
+    /**
+     * Kullanıcının alerjik olmadığı halde tercih etmediği malzemeler.
+     * AI öneri akışında soft-constraint olarak kullanılmak üzere saklanır.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_disliked_ingredients", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "ingredient_name")
+    private List<String> dislikedIngredients;
 
     /**
      * Tercih edilen diyet tipi (Örn: VEGAN, KETO, PALEO).

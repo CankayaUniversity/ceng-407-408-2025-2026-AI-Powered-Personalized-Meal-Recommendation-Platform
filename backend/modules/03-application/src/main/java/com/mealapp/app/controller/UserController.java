@@ -102,6 +102,7 @@ public class UserController {
         if (request.getDietType() != null) existing.setDietType(request.getDietType());
         if (request.getDietaryGoal() != null) existing.setDietaryGoal(request.getDietaryGoal());
         if (request.getAllergies() != null) existing.setAllergies(request.getAllergies());
+        if (request.getDislikedIngredients() != null) existing.setDislikedIngredients(request.getDislikedIngredients());
         existing.setDailyCalorieTarget(CalorieCalculator.calculateDailyTarget(existing));
     }
 

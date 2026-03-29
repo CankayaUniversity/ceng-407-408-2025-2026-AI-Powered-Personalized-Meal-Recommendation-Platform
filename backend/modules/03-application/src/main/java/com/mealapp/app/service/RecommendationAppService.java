@@ -15,6 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 /**
  * Bu sınıf "Orchestrator" görevini üstlenir.
@@ -37,8 +40,11 @@ public class RecommendationAppService {
         User user = userService.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + request.getUserId()));
 
+        user.setDislikedIngredients(resolveDislikedIngredients(user, request));
+        String normalizedCravings = normalizeValue(request.getCravings());
+
         // 2. İstekteki malzemeleri geçici Inventory nesnelerine çevir (Dinamik envanter)
-        List<Inventory> dynamicInventory = request.getAvailableIngredients().stream()
+        List<Inventory> dynamicInventory = normalizeValues(request.getAvailableIngredients()).stream()
                 .map(ingredientName -> {
                     Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(ingredientName)
                             .orElseGet(() -> Ingredient.builder()
@@ -53,9 +59,46 @@ public class RecommendationAppService {
                     .toList();
 
         // 3. Domain servisinden önerileri al
-        List<Recipe> recommendedRecipes = recommendationService.getRecommendations(user, dynamicInventory);
+        List<Recipe> recommendedRecipes = recommendationService.getRecommendations(user, dynamicInventory, normalizedCravings);
 
         // 4. Sonucu DTO'ya çevirip dön
-        return recommendationMapper.toResponse(recommendedRecipes);
+        return recommendationMapper.toResponse(
+                recommendedRecipes,
+                dynamicInventory.stream()
+                        .map(inventory -> inventory.getIngredient() != null ? inventory.getIngredient().getName() : null)
+                        .filter(name -> name != null && !name.isBlank())
+                        .toList()
+        );
+    }
+
+    private List<String> resolveDislikedIngredients(User user, RecommendationRequest request) {
+        if (request.getDislikedIngredients() != null) {
+            return normalizeValues(request.getDislikedIngredients());
+        }
+
+        return normalizeValues(user.getDislikedIngredients());
+    }
+
+    private List<String> normalizeValues(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> seen = new LinkedHashSet<>();
+
+        return values.stream()
+                .map(value -> value == null ? "" : value.trim())
+                .filter(value -> !value.isBlank())
+                .filter(value -> seen.add(value.toLowerCase(Locale.ROOT)))
+                .toList();
+    }
+
+    private String normalizeValue(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        return normalized.isBlank() ? null : normalized;
     }
 }

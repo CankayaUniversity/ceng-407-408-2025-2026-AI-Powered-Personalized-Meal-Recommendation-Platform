@@ -3,7 +3,12 @@ package com.mealapp.domain.consumption.service;
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.repository.DailyConsumptionRepository;
 import com.mealapp.domain.inventory.service.InventoryService;
+import com.mealapp.domain.recipe.entity.Ingredient;
+import com.mealapp.domain.recipe.entity.IngredientNutrition;
+import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
+import com.mealapp.domain.recipe.repository.IngredientRepository;
+import com.mealapp.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +29,8 @@ public class DailyConsumptionService {
 
     private final DailyConsumptionRepository dailyConsumptionRepository;
     private final InventoryService inventoryService;
+    private final RecipeRepository recipeRepository;
+    private final IngredientRepository ingredientRepository;
 
     /**
      * Yeni bir tüketim kaydı oluşturur. 
@@ -32,44 +39,110 @@ public class DailyConsumptionService {
      */
     @Transactional
     public DailyConsumption logConsumption(DailyConsumption consumption) {
-        if (Boolean.TRUE.equals(consumption.getIsCustomEntry()) && consumption.getPortionSize() != null) {
+        enrichConsumption(consumption);
+
+        if (Boolean.TRUE.equals(consumption.getIsCustomEntry()) && consumption.getPortionSize() != null
+                && consumption.getRecipe() == null && consumption.getIngredient() == null) {
             applyApproximateNutrition(consumption);
         }
-        
+
         DailyConsumption saved = dailyConsumptionRepository.save(consumption);
-        
-        // Stok düşüm mantığı: Sadece 'isFromInventory' true ise ve bir 'recipe' seçilmişse
-        if (Boolean.TRUE.equals(saved.getIsFromInventory()) && saved.getRecipe() != null) {
+
+        if (Boolean.TRUE.equals(saved.getIsFromInventory()) && saved.getInventoryGroup() != null) {
             deductFromInventory(saved);
         }
-        
+
         return saved;
     }
 
     private void deductFromInventory(DailyConsumption consumption) {
-        if (consumption.getRecipe() == null || consumption.getRecipe().getRecipeIngredients() == null) {
+        if (consumption.getInventoryGroup() == null) {
             return;
         }
 
         String userId = consumption.getUser().getId();
-        // Porsiyon çarpanı (Örn: Tarif 4 kişilikse ve kullanıcı 1 porsiyon yemişse 0.25 ile çarpılır)
-        // Şimdilik basitlik için 1 porsiyon üzerinden düşüyoruz. 
-        // İleride 'servingsConsumed' alanı eklenebilir.
-        
-        for (RecipeIngredient ri : consumption.getRecipe().getRecipeIngredients()) {
-            if (ri.getIngredient() != null) {
-                inventoryService.consumeFromInventory(userId, ri.getIngredient().getId(), ri.getGrams());
+        Long inventoryGroupId = consumption.getInventoryGroup().getId();
+
+        if (consumption.getRecipe() != null && consumption.getRecipe().getRecipeIngredients() != null) {
+            double portionMultiplier = resolvePortionMultiplier(consumption);
+
+            for (RecipeIngredient recipeIngredient : consumption.getRecipe().getRecipeIngredients()) {
+                if (recipeIngredient.getIngredient() != null && recipeIngredient.getGrams() != null) {
+                    inventoryService.consumeFromInventoryGroup(
+                            userId,
+                            inventoryGroupId,
+                            recipeIngredient.getIngredient().getId(),
+                            recipeIngredient.getGrams() * portionMultiplier
+                    );
+                }
+            }
+        }
+
+        if (consumption.getIngredient() != null && consumption.getPortionGrams() != null) {
+            inventoryService.consumeFromInventoryGroup(
+                    userId,
+                    inventoryGroupId,
+                    consumption.getIngredient().getId(),
+                    consumption.getPortionGrams()
+            );
+        }
+    }
+
+    private void enrichConsumption(DailyConsumption consumption) {
+        if (consumption.getInventoryGroup() != null) {
+            consumption.setIsFromInventory(true);
+        }
+
+        if (consumption.getRecipe() != null) {
+            Recipe managedRecipe = loadRecipe(consumption.getRecipe());
+            consumption.setRecipe(managedRecipe);
+            applyRecipeNutrition(consumption, managedRecipe);
+            if ((consumption.getFoodName() == null || consumption.getFoodName().isBlank()) && managedRecipe.getTitle() != null) {
+                consumption.setFoodName(managedRecipe.getTitle());
+            }
+            return;
+        }
+
+        if (consumption.getIngredient() != null) {
+            Ingredient managedIngredient = loadIngredient(consumption.getIngredient());
+            consumption.setIngredient(managedIngredient);
+            applyIngredientNutrition(consumption, managedIngredient);
+            if ((consumption.getFoodName() == null || consumption.getFoodName().isBlank()) && managedIngredient.getName() != null) {
+                consumption.setFoodName(managedIngredient.getName());
             }
         }
     }
 
+    private void applyRecipeNutrition(DailyConsumption consumption, Recipe recipe) {
+        NutritionTotals nutritionTotals = calculateRecipeNutrition(recipe);
+        double multiplier = resolvePortionMultiplier(consumption);
+
+        consumption.setPortionMultiplier(multiplier);
+        consumption.setEstimatedCalories((int) Math.round(nutritionTotals.calories() * multiplier));
+        consumption.setEstimatedProtein(roundDouble(nutritionTotals.protein() * multiplier));
+        consumption.setEstimatedCarbs(roundDouble(nutritionTotals.carbs() * multiplier));
+        consumption.setEstimatedFat(roundDouble(nutritionTotals.fat() * multiplier));
+    }
+
+    private void applyIngredientNutrition(DailyConsumption consumption, Ingredient ingredient) {
+        IngredientNutrition nutrition = ingredient.getNutrition();
+        if (nutrition == null) {
+            return;
+        }
+
+        double grams = resolveIngredientGrams(consumption);
+        double factor = grams / 100.0;
+
+        consumption.setPortionGrams(grams);
+        consumption.setEstimatedCalories((int) Math.round(nutrition.getCaloriesPer100g() * factor));
+        consumption.setEstimatedProtein(roundDouble(nutrition.getProteinPer100g() * factor));
+        consumption.setEstimatedCarbs(roundDouble(nutrition.getCarbsPer100g() * factor));
+        consumption.setEstimatedFat(roundDouble(nutrition.getFatPer100g() * factor));
+    }
+
     private void applyApproximateNutrition(DailyConsumption consumption) {
         // Profesyonel hesaplama yerine 'yaklaşık' standart değerler (Örn: Bir öğün ortalama değerleri)
-        double multiplier = switch (consumption.getPortionSize()) {
-            case SMALL -> 0.7;
-            case MEDIUM -> 1.0;
-            case LARGE -> 1.3;
-        };
+        double multiplier = resolvePortionMultiplier(consumption);
 
         // Ortalama bir ev yemeği öğünü (yaklaşık 500 kcal baz alınarak)
         if (consumption.getEstimatedCalories() == null) {
@@ -84,6 +157,96 @@ public class DailyConsumptionService {
         if (consumption.getEstimatedFat() == null) {
             consumption.setEstimatedFat(15.0 * multiplier);
         }
+    }
+
+    private Recipe loadRecipe(Recipe recipe) {
+        if (recipe.getId() == null) {
+            return recipe;
+        }
+
+        return recipeRepository.findByIdWithIngredients(recipe.getId()).orElse(recipe);
+    }
+
+    private Ingredient loadIngredient(Ingredient ingredient) {
+        if (ingredient.getId() == null) {
+            return ingredient;
+        }
+
+        return ingredientRepository.findById(ingredient.getId()).orElse(ingredient);
+    }
+
+    private NutritionTotals calculateRecipeNutrition(Recipe recipe) {
+        if (recipe.getTotalCalories() != null
+                && recipe.getTotalProtein() != null
+                && recipe.getTotalCarbs() != null
+                && recipe.getTotalFat() != null) {
+            return new NutritionTotals(
+                    recipe.getTotalCalories(),
+                    recipe.getTotalProtein(),
+                    recipe.getTotalCarbs(),
+                    recipe.getTotalFat()
+            );
+        }
+
+        double totalCalories = 0;
+        double totalProtein = 0;
+        double totalCarbs = 0;
+        double totalFat = 0;
+
+        if (recipe.getRecipeIngredients() != null) {
+            for (RecipeIngredient recipeIngredient : recipe.getRecipeIngredients()) {
+                if (recipeIngredient.getIngredient() == null || recipeIngredient.getIngredient().getNutrition() == null
+                        || recipeIngredient.getGrams() == null) {
+                    continue;
+                }
+
+                IngredientNutrition nutrition = recipeIngredient.getIngredient().getNutrition();
+                double factor = recipeIngredient.getGrams() / 100.0;
+
+                totalCalories += nutrition.getCaloriesPer100g() * factor;
+                totalProtein += nutrition.getProteinPer100g() * factor;
+                totalCarbs += nutrition.getCarbsPer100g() * factor;
+                totalFat += nutrition.getFatPer100g() * factor;
+            }
+        }
+
+        return new NutritionTotals(totalCalories, totalProtein, totalCarbs, totalFat);
+    }
+
+    private double resolvePortionMultiplier(DailyConsumption consumption) {
+        if (consumption.getPortionMultiplier() != null && consumption.getPortionMultiplier() > 0) {
+            return consumption.getPortionMultiplier();
+        }
+
+        if (consumption.getPortionSize() == null) {
+            return 1.0;
+        }
+
+        return switch (consumption.getPortionSize()) {
+            case SMALL -> 0.7;
+            case MEDIUM -> 1.0;
+            case LARGE -> 1.3;
+        };
+    }
+
+    private double resolveIngredientGrams(DailyConsumption consumption) {
+        if (consumption.getPortionGrams() != null && consumption.getPortionGrams() > 0) {
+            return consumption.getPortionGrams();
+        }
+
+        if (consumption.getPortionSize() == null) {
+            return 100.0;
+        }
+
+        return switch (consumption.getPortionSize()) {
+            case SMALL -> 40.0;
+            case MEDIUM -> 100.0;
+            case LARGE -> 180.0;
+        };
+    }
+
+    private double roundDouble(double value) {
+        return Math.round(value * 10.0) / 10.0;
     }
 
     /**
@@ -146,4 +309,11 @@ public class DailyConsumptionService {
                 .average()
                 .orElse(0);
     }
+
+    private record NutritionTotals(
+            double calories,
+            double protein,
+            double carbs,
+            double fat
+    ) {}
 }

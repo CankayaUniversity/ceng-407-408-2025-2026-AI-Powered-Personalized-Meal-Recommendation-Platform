@@ -59,6 +59,7 @@
   "navigation": {
     "home": "Home",
     "recipes": "Recipes",
+    "inventory": "Inventory",
     "recommendations": "Recommendations",
     "profile": "Profile"
   },

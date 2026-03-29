@@ -24,7 +24,11 @@ type RecipeListItemDto = {
   title: string;
   category?: string;
   calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
   preparationTime?: number;
+  servings?: number;
   rating?: number;
   imageUrl?: string;
 };
@@ -122,6 +126,36 @@ export const getRecipeService = (api: AxiosInstance) => {
   },
 
   /**
+   * Kullanıcının daha önce verdiği tarif puanlarını getirir.
+   */
+  getRatingsByUser: async (userId: string): Promise<RecipeRatingResponse[]> => {
+    try {
+      const response = await api.get<RecipeRatingResponse[]>(`/v1/ratings/user/${userId}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Değerlendirmeler alınamadı';
+
+        switch (status) {
+          case 401:
+            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          case 404:
+            throw new NotFoundError(message);
+          default:
+            throw new ApiError(message, 'API_ERROR', status);
+        }
+      }
+
+      throw new ApiError('Beklenmeyen bir hata oluştu');
+    }
+  },
+
+  /**
    * Tarif listesini backend'den getirir.
    * Response doğrudan backend liste DTO'suna hizalanır.
    */
@@ -153,7 +187,11 @@ export const getRecipeService = (api: AxiosInstance) => {
         title: r.title,
         category: r.category,
         totalCalories: r.calories,
+        totalProtein: r.protein,
+        totalCarbs: r.carbs,
+        totalFat: r.fat,
         preparationTimeMinutes: r.preparationTime,
+        servings: r.servings,
         averageRating: r.rating,
         imageUrl: r.imageUrl
       }));

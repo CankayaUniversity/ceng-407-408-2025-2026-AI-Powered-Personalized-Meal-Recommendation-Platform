@@ -4,14 +4,13 @@ import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDate;
 
 /**
  * Kullanıcının elindeki malzemeleri (stok) temsil eden varlık sınıfı.
  * Malzeme adı, miktar, birim ve son kullanma tarihi gibi temel bilgileri tutar.
  */
 @Entity
-@Table(name = "inventories", uniqueConstraints = @UniqueConstraint(name = "unique_inventory", columnNames = {"user_id", "ingredient_id"}))
+@Table(name = "inventories", uniqueConstraints = @UniqueConstraint(name = "unique_inventory", columnNames = {"user_id", "inventory_group_id", "ingredient_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,6 +32,10 @@ public class Inventory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inventory_group_id", nullable = false)
+    private InventoryGroup inventoryGroup;
 
     private Double quantity;
 

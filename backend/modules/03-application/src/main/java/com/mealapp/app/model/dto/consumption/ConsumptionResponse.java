@@ -10,6 +10,15 @@ import java.time.LocalDateTime;
 @Data
 public class ConsumptionResponse {
     private Long id;
+    private String foodName;
+    private Long recipeId;
+    private Long ingredientId;
+    private Long inventoryGroupId;
+    private String portionLabel;
     private Integer estimatedCalories; // null olabilir; dışarıda yenildiyse AI tarafından sonra hesaplanacaktır
+    private Double estimatedProtein;
+    private Double estimatedCarbs;
+    private Double estimatedFat;
+    private Boolean isFromInventory;
     private LocalDateTime consumedAt;
 }

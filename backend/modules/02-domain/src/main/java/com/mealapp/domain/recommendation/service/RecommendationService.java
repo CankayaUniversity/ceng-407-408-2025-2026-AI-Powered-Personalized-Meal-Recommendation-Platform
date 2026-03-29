@@ -26,16 +26,19 @@ public class RecommendationService {
      * Kullanıcı ve envanter bilgilerine dayanarak yemek tarifleri önerir.
      * Sonuçlar kullanıcı ID'si ve envanterdeki malzeme listesine göre önbelleğe alınır.
      */
-    @Cacheable(value = "recommendations", key = "#user.id + #inventory.hashCode()")
-    public List<Recipe> getRecommendations(User user, List<Inventory> inventory) {
+    @Cacheable(
+            value = "recommendations",
+            key = "#user.id + ':' + (#user.dietType != null ? #user.dietType.name() : 'NONE') + ':' + (#user.dietaryGoal != null ? #user.dietaryGoal.name() : 'NONE') + ':' + (#user.allergies != null ? #user.allergies.hashCode() : 0) + ':' + (#user.dislikedIngredients != null ? #user.dislikedIngredients.hashCode() : 0) + ':' + (#cravings != null ? #cravings.toLowerCase() : 'none') + ':' + #inventory.hashCode()"
+    )
+    public List<Recipe> getRecommendations(User user, List<Inventory> inventory, String cravings) {
         DailyConsumptionService.DailyNutritionSummary dailySummary = dailyConsumptionService.getDailyNutritionSummary(user.getId(), java.time.LocalDate.now());
-        
-        List<Recipe> recipes = aiRecommendationStrategy.recommend(user, inventory, dailySummary);
-        
+
+        List<Recipe> recipes = aiRecommendationStrategy.recommend(user, inventory, dailySummary, cravings);
+
         // Önerilen her tarif için besin değerlerini (Transient olsa bile) 
         // güncelleyelim ki prompt veya response'da doğru görünsün.
         recipes.forEach(recipeService::calculateAndSetNutrition);
-        
+
         return recipes;
     }
 }
