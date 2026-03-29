@@ -36,12 +36,20 @@ export enum Difficulty {
 }
 
 export enum IngredientCategory {
+  MEAT = 'MEAT',
   VEGETABLE = 'VEGETABLE',
   FRUIT = 'FRUIT',
-  PROTEIN = 'PROTEIN',
-  GRAIN = 'GRAIN',
   DAIRY = 'DAIRY',
+  GRAIN = 'GRAIN',
   SPICE = 'SPICE',
+  OIL = 'OIL',
+  SEAFOOD = 'SEAFOOD',
+  SAUCE = 'SAUCE',
+  NUT = 'NUT',
+  SWEETENER = 'SWEETENER',
+  BEVERAGE = 'BEVERAGE',
+  EGG = 'EGG',
+  LEGUME = 'LEGUME',
   OTHER = 'OTHER'
 }
 
@@ -140,11 +148,19 @@ export interface DailyConsumption {
 
 export interface Inventory {
   id: number;
-  userId: string;
+  inventoryGroupId: number;
   ingredientId: number;
   quantity: number;
   unit: string;
   ingredient?: Ingredient;
+}
+
+export interface InventoryGroup {
+  id: number;
+  name: string;
+  icon?: string | null;
+  itemCount: number;
+  items: Inventory[];
 }
 
 // API DTOs
@@ -176,6 +192,17 @@ export interface ConsumptionResponse {
   id: number;
   estimatedCalories?: number | null;
   consumedAt: string;
+}
+
+export interface InventoryGroupRequest {
+  name: string;
+  icon?: string;
+}
+
+export interface InventoryItemRequest {
+  ingredientId: number;
+  quantity: number;
+  unit: string;
 }
 
 export interface RecipeRatingRequest {

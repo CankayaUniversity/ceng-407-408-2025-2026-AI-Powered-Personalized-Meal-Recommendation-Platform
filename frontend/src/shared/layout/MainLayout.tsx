@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChefHat, LayoutDashboard, Utensils, User as UserIcon, LogOut, ChevronLeft, ChevronRight, Globe, Moon, Sun } from 'lucide-react';
+import { ChefHat, LayoutDashboard, Utensils, User as UserIcon, LogOut, ChevronLeft, ChevronRight, Globe, Moon, Sun, Boxes } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const menuItems = [
         { id: 'dashboard', text: t('navigation.home'), icon: <LayoutDashboard size={24} strokeWidth={1.5} />, route: '/dashboard' },
         { id: 'recipes', text: t('navigation.recipes'), icon: <Utensils size={24} strokeWidth={1.5} />, route: '/recipes', private: true },
+        { id: 'inventory', text: t('navigation.inventory'), icon: <Boxes size={24} strokeWidth={1.5} />, route: '/inventory', private: true },
         { id: 'profile', text: t('navigation.profile'), icon: <UserIcon size={24} strokeWidth={1.5} />, route: '/profile', private: true },
     ];
 

@@ -1,5 +1,6 @@
 package com.mealapp.domain.user.entity;
 
+import com.mealapp.domain.inventory.entity.InventoryGroup;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -27,6 +28,9 @@ public class User {
 
     @Column(unique = true, nullable = true)
     private String email;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InventoryGroup> inventoryGroups;
 
     /**
      * Kullanıcının sahip olduğu alerjiler. 
