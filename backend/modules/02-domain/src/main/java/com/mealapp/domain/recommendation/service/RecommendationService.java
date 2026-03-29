@@ -26,7 +26,10 @@ public class RecommendationService {
      * Kullanıcı ve envanter bilgilerine dayanarak yemek tarifleri önerir.
      * Sonuçlar kullanıcı ID'si ve envanterdeki malzeme listesine göre önbelleğe alınır.
      */
-    @Cacheable(value = "recommendations", key = "#user.id + #inventory.hashCode()")
+    @Cacheable(
+            value = "recommendations",
+            key = "#user.id + ':' + (#user.dietType != null ? #user.dietType.name() : 'NONE') + ':' + (#user.dietaryGoal != null ? #user.dietaryGoal.name() : 'NONE') + ':' + (#user.allergies != null ? #user.allergies.hashCode() : 0) + ':' + (#user.dislikedIngredients != null ? #user.dislikedIngredients.hashCode() : 0) + ':' + #inventory.hashCode()"
+    )
     public List<Recipe> getRecommendations(User user, List<Inventory> inventory) {
         DailyConsumptionService.DailyNutritionSummary dailySummary = dailyConsumptionService.getDailyNutritionSummary(user.getId(), java.time.LocalDate.now());
         

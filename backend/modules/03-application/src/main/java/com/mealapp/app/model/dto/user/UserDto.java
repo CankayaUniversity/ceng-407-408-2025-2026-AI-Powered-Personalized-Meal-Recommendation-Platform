@@ -20,6 +20,7 @@ public class UserDto {
     private String email;
 
     private List<String> allergies;
+    private List<String> dislikedIngredients;
     private User.DietType dietType;
     private User.DietaryGoal dietaryGoal;
     

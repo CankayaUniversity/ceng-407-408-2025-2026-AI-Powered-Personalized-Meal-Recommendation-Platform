@@ -72,6 +72,7 @@ export interface User {
   name?: string | null;
   email?: string | null;
   allergies?: string[] | null;
+  dislikedIngredients?: string[] | null;
   dietType?: DietType | null;
   dietaryGoal?: DietaryGoal | null;
   weight?: number | null;
@@ -167,6 +168,7 @@ export interface InventoryGroup {
 export interface RecommendationRequest {
   userId: string;
   availableIngredients: string[];
+  dislikedIngredients?: string[] | null;
 }
 
 export interface RecommendedRecipe {

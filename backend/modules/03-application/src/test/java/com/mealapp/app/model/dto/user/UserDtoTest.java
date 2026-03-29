@@ -13,6 +13,7 @@ class UserDtoTest {
         userDto.setName("John Doe");
         userDto.setEmail("john@example.com");
         userDto.setAllergies(List.of("Nuts", "Dairy"));
+        userDto.setDislikedIngredients(List.of("Olives", "Cilantro"));
         userDto.setDietType(User.DietType.VEGAN);
         userDto.setDietaryGoal(User.DietaryGoal.LOSE_WEIGHT);
         userDto.setWeight(80.0);
@@ -26,6 +27,7 @@ class UserDtoTest {
         assertEquals("John Doe", userDto.getName());
         assertEquals("john@example.com", userDto.getEmail());
         assertEquals(2, userDto.getAllergies().size());
+        assertEquals(2, userDto.getDislikedIngredients().size());
         assertEquals(User.DietType.VEGAN, userDto.getDietType());
         assertEquals(User.DietaryGoal.LOSE_WEIGHT, userDto.getDietaryGoal());
         assertEquals(80.0, userDto.getWeight());
@@ -40,6 +42,7 @@ class UserDtoTest {
         userDto2.setName("John Doe");
         userDto2.setEmail("john@example.com");
         userDto2.setAllergies(List.of("Nuts", "Dairy"));
+        userDto2.setDislikedIngredients(List.of("Olives", "Cilantro"));
         userDto2.setDietType(User.DietType.VEGAN);
         userDto2.setDietaryGoal(User.DietaryGoal.LOSE_WEIGHT);
         userDto2.setWeight(80.0);

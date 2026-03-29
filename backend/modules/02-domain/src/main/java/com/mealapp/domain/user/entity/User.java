@@ -42,6 +42,15 @@ public class User {
     private List<String> allergies;
 
     /**
+     * Kullanıcının alerjik olmadığı halde tercih etmediği malzemeler.
+     * AI öneri akışında soft-constraint olarak kullanılmak üzere saklanır.
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_disliked_ingredients", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "ingredient_name")
+    private List<String> dislikedIngredients;
+
+    /**
      * Tercih edilen diyet tipi (Örn: VEGAN, KETO, PALEO).
      */
     @Enumerated(EnumType.STRING)

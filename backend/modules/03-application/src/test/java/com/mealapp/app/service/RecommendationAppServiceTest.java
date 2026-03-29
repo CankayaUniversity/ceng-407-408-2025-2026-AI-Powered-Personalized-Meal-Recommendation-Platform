@@ -11,6 +11,7 @@ import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,9 +19,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +45,8 @@ class RecommendationAppServiceTest {
     void shouldGetRecommendations() {
         RecommendationRequest request = new RecommendationRequest();
         request.setUserId("user-1");
-        request.setAvailableIngredients(List.of("Tomato", "Onion"));
+        request.setAvailableIngredients(List.of("Tomato", "Onion", "Tomato"));
+        request.setDislikedIngredients(List.of("Cilantro", " cilantro "));
 
         User user = User.builder().id("user-1").build();
         when(userService.findById("user-1")).thenReturn(Optional.of(user));
@@ -53,5 +57,9 @@ class RecommendationAppServiceTest {
         RecommendationResponse response = recommendationAppService.getRecommendations(request);
 
         assertNotNull(response);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(recommendationService).getRecommendations(userCaptor.capture(), anyList());
+        assertEquals(List.of("Cilantro"), userCaptor.getValue().getDislikedIngredients());
     }
 }

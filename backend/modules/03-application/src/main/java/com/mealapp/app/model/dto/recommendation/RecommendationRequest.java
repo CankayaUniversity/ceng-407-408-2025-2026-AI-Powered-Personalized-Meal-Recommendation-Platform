@@ -7,4 +7,5 @@ import java.util.List;
 public class RecommendationRequest {
     private String userId;
     private List<String> availableIngredients;
+    private List<String> dislikedIngredients;
 }
