@@ -20,6 +20,7 @@ public class UserMapper {
                 .name(dto.getName())
                 .email(dto.getEmail())
                 .allergies(dto.getAllergies())
+                .dislikedIngredients(dto.getDislikedIngredients())
                 .dietType(dto.getDietType())
                 .dietaryGoal(dto.getDietaryGoal())
                 .weight(dto.getWeight())
@@ -43,6 +44,7 @@ public class UserMapper {
         dto.setName(entity.getName());
         dto.setEmail(entity.getEmail());
         dto.setAllergies(entity.getAllergies());
+        dto.setDislikedIngredients(entity.getDislikedIngredients());
         dto.setDietType(entity.getDietType());
         dto.setDietaryGoal(entity.getDietaryGoal());
         dto.setWeight(entity.getWeight());

@@ -9,7 +9,18 @@ public class RecommendationResponse {
 
     @Data
     public static class RecipeRecommendationDto {
+        private Long recipeId;
         private String recipeTitle;
         private String insight;
+        private List<String> matchedIngredients;
+        private List<String> missingIngredients;
+        private Double calories;
+        private Double protein;
+        private Double carbs;
+        private Double fat;
+        private Integer preparationTimeMinutes;
+        private Integer servings;
+        private Double averageRating;
+        private String imageUrl;
     }
 }

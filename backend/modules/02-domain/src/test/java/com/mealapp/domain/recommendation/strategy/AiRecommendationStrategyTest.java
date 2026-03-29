@@ -5,6 +5,7 @@ import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
 import com.mealapp.domain.recipe.service.RecipeService;
 import com.mealapp.domain.recommendation.service.IngredientMatchService;
@@ -13,12 +14,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -90,14 +93,87 @@ class AiRecommendationStrategyTest {
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
 
         // When
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary);
+        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "spicy chicken");
 
         // Then
-        // High Match Score: (1.0 * 0.7) + (0.2 * 0.3) = 0.7 + 0.06 = 0.76
-        // High Rating Score: (0.0 * 0.7) + (1.0 * 0.3) = 0.3
-        // So High Match (ID 2) should be first
         assertFalse(recommendations.isEmpty());
         assertEquals(2L, recommendations.get(0).getId());
         assertEquals("Great choice!", recommendations.get(0).getAiInsight());
+    }
+
+    @Test
+    void shouldDeprioritizeRecipesContainingDislikedIngredientsInFallbackRanking() {
+        user.setDislikedIngredients(List.of("Onion"));
+
+        Recipe dislikedRecipe = recipeWithIngredients(1L, "Onion Bowl", 5.0, "Chicken", "Onion");
+        Recipe preferredRecipe = recipeWithIngredients(2L, "Herb Bowl", 5.0, "Chicken", "Garlic");
+
+        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyList(), any(Pageable.class)))
+                .thenReturn(List.of(dislikedRecipe, preferredRecipe));
+
+        lenient().when(recipeService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);
+        when(ingredientMatchService.calculateMatchScore(eq(dislikedRecipe), anyList())).thenReturn(0.8);
+        when(ingredientMatchService.calculateMatchScore(eq(preferredRecipe), anyList())).thenReturn(0.8);
+
+        when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenReturn("mock prompt");
+        when(promptEngine.callAi(anyString())).thenThrow(new RuntimeException("AI unavailable"));
+
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
+
+        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "comfort food");
+
+        assertFalse(recommendations.isEmpty());
+        assertEquals(2L, recommendations.get(0).getId());
+    }
+
+    @Test
+    void shouldIncludeHardAndSoftConstraintsInPromptContext() {
+        user.setAllergies(List.of("Peanut"));
+        user.setDislikedIngredients(List.of("Onion"));
+
+        Recipe recipe = recipeWithIngredients(3L, "Balanced Plate", 4.5, "Chicken", "Garlic");
+
+        lenient().when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyList(), any(Pageable.class)))
+                .thenReturn(List.of(recipe));
+
+        lenient().when(recipeService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);
+        lenient().when(ingredientMatchService.calculateMatchScore(eq(recipe), anyList())).thenReturn(1.0);
+        lenient().when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenAnswer(invocation -> {
+            String template = invocation.getArgument(0);
+            return template + " :: " + Arrays.deepToString(invocation.getArguments());
+        });
+        lenient().when(promptEngine.callAi(anyString())).thenReturn("[]");
+
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
+
+        strategy.recommend(user, inventory, dailySummary, "garlic");
+
+        ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
+        verify(promptEngine).callAi(promptCaptor.capture());
+
+        String finalPrompt = promptCaptor.getValue();
+        assertTrue(finalPrompt.contains("Hard Constraints (Allergies)"));
+        assertTrue(finalPrompt.contains("Soft Constraints (Disliked Ingredients)"));
+        assertTrue(finalPrompt.contains("Current Cravings"));
+        assertTrue(finalPrompt.contains("Peanut"));
+        assertTrue(finalPrompt.contains("Onion"));
+        assertTrue(finalPrompt.contains("garlic"));
+        assertTrue(finalPrompt.contains("Disliked overlap"));
+    }
+
+    private Recipe recipeWithIngredients(Long id, String title, double rating, String... ingredientNames) {
+        List<RecipeIngredient> recipeIngredients = Arrays.stream(ingredientNames)
+                .map(name -> RecipeIngredient.builder()
+                        .ingredient(Ingredient.builder().name(name).build())
+                        .grams(100.0)
+                        .build())
+                .toList();
+
+        return Recipe.builder()
+                .id(id)
+                .title(title)
+                .averageRating(rating)
+                .recipeIngredients(recipeIngredients)
+                .build();
     }
 }
