@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { useMemo } from 'react';
 import { useService } from '../infrastructure/di';
 import { HttpClientKey } from '../infrastructure/services';
-import { ConsumptionRequest, ConsumptionResponse } from '../types';
+import { ConsumptionRequest, ConsumptionResponse, ConsumptionSummary } from '../types';
 import {
   ApiError,
   AuthenticationError,
@@ -36,6 +36,17 @@ const mapAxiosError = (error: unknown, fallback: string): never => {
 };
 
 export const getConsumptionService = (api: AxiosInstance) => ({
+  getDailySummary: async (date?: string): Promise<ConsumptionSummary> => {
+    try {
+      const response = await api.get<ConsumptionSummary>('/v1/consumptions/summary', {
+        params: date ? { date } : undefined
+      });
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Günlük tüketim özeti alınamadı');
+    }
+  },
+
   logConsumption: async (payload: ConsumptionRequest): Promise<ConsumptionResponse> => {
     try {
       const response = await api.post<ConsumptionResponse>('/v1/consumptions', payload);

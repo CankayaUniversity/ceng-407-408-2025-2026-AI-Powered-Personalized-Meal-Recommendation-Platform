@@ -89,7 +89,11 @@ const formatCalories = (value?: number | null) =>
 const scaleValue = (value: number | null | undefined, factor: number) =>
   value == null ? null : Math.round(value * factor * 10) / 10;
 
-const SmartConsumptionPanel: React.FC = () => {
+type SmartConsumptionPanelProps = {
+  onConsumptionLogged?: (response: ConsumptionResponse) => void | Promise<void>;
+};
+
+const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsumptionLogged }) => {
   const { authenticated, user } = useAuth();
   const inventoryService = useInventoryService();
   const recipeService = useRecipeService();
@@ -279,6 +283,10 @@ const SmartConsumptionPanel: React.FC = () => {
 
       if (!isOutside && selectedGroup) {
         await loadInventoryGroups();
+      }
+
+      if (onConsumptionLogged) {
+        void Promise.resolve(onConsumptionLogged(response)).catch(() => undefined);
       }
     } catch (error) {
       setErrorMessage(getErrorMessage(error, 'Tüketim kaydı oluşturulamadı.'));

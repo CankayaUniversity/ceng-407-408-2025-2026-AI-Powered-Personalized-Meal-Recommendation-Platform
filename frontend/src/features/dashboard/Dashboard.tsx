@@ -1,262 +1,561 @@
-import React from 'react';
+import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  AlertCircle,
+  ArrowRight,
+  Boxes,
+  ChefHat,
+  Flame,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  TrendingUp,
+  UtensilsCrossed
+} from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
-import { Zap, TrendingUp, Clock, Star, Heart, Wind, ShieldCheck, Activity, Target } from 'lucide-react';
+import { useConsumptionService } from '../../services/consumptionService';
+import { ApiError, NotFoundError } from '../../services/errors';
+import { useInventoryService } from '../../services/inventoryService';
+import { useUserService } from '../../services/userService';
+import type { ConsumptionResponse, ConsumptionSummary, Inventory, InventoryGroup, User } from '../../types';
 import SmartConsumptionPanel from './SmartConsumptionPanel';
+
+const SMART_CONSUMPTION_PANEL_ID = 'smart-consumption-panel';
+
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(value);
+
+const formatMacro = (value: number) =>
+  `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(value)}g`;
+
+const formatEnumLabel = (value?: string | null) =>
+  value
+    ? value
+        .split('_')
+        .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+        .join(' ')
+    : null;
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return fallback;
+};
+
+const lowStockThresholdForUnit = (unit?: string | null) => {
+  switch (unit?.toUpperCase()) {
+    case 'GRAM':
+      return 250;
+    case 'ML':
+      return 500;
+    case 'LITRE':
+      return 1;
+    case 'ADET':
+    case 'PAKET':
+      return 2;
+    default:
+      return 2;
+  }
+};
+
+const isRunningLow = (item: Inventory) => item.quantity <= lowStockThresholdForUnit(item.unit);
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user, authenticated, login } = useAuth();
+  const { user: authUser, authenticated, login } = useAuth();
+  const inventoryService = useInventoryService();
+  const consumptionService = useConsumptionService();
+  const userService = useUserService();
 
-  const dnaFilters = [
-    { label: 'Peanut-Free', type: 'allergen' },
-    { label: 'Keto Goal', type: 'goal' },
-    { label: 'High Protein', type: 'goal' },
-  ];
+  const [inventoryGroups, setInventoryGroups] = useState<InventoryGroup[]>([]);
+  const [dailySummary, setDailySummary] = useState<ConsumptionSummary | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const filters = [
-    { label: 'Energetic', icon: <Zap size={18} strokeWidth={1.5} /> },
-    { label: 'Under 30 min', icon: <Clock size={18} strokeWidth={1.5} /> },
-    { label: 'Plant Based', icon: <Heart size={18} strokeWidth={1.5} /> },
-    { label: 'Light', icon: <Wind size={18} strokeWidth={1.5} /> },
-  ];
+  const loadDashboardData = useCallback(async (options?: { silent?: boolean }) => {
+    if (!authenticated || !authUser) return;
+
+    if (options?.silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const [groups, summary] = await Promise.all([
+        inventoryService.getInventoryGroups(),
+        consumptionService.getDailySummary()
+      ]);
+
+      let nextProfile: User | null = null;
+      try {
+        nextProfile = await userService.getUserById(authUser.id);
+      } catch (error) {
+        if (!(error instanceof NotFoundError)) {
+          throw error;
+        }
+      }
+
+      startTransition(() => {
+        setInventoryGroups(groups);
+        setDailySummary(summary);
+        setProfile(nextProfile);
+        setErrorMessage(null);
+      });
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Dashboard data could not be loaded.'));
+    } finally {
+      if (options?.silent) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [authUser, authenticated, consumptionService, inventoryService, userService]);
+
+  useEffect(() => {
+    if (!authenticated || !authUser) return;
+
+    let ignore = false;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [groups, summary] = await Promise.all([
+          inventoryService.getInventoryGroups(),
+          consumptionService.getDailySummary()
+        ]);
+
+        let nextProfile: User | null = null;
+        try {
+          nextProfile = await userService.getUserById(authUser.id);
+        } catch (error) {
+          if (!(error instanceof NotFoundError)) {
+            throw error;
+          }
+        }
+
+        if (ignore) return;
+
+        startTransition(() => {
+          setInventoryGroups(groups);
+          setDailySummary(summary);
+          setProfile(nextProfile);
+          setErrorMessage(null);
+        });
+      } catch (error) {
+        if (ignore) return;
+        setErrorMessage(getErrorMessage(error, 'Dashboard data could not be loaded.'));
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+
+    void load();
+
+    return () => {
+      ignore = true;
+    };
+  }, [authUser, authenticated, consumptionService, inventoryService, userService]);
+
+  const inventoryMetrics = useMemo(() => {
+    const itemsWithGroup = inventoryGroups.flatMap((group) =>
+      group.items.map((item) => ({ group, item }))
+    );
+    const lowItems = itemsWithGroup.filter(({ item }) => isRunningLow(item));
+    const lowCountsByGroup = lowItems.reduce<Record<string, number>>((acc, entry) => {
+      const key = String(entry.group.id);
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const spotlightGroup = inventoryGroups.reduce<InventoryGroup | null>((current, group) => {
+      if (!current) return group;
+      return (lowCountsByGroup[String(group.id)] ?? 0) > (lowCountsByGroup[String(current.id)] ?? 0) ? group : current;
+    }, null);
+
+    const categories = new Set(
+      itemsWithGroup.flatMap(({ item }) => (item.ingredient?.category ? [item.ingredient.category] : []))
+    );
+
+    return {
+      totalLocations: inventoryGroups.length,
+      totalItems: itemsWithGroup.length,
+      totalLowItems: lowItems.length,
+      totalCategories: categories.size,
+      lowItems,
+      spotlightGroup
+    };
+  }, [inventoryGroups]);
+
+  const dailyGoal = profile?.dailyCalorieTarget ?? null;
+  const consumedCalories = dailySummary?.totalCalories ?? 0;
+  const calorieProgress = dailyGoal && dailyGoal > 0 ? Math.min((consumedCalories / dailyGoal) * 100, 100) : 0;
+  const calorieDelta = dailyGoal && dailyGoal > 0 ? dailyGoal - consumedCalories : null;
+
+  const profileSignals = useMemo(() => {
+    const signals: string[] = [];
+
+    const dietType = formatEnumLabel(profile?.dietType);
+    const dietaryGoal = formatEnumLabel(profile?.dietaryGoal);
+
+    if (dietType) signals.push(dietType);
+    if (dietaryGoal) signals.push(dietaryGoal);
+
+    profile?.allergies?.slice(0, 2).forEach((allergy) => signals.push(`${allergy} free`));
+    profile?.dislikedIngredients?.slice(0, 2).forEach((ingredient) => signals.push(`No ${ingredient}`));
+
+    if (signals.length === 0 && authUser?.roles?.length) {
+      authUser.roles.slice(0, 2).forEach((role) => signals.push(role.replace(/^ROLE_/, '').toLowerCase()));
+    }
+
+    return signals.slice(0, 5);
+  }, [authUser?.roles, profile?.allergies, profile?.dietType, profile?.dietaryGoal, profile?.dislikedIngredients]);
+
+  const lowStockHeadline = inventoryMetrics.totalLowItems > 0
+    ? `${inventoryMetrics.totalLowItems} items running low in ${inventoryMetrics.spotlightGroup?.name ?? 'your inventory'}`
+    : inventoryMetrics.totalItems > 0
+      ? `${inventoryMetrics.totalItems} items stocked across ${inventoryMetrics.totalLocations} locations`
+      : 'Start by adding a few ingredients to your inventory';
+
+  const dailyHeadline = dailyGoal && dailyGoal > 0
+    ? `${formatNumber(consumedCalories)} / ${formatNumber(dailyGoal)} kcal`
+    : `${formatNumber(consumedCalories)} kcal logged today`;
+
+  const heroMessage = dailyGoal && calorieDelta != null
+    ? calorieDelta >= 0
+      ? `${formatNumber(calorieDelta)} kcal remain in today's target while ${inventoryMetrics.totalLowItems} ingredients need a refill check.`
+      : `${formatNumber(Math.abs(calorieDelta))} kcal above target and ${inventoryMetrics.totalLowItems} ingredients are running low.`
+    : 'Live inventory signals and meal logging now feed the dashboard in real time.';
+
+  const topLowItems = inventoryMetrics.lowItems.slice(0, 3);
+
+  const handleQuickAddMeal = () => {
+    const panel = document.getElementById(SMART_CONSUMPTION_PANEL_ID);
+    panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleConsumptionLogged = useCallback((_response: ConsumptionResponse) => {
+    void loadDashboardData({ silent: true });
+  }, [loadDashboardData]);
+
+  if (!authenticated) {
+    return (
+      <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <header className="relative overflow-hidden rounded-[2.9rem] bg-espresso-midnight px-8 py-8 text-white shadow-[var(--brand-shadow-hero)]">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-16 right-0 h-48 w-48 rounded-full bg-terracotta/30 blur-[90px]" />
+            <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-moss-sage/20 blur-[100px]" />
+          </div>
+          <div className="relative z-10 max-w-3xl space-y-6">
+            <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-alabaster/80">
+              <Sparkles size={14} className="text-terracotta" />
+              Private Chef Dashboard
+            </div>
+            <div>
+              <h1 className="font-serif text-4xl font-bold leading-tight sm:text-5xl">Turn nutrition data into a calmer daily routine.</h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-alabaster/70 sm:text-lg">
+                Track meals, watch inventory health, and launch personalized recommendations from one polished workspace.
+              </p>
+            </div>
+            <button
+              onClick={() => void login()}
+              className="inline-flex items-center gap-3 rounded-2xl bg-terracotta px-6 py-4 font-semibold text-white shadow-xl shadow-terracotta/25 hover:scale-[1.02] hover:bg-terracotta/90"
+            >
+              <Target size={18} />
+              Begin Your Experience
+            </button>
+          </div>
+        </header>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      {/* Intelligence Sidebar (User DNA) */}
-      <aside className="lg:w-64 space-y-8">
-        <div className="glass-card p-6 rounded-4xl border-moss-sage/20 dark:border-moss-sage/10">
-          <div className="flex items-center gap-2 mb-6">
-            <ShieldCheck size={20} className="text-moss-sage" />
-            <h3 className="text-xs uppercase tracking-widest font-extrabold text-espresso-midnight/60 dark:text-alabaster/60">User DNA</h3>
-          </div>
-          <div className="flex flex-wrap lg:flex-col gap-3">
-            {dnaFilters.map((dna, i) => (
-              <div key={i} className="medical-badge flex items-center justify-center text-center">
-                {dna.label}
-              </div>
-            ))}
-          </div>
-          
-          <div className="mt-8 pt-6 border-t border-espresso-midnight/5 dark:border-white/5 space-y-4">
-             <div className="flex items-center gap-2">
-               <Activity size={16} className="text-moss-sage" />
-               <span className="text-[10px] font-bold text-espresso-midnight/40 dark:text-alabaster/40 uppercase tracking-tighter">Health Progress</span>
-             </div>
-             <div className="h-1 bg-espresso-midnight/5 dark:bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full bg-moss-sage rounded-full" style={{ width: '65%' }}></div>
-             </div>
-          </div>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <header className="relative overflow-hidden rounded-[2.9rem] bg-espresso-midnight px-8 py-8 text-white shadow-[var(--brand-shadow-hero)]">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-20 right-0 h-56 w-56 rounded-full bg-terracotta/30 blur-[100px]" />
+          <div className="absolute bottom-0 left-0 h-56 w-56 rounded-full bg-moss-sage/20 blur-[110px]" />
         </div>
-
-        <div className="hidden lg:block space-y-4">
-          <h4 className="font-serif text-lg font-bold text-espresso-midnight dark:text-alabaster px-2">Mood & Style</h4>
-          <div className="space-y-2">
-            {filters.map((filter, i) => (
-              <button key={i} className="w-full text-left px-4 py-3 rounded-2xl text-sm font-medium text-espresso-midnight/60 dark:text-alabaster/60 hover:bg-white/50 dark:hover:bg-white/5 hover:text-terracotta transition-all flex items-center gap-3">
-                {filter.icon}
-                {filter.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 space-y-10">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1 className="text-5xl font-serif font-bold text-espresso-midnight dark:text-alabaster leading-tight">
-              {authenticated ? `Bonjour, ${user?.firstName || 'Gourmet'}!` : 'The Private Chef Experience'}
-            </h1>
-            <p className="text-moss-forest/60 dark:text-moss-sage/60 mt-4 text-lg max-w-2xl font-medium italic">
-              "Precision nutrition meets culinary mastery."
-            </p>
-          </div>
-          
-          <button 
-            onClick={() => {
-              if (authenticated) {
-                navigate('/recommendations');
-                return;
-              }
-
-              void login();
-            }}
-            className="bg-terracotta text-white px-8 py-4 rounded-2xl font-bold hover:scale-105 transition-transform shadow-xl shadow-terracotta/20 flex items-center gap-3"
-          >
-            <Target size={20} />
-            {authenticated ? 'Open Recommendation Engine' : 'Generate My Plan'}
-          </button>
-        </header>
-
-        {authenticated && <SmartConsumptionPanel />}
-
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* Daily Recommendation Hero Card */}
-          <div className="md:col-span-2 relative rounded-5xl overflow-hidden group shadow-2xl aspect-[16/10]">
-            <img 
-              src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=1000" 
-              alt="Signature Dish" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight/80 via-espresso-midnight/20 to-transparent" />
-            
-            <div className="absolute top-8 left-8 flex items-center gap-3">
-              <span className="glass-card px-4 py-2 rounded-full text-[10px] uppercase tracking-[0.2em] font-bold text-white">
-                Daily Recommendation
-              </span>
-              <div className="match-score-badge text-xs flex items-center gap-2">
-                 <Activity size={14} className="text-terracotta" />
-                 95% Match
-              </div>
+        <div className="relative z-10 flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl space-y-4">
+            <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-alabaster/80">
+              <Sparkles size={14} className="text-terracotta" />
+              Live Dashboard
             </div>
+            <div>
+              <h1 className="font-serif text-4xl font-bold leading-tight sm:text-5xl">
+                {`Welcome back, ${authUser?.firstName || authUser?.username || 'Chef'}!`}
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-alabaster/70 sm:text-lg">
+                {heroMessage}
+              </p>
+            </div>
+          </div>
 
-            <div className="absolute bottom-8 left-8 right-8">
-              <div className="glass-card p-8 rounded-4xl space-y-4 border-white/20">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-3xl font-serif font-bold text-white mb-2">Roasted Mediterranean Salmon</h3>
-                    <div className="flex gap-2">
-                       <span className="medical-badge bg-white/10 border-white/20 text-white">High Protein</span>
-                       <span className="medical-badge-focus text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
-                         <Star size={10} className="fill-ochre-soft" /> Soft Ochre Highlight
-                       </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="pt-4 border-t border-white/10 group/tooltip relative">
-                  <p className="text-white/90 text-sm italic leading-relaxed cursor-help">
-                    "Why this recipe? Matches your 20g protein goal & excludes Dairy."
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:max-w-md xl:justify-end">
+            <button
+              type="button"
+              onClick={handleQuickAddMeal}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-terracotta px-5 py-3 font-semibold text-white shadow-xl shadow-terracotta/25 hover:scale-[1.02] hover:bg-terracotta/90"
+            >
+              <UtensilsCrossed size={18} />
+              Add Meal
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/recommendations')}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 font-semibold text-white shadow-lg shadow-black/10 hover:bg-white/10"
+            >
+              <Sparkles size={18} />
+              Quick Recommend
+            </button>
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-sm">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-alabaster/40">Locations</p>
+            <p className="mt-2 text-3xl font-serif font-bold">{inventoryMetrics.totalLocations}</p>
+          </div>
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-sm">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-alabaster/40">Low Stock</p>
+            <p className="mt-2 text-3xl font-serif font-bold">{inventoryMetrics.totalLowItems}</p>
+          </div>
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-sm">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-alabaster/40">Today</p>
+            <p className="mt-2 text-3xl font-serif font-bold">{formatNumber(consumedCalories)} kcal</p>
+          </div>
+        </div>
+      </header>
+
+      {errorMessage && (
+        <div className="rounded-[2rem] border border-red-200/70 bg-red-50/90 px-5 py-4 text-red-700 shadow-[0_18px_48px_-28px_rgba(185,28,28,0.35)]">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={18} className="mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold">Dashboard data could not be refreshed</p>
+              <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="glass-card flex min-h-[260px] items-center justify-center rounded-[2.5rem] border border-white/60 px-8 py-7 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
+          <div className="flex items-center gap-4">
+            <Loader2 size={24} className="animate-spin text-terracotta" />
+            <div>
+              <p className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Dashboard is syncing live data</p>
+              <p className="text-sm text-espresso-midnight/60 dark:text-alabaster/60">Inventory, profile, and daily nutrition summary are loading.</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10 xl:col-span-2">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Inventory Summary</p>
+                  <h2 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{lowStockHeadline}</h2>
+                  <p className="mt-3 text-sm leading-7 text-espresso-midnight/60 dark:text-alabaster/60">
+                    Terracotta flags the ingredients that need attention first, while sage keeps healthy coverage visible across the rest of your kitchens.
                   </p>
-                  
-                  {/* Tooltip implementation via absolute positioning (Glassmorphism card) */}
-                  <div className="absolute bottom-full left-0 mb-4 w-72 glass-card p-6 rounded-3xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none border-white/30 z-20">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-3">AI Intelligence</h4>
-                    <ul className="space-y-2">
-                      <li className="text-[11px] text-white/70 flex items-center gap-2">
-                        <div className="w-1 h-1 bg-terracotta rounded-full" />
-                        Bio-available Omega-3 for focus
-                      </li>
-                      <li className="text-[11px] text-white/70 flex items-center gap-2">
-                        <div className="w-1 h-1 bg-moss-sage rounded-full" />
-                        0% Dairy detected in ingredients
-                      </li>
-                    </ul>
-                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/inventory')}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-espresso-midnight/10 bg-white/70 px-4 py-3 text-sm font-semibold text-espresso-midnight/70 shadow-sm hover:text-terracotta dark:border-white/10 dark:bg-white/5 dark:text-alabaster/70"
+                >
+                  <Boxes size={16} />
+                  Open Inventory
+                </button>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Running Low</p>
+                  <p className="mt-3 font-serif text-3xl font-bold text-terracotta">{inventoryMetrics.totalLowItems}</p>
+                </div>
+                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Stocked Items</p>
+                  <p className="mt-3 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{inventoryMetrics.totalItems}</p>
+                </div>
+                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Categories</p>
+                  <p className="mt-3 font-serif text-3xl font-bold text-moss-forest dark:text-moss-sage">{inventoryMetrics.totalCategories}</p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Precision Data Card */}
-          <div className="glass-card p-8 rounded-5xl flex flex-col justify-between shadow-xl border-white/50 dark:border-white/5">
-            <div className="space-y-6">
+              <div className="mt-6 flex flex-wrap gap-3">
+                {topLowItems.length > 0 ? topLowItems.map(({ group, item }) => (
+                  <span key={`${group.id}-${item.id}`} className="inline-flex items-center gap-2 rounded-full border border-terracotta/20 bg-terracotta/10 px-3 py-2 text-xs font-semibold text-terracotta">
+                    <span>{item.ingredient?.name || 'Ingredient'}</span>
+                    <span className="text-terracotta/60">{group.name}</span>
+                  </span>
+                )) : (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-moss-sage/20 bg-moss-sage/10 px-3 py-2 text-xs font-semibold text-moss-forest dark:text-moss-sage">
+                    Inventory looks healthy across all locations.
+                  </span>
+                )}
+              </div>
+            </section>
+
+            <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Daily Summary</p>
+                  <h2 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{dailyHeadline}</h2>
+                </div>
+                <div className="rounded-full bg-terracotta/10 p-3 text-terracotta">
+                  <Flame size={18} />
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-alabaster/40">
+                  <span>Daily Goal Progress</span>
+                  <span>{dailyGoal ? `${Math.round(calorieProgress)}%` : 'Set Profile'}</span>
+                </div>
+                <div className="mt-3 h-2 rounded-full bg-espresso-midnight/5 dark:bg-white/5">
+                  <div className="h-full rounded-full bg-terracotta transition-all duration-700" style={{ width: `${calorieProgress}%` }} />
+                </div>
+                <p className="mt-3 text-sm text-espresso-midnight/60 dark:text-alabaster/60">
+                  {dailyGoal && calorieDelta != null
+                    ? calorieDelta >= 0
+                      ? `${formatNumber(calorieDelta)} kcal left to hit your target.`
+                      : `${formatNumber(Math.abs(calorieDelta))} kcal above your target today.`
+                    : 'Complete your profile to unlock personalized calorie targeting.'}
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Protein</p>
+                  <p className="mt-2 font-serif text-2xl font-bold text-terracotta">{formatMacro(dailySummary?.totalProtein ?? 0)}</p>
+                </div>
+                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Carbs</p>
+                  <p className="mt-2 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{formatMacro(dailySummary?.totalCarbs ?? 0)}</p>
+                </div>
+                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Fat</p>
+                  <p className="mt-2 font-serif text-2xl font-bold text-moss-forest dark:text-moss-sage">{formatMacro(dailySummary?.totalFat ?? 0)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/profile')}
+                  className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 text-left shadow-sm hover:border-terracotta/25 dark:border-white/10 dark:bg-white/5"
+                >
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Goal Source</p>
+                  <p className="mt-2 text-sm font-semibold text-terracotta">{dailyGoal ? `${formatNumber(dailyGoal)} kcal target` : 'Set up profile data'}</p>
+                </button>
+              </div>
+            </section>
+
+            <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-espresso-midnight dark:bg-white/10 flex items-center justify-center text-white">
-                  <Activity size={20} strokeWidth={1.5} />
+                <div className="rounded-full bg-moss-sage/12 p-3 text-moss-forest dark:text-moss-sage">
+                  <ShieldCheck size={18} />
                 </div>
-                <h3 className="font-serif font-bold text-xl text-espresso-midnight dark:text-alabaster">Data Precision</h3>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">User DNA</p>
+                  <h2 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Profile signals</h2>
+                </div>
               </div>
-              
-              <div className="space-y-6">
-                {[
-                  { label: 'Protein Goal', current: 45, target: 60, color: 'bg-terracotta' },
-                  { label: 'Fiber intake', current: 18, target: 25, color: 'bg-moss-sage' },
-                ].map((item, i) => (
-                  <div key={i} className="space-y-3">
-                    <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-espresso-midnight/40 dark:text-alabaster/40">
-                      <span>{item.label}</span>
-                      <span>{Math.round((item.current/item.target)*100)}%</span>
-                    </div>
-                    <div className="h-2 bg-espresso-midnight/5 dark:bg-white/5 rounded-full overflow-hidden">
-                      <div className={`h-full ${item.color} rounded-full transition-all duration-1000`} style={{ width: `${(item.current/item.target)*100}%` }}></div>
-                    </div>
-                    <p className="text-[10px] font-medium text-moss-forest/60 dark:text-moss-sage/60">{item.current}g / {item.target}g achieved</p>
-                  </div>
-                ))}
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                {profileSignals.length > 0 ? profileSignals.map((signal) => (
+                  <span key={signal} className="medical-badge">{signal}</span>
+                )) : (
+                  <span className="rounded-full border border-espresso-midnight/10 bg-white/70 px-3 py-2 text-xs font-semibold text-espresso-midnight/60 dark:border-white/10 dark:bg-white/5 dark:text-alabaster/60">
+                    Add diet, goal, or allergy details from your profile.
+                  </span>
+                )}
               </div>
-            </div>
-            
-            <div className="pt-6 mt-6 border-t border-espresso-midnight/5 dark:border-white/5">
-              <div className="flex gap-2">
-                <span className="text-[10px] font-bold text-ochre-soft bg-ochre-soft/10 px-2 py-1 rounded">PRO TIP</span>
-                <p className="text-[10px] text-espresso-midnight/60 dark:text-alabaster/60 leading-relaxed font-medium">Add 10g seeds to reach your Fiber goal for today.</p>
+
+              <div className="mt-6 rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Goal Alignment</p>
+                <p className="mt-3 text-sm leading-7 text-espresso-midnight/65 dark:text-alabaster/65">
+                  {formatEnumLabel(profile?.dietaryGoal)
+                    ? `Recommendations will stay tuned for ${formatEnumLabel(profile?.dietaryGoal)?.toLowerCase()}.`
+                    : 'Profile goal is not set yet, so recommendation intent stays more general.'}
+                </p>
               </div>
-            </div>
+            </section>
+
+            <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-terracotta/10 p-3 text-terracotta">
+                  <TrendingUp size={18} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Kitchen Footprint</p>
+                  <h2 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Coverage at a glance</h2>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Locations connected</span>
+                  <span className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{inventoryMetrics.totalLocations}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Live ingredients</span>
+                  <span className="font-serif text-2xl font-bold text-terracotta">{inventoryMetrics.totalItems}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                  <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Tracked categories</span>
+                  <span className="font-serif text-2xl font-bold text-moss-forest dark:text-moss-sage">{inventoryMetrics.totalCategories}</span>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-[2.6rem] border border-white/60 bg-espresso-midnight p-6 text-white shadow-[0_28px_80px_-40px_rgba(40,36,33,0.7)] xl:col-span-2">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">Quick Actions</p>
+                  <h2 className="mt-2 font-serif text-3xl font-bold">Jump from insight to action without leaving the dashboard.</h2>
+                  <p className="mt-3 text-sm leading-7 text-white/70">
+                    Use the spiced terracotta action buttons to log a meal instantly or open the recommendation engine with your latest inventory context.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={handleQuickAddMeal}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-terracotta px-5 py-4 font-semibold text-white shadow-xl shadow-terracotta/25 hover:scale-[1.02] hover:bg-terracotta/90"
+                  >
+                    <ChefHat size={18} />
+                    Add Meal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/recommendations')}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-4 font-semibold text-white shadow-lg shadow-black/10 hover:bg-white/10"
+                  >
+                    <ArrowRight size={18} />
+                    Quick Recommend
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
 
-          {/* Recipe Card with Tags */}
-          <div className="md:col-span-3 glass-card p-6 rounded-5xl flex flex-col md:flex-row gap-8 items-center shadow-xl border-white/40 dark:border-white/5">
-             <div className="w-full md:w-64 h-48 rounded-4xl overflow-hidden flex-shrink-0 shadow-lg relative group">
-                <img 
-                  src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=600" 
-                  alt="Secondary" 
-                  className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                />
-                <div className="absolute top-4 right-4 match-score-badge scale-75 origin-top-right">
-                   88%
-                </div>
-             </div>
-             <div className="flex-1 space-y-6 w-full">
-                <div className="flex flex-wrap justify-between items-start gap-4">
-                  <div>
-                    <h3 className="text-2xl font-serif font-bold text-espresso-midnight dark:text-alabaster mb-2">Quinoa Tabbouleh Bowl</h3>
-                    <div className="flex flex-wrap gap-2">
-                       <span className="medical-badge">Allergen-Free</span>
-                       <span className="medical-badge bg-ochre-soft/10 border-ochre-soft/20 text-ochre-soft">Favorite Flavor</span>
-                       <span className="text-[10px] font-bold text-moss-sage flex items-center gap-1">
-                          <ShieldCheck size={12} /> Matches Keto Goal
-                       </span>
-                    </div>
-                  </div>
-                  <div className="bg-alabaster dark:bg-white/5 p-3 rounded-2xl border border-espresso-midnight/5 dark:border-white/5">
-                    <TrendingUp size={20} className="text-terracotta" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                   {[
-                     { label: 'Carbs', val: '24g', color: 'text-espresso-midnight dark:text-alabaster' },
-                     { label: 'Protein', val: '12g', color: 'text-terracotta' },
-                     { label: 'Fat', val: '32g', color: 'text-moss-sage' },
-                     { label: 'Cals', val: '380', color: 'text-ochre-soft' },
-                   ].map((nut, i) => (
-                     <div key={i} className="bg-white/40 dark:bg-white/5 p-3 rounded-2xl text-center border border-white/60 dark:border-white/10">
-                        <p className="text-[9px] uppercase tracking-tighter font-bold text-espresso-midnight/30 dark:text-alabaster/30 mb-1">{nut.label}</p>
-                        <p className={`text-sm font-black ${nut.color}`}>{nut.val}</p>
-                     </div>
-                   ))}
-                </div>
-             </div>
-          </div>
-        </div>
-      </div>
-      
-      {!authenticated && (
-        <div className="bg-espresso-midnight rounded-[3rem] p-16 text-center space-y-8 relative overflow-hidden shadow-2xl mt-12">
-           <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-              <div className="absolute top-10 left-10 w-64 h-64 bg-terracotta rounded-full blur-[100px]" />
-              <div className="absolute bottom-10 right-10 w-64 h-64 bg-moss-forest rounded-full blur-[100px]" />
-           </div>
-           <div className="relative z-10 space-y-4">
-             <h2 className="text-4xl md:text-6xl font-serif font-bold text-white max-w-3xl mx-auto leading-tight">
-               Elevate your culinary journey with AI.
-             </h2>
-             <p className="text-alabaster/40 text-lg max-w-xl mx-auto">
-               Join our exclusive community of health-conscious gourmets and unlock personalized nutrition.
-             </p>
-           </div>
-           <button 
-             onClick={() => login()}
-             className="relative z-10 bg-terracotta text-white px-12 py-5 rounded-2xl font-bold hover:scale-105 transition-transform shadow-2xl shadow-terracotta/40"
-           >
-             Begin Your Experience
-           </button>
-        </div>
+          <section id={SMART_CONSUMPTION_PANEL_ID} className="scroll-mt-6">
+            <div className="mb-3 flex items-center justify-end">
+              <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${refreshing ? 'bg-moss-sage/15 text-moss-forest dark:text-moss-sage' : 'bg-transparent text-espresso-midnight/35 dark:text-alabaster/35'}`}>
+                {refreshing ? 'Dashboard syncing...' : 'Live bound to meal logging'}
+              </span>
+            </div>
+            <SmartConsumptionPanel onConsumptionLogged={handleConsumptionLogged} />
+          </section>
+        </>
       )}
     </div>
   );

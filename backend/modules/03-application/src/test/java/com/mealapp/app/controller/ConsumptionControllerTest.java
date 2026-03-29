@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -23,6 +24,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -136,5 +138,23 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
                 .andExpect(jsonPath("$.isFromInventory").value(false));
 
         verify(inventoryService, never()).getUserInventoryGroup(any(), any());
+    }
+
+    @Test
+    void shouldReturnDailySummaryForAuthenticatedUser() throws Exception {
+        DailyConsumptionService.DailyNutritionSummary summary =
+                new DailyConsumptionService.DailyNutritionSummary(1280, 86.4, 132.8, 41.2);
+
+        when(dailyConsumptionService.getDailyNutritionSummary("system-user", LocalDate.of(2026, 3, 29)))
+                .thenReturn(summary);
+
+        mockMvc.perform(get("/api/v1/consumptions/summary")
+                        .param("date", "2026-03-29"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.date").value("2026-03-29"))
+                .andExpect(jsonPath("$.totalCalories").value(1280))
+                .andExpect(jsonPath("$.totalProtein").value(86.4))
+                .andExpect(jsonPath("$.totalCarbs").value(132.8))
+                .andExpect(jsonPath("$.totalFat").value(41.2));
     }
 }

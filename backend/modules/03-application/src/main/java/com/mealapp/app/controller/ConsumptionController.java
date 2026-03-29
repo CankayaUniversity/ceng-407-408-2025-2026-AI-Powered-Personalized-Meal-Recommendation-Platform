@@ -2,6 +2,7 @@ package com.mealapp.app.controller;
 
 import com.mealapp.app.model.dto.consumption.ConsumptionRequest;
 import com.mealapp.app.model.dto.consumption.ConsumptionResponse;
+import com.mealapp.app.model.dto.consumption.ConsumptionSummaryResponse;
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.common.exception.MealAppDomainException;
@@ -16,9 +17,12 @@ import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 /**
  * Günlük tüketim (yemek) kayıtlarını yöneten uç noktalar.
@@ -34,6 +38,28 @@ public class ConsumptionController {
     private final RecipeService recipeService;
     private final IngredientService ingredientService;
     private final InventoryService inventoryService;
+
+    /**
+     * Belirli bir gün için toplam kalori ve makro özetini döner.
+     */
+    @GetMapping("/summary")
+    public ConsumptionSummaryResponse getSummary(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        String userId = requireAuthenticatedUserId(jwt, null);
+        LocalDate requestedDate = date != null ? date : LocalDate.now();
+        DailyConsumptionService.DailyNutritionSummary summary =
+                dailyConsumptionService.getDailyNutritionSummary(userId, requestedDate);
+
+        ConsumptionSummaryResponse response = new ConsumptionSummaryResponse();
+        response.setDate(requestedDate);
+        response.setTotalCalories(summary.totalCalories());
+        response.setTotalProtein(summary.totalProtein());
+        response.setTotalCarbs(summary.totalCarbs());
+        response.setTotalFat(summary.totalFat());
+        return response;
+    }
 
     /**
      * Günlük tüketim kaydı oluşturur.

@@ -235,6 +235,14 @@ export interface ConsumptionResponse {
   consumedAt: string;
 }
 
+export interface ConsumptionSummary {
+  date: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+}
+
 export interface InventoryGroupRequest {
   name: string;
   icon?: string;

@@ -3,9 +3,17 @@
 @tailwind utilities;
 
 :root {
+  --brand-shadow-soft: 0 22px 56px -32px rgba(40, 36, 33, 0.34);
+  --brand-shadow-elevated: 0 24px 60px -30px rgba(40, 36, 33, 0.38);
+  --brand-shadow-hero: 0 30px 90px -36px rgba(40, 36, 33, 0.72);
+  --brand-ease: cubic-bezier(0.22, 1, 0.36, 1);
   font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -42,6 +50,19 @@ body {
 
 h1, h2, h3, h4, .font-serif {
   font-family: 'Playfair Display', serif;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  transition:
+    color 0.22s var(--brand-ease),
+    background-color 0.22s var(--brand-ease),
+    border-color 0.22s var(--brand-ease),
+    box-shadow 0.22s var(--brand-ease),
+    transform 0.22s var(--brand-ease);
 }
 
 .bento-grid {
@@ -101,13 +122,13 @@ h1, h2, h3, h4, .font-serif {
   padding: 0.5rem 1rem;
   border-radius: 1.5rem;
   font-weight: 800;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--brand-shadow-soft);
 }
 
 .dark .match-score-badge {
   background: rgba(40, 36, 33, 0.9);
   color: #F9F6F0;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--brand-shadow-elevated);
 }
 
 #root {
