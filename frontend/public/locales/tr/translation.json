@@ -59,6 +59,7 @@
   "navigation": {
     "home": "Anasayfa",
     "recipes": "Tarifler",
+    "inventory": "Envanter",
     "recommendations": "Öneriler",
     "profile": "Profil"
   },

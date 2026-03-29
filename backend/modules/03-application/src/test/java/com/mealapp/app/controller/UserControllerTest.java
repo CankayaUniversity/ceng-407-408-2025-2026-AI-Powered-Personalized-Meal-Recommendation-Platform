@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -42,6 +43,7 @@ class UserControllerTest extends AbstractMockMvcTest {
         userDto.setAge(25);
         userDto.setGender(User.Gender.MALE);
         userDto.setActivityLevel(User.ActivityLevel.MODERATELY_ACTIVE);
+        userDto.setDislikedIngredients(List.of("Cilantro", "Celery"));
 
         when(userService.findById("system-user")).thenReturn(Optional.empty());
         when(userService.findByEmail("system@mealapp.local")).thenReturn(Optional.empty());

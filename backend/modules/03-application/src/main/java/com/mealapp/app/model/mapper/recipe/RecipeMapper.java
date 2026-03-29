@@ -17,7 +17,11 @@ public class RecipeMapper {
                 .title(recipe.getTitle())
                 .category("Genel") // Recipe entity'sinde henüz kategori yok, varsayılan değer veriyoruz
                 .calories(recipe.getTotalCalories())
+                .protein(recipe.getTotalProtein())
+                .carbs(recipe.getTotalCarbs())
+                .fat(recipe.getTotalFat())
                 .preparationTime(recipe.getPreparationTimeMinutes())
+                .servings(recipe.getServings())
                 .rating(recipe.getAverageRating())
                 .imageUrl(recipe.getImageUrl())
                 .build();

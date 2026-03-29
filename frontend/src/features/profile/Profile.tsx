@@ -16,6 +16,7 @@ import { ApiError, NotFoundError, ValidationError } from '../../services/errors'
 import { useUserService } from '../../services/userService';
 type UserService = ReturnType<typeof useUserService>;
 import { ActivityLevel, DietaryGoal, DietType, Gender, type User } from '../../types';
+import TastePreferencePicker from './TastePreferencePicker';
 
 interface ProfileFormState {
   weight: string;
@@ -26,6 +27,7 @@ interface ProfileFormState {
   dietType: DietType | '';
   dietaryGoal: DietaryGoal | '';
   allergies: string[];
+  dislikedIngredients: string[];
 }
 
 const genderOptions = [
@@ -66,7 +68,8 @@ const emptyForm = (): ProfileFormState => ({
   activityLevel: '',
   dietType: '',
   dietaryGoal: '',
-  allergies: []
+  allergies: [],
+  dislikedIngredients: []
 });
 
 const buildDisplayName = (authUser: AuthUser | undefined): string => {
@@ -91,10 +94,10 @@ const getInitials = (authUser: AuthUser | undefined): string => {
   return authUser.username.slice(0, 2).toUpperCase();
 };
 
-const normalizeAllergies = (allergies: string[]): string[] => {
+const normalizePreferenceList = (values: string[]): string[] => {
   const seen = new Set<string>();
 
-  return allergies.reduce<string[]>((acc, item) => {
+  return values.reduce<string[]>((acc, item) => {
     const value = item.trim();
     const key = value.toLocaleLowerCase('tr-TR');
 
@@ -116,12 +119,14 @@ const toForm = (profile: User | null): ProfileFormState => ({
   activityLevel: profile?.activityLevel ?? '',
   dietType: profile?.dietType ?? '',
   dietaryGoal: profile?.dietaryGoal ?? '',
-  allergies: normalizeAllergies(profile?.allergies ?? [])
+  allergies: normalizePreferenceList(profile?.allergies ?? []),
+  dislikedIngredients: normalizePreferenceList(profile?.dislikedIngredients ?? [])
 });
 
 const snapshotForm = (form: ProfileFormState): string => JSON.stringify({
   ...form,
-  allergies: normalizeAllergies(form.allergies)
+  allergies: normalizePreferenceList(form.allergies),
+  dislikedIngredients: normalizePreferenceList(form.dislikedIngredients)
 });
 
 const toFloat = (value: string): number | undefined => {
@@ -153,7 +158,8 @@ const buildPayload = (authUser: AuthUser, form: ProfileFormState): Partial<User>
   activityLevel: form.activityLevel || undefined,
   dietType: form.dietType || undefined,
   dietaryGoal: form.dietaryGoal || undefined,
-  allergies: normalizeAllergies(form.allergies)
+  allergies: normalizePreferenceList(form.allergies),
+  dislikedIngredients: normalizePreferenceList(form.dislikedIngredients)
 });
 
 const loadProfile = async (authUser: AuthUser, userService: UserService): Promise<User> => {
@@ -493,7 +499,7 @@ const Profile: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900">Tercihler ve Alerjenler</h3>
-                <p className="text-sm text-gray-500">Seçimler backend enumları ile bire bir kaydedilir.</p>
+                <p className="text-sm text-gray-500">Sert kısıtlar ve kişisel damak tercihleri öneri akışına birlikte taşınır.</p>
               </div>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -596,6 +602,21 @@ const Profile: React.FC = () => {
                 )}
 
                 {fieldErrors.allergies && <span className="text-sm text-red-600">{fieldErrors.allergies}</span>}
+              </div>
+
+              <div className="space-y-3 md:col-span-2">
+                <div className="space-y-1">
+                  <span className="text-sm font-semibold text-gray-700">Taste Preferences</span>
+                  <p className="text-sm text-gray-500">
+                    Sevmediğin gıdaları soft-constraint olarak kaydediyoruz; öneri motoru bunları alerjenlerden farklı şekilde ele alacak.
+                  </p>
+                </div>
+
+                <TastePreferencePicker
+                  values={form.dislikedIngredients}
+                  onChange={(nextValues) => updateField('dislikedIngredients', nextValues)}
+                  error={fieldErrors.dislikedIngredients}
+                />
               </div>
             </div>
           </section>
