@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -38,5 +39,6 @@ public class GeminiRequest {
         private Double temperature;
         private Integer maxOutputTokens;
         private String responseMimeType;
+        private Map<String, Object> responseJsonSchema;
     }
 }

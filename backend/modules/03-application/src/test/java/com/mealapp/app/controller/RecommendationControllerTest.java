@@ -25,6 +25,7 @@ class RecommendationControllerTest extends AbstractMockMvcTest {
         RecommendationRequest request = new RecommendationRequest();
         request.setUserId("user-1");
         request.setAvailableIngredients(List.of("Tomato"));
+        request.setDislikedIngredients(List.of("Onion"));
 
         when(recommendationAppService.getRecommendations(any())).thenReturn(new RecommendationResponse());
 

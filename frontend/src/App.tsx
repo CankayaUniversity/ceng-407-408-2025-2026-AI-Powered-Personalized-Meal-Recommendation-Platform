@@ -16,6 +16,8 @@ import LandingPage from './features/landing-page/LandingPage';
 import Dashboard from './features/dashboard/Dashboard';
 import RecipeList from './features/recipes/RecipeList';
 import Profile from './features/profile/Profile';
+import InventoryPage from './features/inventory/InventoryPage';
+import RecommendationPage from './features/recommendations/RecommendationPage';
 import keycloakConfig from './keycloak-config.json';
 import type { AuthService } from './infrastructure/services/auth/AuthService';
 
@@ -90,6 +92,26 @@ const App: React.FC = () => {
                     <PrivateRoute>
                       <MainLayout>
                         <Profile />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/inventory"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <InventoryPage />
+                      </MainLayout>
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/recommendations"
+                  element={
+                    <PrivateRoute>
+                      <MainLayout>
+                        <RecommendationPage />
                       </MainLayout>
                     </PrivateRoute>
                   }

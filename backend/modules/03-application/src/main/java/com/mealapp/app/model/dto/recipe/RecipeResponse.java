@@ -14,7 +14,11 @@ public class RecipeResponse {
     private String title;
     private String category;
     private Double calories;
+    private Double protein;
+    private Double carbs;
+    private Double fat;
     private Integer preparationTime;
+    private Integer servings;
     private Double rating;
     private String imageUrl;
 }

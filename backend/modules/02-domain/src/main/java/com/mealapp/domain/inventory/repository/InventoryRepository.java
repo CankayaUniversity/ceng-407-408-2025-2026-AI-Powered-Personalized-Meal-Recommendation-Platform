@@ -14,15 +14,23 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     /**
      * Belirli bir kullanıcıya ait tüm malzemeleri listeler.
      */
-    List<Inventory> findByUserId(String userId);
+    List<Inventory> findByUserIdOrderByInventoryGroupIdAscIngredientNameAsc(String userId);
+
+    List<Inventory> findByInventoryGroupIdAndUserIdOrderByIngredientNameAsc(Long inventoryGroupId, String userId);
 
     /**
      * Kullanıcının elindeki belirli bir malzemeyi bulur.
      */
-    List<Inventory> findByUserIdAndIngredientNameContainingIgnoreCase(String userId, String ingredientName);
+    List<Inventory> findByUserIdAndIngredientNameContainingIgnoreCaseOrderByInventoryGroupIdAsc(String userId, String ingredientName);
 
     /**
      * Kullanıcının elindeki belirli bir malzeme ID'sine göre envanter kaydını bulur.
      */
     java.util.Optional<Inventory> findByUserIdAndIngredientId(String userId, Long ingredientId);
+
+    java.util.Optional<Inventory> findByUserIdAndInventoryGroupIdAndIngredientId(String userId, Long inventoryGroupId, Long ingredientId);
+
+    java.util.Optional<Inventory> findByIdAndUserIdAndInventoryGroupId(Long id, String userId, Long inventoryGroupId);
+
+    List<Inventory> findByUserIdAndIngredientIdOrderByInventoryGroupIdAsc(String userId, Long ingredientId);
 }

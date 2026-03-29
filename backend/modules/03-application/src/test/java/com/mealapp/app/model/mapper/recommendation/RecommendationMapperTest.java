@@ -20,11 +20,12 @@ class RecommendationMapperTest {
         RecommendationMapper mapper = new RecommendationMapper();
 
         // Act
-        RecommendationResponse response = mapper.toResponse(recipes);
+        RecommendationResponse response = mapper.toResponse(recipes, List.of("Menemen"));
 
         // Assert
         assertNotNull(response);
         assertEquals(2, response.getRecommendedRecipes().size());
+        assertEquals(1L, response.getRecommendedRecipes().get(0).getRecipeId());
         assertEquals("Menemen", response.getRecommendedRecipes().get(0).getRecipeTitle());
         assertEquals("Mercimek Çorbası", response.getRecommendedRecipes().get(1).getRecipeTitle());
     }
@@ -33,7 +34,7 @@ class RecommendationMapperTest {
     void toResponse_handlesEmptyList() {
         RecommendationMapper mapper = new RecommendationMapper();
 
-        RecommendationResponse response = mapper.toResponse(List.of());
+        RecommendationResponse response = mapper.toResponse(List.of(), List.of());
 
         assertNotNull(response);
         assertNotNull(response.getRecommendedRecipes());

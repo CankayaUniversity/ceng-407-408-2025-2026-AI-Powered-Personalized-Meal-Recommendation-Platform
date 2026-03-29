@@ -36,12 +36,20 @@ export enum Difficulty {
 }
 
 export enum IngredientCategory {
+  MEAT = 'MEAT',
   VEGETABLE = 'VEGETABLE',
   FRUIT = 'FRUIT',
-  PROTEIN = 'PROTEIN',
-  GRAIN = 'GRAIN',
   DAIRY = 'DAIRY',
+  GRAIN = 'GRAIN',
   SPICE = 'SPICE',
+  OIL = 'OIL',
+  SEAFOOD = 'SEAFOOD',
+  SAUCE = 'SAUCE',
+  NUT = 'NUT',
+  SWEETENER = 'SWEETENER',
+  BEVERAGE = 'BEVERAGE',
+  EGG = 'EGG',
+  LEGUME = 'LEGUME',
   OTHER = 'OTHER'
 }
 
@@ -64,6 +72,7 @@ export interface User {
   name?: string | null;
   email?: string | null;
   allergies?: string[] | null;
+  dislikedIngredients?: string[] | null;
   dietType?: DietType | null;
   dietaryGoal?: DietaryGoal | null;
   weight?: number | null;
@@ -81,7 +90,11 @@ export interface RecipeListItem {
   title: string;
   category?: string | null;
   totalCalories?: number | null;
+  totalProtein?: number | null;
+  totalCarbs?: number | null;
+  totalFat?: number | null;
   preparationTimeMinutes?: number | null;
+  servings?: number | null;
   averageRating?: number | null;
   imageUrl?: string | null;
 }
@@ -130,32 +143,62 @@ export interface DailyConsumption {
   id: number;
   userId: string;
   recipeId?: number;
+  ingredientId?: number;
+  inventoryGroupId?: number;
   foodName: string;
   estimatedCalories: number;
+  estimatedProtein?: number | null;
+  estimatedCarbs?: number | null;
+  estimatedFat?: number | null;
   mealType: MealType;
   portionSize: PortionSize;
+  portionLabel?: string | null;
+  portionMultiplier?: number | null;
+  portionGrams?: number | null;
   consumedAt: string;
   isCustomEntry: boolean;
+  isFromInventory?: boolean;
 }
 
 export interface Inventory {
   id: number;
-  userId: string;
+  inventoryGroupId: number;
   ingredientId: number;
   quantity: number;
   unit: string;
   ingredient?: Ingredient;
 }
 
+export interface InventoryGroup {
+  id: number;
+  name: string;
+  icon?: string | null;
+  itemCount: number;
+  items: Inventory[];
+}
+
 // API DTOs
 export interface RecommendationRequest {
   userId: string;
   availableIngredients: string[];
+  dislikedIngredients?: string[] | null;
+  cravings?: string | null;
 }
 
 export interface RecommendedRecipe {
+  recipeId: number;
   recipeTitle: string;
   insight: string;
+  matchedIngredients: string[];
+  missingIngredients: string[];
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
+  preparationTimeMinutes?: number | null;
+  servings?: number | null;
+  averageRating?: number | null;
+  imageUrl?: string | null;
 }
 
 export interface RecommendationResponse {
@@ -165,17 +208,50 @@ export interface RecommendationResponse {
 export interface ConsumptionRequest {
   userId: string;
   recipeId?: number;
+  ingredientId?: number;
+  inventoryGroupId?: number;
   foodName: string;
   mealType: MealType;
   portionSize: PortionSize;
+  portionLabel?: string | null;
+  portionMultiplier?: number | null;
+  portionGrams?: number | null;
   isCustomEntry?: boolean | null;
   isFromInventory?: boolean | null;
 }
 
 export interface ConsumptionResponse {
   id: number;
+  foodName: string;
+  recipeId?: number | null;
+  ingredientId?: number | null;
+  inventoryGroupId?: number | null;
+  portionLabel?: string | null;
   estimatedCalories?: number | null;
+  estimatedProtein?: number | null;
+  estimatedCarbs?: number | null;
+  estimatedFat?: number | null;
+  isFromInventory?: boolean | null;
   consumedAt: string;
+}
+
+export interface ConsumptionSummary {
+  date: string;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+}
+
+export interface InventoryGroupRequest {
+  name: string;
+  icon?: string;
+}
+
+export interface InventoryItemRequest {
+  ingredientId: number;
+  quantity: number;
+  unit: string;
 }
 
 export interface RecipeRatingRequest {
