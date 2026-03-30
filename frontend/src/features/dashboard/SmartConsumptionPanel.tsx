@@ -358,9 +358,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
             </div>
 
             <label className="mt-5 block space-y-2">
-              <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">{entryMode === 'RECIPE' ? 'Tarif ara' : 'Malzeme ara'}</span>
+              <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-gray-300">{entryMode === 'RECIPE' ? 'Tarif ara' : 'Malzeme ara'}</span>
               <div className="relative">
-                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-espresso-midnight/30 dark:text-alabaster/30" />
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-espresso-midnight/30 dark:text-gray-500" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -371,7 +371,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     setSuccess(null);
                   }}
                   placeholder={entryMode === 'RECIPE' ? 'Mercimek çorbası, menemen...' : 'Yoğurt, muz, badem...'}
-                  className="w-full rounded-[1.6rem] border border-espresso-midnight/10 bg-white/80 py-4 pl-12 pr-4 text-sm text-espresso-midnight shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10 dark:border-white/10 dark:bg-white/5 dark:text-alabaster"
+                  className="w-full rounded-[1.6rem] border border-espresso-midnight/10 dark:border-gray-700 bg-white/80 dark:bg-gray-800/50 py-4 pl-12 pr-4 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10"
                 />
               </div>
             </label>
@@ -396,7 +396,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                   className={`rounded-[1.7rem] border px-4 py-4 text-left transition-all ${
                     selectedRecipe?.id === recipe.id
                       ? 'border-transparent bg-terracotta text-white shadow-xl shadow-terracotta/20'
-                      : 'border-white/70 bg-white/80 hover:border-moss-sage/30 dark:border-white/10 dark:bg-white/5'
+                      : 'border-white/70 dark:border-gray-800 bg-white/80 dark:bg-gray-800/40 hover:border-moss-sage/30 dark:text-alabaster'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -426,7 +426,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                   className={`rounded-[1.7rem] border px-4 py-4 text-left transition-all ${
                     selectedIngredient?.id === ingredient.id
                       ? 'border-transparent bg-terracotta text-white shadow-xl shadow-terracotta/20'
-                      : 'border-white/70 bg-white/80 hover:border-moss-sage/30 dark:border-white/10 dark:bg-white/5'
+                      : 'border-white/70 dark:border-gray-800 bg-white/80 dark:bg-gray-800/40 hover:border-moss-sage/30 dark:text-alabaster'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">

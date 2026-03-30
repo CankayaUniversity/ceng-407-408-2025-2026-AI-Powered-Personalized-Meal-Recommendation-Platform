@@ -381,7 +381,7 @@ const RecommendationPage: React.FC = () => {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {(profile?.allergies ?? []).length > 0 ? (
                     (profile?.allergies ?? []).map((item) => (
-                      <span key={item} className="medical-badge bg-red-50 border-red-200/70 text-red-600">
+                      <span key={item} className="medical-badge bg-red-50 dark:bg-orange-900/20 border-red-200/70 dark:border-orange-800/40 text-red-600 dark:text-orange-400">
                         {item}
                       </span>
                     ))
@@ -396,7 +396,7 @@ const RecommendationPage: React.FC = () => {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {(profile?.dislikedIngredients ?? []).length > 0 ? (
                     (profile?.dislikedIngredients ?? []).map((item) => (
-                      <span key={item} className="medical-badge">
+                      <span key={item} className="medical-badge dark:bg-moss-sage/20 dark:border-moss-sage/30 dark:text-moss-sage">
                         {item}
                       </span>
                     ))
@@ -406,7 +406,7 @@ const RecommendationPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-[1.8rem] border border-white/60 bg-white/60 px-5 py-4 dark:border-white/10 dark:bg-white/5">
+              <div className="rounded-[1.8rem] border border-white/60 bg-white/60 px-5 py-4 dark:border-white/10 dark:bg-gray-800/40">
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Goal Sync</p>
                 <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{formatEnumLabel(profile?.dietaryGoal)}</p>
                 <p className="mt-2 text-sm text-espresso-midnight/55 dark:text-alabaster/55">
@@ -485,7 +485,7 @@ const RecommendationPage: React.FC = () => {
                 <div className="mt-5 flex flex-wrap gap-2">
                   {availableIngredients.length > 0 ? (
                     availableIngredients.map((item) => (
-                      <span key={item} className="medical-badge bg-moss-sage/8 border-moss-sage/20 text-moss-forest dark:text-moss-sage">
+                      <span key={item} className="medical-badge bg-moss-sage/8 dark:bg-moss-sage/20 border-moss-sage/20 dark:border-moss-sage/30 text-moss-forest dark:text-moss-sage">
                         {item}
                       </span>
                     ))
@@ -515,7 +515,7 @@ const RecommendationPage: React.FC = () => {
                 type="button"
                 onClick={handleGetRecommendations}
                 disabled={recommending || !hasInventory}
-                className="inline-flex items-center justify-center gap-2 rounded-[1.8rem] bg-terracotta px-5 py-4 font-semibold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.02] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-[1.8rem] bg-terracotta px-5 py-4 font-bold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.02] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60 dark:shadow-none"
               >
                 {recommending ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
                 {recommending ? 'AI dusunuyor' : 'Get Recommendation'}
@@ -530,7 +530,7 @@ const RecommendationPage: React.FC = () => {
                   value={cravings}
                   onChange={(event) => setCravings(event.target.value)}
                   placeholder='Examples: "Something spicy", "Pasta", "Light but high protein"'
-                  className="w-full rounded-[1.8rem] border border-espresso-midnight/10 bg-white/75 px-5 py-4 text-sm text-espresso-midnight shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10 dark:border-white/10 dark:bg-white/5 dark:text-alabaster"
+                  className="w-full rounded-[1.8rem] border border-espresso-midnight/10 dark:border-gray-700 bg-white/75 dark:bg-gray-800/50 px-5 py-4 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10"
                 />
               </label>
 

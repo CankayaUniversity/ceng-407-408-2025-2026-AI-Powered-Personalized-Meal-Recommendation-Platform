@@ -111,26 +111,26 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
   const shouldShowResults = searching || results.length > 0 || trimmedQuery.length >= 2 || searchError;
 
   return (
-    <div className="rounded-[2rem] border border-terracotta/20 bg-gradient-to-br from-terracotta/10 via-white to-alabaster p-5 shadow-[0_24px_60px_-40px_rgba(226,114,91,0.45)]">
+    <div className="rounded-[2rem] border border-terracotta/20 dark:border-terracotta/10 bg-gradient-to-br from-terracotta/10 via-white to-alabaster dark:from-terracotta/20 dark:via-gray-900/40 dark:to-gray-800/40 p-5 shadow-[0_24px_60px_-40px_rgba(226,114,91,0.45)] dark:shadow-none">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-terracotta/15 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-terracotta">
+          <div className="inline-flex items-center gap-2 rounded-full bg-terracotta/15 dark:bg-terracotta/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-terracotta dark:text-terracotta/90">
             Taste Preferences
           </div>
-          <p className="mt-3 text-sm leading-6 text-espresso-midnight/65">
+          <p className="mt-3 text-sm leading-6 text-espresso-midnight/65 dark:text-gray-400">
             Alerji değil, sadece önerilerde geri planda kalmasını istediğin malzemeleri ekle.
           </p>
         </div>
-        <div className="inline-flex items-center rounded-full bg-white/85 px-3 py-2 text-xs font-semibold text-terracotta shadow-sm">
+        <div className="inline-flex items-center rounded-full bg-white/85 dark:bg-gray-800/80 px-3 py-2 text-xs font-semibold text-terracotta dark:text-terracotta/90 shadow-sm">
           {values.length} dislike
         </div>
       </div>
 
       <div className="mt-5 space-y-4">
         <label className="space-y-2">
-          <span className="text-sm font-semibold text-espresso-midnight/80">Malzeme Ara</span>
+          <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-gray-300">Malzeme Ara</span>
           <div className="relative">
-            <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-terracotta/75" />
+            <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-terracotta/75 dark:text-terracotta/60" />
             <input
               type="text"
               value={query}
@@ -141,7 +141,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
                   commitValue(trimmedQuery);
                 }
               }}
-              className="w-full rounded-[1.6rem] border border-terracotta/20 bg-white/90 py-4 pl-12 pr-12 text-sm text-espresso-midnight shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10"
+              className="w-full rounded-[1.6rem] border border-terracotta/20 dark:border-gray-700 bg-white/90 dark:bg-gray-800/50 py-4 pl-12 pr-12 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10"
               placeholder="Örn. Kişniş, kereviz, zeytin"
             />
             {searching ? (
@@ -159,31 +159,31 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
           </div>
         </label>
 
-        <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-xs leading-5 text-espresso-midnight/55">
+        <div className="rounded-2xl border border-white/70 dark:border-gray-800 bg-white/80 dark:bg-gray-800/40 px-4 py-3 text-xs leading-5 text-espresso-midnight/55 dark:text-gray-400">
           Arama sonuçlarından hızlıca seçebilir, istersen yazdığın ifadeyi doğrudan listeye ekleyebilirsin.
         </div>
 
         {shouldShowResults && (
-          <div className="overflow-hidden rounded-[1.5rem] border border-terracotta/15 bg-white/90 shadow-sm">
+          <div className="overflow-hidden rounded-[1.5rem] border border-terracotta/15 dark:border-gray-700 bg-white/90 dark:bg-gray-800 shadow-sm">
             {searching ? (
-              <div className="flex items-center gap-3 px-4 py-4 text-sm text-espresso-midnight/60">
+              <div className="flex items-center gap-3 px-4 py-4 text-sm text-espresso-midnight/60 dark:text-gray-400">
                 <Loader2 size={16} className="animate-spin text-terracotta" />
                 <span>Malzemeler getiriliyor...</span>
               </div>
             ) : searchError ? (
-              <div className="px-4 py-4 text-sm text-red-600">{searchError}</div>
+              <div className="px-4 py-4 text-sm text-red-600 dark:text-red-400">{searchError}</div>
             ) : results.length > 0 ? (
-              <div className="divide-y divide-terracotta/10">
+              <div className="divide-y divide-terracotta/10 dark:divide-gray-700">
                 {results.map((ingredient) => (
                   <button
                     key={ingredient.id}
                     type="button"
                     onClick={() => commitValue(ingredient.name)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-terracotta/8"
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-terracotta/8 dark:hover:bg-terracotta/10"
                   >
                     <div>
-                      <p className="font-semibold text-espresso-midnight">{ingredient.name}</p>
-                      <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-espresso-midnight/40">{formatCategory(ingredient.category)}</p>
+                      <p className="font-semibold text-espresso-midnight dark:text-gray-100">{ingredient.name}</p>
+                      <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-espresso-midnight/40 dark:text-gray-500">{formatCategory(ingredient.category)}</p>
                     </div>
                     <Plus size={16} className="shrink-0 text-terracotta" />
                   </button>
@@ -193,11 +193,11 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
               <button
                 type="button"
                 onClick={() => commitValue(trimmedQuery)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-terracotta/8"
+                className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-terracotta/8 dark:hover:bg-terracotta/10"
               >
                 <div>
-                  <p className="font-semibold text-espresso-midnight">"{trimmedQuery}" için eşleşme bulunamadı</p>
-                  <p className="mt-1 text-sm text-espresso-midnight/55">Yazdığın ifadeyi yine de dislike listene ekle.</p>
+                  <p className="font-semibold text-espresso-midnight dark:text-gray-100">"{trimmedQuery}" için eşleşme bulunamadı</p>
+                  <p className="mt-1 text-sm text-espresso-midnight/55 dark:text-gray-400">Yazdığın ifadeyi yine de dislike listene ekle.</p>
                 </div>
                 <Plus size={16} className="shrink-0 text-terracotta" />
               </button>
@@ -210,13 +210,13 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
             {values.map((value) => (
               <span
                 key={value}
-                className="inline-flex items-center gap-2 rounded-full border border-terracotta/20 bg-terracotta/10 px-4 py-2 text-sm font-semibold text-terracotta"
+                className="inline-flex items-center gap-2 rounded-full border border-terracotta/20 dark:border-terracotta/40 bg-terracotta/10 px-4 py-2 text-sm font-semibold text-terracotta dark:text-terracotta/90"
               >
                 {value}
                 <button
                   type="button"
                   onClick={() => removeValue(value)}
-                  className="text-terracotta/75 transition-colors hover:text-terracotta"
+                  className="text-terracotta/75 hover:text-terracotta dark:text-terracotta/60 dark:hover:text-terracotta/90 transition-colors"
                   aria-label={`${value} tercihini kaldır`}
                 >
                   <X size={14} />
@@ -225,12 +225,12 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-terracotta/25 bg-white/70 px-4 py-5 text-sm text-espresso-midnight/55">
+          <div className="rounded-2xl border border-dashed border-terracotta/25 dark:border-terracotta/40 bg-white/70 dark:bg-gray-800/30 px-4 py-5 text-sm text-espresso-midnight/55 dark:text-gray-400">
             Henüz dislike listesi oluşturulmadı.
           </div>
         )}
 
-        {error && <span className="text-sm text-red-600">{error}</span>}
+        {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
       </div>
     </div>
   );
