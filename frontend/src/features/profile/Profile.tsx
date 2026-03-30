@@ -343,14 +343,14 @@ const Profile: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Profil Ayarları</h1>
-          <p className="text-gray-500 mt-1">Beslenme ve fiziksel profil bilgilerinizi backend ile senkron yönetin.</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-serif">Profil Ayarları</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Beslenme ve fiziksel profil bilgilerinizi backend ile senkron yönetin.</p>
         </div>
         <button
           type="button"
           onClick={reloadFromServer}
           disabled={loading || saving || !user?.id}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
           Sunucudaki Son Veriyi Getir
@@ -376,35 +376,35 @@ const Profile: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-8">
         <aside className="space-y-6">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="glass-card rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
             <div className="h-24 bg-orange-500" />
             <div className="px-6 pb-6 -mt-12 text-center">
-              <div className="w-24 h-24 mx-auto rounded-full border-4 border-white bg-orange-100 text-orange-600 flex items-center justify-center text-3xl font-bold shadow-sm">
+              <div className="w-24 h-24 mx-auto rounded-full border-4 border-white dark:border-gray-800 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center text-3xl font-bold shadow-sm">
                 {getInitials(user)}
               </div>
-              <h2 className="mt-4 text-xl font-bold text-gray-900">{displayName}</h2>
-              <p className="text-sm text-gray-500">@{user?.username}</p>
+              <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-gray-100 font-serif">{displayName}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">@{user?.username}</p>
 
-              <div className="mt-6 rounded-2xl bg-orange-50 px-4 py-4 text-left">
-                <div className="flex items-center gap-2 text-orange-600">
+              <div className="mt-6 rounded-2xl bg-orange-50 dark:bg-orange-900/20 px-4 py-4 text-left">
+                <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
                   <Flame size={18} />
                   <span className="text-xs font-black uppercase tracking-[0.18em]">Günlük Hedef</span>
                 </div>
-                <div className="mt-2 text-3xl font-bold text-gray-900">{calorieTarget}</div>
-                <p className="text-xs text-gray-500 mt-1">Sunucu tarafından otomatik hesaplanır.</p>
+                <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100 font-serif">{calorieTarget}</div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sunucu tarafından otomatik hesaplanır.</p>
               </div>
 
               <div className="mt-6 space-y-3 text-left">
-                <div className="rounded-2xl bg-gray-50 px-4 py-3">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">E-posta</p>
-                  <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <Mail size={16} className="text-gray-400 shrink-0" />
+                <div className="rounded-2xl bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">E-posta</p>
+                  <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <Mail size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />
                     <span className="truncate">{user?.email || 'Belirtilmedi'}</span>
                   </div>
                 </div>
-                <div className="rounded-2xl bg-gray-50 px-4 py-3">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sistem ID</p>
-                  <p className="mt-1 text-xs text-gray-500 font-mono break-all">{user?.id}</p>
+                <div className="rounded-2xl bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Sistem ID</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono break-all">{user?.id}</p>
                 </div>
               </div>
             </div>
@@ -420,142 +420,142 @@ const Profile: React.FC = () => {
         </aside>
 
         <form onSubmit={handleSave} className="space-y-6">
-          <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-50 flex items-center gap-3">
-              <div className="p-3 bg-blue-50 text-blue-500 rounded-2xl">
+          <section className="glass-card rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center gap-3">
+              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 rounded-2xl">
                 <UserIcon size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Fiziksel Bilgiler</h3>
-                <p className="text-sm text-gray-500">Kalori hesabında kullanılan temel veriler.</p>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 font-serif">Fiziksel Bilgiler</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Kalori hesabında kullanılan temel veriler.</p>
               </div>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700">Kilo (kg)</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Kilo (kg)</span>
                 <input
                   type="number"
                   min="0"
                   step="0.1"
                   value={form.weight}
                   onChange={(event) => updateField('weight', event.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
                   placeholder="72.5"
                 />
-                {fieldErrors.weight && <span className="text-sm text-red-600">{fieldErrors.weight}</span>}
+                {fieldErrors.weight && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.weight}</span>}
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700">Boy (cm)</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Boy (cm)</span>
                 <input
                   type="number"
                   min="0"
                   step="0.1"
                   value={form.height}
                   onChange={(event) => updateField('height', event.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
                   placeholder="178"
                 />
-                {fieldErrors.height && <span className="text-sm text-red-600">{fieldErrors.height}</span>}
+                {fieldErrors.height && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.height}</span>}
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700">Yaş</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Yaş</span>
                 <input
                   type="number"
                   min="0"
                   step="1"
                   value={form.age}
                   onChange={(event) => updateField('age', event.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
                   placeholder="24"
                 />
-                {fieldErrors.age && <span className="text-sm text-red-600">{fieldErrors.age}</span>}
+                {fieldErrors.age && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.age}</span>}
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700">Cinsiyet</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Cinsiyet</span>
                 <select
                   value={form.gender}
                   onChange={(event) => updateField('gender', event.target.value as Gender | '')}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
                 >
-                  <option value="">Seçiniz</option>
+                  <option value="" className="dark:bg-gray-800">Seçiniz</option>
                   {genderOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value} className="dark:bg-gray-800">
                       {option.label}
                     </option>
                   ))}
                 </select>
-                {fieldErrors.gender && <span className="text-sm text-red-600">{fieldErrors.gender}</span>}
+                {fieldErrors.gender && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.gender}</span>}
               </label>
             </div>
           </section>
 
-          <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-50 flex items-center gap-3">
-              <div className="p-3 bg-orange-50 text-orange-500 rounded-2xl">
+          <section className="glass-card rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center gap-3">
+              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 rounded-2xl">
                 <Shield size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Tercihler ve Alerjenler</h3>
-                <p className="text-sm text-gray-500">Sert kısıtlar ve kişisel damak tercihleri öneri akışına birlikte taşınır.</p>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 font-serif">Tercihler ve Alerjenler</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Sert kısıtlar ve kişisel damak tercihleri öneri akışına birlikte taşınır.</p>
               </div>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700">Aktivite Seviyesi</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Aktivite Seviyesi</span>
                 <select
                   value={form.activityLevel}
                   onChange={(event) => updateField('activityLevel', event.target.value as ActivityLevel | '')}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
                 >
-                  <option value="">Seçiniz</option>
+                  <option value="" className="dark:bg-gray-800">Seçiniz</option>
                   {activityOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value} className="dark:bg-gray-800">
                       {option.label}
                     </option>
                   ))}
                 </select>
-                {fieldErrors.activityLevel && <span className="text-sm text-red-600">{fieldErrors.activityLevel}</span>}
+                {fieldErrors.activityLevel && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.activityLevel}</span>}
               </label>
 
               <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700">Hedef</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Hedef</span>
                 <select
                   value={form.dietaryGoal}
                   onChange={(event) => updateField('dietaryGoal', event.target.value as DietaryGoal | '')}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
                 >
-                  <option value="">Seçiniz</option>
+                  <option value="" className="dark:bg-gray-800">Seçiniz</option>
                   {goalOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value} className="dark:bg-gray-800">
                       {option.label}
                     </option>
                   ))}
                 </select>
-                {fieldErrors.dietaryGoal && <span className="text-sm text-red-600">{fieldErrors.dietaryGoal}</span>}
+                {fieldErrors.dietaryGoal && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.dietaryGoal}</span>}
               </label>
 
               <label className="space-y-2 md:col-span-2">
-                <span className="text-sm font-semibold text-gray-700">Diyet Tipi</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Diyet Tipi</span>
                 <select
                   value={form.dietType}
                   onChange={(event) => updateField('dietType', event.target.value as DietType | '')}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
                 >
-                  <option value="">Seçiniz</option>
+                  <option value="" className="dark:bg-gray-800">Seçiniz</option>
                   {dietOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option key={option.value} value={option.value} className="dark:bg-gray-800">
                       {option.label}
                     </option>
                   ))}
                 </select>
-                {fieldErrors.dietType && <span className="text-sm text-red-600">{fieldErrors.dietType}</span>}
+                {fieldErrors.dietType && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.dietType}</span>}
               </label>
 
               <div className="space-y-3 md:col-span-2">
-                <span className="text-sm font-semibold text-gray-700">Alerjenler</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Alerjenler</span>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
@@ -567,13 +567,13 @@ const Profile: React.FC = () => {
                         addAllergy();
                       }
                     }}
-                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                    className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
                     placeholder="Örn. Fıstık, Laktoz, Gluten"
                   />
                   <button
                     type="button"
                     onClick={addAllergy}
-                    className="px-5 py-3 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-gray-800"
+                    className="px-5 py-3 rounded-2xl bg-gray-900 dark:bg-gray-700 text-white font-semibold hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
                   >
                     Ekle
                   </button>
@@ -582,12 +582,12 @@ const Profile: React.FC = () => {
                 {form.allergies.length > 0 ? (
                   <div className="flex flex-wrap gap-3">
                     {form.allergies.map((allergy) => (
-                      <span key={allergy} className="inline-flex items-center gap-2 rounded-full bg-orange-50 text-orange-700 px-4 py-2 text-sm font-semibold">
+                      <span key={allergy} className="inline-flex items-center gap-2 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-4 py-2 text-sm font-semibold border border-orange-100 dark:border-orange-800">
                         {allergy}
                         <button
                           type="button"
                           onClick={() => updateField('allergies', form.allergies.filter((item) => item !== allergy))}
-                          className="text-orange-500 hover:text-orange-700"
+                          className="text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300"
                           aria-label={`${allergy} alerjenini kaldır`}
                         >
                           <X size={14} />
@@ -596,18 +596,18 @@ const Profile: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">
+                  <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 px-4 py-5 text-sm text-gray-500 dark:text-gray-400">
                     Henüz alerjen eklenmedi.
                   </div>
                 )}
 
-                {fieldErrors.allergies && <span className="text-sm text-red-600">{fieldErrors.allergies}</span>}
+                {fieldErrors.allergies && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.allergies}</span>}
               </div>
 
               <div className="space-y-3 md:col-span-2">
                 <div className="space-y-1">
-                  <span className="text-sm font-semibold text-gray-700">Taste Preferences</span>
-                  <p className="text-sm text-gray-500">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Taste Preferences</span>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Sevmediğin gıdaları soft-constraint olarak kaydediyoruz; öneri motoru bunları alerjenlerden farklı şekilde ele alacak.
                   </p>
                 </div>
@@ -621,19 +621,19 @@ const Profile: React.FC = () => {
             </div>
           </section>
 
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm px-6 py-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="glass-card rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm px-6 py-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-semibold text-gray-900">
+              <p className="font-semibold text-gray-900 dark:text-gray-100">
                 {isDirty ? 'Kaydedilmemiş değişiklikleriniz var.' : 'Tüm bilgileriniz sunucu ile senkron.'}
               </p>
-              <p className="text-sm text-gray-500 mt-1">Boş bıraktığınız alanlar kaydetme sırasında mevcut değerlerini korur.</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Boş bıraktığınız alanlar kaydetme sırasında mevcut değerlerini korur.</p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => profile && applyProfile(profile)}
                 disabled={!profile || !isDirty || saving}
-                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <RefreshCcw size={16} />
                 Son Kayda Dön
@@ -641,7 +641,7 @@ const Profile: React.FC = () => {
               <button
                 type="submit"
                 disabled={saving || loading || !user?.id || !isDirty}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-orange-500 text-white font-semibold shadow-lg shadow-orange-100 hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-orange-500 text-white font-semibold shadow-lg shadow-orange-100 dark:shadow-none hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
               >
                 {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                 {saving ? 'Kaydediliyor' : 'Kaydet'}

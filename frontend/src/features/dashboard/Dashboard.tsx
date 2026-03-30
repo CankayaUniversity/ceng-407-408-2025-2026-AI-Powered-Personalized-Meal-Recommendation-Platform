@@ -334,12 +334,12 @@ const Dashboard: React.FC = () => {
       </header>
 
       {errorMessage && (
-        <div className="rounded-[2rem] border border-red-200/70 bg-red-50/90 px-5 py-4 text-red-700 shadow-[0_18px_48px_-28px_rgba(185,28,28,0.35)]">
+        <div className="rounded-[2rem] border border-red-200/70 dark:border-red-900/30 bg-red-50/90 dark:bg-red-900/10 px-5 py-4 text-red-700 dark:text-red-400 shadow-[0_18px_48px_-28px_rgba(185,28,28,0.35)] dark:shadow-none">
           <div className="flex items-start gap-3">
             <AlertCircle size={18} className="mt-0.5 shrink-0" />
             <div>
               <p className="font-semibold">Dashboard data could not be refreshed</p>
-              <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
             </div>
           </div>
         </div>
@@ -370,7 +370,7 @@ const Dashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/inventory')}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-espresso-midnight/10 bg-white/70 px-4 py-3 text-sm font-semibold text-espresso-midnight/70 shadow-sm hover:text-terracotta dark:border-white/10 dark:bg-white/5 dark:text-alabaster/70"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-espresso-midnight/10 bg-white/70 px-4 py-3 text-sm font-semibold text-espresso-midnight/70 shadow-sm hover:text-terracotta dark:border-white/10 dark:bg-white/5 dark:text-alabaster/70 transition-colors"
                 >
                   <Boxes size={16} />
                   Open Inventory
@@ -378,15 +378,15 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Running Low</p>
                   <p className="mt-3 font-serif text-3xl font-bold text-terracotta">{inventoryMetrics.totalLowItems}</p>
                 </div>
-                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Stocked Items</p>
                   <p className="mt-3 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{inventoryMetrics.totalItems}</p>
                 </div>
-                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Categories</p>
                   <p className="mt-3 font-serif text-3xl font-bold text-moss-forest dark:text-moss-sage">{inventoryMetrics.totalCategories}</p>
                 </div>
@@ -394,12 +394,12 @@ const Dashboard: React.FC = () => {
 
               <div className="mt-6 flex flex-wrap gap-3">
                 {topLowItems.length > 0 ? topLowItems.map(({ group, item }) => (
-                  <span key={`${group.id}-${item.id}`} className="inline-flex items-center gap-2 rounded-full border border-terracotta/20 bg-terracotta/10 px-3 py-2 text-xs font-semibold text-terracotta">
+                  <span key={`${group.id}-${item.id}`} className="inline-flex items-center gap-2 rounded-full border border-terracotta/20 dark:border-terracotta/40 bg-terracotta/10 px-3 py-2 text-xs font-semibold text-terracotta">
                     <span>{item.ingredient?.name || 'Ingredient'}</span>
-                    <span className="text-terracotta/60">{group.name}</span>
+                    <span className="text-terracotta/60 dark:text-terracotta/40">{group.name}</span>
                   </span>
                 )) : (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-moss-sage/20 bg-moss-sage/10 px-3 py-2 text-xs font-semibold text-moss-forest dark:text-moss-sage">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-moss-sage/20 dark:border-moss-sage/40 bg-moss-sage/10 px-3 py-2 text-xs font-semibold text-moss-forest dark:text-moss-sage">
                     Inventory looks healthy across all locations.
                   </span>
                 )}
@@ -412,7 +412,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Daily Summary</p>
                   <h2 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{dailyHeadline}</h2>
                 </div>
-                <div className="rounded-full bg-terracotta/10 p-3 text-terracotta">
+                <div className="rounded-full bg-terracotta/10 dark:bg-terracotta/20 p-3 text-terracotta">
                   <Flame size={18} />
                 </div>
               </div>
@@ -435,22 +435,22 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Protein</p>
                   <p className="mt-2 font-serif text-2xl font-bold text-terracotta">{formatMacro(dailySummary?.totalProtein ?? 0)}</p>
                 </div>
-                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Carbs</p>
                   <p className="mt-2 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{formatMacro(dailySummary?.totalCarbs ?? 0)}</p>
                 </div>
-                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Fat</p>
                   <p className="mt-2 font-serif text-2xl font-bold text-moss-forest dark:text-moss-sage">{formatMacro(dailySummary?.totalFat ?? 0)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => navigate('/profile')}
-                  className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 text-left shadow-sm hover:border-terracotta/25 dark:border-white/10 dark:bg-white/5"
+                  className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 text-left shadow-sm hover:border-terracotta/25 dark:border-white/10 dark:bg-gray-800/40 transition-colors"
                 >
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Goal Source</p>
                   <p className="mt-2 text-sm font-semibold text-terracotta">{dailyGoal ? `${formatNumber(dailyGoal)} kcal target` : 'Set up profile data'}</p>
@@ -460,7 +460,7 @@ const Dashboard: React.FC = () => {
 
             <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
               <div className="flex items-center gap-3">
-                <div className="rounded-full bg-moss-sage/12 p-3 text-moss-forest dark:text-moss-sage">
+                <div className="rounded-full bg-moss-sage/12 dark:bg-moss-sage/20 p-3 text-moss-forest dark:text-moss-sage">
                   <ShieldCheck size={18} />
                 </div>
                 <div>
@@ -471,15 +471,15 @@ const Dashboard: React.FC = () => {
 
               <div className="mt-5 flex flex-wrap gap-3">
                 {profileSignals.length > 0 ? profileSignals.map((signal) => (
-                  <span key={signal} className="medical-badge">{signal}</span>
+                  <span key={signal} className="medical-badge dark:bg-moss-sage/20 dark:border-moss-sage/30 dark:text-moss-sage">{signal}</span>
                 )) : (
-                  <span className="rounded-full border border-espresso-midnight/10 bg-white/70 px-3 py-2 text-xs font-semibold text-espresso-midnight/60 dark:border-white/10 dark:bg-white/5 dark:text-alabaster/60">
+                  <span className="rounded-full border border-espresso-midnight/10 bg-white/70 px-3 py-2 text-xs font-semibold text-espresso-midnight/60 dark:border-white/10 dark:bg-gray-800/40 dark:text-alabaster/60">
                     Add diet, goal, or allergy details from your profile.
                   </span>
                 )}
               </div>
 
-              <div className="mt-6 rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+              <div className="mt-6 rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Goal Alignment</p>
                 <p className="mt-3 text-sm leading-7 text-espresso-midnight/65 dark:text-alabaster/65">
                   {formatEnumLabel(profile?.dietaryGoal)
@@ -491,7 +491,7 @@ const Dashboard: React.FC = () => {
 
             <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
               <div className="flex items-center gap-3">
-                <div className="rounded-full bg-terracotta/10 p-3 text-terracotta">
+                <div className="rounded-full bg-terracotta/10 dark:bg-terracotta/20 p-3 text-terracotta">
                   <TrendingUp size={18} />
                 </div>
                 <div>
@@ -501,15 +501,15 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Locations connected</span>
                   <span className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{inventoryMetrics.totalLocations}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Live ingredients</span>
                   <span className="font-serif text-2xl font-bold text-terracotta">{inventoryMetrics.totalItems}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
+                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
                   <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Tracked categories</span>
                   <span className="font-serif text-2xl font-bold text-moss-forest dark:text-moss-sage">{inventoryMetrics.totalCategories}</span>
                 </div>
