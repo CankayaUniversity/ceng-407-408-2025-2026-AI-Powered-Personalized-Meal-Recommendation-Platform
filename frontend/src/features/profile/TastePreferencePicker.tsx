@@ -121,7 +121,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
             Alerji değil, sadece önerilerde geri planda kalmasını istediğin malzemeleri ekle.
           </p>
         </div>
-        <div className="inline-flex items-center rounded-full bg-white/85 dark:bg-gray-800/80 px-3 py-2 text-xs font-semibold text-terracotta dark:text-terracotta/90 shadow-sm">
+        <div className="meal-badge-neon bg-white/85 px-3 py-2 text-terracotta shadow-sm dark:bg-gray-800/80 dark:text-terracotta/90">
           {values.length} dislike
         </div>
       </div>
@@ -141,7 +141,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
                   commitValue(trimmedQuery);
                 }
               }}
-              className="w-full rounded-[1.6rem] border border-terracotta/20 dark:border-gray-700 bg-white/90 dark:bg-gray-800/50 py-4 pl-12 pr-12 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10"
+              className="base-input border-terracotta/20 bg-white/90 py-4 pl-12 pr-12 dark:border-gray-700 dark:bg-gray-800/50"
               placeholder="Örn. Kişniş, kereviz, zeytin"
             />
             {searching ? (
@@ -159,7 +159,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
           </div>
         </label>
 
-        <div className="rounded-2xl border border-white/70 dark:border-gray-800 bg-white/80 dark:bg-gray-800/40 px-4 py-3 text-xs leading-5 text-espresso-midnight/55 dark:text-gray-400">
+        <div className="meal-metric-card rounded-2xl border-white/70 bg-white/80 px-4 py-3 text-xs leading-5 text-espresso-midnight/55 dark:border-gray-800 dark:bg-gray-800/40 dark:text-gray-400">
           Arama sonuçlarından hızlıca seçebilir, istersen yazdığın ifadeyi doğrudan listeye ekleyebilirsin.
         </div>
 
@@ -210,7 +210,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
             {values.map((value) => (
               <span
                 key={value}
-                className="inline-flex items-center gap-2 rounded-full border border-terracotta/20 dark:border-terracotta/40 bg-terracotta/10 px-4 py-2 text-sm font-semibold text-terracotta dark:text-terracotta/90"
+                className="meal-badge-neon px-4 py-2 text-sm dark:border-terracotta/40 dark:text-terracotta/90"
               >
                 {value}
                 <button
@@ -225,7 +225,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-terracotta/25 dark:border-terracotta/40 bg-white/70 dark:bg-gray-800/30 px-4 py-5 text-sm text-espresso-midnight/55 dark:text-gray-400">
+          <div className="meal-metric-card rounded-2xl border-dashed border-terracotta/25 bg-white/70 px-4 py-5 text-sm text-espresso-midnight/55 dark:border-terracotta/40 dark:bg-gray-800/30 dark:text-gray-400">
             Henüz dislike listesi oluşturulmadı.
           </div>
         )}

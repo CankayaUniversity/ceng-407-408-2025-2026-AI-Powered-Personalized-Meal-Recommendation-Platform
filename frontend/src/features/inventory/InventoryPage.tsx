@@ -267,7 +267,7 @@ const InventoryPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="glass-card rounded-[2.5rem] border border-white/60 px-8 py-7 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.45)] dark:border-white/10 flex items-center gap-4">
+        <div className="meal-card flex items-center gap-4 px-8 py-7 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.45)]">
           <Loader2 size={24} className="animate-spin text-terracotta" />
           <div>
             <p className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Inventory loading</p>
@@ -338,8 +338,8 @@ const InventoryPage: React.FC = () => {
 
         <section className="space-y-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/50 dark:text-moss-sage/50">Location Selector</p>
-            <h2 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Nerede olduğunu seç</h2>
+            <p className="meal-overline text-moss-forest/50 dark:text-moss-sage/50">Location Selector</p>
+            <h2 className="meal-section-title mt-1 text-2xl">Nerede olduğunu seç</h2>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {groups.map((group) => {
@@ -370,11 +370,11 @@ const InventoryPage: React.FC = () => {
         </section>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <section className="glass-card rounded-[2.5rem] border border-white/60 dark:border-white/10 p-6 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
+          <section className="meal-card shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/50">Stock Editor</p>
-                <h3 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{editingItemId ? 'Malzemeyi Güncelle' : 'Malzeme Ekle'}</h3>
+                <p className="meal-overline">Stock Editor</p>
+                <h3 className="meal-section-title mt-2">{editingItemId ? 'Malzemeyi Güncelle' : 'Malzeme Ekle'}</h3>
               </div>
               {editingItemId && (
                 <button type="button" onClick={resetItemForm} className="inline-flex items-center gap-2 rounded-full border border-espresso-midnight/10 dark:border-gray-700 bg-white/60 dark:bg-gray-800/40 px-3 py-2 text-xs font-semibold text-espresso-midnight/65 dark:text-gray-300 transition-colors hover:text-terracotta">
@@ -397,7 +397,7 @@ const InventoryPage: React.FC = () => {
                       setItemDraft((current) => ({ ...current, ingredientQuery: value, selectedIngredient: current.selectedIngredient?.name === value ? current.selectedIngredient : null }));
                     }}
                     placeholder="Domates, yoğurt, zeytinyağı..."
-                    className="w-full rounded-[1.6rem] border border-espresso-midnight/10 dark:border-gray-700 bg-white/75 dark:bg-gray-800/50 py-4 pl-12 pr-4 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10"
+                    className="base-input py-4 pl-12 pr-4 dark:border-gray-700 dark:bg-gray-800/50"
                   />
                   {(ingredientResults.length > 0 || searchingIngredients) && (
                     <div className="absolute inset-x-0 top-[calc(100%+0.65rem)] z-20 overflow-hidden rounded-[1.75rem] border border-white/70 dark:border-gray-700 bg-alabaster dark:bg-gray-800 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.45)]">
@@ -425,7 +425,7 @@ const InventoryPage: React.FC = () => {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="block space-y-2">
                   <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-gray-300">Miktar</span>
-                  <input type="number" min="0" step="0.01" value={itemDraft.quantity} onChange={(event) => setItemDraft((current) => ({ ...current, quantity: event.target.value }))} placeholder="2.5" className="w-full rounded-[1.6rem] border border-espresso-midnight/10 dark:border-gray-700 bg-white/75 dark:bg-gray-800/50 px-4 py-4 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10" />
+                  <input type="number" min="0" step="0.01" value={itemDraft.quantity} onChange={(event) => setItemDraft((current) => ({ ...current, quantity: event.target.value }))} placeholder="2.5" className="base-input py-4 dark:border-gray-700 dark:bg-gray-800/50" />
                 </label>
                 <div className="space-y-2">
                   <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-gray-300">Birim</span>
@@ -447,11 +447,11 @@ const InventoryPage: React.FC = () => {
           </section>
 
           <section className="space-y-6">
-            <div className="glass-card rounded-[2.5rem] border border-white/60 dark:border-white/10 p-6 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
+            <div className="meal-card shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
               <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/50">Selected Location</p>
-                  <h3 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{activeGroup?.name || 'Inventory'}</h3>
+                  <p className="meal-overline">Selected Location</p>
+                  <h3 className="meal-section-title mt-2">{activeGroup?.name || 'Inventory'}</h3>
                   <p className="mt-2 text-sm leading-6 text-espresso-midnight/60 dark:text-gray-400">Seçtiğin lokasyondaki malzemeler burada filtrelenir ve gelecekte öneri akışına doğrudan bağlanabilir.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -466,22 +466,22 @@ const InventoryPage: React.FC = () => {
                 </div>
               </div>
               <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-[1.8rem] border border-white/70 dark:border-gray-800 bg-white/70 dark:bg-gray-800/40 px-5 py-4 shadow-sm"><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Items</p><p className="mt-3 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{activeItems.length}</p></div>
-                <div className="rounded-[1.8rem] border border-white/70 dark:border-gray-800 bg-white/70 dark:bg-gray-800/40 px-5 py-4 shadow-sm"><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Categories</p><p className="mt-3 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{categoryCount}</p></div>
-                <div className="rounded-[1.8rem] border border-white/70 dark:border-gray-800 bg-white/70 dark:bg-gray-800/40 px-5 py-4 shadow-sm"><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Theme</p><p className="mt-3 text-sm font-semibold text-terracotta dark:text-terracotta/90">Sage Green + Spiced Terracotta</p></div>
+                <div className="meal-metric-card dark:border-gray-800"><p className="meal-overline tracking-[0.18em]">Items</p><p className="mt-3 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{activeItems.length}</p></div>
+                <div className="meal-metric-card dark:border-gray-800"><p className="meal-overline tracking-[0.18em]">Categories</p><p className="mt-3 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{categoryCount}</p></div>
+                <div className="meal-metric-card dark:border-gray-800"><p className="meal-overline tracking-[0.18em]">Theme</p><p className="mt-3 text-sm font-semibold text-terracotta dark:text-terracotta/90">Sage Green + Spiced Terracotta</p></div>
               </div>
             </div>
 
             {activeItems.length === 0 ? (
-              <div className="glass-card rounded-[2.5rem] border border-dashed border-moss-sage/25 dark:border-gray-700 px-6 py-10 text-center shadow-[0_24px_60px_-30px_rgba(40,36,33,0.28)]">
+              <div className="meal-card border-dashed border-moss-sage/25 px-6 py-10 text-center shadow-[0_24px_60px_-30px_rgba(40,36,33,0.28)] dark:border-gray-700">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-terracotta/10 text-terracotta"><Package size={28} /></div>
-                <h3 className="mt-5 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">Bu lokasyon henüz boş.</h3>
+                <h3 className="meal-section-title mt-5">Bu lokasyon henüz boş.</h3>
                 <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-espresso-midnight/60 dark:text-gray-400">Örneğin ofis için yulaf ve kahve, yazlık için domates ve zeytinyağı gibi ayrı stoklar oluşturabilirsin.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
                 {activeItems.map((item) => (
-                  <article key={item.id} className="glass-card rounded-[2.2rem] border border-white/60 dark:border-gray-800 p-5 shadow-[0_22px_56px_-32px_rgba(40,36,33,0.34)] transition-all hover:-translate-y-1 hover:shadow-[0_30px_70px_-30px_rgba(40,36,33,0.42)]">
+                  <article key={item.id} className="meal-card rounded-[2.2rem] border-white/60 p-5 shadow-[0_22px_56px_-32px_rgba(40,36,33,0.34)] hover:-translate-y-1 hover:shadow-[0_30px_70px_-30px_rgba(40,36,33,0.42)] dark:border-gray-800">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">{formatCategory(item.ingredient?.category)}</p>
@@ -492,7 +492,7 @@ const InventoryPage: React.FC = () => {
                         <button type="button" onClick={() => handleDeleteItem(item)} className="rounded-full bg-red-50 dark:bg-red-900/30 p-2 text-red-500 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-900/50" aria-label="Malzemeyi sil"><Trash2 size={15} /></button>
                       </div>
                     </div>
-                    <div className="mt-6 rounded-[1.8rem] border border-white/60 dark:border-gray-800 bg-white/70 dark:bg-gray-800/40 px-4 py-4">
+                    <div className="meal-metric-card mt-6 px-4 dark:border-gray-800">
                       <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-gray-500">Available Stock</p>
                       <div className="mt-2 flex items-end gap-2">
                         <span className="font-serif text-4xl font-bold text-espresso-midnight dark:text-alabaster">{formatQuantity(item.quantity)}</span>
@@ -513,15 +513,15 @@ const InventoryPage: React.FC = () => {
             <div className="px-7 py-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Location Manager</p>
-                  <h3 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{editingGroupId ? 'Lokasyonu Güncelle' : 'Yeni Lokasyon Oluştur'}</h3>
+                  <p className="meal-overline">Location Manager</p>
+                  <h3 className="meal-section-title mt-2">{editingGroupId ? 'Lokasyonu Güncelle' : 'Yeni Lokasyon Oluştur'}</h3>
                 </div>
                 <button type="button" onClick={closeLocationModal} className="rounded-full bg-white/70 dark:bg-gray-700 p-2 text-espresso-midnight/55 dark:text-gray-300 transition-colors hover:text-terracotta dark:hover:text-terracotta" aria-label="Modalı kapat"><X size={16} /></button>
               </div>
               <form onSubmit={handleLocationSubmit} className="mt-6 space-y-5">
                 <label className="block space-y-2">
                   <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-gray-300">Lokasyon Adı</span>
-                  <input type="text" value={groupDraft.name} onChange={(event) => setGroupDraft((current) => ({ ...current, name: event.target.value }))} placeholder="Örn. Office Pantry" className="w-full rounded-[1.6rem] border border-espresso-midnight/10 dark:border-gray-700 bg-white/75 dark:bg-gray-900/50 px-4 py-4 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10" />
+                  <input type="text" value={groupDraft.name} onChange={(event) => setGroupDraft((current) => ({ ...current, name: event.target.value }))} placeholder="Örn. Office Pantry" className="base-input py-4 dark:border-gray-700 dark:bg-gray-900/50" />
                 </label>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {LOCATION_ICONS.map((option) => {

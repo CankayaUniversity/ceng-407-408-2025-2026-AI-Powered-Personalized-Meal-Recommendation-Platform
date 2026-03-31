@@ -291,7 +291,7 @@ const RecommendationPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="glass-card rounded-[2.5rem] border border-white/60 px-8 py-7 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.45)] dark:border-white/10 flex items-center gap-4">
+        <div className="meal-card flex items-center gap-4 px-8 py-7 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.45)]">
           <Loader2 size={24} className="animate-spin text-terracotta" />
           <div>
             <p className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Recommendation engine loading</p>
@@ -364,14 +364,14 @@ const RecommendationPage: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="space-y-6">
-          <section className="glass-card rounded-[2.5rem] border border-white/60 p-6 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)] dark:border-white/10">
+          <section className="meal-card shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-terracotta/10 p-3 text-terracotta">
                 <ShieldAlert size={20} />
               </div>
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Signal Stack</p>
-                <h2 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{buildDisplayName(user) || 'Chef AI'}</h2>
+                <p className="meal-overline">Signal Stack</p>
+                <h2 className="meal-section-title mt-1 text-2xl">{buildDisplayName(user) || 'Chef AI'}</h2>
               </div>
             </div>
 
@@ -406,8 +406,8 @@ const RecommendationPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-[1.8rem] border border-white/60 bg-white/60 px-5 py-4 dark:border-white/10 dark:bg-gray-800/40">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Goal Sync</p>
+              <div className="meal-metric-card border-white/60 bg-white/60">
+                <p className="meal-overline tracking-[0.18em]">Goal Sync</p>
                 <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{formatEnumLabel(profile?.dietaryGoal)}</p>
                 <p className="mt-2 text-sm text-espresso-midnight/55 dark:text-alabaster/55">
                   {profile?.dietType ? `Diet: ${formatEnumLabel(profile.dietType)}` : 'Diyet tercihi kaydedilmemis.'}
@@ -435,14 +435,14 @@ const RecommendationPage: React.FC = () => {
             </div>
           </section>
 
-          <section className="glass-card rounded-[2.5rem] border border-white/60 p-6 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)] dark:border-white/10">
+          <section className="meal-card shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-moss-sage/10 p-3 text-moss-forest dark:text-moss-sage">
                 <Boxes size={20} />
               </div>
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Inventory Focus</p>
-                <h2 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Current Inventory</h2>
+                <p className="meal-overline">Inventory Focus</p>
+                <h2 className="meal-section-title mt-1 text-2xl">Current Inventory</h2>
               </div>
             </div>
 
@@ -490,7 +490,7 @@ const RecommendationPage: React.FC = () => {
                       </span>
                     ))
                   ) : (
-                    <div className="rounded-[1.8rem] border border-dashed border-moss-sage/25 px-4 py-5 text-sm text-espresso-midnight/60 dark:text-alabaster/60">
+                    <div className="meal-metric-card border-dashed border-moss-sage/25 px-4 py-5 text-sm text-espresso-midnight/60 dark:text-alabaster/60">
                       Secili lokasyonda malzeme yok. AI&apos;nin oncelik verecegi icerikleri eklemek icin inventory&apos;yi doldur.
                     </div>
                   )}
@@ -501,11 +501,11 @@ const RecommendationPage: React.FC = () => {
         </aside>
 
         <section className="space-y-6">
-          <div className="glass-card rounded-[2.5rem] border border-white/60 p-6 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)] dark:border-white/10">
+          <div className="meal-card shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Get Recommendation</p>
-                <h2 className="mt-2 font-serif text-4xl font-bold text-espresso-midnight dark:text-alabaster">Final craving sinyalini ekle.</h2>
+                <p className="meal-overline">Get Recommendation</p>
+                <h2 className="meal-section-title mt-2 text-4xl">Final craving sinyalini ekle.</h2>
                 <p className="mt-3 text-sm leading-6 text-espresso-midnight/60 dark:text-alabaster/60">
                   Opsiyonel son soru: bugun ozellikle caninin cektigi bir sey var mi? Gemini bu sinyali, inventory ve kullanici profilinle birlikte on plana cikaracak.
                 </p>
@@ -530,7 +530,7 @@ const RecommendationPage: React.FC = () => {
                   value={cravings}
                   onChange={(event) => setCravings(event.target.value)}
                   placeholder='Examples: "Something spicy", "Pasta", "Light but high protein"'
-                  className="w-full rounded-[1.8rem] border border-espresso-midnight/10 dark:border-gray-700 bg-white/75 dark:bg-gray-800/50 px-5 py-4 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10"
+                  className="base-input px-5 py-4 dark:border-gray-700 dark:bg-gray-800/50"
                 />
               </label>
 
@@ -568,11 +568,11 @@ const RecommendationPage: React.FC = () => {
           </div>
 
           {recommendations.length === 0 ? (
-            <div className="glass-card rounded-[2.5rem] border border-dashed border-moss-sage/25 px-8 py-10 text-center shadow-[0_24px_60px_-30px_rgba(40,36,33,0.28)] dark:border-white/10">
+            <div className="meal-card border-dashed border-moss-sage/25 px-8 py-10 text-center shadow-[0_24px_60px_-30px_rgba(40,36,33,0.28)]">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-terracotta/10 text-terracotta">
                 <Sparkles size={28} />
               </div>
-              <h3 className="mt-5 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">Recommendation sonuclari burada belirecek.</h3>
+              <h3 className="meal-section-title mt-5">Recommendation sonuclari burada belirecek.</h3>
               <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-espresso-midnight/60 dark:text-alabaster/60">
                 Sectigin inventory lokasyonu ve kullanici profilinle birlikte son craving sinyalini gonderdiginde, her tarif icin neden secildigini anlatan AI insight kartlari olusturacagiz.
               </p>
@@ -581,8 +581,8 @@ const RecommendationPage: React.FC = () => {
             <div className="space-y-6">
               <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Results</p>
-                  <h2 className="mt-1 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">AI tarafindan secilen tarifler</h2>
+                  <p className="meal-overline">Results</p>
+                  <h2 className="meal-section-title mt-1">AI tarafindan secilen tarifler</h2>
                 </div>
                 <p className="text-sm text-espresso-midnight/55 dark:text-alabaster/55">
                   {activeGroup?.name || 'Inventory'} lokasyonu baz alindi{cravings.trim() ? ` ve "${cravings.trim()}" craving'i vurgulandi.` : '.'}
@@ -598,7 +598,7 @@ const RecommendationPage: React.FC = () => {
                     : 100;
 
                   return (
-                    <article key={recipe.recipeId} className="glass-card overflow-hidden rounded-[2.8rem] border border-white/60 shadow-[0_24px_70px_-32px_rgba(40,36,33,0.38)] dark:border-white/10">
+                    <article key={recipe.recipeId} className="meal-card overflow-hidden rounded-[2.8rem] p-0 shadow-[0_24px_70px_-32px_rgba(40,36,33,0.38)]">
                       <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)]">
                         <div className="relative min-h-[260px] overflow-hidden bg-gradient-to-br from-terracotta via-terracotta/90 to-espresso-midnight">
                           {recipe.imageUrl ? (
@@ -609,14 +609,14 @@ const RecommendationPage: React.FC = () => {
                           <div className="absolute left-5 top-5 flex flex-wrap gap-2">
                             <span className="match-score-badge text-xs">{matchPercentage}% pantry fit</span>
                             {cravings.trim() && (
-                              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                              <span className="meal-badge-neon border-white/20 bg-white/10 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
                                 Craving active
                               </span>
                             )}
                           </div>
 
                           <div className="absolute bottom-5 left-5 right-5">
-                            <div className="glass-card rounded-[2rem] border border-white/20 p-5">
+                            <div className="meal-card rounded-[2rem] border-white/20 bg-white/10 p-5 shadow-none dark:border-white/20 dark:bg-white/10">
                               <p className="text-[10px] uppercase tracking-[0.2em] text-white/65">AI Pick</p>
                               <h3 className="mt-2 font-serif text-3xl font-bold text-white">{recipe.recipeTitle}</h3>
                               <div className="mt-3 flex flex-wrap gap-2">
@@ -633,30 +633,30 @@ const RecommendationPage: React.FC = () => {
                         <div className="space-y-6 p-6">
                           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                             <div>
-                              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Recommendation Detail</p>
-                              <h3 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{recipe.recipeTitle}</h3>
+                              <p className="meal-overline">Recommendation Detail</p>
+                              <h3 className="meal-section-title mt-2">{recipe.recipeTitle}</h3>
                               <div className="mt-3 flex flex-wrap gap-2">
-                                <span className="medical-badge">AI Insight Ready</span>
-                                <span className="medical-badge bg-ochre-soft/10 border-ochre-soft/20 text-ochre-soft">
+                                <span className="meal-badge-neon">AI Insight Ready</span>
+                                <span className="meal-badge-neon border-ochre-soft/20 bg-ochre-soft/10 text-ochre-soft">
                                   {recipe.servings ? `${recipe.servings} servings` : 'Flexible portions'}
                                 </span>
                               </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                              <div className="rounded-[1.4rem] border border-white/70 bg-white/70 px-4 py-3 text-center dark:border-white/10 dark:bg-white/5">
+                              <div className="meal-metric-card rounded-[1.4rem] px-4 py-3 text-center dark:bg-white/5">
                                 <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Calories</p>
                                 <p className="mt-2 font-semibold text-terracotta">{formatMetric(recipe.calories)}</p>
                               </div>
-                              <div className="rounded-[1.4rem] border border-white/70 bg-white/70 px-4 py-3 text-center dark:border-white/10 dark:bg-white/5">
+                              <div className="meal-metric-card rounded-[1.4rem] px-4 py-3 text-center dark:bg-white/5">
                                 <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Protein</p>
                                 <p className="mt-2 font-semibold text-moss-forest dark:text-moss-sage">{formatMetric(recipe.protein, 'g')}</p>
                               </div>
-                              <div className="rounded-[1.4rem] border border-white/70 bg-white/70 px-4 py-3 text-center dark:border-white/10 dark:bg-white/5">
+                              <div className="meal-metric-card rounded-[1.4rem] px-4 py-3 text-center dark:bg-white/5">
                                 <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Prep</p>
                                 <p className="mt-2 font-semibold text-ochre-soft">{formatMetric(recipe.preparationTimeMinutes, 'm')}</p>
                               </div>
-                              <div className="rounded-[1.4rem] border border-white/70 bg-white/70 px-4 py-3 text-center dark:border-white/10 dark:bg-white/5">
+                              <div className="meal-metric-card rounded-[1.4rem] px-4 py-3 text-center dark:bg-white/5">
                                 <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Rating</p>
                                 <p className="mt-2 inline-flex items-center gap-1 font-semibold text-espresso-midnight dark:text-alabaster">
                                   <Star size={14} className="fill-ochre-soft text-ochre-soft" />
@@ -667,20 +667,20 @@ const RecommendationPage: React.FC = () => {
                           </div>
 
                           <div className="grid grid-cols-1 gap-5 2xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-                            <div className="rounded-[2rem] border border-white/70 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
+                            <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-none dark:bg-white/5">
                               <div className="flex items-center gap-3">
                                 <div className="rounded-2xl bg-terracotta/10 p-3 text-terracotta">
                                   <MessageSquareText size={18} />
                                 </div>
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">AI Insight</p>
+                                  <p className="meal-overline tracking-[0.18em]">AI Insight</p>
                                   <h4 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Why we recommended this?</h4>
                                 </div>
                               </div>
                               <p className="mt-4 text-sm leading-7 text-espresso-midnight/70 dark:text-alabaster/70">{recipe.insight}</p>
 
                               <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                <div className="rounded-[1.6rem] border border-moss-sage/20 bg-moss-sage/10 px-4 py-4">
+                                <div className="meal-metric-card border-moss-sage/20 bg-moss-sage/10 px-4">
                                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-moss-forest/55 dark:text-moss-sage">Prioritized from inventory</p>
                                   <div className="mt-3 flex flex-wrap gap-2">
                                     {recipe.matchedIngredients.length > 0 ? (
@@ -695,12 +695,12 @@ const RecommendationPage: React.FC = () => {
                                   </div>
                                 </div>
 
-                                <div className="rounded-[1.6rem] border border-ochre-soft/20 bg-ochre-soft/10 px-4 py-4">
+                                <div className="meal-metric-card border-ochre-soft/20 bg-ochre-soft/10 px-4">
                                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ochre-soft">Might still need</p>
                                   <div className="mt-3 flex flex-wrap gap-2">
                                     {recipe.missingIngredients.length > 0 ? (
                                       recipe.missingIngredients.map((item) => (
-                                        <span key={item} className="rounded-full border border-ochre-soft/20 bg-white/70 px-3 py-1.5 text-[11px] font-semibold text-espresso-midnight dark:border-ochre-soft/30 dark:bg-white/5 dark:text-alabaster">
+                                        <span key={item} className="meal-badge-neon border-ochre-soft/20 bg-white/70 py-1.5 text-[11px] text-espresso-midnight dark:border-ochre-soft/30 dark:bg-white/5 dark:text-alabaster">
                                           {item}
                                         </span>
                                       ))
@@ -712,13 +712,13 @@ const RecommendationPage: React.FC = () => {
                               </div>
                             </div>
 
-                            <div className="rounded-[2rem] border border-white/70 bg-white/65 p-5 dark:border-white/10 dark:bg-white/5">
+                            <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-none dark:bg-white/5">
                               <div className="flex items-center gap-3">
                                 <div className="rounded-2xl bg-espresso-midnight/10 p-3 text-espresso-midnight dark:bg-white/10 dark:text-alabaster">
                                   <Star size={18} />
                                 </div>
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Feedback Loop</p>
+                                  <p className="meal-overline tracking-[0.18em]">Feedback Loop</p>
                                   <h4 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Rate and Comment</h4>
                                 </div>
                               </div>
@@ -727,7 +727,7 @@ const RecommendationPage: React.FC = () => {
                                 <div>
                                   <div className="flex items-center justify-between gap-4">
                                     <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">Rating</span>
-                                    <span className="rounded-full bg-terracotta px-3 py-1 text-xs font-bold text-white">{draft.rating}/10</span>
+                                    <span className="meal-badge-neon border-transparent bg-terracotta px-3 py-1 text-white">{draft.rating}/10</span>
                                   </div>
                                   <input
                                     type="range"
@@ -758,7 +758,7 @@ const RecommendationPage: React.FC = () => {
                                       error: null
                                     })}
                                     placeholder="Bu oneri craving'ine uydu mu, inventory acisindan pratik miydi?"
-                                    className="w-full rounded-[1.6rem] border border-espresso-midnight/10 bg-white/80 px-4 py-3 text-sm text-espresso-midnight outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10 dark:border-white/10 dark:bg-white/5 dark:text-alabaster"
+                                    className="base-input px-4 py-3 dark:border-white/10 dark:bg-white/5"
                                   />
                                 </label>
 
@@ -788,19 +788,19 @@ const RecommendationPage: React.FC = () => {
                           </div>
 
                           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            <div className="rounded-[1.5rem] border border-white/70 bg-white/70 px-4 py-4 dark:border-white/10 dark:bg-white/5">
+                            <div className="meal-metric-card rounded-[1.5rem] px-4 py-4 dark:bg-white/5">
                               <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Carbs</p>
                               <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMetric(recipe.carbs, 'g')}</p>
                             </div>
-                            <div className="rounded-[1.5rem] border border-white/70 bg-white/70 px-4 py-4 dark:border-white/10 dark:bg-white/5">
+                            <div className="meal-metric-card rounded-[1.5rem] px-4 py-4 dark:bg-white/5">
                               <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Fat</p>
                               <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMetric(recipe.fat, 'g')}</p>
                             </div>
-                            <div className="rounded-[1.5rem] border border-white/70 bg-white/70 px-4 py-4 dark:border-white/10 dark:bg-white/5">
+                            <div className="meal-metric-card rounded-[1.5rem] px-4 py-4 dark:bg-white/5">
                               <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Matched</p>
                               <p className="mt-2 font-semibold text-moss-forest dark:text-moss-sage">{recipe.matchedIngredients.length}</p>
                             </div>
-                            <div className="rounded-[1.5rem] border border-white/70 bg-white/70 px-4 py-4 dark:border-white/10 dark:bg-white/5">
+                            <div className="meal-metric-card rounded-[1.5rem] px-4 py-4 dark:bg-white/5">
                               <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Missing</p>
                               <p className="mt-2 inline-flex items-center gap-2 font-semibold text-espresso-midnight dark:text-alabaster">
                                 <Clock3 size={14} className="text-ochre-soft" />

@@ -299,30 +299,30 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const activeEntryModeLabel = ENTRY_MODE_OPTIONS.find((option) => option.value === entryMode)?.label ?? entryMode;
 
   return (
-    <section className="glass-card rounded-[2.75rem] border border-white/60 p-6 shadow-[0_28px_80px_-36px_rgba(40,36,33,0.44)] dark:border-white/10">
+    <section className="meal-card rounded-[2.75rem] shadow-[0_28px_80px_-36px_rgba(40,36,33,0.44)]">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-terracotta/20 bg-terracotta/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-terracotta">
+          <div className="meal-badge-neon px-4 text-[11px] font-bold tracking-[0.22em]">
             <Sparkles size={14} />
             Smart Consumption
           </div>
-          <h2 className="mt-4 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
+          <h2 className="meal-section-title mt-4">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
           <p className="mt-3 max-w-xl text-sm leading-7 text-espresso-midnight/60 dark:text-alabaster/60">
             Home veya Office seçersen tarifin içindeki malzemeler seçili lokasyondan otomatik düşülür. Outside / Other seçeneğinde ise yalnızca kalori ve makrolar loglanır.
           </p>
         </div>
 
         <div className="grid min-w-[260px] grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="rounded-[1.7rem] border border-white/60 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/50">Mode</p>
+            <div className="meal-metric-card px-4 dark:bg-white/5">
+              <p className="meal-overline tracking-[0.18em]">Mode</p>
             <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{activeEntryModeLabel}</p>
           </div>
-          <div className="rounded-[1.7rem] border border-white/60 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/50">Location</p>
+          <div className="meal-metric-card px-4 dark:bg-white/5">
+            <p className="meal-overline tracking-[0.18em]">Location</p>
             <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{locationLabel(selectedGroup)}</p>
           </div>
-          <div className="col-span-2 rounded-[1.7rem] border border-white/60 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/5 sm:col-span-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/50">Selected</p>
+          <div className="meal-metric-card col-span-2 px-4 dark:bg-white/5 sm:col-span-1">
+            <p className="meal-overline tracking-[0.18em]">Selected</p>
             <p className="mt-3 text-sm font-semibold text-terracotta">{activeItemName ?? 'Awaiting selection'}</p>
           </div>
         </div>
@@ -330,11 +330,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
       <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6">
-          <div className="rounded-[2rem] border border-white/70 bg-white/65 p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
+          <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-sm dark:bg-white/5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Entry Type</p>
-            <h3 className="mt-2 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Tarif ya da malzeme sec</h3>
+                <p className="meal-overline tracking-[0.18em]">Entry Type</p>
+            <h3 className="meal-section-title mt-2 text-2xl">Tarif ya da malzeme sec</h3>
               </div>
               <div className="inline-flex rounded-full border border-espresso-midnight/10 bg-white/70 p-1 dark:border-white/10 dark:bg-white/5">
                 {ENTRY_MODE_OPTIONS.map((option) => {
@@ -371,7 +371,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     setSuccess(null);
                   }}
                   placeholder={entryMode === 'RECIPE' ? 'Mercimek çorbası, menemen...' : 'Yoğurt, muz, badem...'}
-                  className="w-full rounded-[1.6rem] border border-espresso-midnight/10 dark:border-gray-700 bg-white/80 dark:bg-gray-800/50 py-4 pl-12 pr-4 text-sm text-espresso-midnight dark:text-gray-100 shadow-sm outline-none transition-all focus:border-terracotta focus:ring-4 focus:ring-terracotta/10"
+                  className="base-input py-4 pl-12 pr-4 dark:border-gray-700 dark:bg-gray-800/50"
                 />
               </div>
             </label>
@@ -383,7 +383,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
             <div className="mt-4 grid gap-3">
               {resultCards.length === 0 && deferredQuery.length >= 2 && !searching ? (
-                <div className="rounded-[1.5rem] border border-dashed border-espresso-midnight/10 px-4 py-6 text-sm text-espresso-midnight/55 dark:border-white/10 dark:text-alabaster/55">
+                <div className="meal-metric-card rounded-[1.5rem] border-dashed border-espresso-midnight/10 px-4 py-6 text-sm text-espresso-midnight/55 dark:text-alabaster/55">
                   Sonuç bulunamadı. Daha kısa veya farklı bir arama dene.
                 </div>
               ) : null}
@@ -445,9 +445,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-white/70 bg-white/65 p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Meal Context</p>
-            <h3 className="mt-2 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Nerede ve hangi ogunde yedin?</h3>
+          <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-sm dark:bg-white/5">
+            <p className="meal-overline tracking-[0.18em]">Meal Context</p>
+            <h3 className="meal-section-title mt-2 text-2xl">Nerede ve hangi ogunde yedin?</h3>
 
             <div className="mt-5 flex flex-wrap gap-3">
               <button
@@ -494,7 +494,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               ))}
             </div>
 
-            <div className={`mt-5 rounded-[1.6rem] border px-4 py-4 text-sm ${
+            <div className={`meal-metric-card mt-5 px-4 text-sm ${
               isOutside
                 ? 'border-ochre-soft/20 bg-ochre-soft/10 text-espresso-midnight/70 dark:text-alabaster/70'
                 : 'border-moss-sage/25 bg-moss-sage/10 text-moss-forest dark:text-moss-sage'
@@ -509,9 +509,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[2rem] border border-white/70 bg-white/65 p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Household Portion</p>
-            <h3 className="mt-2 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Kolay bir household unit sec</h3>
+          <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-sm dark:bg-white/5">
+            <p className="meal-overline tracking-[0.18em]">Household Portion</p>
+            <h3 className="meal-section-title mt-2 text-2xl">Kolay bir household unit sec</h3>
 
             <div className="mt-5 grid gap-3">
               {entryMode === 'RECIPE' && RECIPE_PORTION_OPTIONS.map((option) => (
@@ -565,8 +565,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           <div className="rounded-[2rem] border border-white/70 bg-espresso-midnight p-5 text-white shadow-[0_28px_80px_-40px_rgba(40,36,33,0.7)]">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/45">Quick Summary</p>
-                <h3 className="mt-2 font-serif text-2xl font-bold">{activeItemName ?? 'Secimini bekliyorum'}</h3>
+                <p className="meal-overline tracking-[0.18em] text-white/45 dark:text-white/45">Quick Summary</p>
+                <h3 className="meal-section-title mt-2 text-2xl text-white dark:text-white">{activeItemName ?? 'Secimini bekliyorum'}</h3>
               </div>
               <div className="rounded-full bg-white/10 p-3 text-terracotta">
                 {entryMode === 'RECIPE' ? <Soup size={18} /> : <UtensilsCrossed size={18} />}

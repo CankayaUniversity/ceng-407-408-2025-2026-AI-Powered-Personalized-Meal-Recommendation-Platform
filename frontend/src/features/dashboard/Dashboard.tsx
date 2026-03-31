@@ -346,7 +346,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {loading ? (
-        <div className="glass-card flex min-h-[260px] items-center justify-center rounded-[2.5rem] border border-white/60 px-8 py-7 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
+        <div className="meal-card flex min-h-[260px] items-center justify-center px-8 py-7 shadow-[var(--brand-shadow-elevated)]">
           <div className="flex items-center gap-4">
             <Loader2 size={24} className="animate-spin text-terracotta" />
             <div>
@@ -358,11 +358,11 @@ const Dashboard: React.FC = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10 xl:col-span-2">
+            <section className="meal-card shadow-[var(--brand-shadow-elevated)] xl:col-span-2">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-2xl">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Inventory Summary</p>
-                  <h2 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{lowStockHeadline}</h2>
+                  <p className="meal-overline">Inventory Summary</p>
+                  <h2 className="meal-section-title mt-2">{lowStockHeadline}</h2>
                   <p className="mt-3 text-sm leading-7 text-espresso-midnight/60 dark:text-alabaster/60">
                     Terracotta flags the ingredients that need attention first, while sage keeps healthy coverage visible across the rest of your kitchens.
                   </p>
@@ -378,39 +378,39 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Running Low</p>
+                <div className="meal-metric-card">
+                  <p className="meal-overline tracking-[0.18em]">Running Low</p>
                   <p className="mt-3 font-serif text-3xl font-bold text-terracotta">{inventoryMetrics.totalLowItems}</p>
                 </div>
-                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Stocked Items</p>
+                <div className="meal-metric-card">
+                  <p className="meal-overline tracking-[0.18em]">Stocked Items</p>
                   <p className="mt-3 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{inventoryMetrics.totalItems}</p>
                 </div>
-                <div className="rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">Categories</p>
+                <div className="meal-metric-card">
+                  <p className="meal-overline tracking-[0.18em]">Categories</p>
                   <p className="mt-3 font-serif text-3xl font-bold text-moss-forest dark:text-moss-sage">{inventoryMetrics.totalCategories}</p>
                 </div>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3">
                 {topLowItems.length > 0 ? topLowItems.map(({ group, item }) => (
-                  <span key={`${group.id}-${item.id}`} className="inline-flex items-center gap-2 rounded-full border border-terracotta/20 dark:border-terracotta/40 bg-terracotta/10 px-3 py-2 text-xs font-semibold text-terracotta">
+                  <span key={`${group.id}-${item.id}`} className="meal-badge-neon dark:border-terracotta/40">
                     <span>{item.ingredient?.name || 'Ingredient'}</span>
                     <span className="text-terracotta/60 dark:text-terracotta/40">{group.name}</span>
                   </span>
                 )) : (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-moss-sage/20 dark:border-moss-sage/40 bg-moss-sage/10 px-3 py-2 text-xs font-semibold text-moss-forest dark:text-moss-sage">
+                  <span className="meal-badge-neon border-moss-sage/20 bg-moss-sage/10 text-moss-forest dark:border-moss-sage/40 dark:text-moss-sage">
                     Inventory looks healthy across all locations.
                   </span>
                 )}
               </div>
             </section>
 
-            <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
+            <section className="meal-card shadow-[var(--brand-shadow-elevated)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Daily Summary</p>
-                  <h2 className="mt-2 font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{dailyHeadline}</h2>
+                  <p className="meal-overline">Daily Summary</p>
+                  <h2 className="meal-section-title mt-2">{dailyHeadline}</h2>
                 </div>
                 <div className="rounded-full bg-terracotta/10 dark:bg-terracotta/20 p-3 text-terracotta">
                   <Flame size={18} />
@@ -435,22 +435,22 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
+                <div className="meal-metric-card px-4">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Protein</p>
                   <p className="mt-2 font-serif text-2xl font-bold text-terracotta">{formatMacro(dailySummary?.totalProtein ?? 0)}</p>
                 </div>
-                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
+                <div className="meal-metric-card px-4">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Carbs</p>
                   <p className="mt-2 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{formatMacro(dailySummary?.totalCarbs ?? 0)}</p>
                 </div>
-                <div className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
+                <div className="meal-metric-card px-4">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Fat</p>
                   <p className="mt-2 font-serif text-2xl font-bold text-moss-forest dark:text-moss-sage">{formatMacro(dailySummary?.totalFat ?? 0)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => navigate('/profile')}
-                  className="rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 text-left shadow-sm hover:border-terracotta/25 dark:border-white/10 dark:bg-gray-800/40 transition-colors"
+                  className="meal-metric-card px-4 text-left transition-colors hover:border-terracotta/25"
                 >
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Goal Source</p>
                   <p className="mt-2 text-sm font-semibold text-terracotta">{dailyGoal ? `${formatNumber(dailyGoal)} kcal target` : 'Set up profile data'}</p>
@@ -458,14 +458,14 @@ const Dashboard: React.FC = () => {
               </div>
             </section>
 
-            <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
+            <section className="meal-card shadow-[var(--brand-shadow-elevated)]">
               <div className="flex items-center gap-3">
                 <div className="rounded-full bg-moss-sage/12 dark:bg-moss-sage/20 p-3 text-moss-forest dark:text-moss-sage">
                   <ShieldCheck size={18} />
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">User DNA</p>
-                  <h2 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Profile signals</h2>
+                  <p className="meal-overline">User DNA</p>
+                  <h2 className="meal-section-title mt-1 text-2xl">Profile signals</h2>
                 </div>
               </div>
 
@@ -473,13 +473,13 @@ const Dashboard: React.FC = () => {
                 {profileSignals.length > 0 ? profileSignals.map((signal) => (
                   <span key={signal} className="medical-badge dark:bg-moss-sage/20 dark:border-moss-sage/30 dark:text-moss-sage">{signal}</span>
                 )) : (
-                  <span className="rounded-full border border-espresso-midnight/10 bg-white/70 px-3 py-2 text-xs font-semibold text-espresso-midnight/60 dark:border-white/10 dark:bg-gray-800/40 dark:text-alabaster/60">
+                  <span className="meal-metric-card px-3 py-2 text-xs font-semibold text-espresso-midnight/60 dark:text-alabaster/60">
                     Add diet, goal, or allergy details from your profile.
                   </span>
                 )}
               </div>
 
-              <div className="mt-6 rounded-[1.8rem] border border-white/70 bg-white/70 px-5 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
+              <div className="meal-metric-card mt-6">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Goal Alignment</p>
                 <p className="mt-3 text-sm leading-7 text-espresso-midnight/65 dark:text-alabaster/65">
                   {formatEnumLabel(profile?.dietaryGoal)
@@ -489,27 +489,27 @@ const Dashboard: React.FC = () => {
               </div>
             </section>
 
-            <section className="glass-card rounded-[2.6rem] border border-white/60 p-6 shadow-[var(--brand-shadow-elevated)] dark:border-white/10">
+            <section className="meal-card shadow-[var(--brand-shadow-elevated)]">
               <div className="flex items-center gap-3">
                 <div className="rounded-full bg-terracotta/10 dark:bg-terracotta/20 p-3 text-terracotta">
                   <TrendingUp size={18} />
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-moss-forest/45 dark:text-moss-sage/55">Kitchen Footprint</p>
-                  <h2 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Coverage at a glance</h2>
+                  <p className="meal-overline">Kitchen Footprint</p>
+                  <h2 className="meal-section-title mt-1 text-2xl">Coverage at a glance</h2>
                 </div>
               </div>
 
               <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
+                <div className="meal-metric-card flex items-center justify-between px-4">
                   <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Locations connected</span>
                   <span className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{inventoryMetrics.totalLocations}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
+                <div className="meal-metric-card flex items-center justify-between px-4">
                   <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Live ingredients</span>
                   <span className="font-serif text-2xl font-bold text-terracotta">{inventoryMetrics.totalItems}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[1.7rem] border border-white/70 bg-white/70 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-gray-800/40">
+                <div className="meal-metric-card flex items-center justify-between px-4">
                   <span className="text-sm font-semibold text-espresso-midnight/70 dark:text-alabaster/70">Tracked categories</span>
                   <span className="font-serif text-2xl font-bold text-moss-forest dark:text-moss-sage">{inventoryMetrics.totalCategories}</span>
                 </div>
@@ -519,8 +519,8 @@ const Dashboard: React.FC = () => {
             <section className="rounded-[2.6rem] border border-white/60 bg-espresso-midnight p-6 text-white shadow-[0_28px_80px_-40px_rgba(40,36,33,0.7)] xl:col-span-2">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <div className="max-w-2xl">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">Quick Actions</p>
-                  <h2 className="mt-2 font-serif text-3xl font-bold">Jump from insight to action without leaving the dashboard.</h2>
+                  <p className="meal-overline text-white/45 dark:text-white/45">Quick Actions</p>
+                  <h2 className="meal-section-title mt-2 text-white dark:text-white">Jump from insight to action without leaving the dashboard.</h2>
                   <p className="mt-3 text-sm leading-7 text-white/70">
                     Use the spiced terracotta action buttons to log a meal instantly or open the recommendation engine with your latest inventory context.
                   </p>
