@@ -80,7 +80,7 @@ const formatCalories = (value?: number | null) =>
     value == null ? '--' : `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(value)} kcal`;
 
 const scaleValue = (value: number | null | undefined, factor: number) =>
-    value == null ? null : Math.round(value * factor * 10) / 10;
+    value == null ? null : value * factor;
 
 type SmartConsumptionPanelProps = {
   onConsumptionLogged?: (response: ConsumptionResponse) => void | Promise<void>;
@@ -104,8 +104,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeListItem | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+
+  // Porsiyon seçimlerini ayrı ayrı state'lerde tutuyoruz
   const [selectedRecipePortion, setSelectedRecipePortion] = useState<RecipePortionOption>(RECIPE_PORTION_OPTIONS[1]);
   const [selectedIngredientPortion, setSelectedIngredientPortion] = useState<IngredientPortionOption>(INGREDIENT_PORTION_OPTIONS[1]);
+
   const [searching, setSearching] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -117,8 +120,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const isSearchStale = searchQuery.trim() !== deferredQuery;
   const activeItemName = entryMode === 'RECIPE' ? selectedRecipe?.title : selectedIngredient?.name;
 
+  // HESAPLAMA MANTIGI: Seçilen nesneye (Recipe/Ingredient) ve porsiyon çarpanına göre tetiklenir
   const nutritionPreview = useMemo(() => {
-    if (selectedRecipe) {
+    if (entryMode === 'RECIPE' && selectedRecipe) {
       const factor = selectedRecipePortion.multiplier;
       return {
         calories: scaleValue(selectedRecipe.totalCalories, factor),
@@ -128,7 +132,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
       };
     }
 
-    if (selectedIngredient?.nutrition) {
+    if (entryMode === 'INGREDIENT' && selectedIngredient?.nutrition) {
       const factor = selectedIngredientPortion.grams / 100;
       return {
         calories: scaleValue(selectedIngredient.nutrition.caloriesPer100g, factor),
@@ -139,7 +143,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     }
 
     return null;
-  }, [selectedIngredient, selectedIngredientPortion.grams, selectedRecipe, selectedRecipePortion.multiplier]);
+  }, [entryMode, selectedRecipe, selectedRecipePortion, selectedIngredient, selectedIngredientPortion]);
 
   const loadInventoryGroups = async () => {
     try {
@@ -236,14 +240,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     if (!selectedRecipe && !selectedIngredient) {
       showToast('Önce bir tarif veya malzeme seçin.', 'info');
       return;
     }
-
     setSubmitting(true);
-
     try {
       const response = await consumptionService.logConsumption({
         userId: user.id,
@@ -259,20 +260,12 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
         isCustomEntry: false,
         isFromInventory: !isOutside && Boolean(selectedGroup)
       });
-
       showToast(`${response.foodName} başarıyla kaydedildi.`, 'success');
-
       setSearchQuery('');
       setSelectedRecipe(null);
       setSelectedIngredient(null);
-
-      if (!isOutside && selectedGroup) {
-        await loadInventoryGroups();
-      }
-
-      if (onConsumptionLogged) {
-        void Promise.resolve(onConsumptionLogged(response)).catch(() => undefined);
-      }
+      if (!isOutside && selectedGroup) { await loadInventoryGroups(); }
+      if (onConsumptionLogged) { void Promise.resolve(onConsumptionLogged(response)).catch(() => undefined); }
     } catch (error) {
       const msg = error instanceof ApiError ? error.message : 'Tüketim kaydı oluşturulamadı.';
       showToast(msg, 'error');
@@ -285,30 +278,30 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const activeEntryModeLabel = ENTRY_MODE_OPTIONS.find((option) => option.value === entryMode)?.label ?? entryMode;
 
   return (
-      <section className="meal-card rounded-5xl shadow-brand-hero border border-card-border transition-colors duration-500">
+      <section className="meal-card rounded-5xl shadow-brand-hero border border-card-border transition-all duration-500 bg-background dark:bg-espresso-midnight/20">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
             <div className="meal-badge-neon px-4 text-[11px] font-bold tracking-[0.22em]">
               <Sparkles size={14} />
               Smart Consumption
             </div>
-            <h2 className="meal-section-title mt-4">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
+            <h2 className="meal-section-title mt-4 text-foreground dark:text-alabaster">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
             <p className="mt-3 max-w-xl text-sm leading-7 text-foreground-muted">
               Ev veya Ofis seçersen tarifin içindeki malzemeler seçili lokasyondan otomatik düşülür. Dışarı / Diğer seçeneğinde ise yalnızca kalori ve makrolar loglanır.
             </p>
           </div>
 
           <div className="grid min-w-[260px] grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="meal-metric-card px-4">
-              <p className="meal-overline tracking-[0.18em]">Mod</p>
-              <p className="mt-3 font-serif text-2xl font-bold text-foreground">{activeEntryModeLabel}</p>
+            <div className="meal-metric-card px-4 bg-background dark:bg-white/5 border border-card-border">
+              <p className="meal-overline tracking-[0.18em] text-foreground/40">Mod</p>
+              <p className="mt-3 font-serif text-2xl font-bold text-foreground dark:text-alabaster">{activeEntryModeLabel}</p>
             </div>
-            <div className="meal-metric-card px-4">
-              <p className="meal-overline tracking-[0.18em]">Lokasyon</p>
-              <p className="mt-3 font-serif text-2xl font-bold text-foreground">{locationLabel(selectedGroup)}</p>
+            <div className="meal-metric-card px-4 bg-background dark:bg-white/5 border border-card-border">
+              <p className="meal-overline tracking-[0.18em] text-foreground/40">Lokasyon</p>
+              <p className="mt-3 font-serif text-2xl font-bold text-foreground dark:text-alabaster">{locationLabel(selectedGroup)}</p>
             </div>
-            <div className="meal-metric-card col-span-2 px-4 sm:col-span-1">
-              <p className="meal-overline tracking-[0.18em]">Seçili</p>
+            <div className="meal-metric-card col-span-2 px-4 sm:col-span-1 bg-background dark:bg-white/5 border border-card-border">
+              <p className="meal-overline tracking-[0.18em] text-foreground/40">Seçili</p>
               <p className="mt-3 text-sm font-bold text-terracotta truncate">{activeItemName ?? 'Seçim Bekleniyor'}</p>
             </div>
           </div>
@@ -316,11 +309,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
         <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
-            <div className="meal-card rounded-3xl bg-background/40 dark:bg-white/5 p-5 border border-card-border">
+            <div className="meal-card rounded-3xl bg-background/60 dark:bg-white/5 p-5 border border-card-border">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="meal-overline tracking-[0.18em]">Giriş Tipi</p>
-                  <h3 className="meal-section-title mt-2 text-2xl">Tarif ya da malzeme seç</h3>
+                  <p className="meal-overline tracking-[0.18em] text-foreground/40">Giriş Tipi</p>
+                  <h3 className="meal-section-title mt-2 text-2xl text-foreground dark:text-alabaster">Tarif ya da malzeme seç</h3>
                 </div>
                 <div className="inline-flex rounded-full border border-card-border bg-background p-1 dark:bg-white/5">
                   {ENTRY_MODE_OPTIONS.map((option) => {
@@ -361,18 +354,12 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                 </div>
               </label>
 
-              <div className="mt-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-foreground/40">
-                {searching || isSearchStale ? <Loader2 size={12} className="animate-spin text-terracotta" /> : <Clock3 size={12} className="text-sage" />}
-                <span>{searching || isSearchStale ? 'Arama güncelleniyor...' : 'Aşağıdaki sonuçlardan seçim yap.'}</span>
-              </div>
-
               <div className="mt-4 grid gap-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-                {resultCards.length === 0 && deferredQuery.length >= 2 && !searching ? (
+                {resultCards.length === 0 && deferredQuery.length >= 2 && !searching && (
                     <div className="meal-metric-card border-dashed border-card-border px-4 py-8 text-center text-sm text-foreground-muted">
-                      Sonuç bulunamadı. Daha farklı bir arama dene.
+                      Sonuç bulunamadı.
                     </div>
-                ) : null}
-
+                )}
                 {entryMode === 'RECIPE' && recipeResults.map((recipe) => (
                     <button
                         key={recipe.id}
@@ -381,7 +368,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                         className={`rounded-2xl border p-4 text-left transition-all group ${
                             selectedRecipe?.id === recipe.id
                                 ? 'border-transparent bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                : 'border-card-border bg-background dark:bg-white/5 hover:border-sage/50'
+                                : 'border-card-border bg-background dark:bg-white/5 hover:border-sage/50 text-foreground dark:text-alabaster'
                         }`}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -395,14 +382,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                           {formatCalories(recipe.totalCalories)}
                         </div>
                       </div>
-                      <div className={`mt-3 flex flex-wrap gap-3 text-[10px] font-bold uppercase tracking-wider ${selectedRecipe?.id === recipe.id ? 'text-white/75' : 'text-foreground/40'}`}>
-                        <span>{formatMacro(recipe.totalProtein)} protein</span>
-                        <span>{formatMacro(recipe.totalCarbs)} karb</span>
-                        <span>{recipe.servings ? `${recipe.servings} porsiyon` : 'Tek tarif'}</span>
-                      </div>
                     </button>
                 ))}
-
                 {entryMode === 'INGREDIENT' && ingredientResults.map((ingredient) => (
                     <button
                         key={ingredient.id}
@@ -411,7 +392,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                         className={`rounded-2xl border p-4 text-left transition-all ${
                             selectedIngredient?.id === ingredient.id
                                 ? 'border-transparent bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                : 'border-card-border bg-background dark:bg-white/5 hover:border-sage/50'
+                                : 'border-card-border bg-background dark:bg-white/5 hover:border-sage/50 text-foreground dark:text-alabaster'
                         }`}
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -422,7 +403,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                           </p>
                         </div>
                         <div className={`rounded-full px-3 py-1 text-[10px] font-bold ${selectedIngredient?.id === ingredient.id ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
-                          {ingredient.nutrition ? `${Math.round(ingredient.nutrition.caloriesPer100g)} kcal / 100g` : 'Veri Bekleniyor'}
+                          {ingredient.nutrition ? `${Math.round(ingredient.nutrition.caloriesPer100g)} kcal` : '--'}
                         </div>
                       </div>
                     </button>
@@ -430,10 +411,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               </div>
             </div>
 
-            <div className="meal-card rounded-3xl bg-background/40 dark:bg-white/5 p-5 border border-card-border">
-              <p className="meal-overline tracking-[0.18em]">Öğün Bağlamı</p>
-              <h3 className="meal-section-title mt-2 text-2xl">Nerede ve ne zaman yedin?</h3>
-
+            <div className="meal-card rounded-3xl bg-background/60 dark:bg-white/5 p-5 border border-card-border">
+              <p className="meal-overline tracking-[0.18em] text-foreground/40">Lokasyon</p>
+              <h3 className="meal-section-title mt-2 text-2xl text-foreground dark:text-alabaster">Nerede yedin?</h3>
               <div className="mt-5 flex flex-wrap gap-2">
                 <button
                     type="button"
@@ -452,7 +432,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                         onClick={() => setSelectedLocationId(String(group.id))}
                         className={`inline-flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-all ${
                             selectedLocationId === String(group.id)
-                                ? 'bg-terracotta text-white shadow-md shadow-terracotta/20'
+                                ? 'bg-terracotta text-white shadow-md'
                                 : 'border border-card-border bg-background text-foreground-muted hover:text-terracotta'
                         }`}
                     >
@@ -461,109 +441,73 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     </button>
                 ))}
               </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {MEAL_OPTIONS.map((option) => (
-                    <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setMealType(option.value)}
-                        className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                            mealType === option.value
-                                ? 'bg-sage text-white shadow-md shadow-sage/20'
-                                : 'border border-card-border bg-background text-foreground-muted hover:text-terracotta'
-                        }`}
-                    >
-                      {option.label}
-                    </button>
-                ))}
-              </div>
-
-              <div className={`mt-5 p-4 rounded-xl text-[10px] font-bold uppercase tracking-wider border ${
-                  isOutside
-                      ? 'border-ochre/20 bg-ochre/5 text-ochre'
-                      : 'border-sage/20 bg-sage/5 text-sage'
-              }`}>
-                {loadingGroups
-                    ? 'Lokasyonlar hazırlanıyor...'
-                    : isOutside
-                        ? 'Bu kayıt yalnızca tüketim özetini günceller. Envanter etkilenmez.'
-                        : `${selectedGroup?.name ?? 'Lokasyon'} envanteri kayıttan sonra otomatik güncellenir.`}
-              </div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <div className="meal-card rounded-3xl bg-background/40 dark:bg-white/5 p-5 border border-card-border">
-              <p className="meal-overline tracking-[0.18em]">Porsiyon Seçimi</p>
-              <h3 className="meal-section-title mt-2 text-2xl">Miktarı belirle</h3>
-
+            <div className="meal-card rounded-3xl bg-background/60 dark:bg-white/5 p-5 border border-card-border">
+              <p className="meal-overline tracking-[0.18em] text-foreground/40">Porsiyon</p>
+              <h3 className="meal-section-title mt-2 text-2xl text-foreground dark:text-alabaster">Miktarı belirle</h3>
               <div className="mt-5 grid gap-3">
-                {entryMode === 'RECIPE' ? RECIPE_PORTION_OPTIONS.map((option) => (
-                    <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setSelectedRecipePortion(option)}
-                        className={`rounded-2xl border p-4 text-left transition-all ${
-                            selectedRecipePortion.id === option.id
-                                ? 'border-transparent bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                : 'border-card-border bg-background dark:bg-white/5 hover:border-sage/50'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-bold text-sm">{option.label}</p>
-                          <p className={`mt-0.5 text-[10px] font-medium ${selectedRecipePortion.id === option.id ? 'text-white/70' : 'text-foreground/40'}`}>{option.note}</p>
+                {(entryMode === 'RECIPE' ? RECIPE_PORTION_OPTIONS : INGREDIENT_PORTION_OPTIONS).map((option: any) => {
+                  const isSelected = entryMode === 'RECIPE'
+                      ? selectedRecipePortion.id === option.id
+                      : selectedIngredientPortion.id === option.id;
+                  return (
+                      <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => entryMode === 'RECIPE' ? setSelectedRecipePortion(option) : setSelectedIngredientPortion(option)}
+                          className={`rounded-2xl border p-4 text-left transition-all ${
+                              isSelected
+                                  ? 'border-transparent bg-terracotta text-white shadow-lg'
+                                  : 'border-card-border bg-background dark:bg-white/5 hover:border-sage/50 text-foreground dark:text-alabaster'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-bold text-sm">{option.label}</p>
+                            <p className={`mt-0.5 text-[10px] ${isSelected ? 'text-white/70' : 'text-foreground/40'}`}>{option.note}</p>
+                          </div>
+                          <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${isSelected ? 'bg-white/20' : 'bg-primary/10 text-primary'}`}>
+                          {option.multiplier ? `x${option.multiplier}` : `${option.grams}g`}
+                        </span>
                         </div>
-                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${selectedRecipePortion.id === option.id ? 'bg-white/20' : 'bg-primary/10 text-primary'}`}>
-                      x{option.multiplier}
-                    </span>
-                      </div>
-                    </button>
-                )) : INGREDIENT_PORTION_OPTIONS.map((option) => (
-                    <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setSelectedIngredientPortion(option)}
-                        className={`rounded-2xl border p-4 text-left transition-all ${
-                            selectedIngredientPortion.id === option.id
-                                ? 'border-transparent bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                : 'border-card-border bg-background dark:bg-white/5 hover:border-sage/50'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-bold text-sm">{option.label}</p>
-                          <p className={`mt-0.5 text-[10px] font-medium ${selectedIngredientPortion.id === option.id ? 'text-white/70' : 'text-foreground/40'}`}>{option.note}</p>
-                        </div>
-                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${selectedIngredientPortion.id === option.id ? 'bg-white/20' : 'bg-primary/10 text-primary'}`}>
-                      {option.grams}g
-                    </span>
-                      </div>
-                    </button>
-                ))}
+                      </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="rounded-3xl bg-espresso-midnight p-6 text-white shadow-brand-hero border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+            {/* Özet Görünüm Kartı - TERRACCOTA ÇERÇEVE VE HESAPLAMA FIX */}
+            <div className={`rounded-3xl p-6 shadow-brand-hero border-2 relative overflow-hidden group transition-all duration-500 ${
+                'bg-white dark:bg-espresso-midnight border-terracotta/20 dark:border-terracotta/30'
+            }`}>
+
+              {/* Arka Plan İkonu */}
+              <div className="absolute top-0 right-0 p-8 opacity-[0.03] dark:opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none text-terracotta">
                 {entryMode === 'RECIPE' ? <Soup size={120} /> : <UtensilsCrossed size={120} />}
               </div>
 
               <div className="relative z-10">
-                <p className="meal-overline text-white/40 tracking-[0.18em]">Özet Görünüm</p>
-                <h3 className="meal-section-title mt-2 text-2xl text-white truncate">{activeItemName ?? 'Seçim Bekleniyor'}</h3>
+                <p className="meal-overline text-terracotta/60 dark:text-terracotta/40 tracking-[0.18em]">Özet Görünüm</p>
+                <h3 className="meal-section-title mt-2 text-2xl text-foreground dark:text-white truncate">
+                  {activeItemName ?? 'Seçim Bekleniyor'}
+                </h3>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   {[
-                    { label: 'Kalori', val: formatCalories(nutritionPreview?.calories) },
-                    { label: 'Protein', val: formatMacro(nutritionPreview?.protein) },
-                    { label: 'Karb', val: formatMacro(nutritionPreview?.carbs) },
-                    { label: 'Yağ', val: formatMacro(nutritionPreview?.fat) }
+                    { label: 'Kalori', val: nutritionPreview?.calories, formatter: formatCalories },
+                    { label: 'Protein', val: nutritionPreview?.protein, formatter: formatMacro },
+                    { label: 'Karb', val: nutritionPreview?.carbs, formatter: formatMacro },
+                    { label: 'Yağ', val: nutritionPreview?.fat, formatter: formatMacro }
                   ].map((m, i) => (
-                      <div key={i} className="rounded-2xl bg-white/5 p-4 border border-white/5">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-white/40">{m.label}</p>
-                        <p className="mt-1 font-serif text-2xl font-bold">{m.val}</p>
+                      <div key={i} className="rounded-2xl bg-terracotta/[0.03] dark:bg-white/5 p-4 border border-terracotta/10 dark:border-white/5">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/40 dark:text-white/40">{m.label}</p>
+                        <p className="mt-1 font-serif text-2xl font-bold text-foreground dark:text-white">
+                          {/* m.val değiştiğinde burası anlık güncellenir */}
+                          {m.val != null ? m.formatter(m.val) : '--'}
+                        </p>
                       </div>
                   ))}
                 </div>
