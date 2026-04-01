@@ -8,11 +8,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        // CSS değişkenlerinden beslenen dinamik renkler
+        // Dinamik Renkler (CSS Variables)
         primary: {
           DEFAULT: 'var(--color-primary)',
           hover: 'var(--color-primary-hover)',
-          soft: 'var(--color-primary-soft)',
+          soft: 'var(--color-primary-soft)', // Bu zaten rgba(226, 114, 91, 0.1) değerinde
         },
         background: 'var(--color-bg)',
         foreground: 'var(--color-text)',
@@ -20,16 +20,21 @@ export default {
           DEFAULT: 'var(--color-card-bg)',
           border: 'var(--color-card-border)',
         },
-        // Sabit yardımcı renkler
-        sage: 'var(--color-sage)',
-        ochre: 'var(--color-ochre)',
+        sage: {
+          DEFAULT: '#8DA399',
+          10: 'rgba(141, 163, 153, 0.1)',
+          20: 'rgba(141, 163, 153, 0.2)',
+        },
+        ochre: '#DAA520',
         moss: "#4A5D4E",
+        terracotta: "#E2725B",
       },
       fontFamily: {
         serif: ["'Playfair Display'", "serif"],
         sans: ["'Montserrat'", "sans-serif"],
       },
       borderRadius: {
+        '3xl': '1.5rem',
         '4xl': '2rem',
         '5xl': '2.5rem',
       },

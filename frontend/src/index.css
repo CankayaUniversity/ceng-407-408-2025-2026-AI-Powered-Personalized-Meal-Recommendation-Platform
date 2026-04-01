@@ -3,53 +3,39 @@
 @tailwind utilities;
 
 :root {
-  /* --- HAM RENKLER (PRIMITIVES) --- */
-  --raw-terracotta: #E2725B;      /* İştah & Enerji */
-  --raw-espresso: #282421;        /* Okunabilirlik & Premium */
-  --raw-espresso-deep: #1A1817;   /* Dark Mode Arka Plan */
-  --raw-alabaster: #F9F6F0;       /* Sıcak Mutfak Arka Planı */
-  --raw-sage: #8DA399;            /* Sağlık & Tazelik */
-  --raw-ochre: #DAA520;           /* Gurme Dokunuş */
+  --raw-terracotta: #E2725B;
+  --raw-espresso: #282421;
+  --raw-espresso-deep: #1A1817;
+  --raw-alabaster: #F9F6F0;
+  --raw-sage: #8DA399;
+  --raw-ochre: #DAA520;
 
-  /* --- LIGHT MODE KARARLARI (DEFAULT) --- */
   --color-bg: var(--raw-alabaster);
   --color-text: var(--raw-espresso);
   --color-primary: var(--raw-terracotta);
   --color-primary-hover: #C55D48;
-  --color-primary-soft: rgba(226, 114, 91, 0.15);
-  --color-sage: var(--raw-sage);
-  --color-ochre: var(--raw-ochre);
+  --color-primary-soft: rgba(226, 114, 91, 0.1);
+  --color-card-bg: rgba(255, 255, 255, 0.75);
+  --color-card-border: rgba(40, 36, 33, 0.08);
 
-  --color-card-bg: rgba(255, 255, 255, 0.7);
-  --color-card-border: rgba(255, 255, 255, 0.6);
-
-  /* --- EFEKTLER --- */
-  --brand-shadow-soft: 0 12px 40px -12px rgba(40, 36, 33, 0.12);
-  --brand-shadow-elevated: 0 20px 50px -20px rgba(40, 36, 33, 0.18);
-  --brand-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --brand-shadow-soft: 0 12px 40px -12px rgba(40, 36, 33, 0.08);
 }
 
-/* --- DARK MODE KARARLARI --- */
 .dark {
   --color-bg: var(--raw-espresso-deep);
   --color-text: var(--raw-alabaster);
-  --color-primary-hover: #EC8B76; /* Dark modda daha parlak hover */
-
-  --color-card-bg: rgba(40, 36, 33, 0.45);
-  --color-card-border: rgba(255, 255, 255, 0.08);
-
-  --brand-shadow-soft: 0 10px 30px -15px rgba(0, 0, 0, 0.5);
+  --color-primary-hover: #EC8B76;
+  --color-card-bg: rgba(40, 36, 33, 0.5);
+  --color-card-border: rgba(255, 255, 255, 0.06);
 }
 
 @layer base {
   body {
-    @apply m-0 min-h-screen transition-colors duration-500 ease-brand;
+    @apply m-0 min-h-screen transition-colors duration-500 antialiased;
     background-color: var(--color-bg);
     color: var(--color-text);
     font-family: 'Montserrat', system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
   }
-
   h1, h2, h3, h4, .font-serif {
     font-family: 'Playfair Display', serif;
     @apply tracking-tight;
@@ -57,69 +43,65 @@
 }
 
 @layer components {
-  /* MealAI Ana Kart Yapısı */
   .meal-card {
     background-color: var(--color-card-bg);
     border-color: var(--color-card-border);
-    @apply rounded-5xl border p-6 backdrop-blur-md shadow-brand-soft
-    transition-all duration-300 ease-brand;
+    @apply rounded-[2.5rem] border p-6 backdrop-blur-md shadow-brand-soft transition-all duration-300;
   }
 
-  /* Metrik Kartları (Protein, Kalori vb.) */
   .meal-metric-card {
     background-color: var(--color-card-bg);
     border-color: var(--color-card-border);
-    @apply rounded-4xl border px-5 py-4 shadow-sm;
+    @apply rounded-3xl border px-5 py-4 shadow-sm;
   }
 
-  /* Dinamik Başlıklar */
   .meal-section-title {
-    @apply font-serif text-2xl md:text-3xl font-bold text-foreground;
+    @apply font-serif text-2xl md:text-3xl font-bold;
+    color: var(--color-text);
   }
 
-  /* Ana Buton */
   .btn-primary {
-    @apply bg-primary text-white px-6 py-3 rounded-2xl font-semibold
-    shadow-[0_10px_20px_-10px_rgba(226,114,91,0.4)]
-    transition-all duration-300 ease-brand
-    hover:bg-primary-hover hover:-translate-y-0.5
-    active:scale-95;
+    background-color: var(--color-primary);
+    @apply text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-lg;
   }
 
-  /* Form Input Alanı */
+  .btn-primary:hover {
+    background-color: var(--color-primary-hover);
+    @apply -translate-y-0.5;
+  }
+
   .base-input {
-    @apply w-full px-4 py-3 rounded-2xl outline-none transition-all duration-200
-    bg-white/50 border border-gray-200 text-foreground
-    focus:ring-2 focus:ring-primary-soft focus:border-primary
-    dark:bg-white/5 dark:border-gray-700;
+    @apply w-full px-4 py-3 rounded-2xl outline-none transition-all duration-200 bg-white/50 border border-gray-200;
+    color: var(--color-text);
   }
 
-  /* Rozetler */
+  .base-input:focus {
+    border-color: var(--color-primary);
+    /* focus:ring-primary/20 hatası için manuel çözüm: */
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+  }
+
+  /* medical-badge: bg-sage/10 hatası için manuel çözüm */
   .medical-badge {
-    @apply bg-sage/10 border border-sage/20 text-sage text-[0.65rem] font-bold
-    uppercase tracking-wider px-3 py-1 rounded-full;
+    @apply text-[0.65rem] font-bold uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-2;
+    background-color: rgba(141, 163, 153, 0.1);
+    border: 1px solid rgba(141, 163, 153, 0.2);
+    color: var(--raw-sage);
   }
 
-  /* AI Skoru */
-  .match-score-badge {
-    @apply bg-card backdrop-blur-md text-foreground px-4 py-2 rounded-3xl
-    font-extrabold shadow-brand-soft border border-card-border;
+  /* meal-badge-neon: border-primary/20 hatası için manuel çözüm */
+  .meal-badge-neon {
+    @apply px-4 py-2 rounded-2xl flex items-center gap-2 transition-all duration-200;
+    background-color: var(--color-primary-soft);
+    border: 1px solid rgba(226, 114, 91, 0.2);
+    color: var(--color-primary);
+  }
+
+  .meal-badge-neon:hover {
+    background-color: rgba(226, 114, 91, 0.15);
   }
 }
 
-/* Bento Grid */
-.bento-grid {
-  @apply grid gap-6;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+.meal-overline {
+  @apply text-[10px] uppercase tracking-[0.2em] font-black opacity-60 mb-1 block;
 }
-
-@media (min-width: 1024px) {
-  .bento-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
-/* Organik Filtre Çipleri */
-.organic-chip {
-  @apply transition-all duration-500 ease-brand;
-  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-}
-.organic-chip:hover { border-radius: 50%; }
