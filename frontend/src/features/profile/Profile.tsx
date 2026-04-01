@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  AlertCircle,
   Flame,
   Loader2,
   LogOut,
-  Mail,
   RefreshCcw,
   Save,
   Shield,
@@ -14,9 +12,9 @@ import {
 import { useAuth, type AuthUser } from '../../infrastructure/auth/AuthContext';
 import { ApiError, NotFoundError, ValidationError } from '../../services/errors';
 import { useUserService } from '../../services/userService';
-type UserService = ReturnType<typeof useUserService>;
 import { ActivityLevel, DietaryGoal, DietType, Gender, type User } from '../../types';
 import TastePreferencePicker from './TastePreferencePicker';
+import { useToast } from '../../shared/hooks/useToast';
 
 interface ProfileFormState {
   weight: string;
@@ -61,264 +59,129 @@ const goalOptions = [
 ];
 
 const emptyForm = (): ProfileFormState => ({
-  weight: '',
-  height: '',
-  age: '',
-  gender: '',
-  activityLevel: '',
-  dietType: '',
-  dietaryGoal: '',
-  allergies: [],
-  dislikedIngredients: []
+  weight: '', height: '', age: '', gender: '',
+  activityLevel: '', dietType: '', dietaryGoal: '',
+  allergies: [], dislikedIngredients: []
 });
 
 const buildDisplayName = (authUser: AuthUser | undefined): string => {
-  if (!authUser) {
-    return '';
-  }
-
-  const fullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ').trim();
-  return fullName || authUser.username;
+  if (!authUser) return '';
+  return [authUser.firstName, authUser.lastName].filter(Boolean).join(' ').trim() || authUser.username;
 };
 
 const getInitials = (authUser: AuthUser | undefined): string => {
-  if (!authUser) {
-    return 'AI';
-  }
-
+  if (!authUser) return 'AI';
   const fullName = [authUser.firstName, authUser.lastName].filter(Boolean);
-  if (fullName.length > 0) {
-    return fullName.map((part) => part![0]).join('').slice(0, 2).toUpperCase();
-  }
-
-  return authUser.username.slice(0, 2).toUpperCase();
+  return fullName.length > 0
+      ? fullName.map((part) => part![0]).join('').slice(0, 2).toUpperCase()
+      : authUser.username.slice(0, 2).toUpperCase();
 };
 
 const normalizePreferenceList = (values: string[]): string[] => {
   const seen = new Set<string>();
-
   return values.reduce<string[]>((acc, item) => {
     const value = item.trim();
     const key = value.toLocaleLowerCase('tr-TR');
-
-    if (!value || seen.has(key)) {
-      return acc;
-    }
-
+    if (!value || seen.has(key)) return acc;
     seen.add(key);
     acc.push(value);
     return acc;
   }, []);
 };
 
-const toForm = (profile: User | null): ProfileFormState => ({
-  weight: profile?.weight != null ? String(profile.weight) : '',
-  height: profile?.height != null ? String(profile.height) : '',
-  age: profile?.age != null ? String(profile.age) : '',
-  gender: profile?.gender ?? '',
-  activityLevel: profile?.activityLevel ?? '',
-  dietType: profile?.dietType ?? '',
-  dietaryGoal: profile?.dietaryGoal ?? '',
-  allergies: normalizePreferenceList(profile?.allergies ?? []),
-  dislikedIngredients: normalizePreferenceList(profile?.dislikedIngredients ?? [])
-});
-
-const snapshotForm = (form: ProfileFormState): string => JSON.stringify({
-  ...form,
-  allergies: normalizePreferenceList(form.allergies),
-  dislikedIngredients: normalizePreferenceList(form.dislikedIngredients)
-});
-
-const toFloat = (value: string): number | undefined => {
-  if (!value.trim()) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
-const toInteger = (value: string): number | undefined => {
-  if (!value.trim()) {
-    return undefined;
-  }
-
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
-const buildPayload = (authUser: AuthUser, form: ProfileFormState): Partial<User> => ({
-  id: authUser.id,
-  name: buildDisplayName(authUser),
-  email: authUser.email,
-  weight: toFloat(form.weight),
-  height: toFloat(form.height),
-  age: toInteger(form.age),
-  gender: form.gender || undefined,
-  activityLevel: form.activityLevel || undefined,
-  dietType: form.dietType || undefined,
-  dietaryGoal: form.dietaryGoal || undefined,
-  allergies: normalizePreferenceList(form.allergies),
-  dislikedIngredients: normalizePreferenceList(form.dislikedIngredients)
-});
-
-const loadProfile = async (authUser: AuthUser, userService: UserService): Promise<User> => {
-  try {
-    return await userService.getUserById(authUser.id);
-  } catch (error) {
-    if (!(error instanceof NotFoundError)) {
-      throw error;
-    }
-
-    return userService.upsertUser({
-      id: authUser.id,
-      name: buildDisplayName(authUser),
-      email: authUser.email
-    });
-  }
-};
-
-const getErrorMessage = (error: unknown, fallback: string): string => {
-  if (error instanceof ApiError) {
-    return error.message;
-  }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return fallback;
-};
-
 const Profile: React.FC = () => {
   const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const userService = useUserService();
+
   const [profile, setProfile] = useState<User | null>(null);
   const [form, setForm] = useState<ProfileFormState>(emptyForm());
   const [allergyInput, setAllergyInput] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [pageError, setPageError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [serverSnapshot, setServerSnapshot] = useState(snapshotForm(emptyForm()));
+  const [serverSnapshot, setServerSnapshot] = useState(JSON.stringify(emptyForm()));
 
-  const isDirty = snapshotForm(form) !== serverSnapshot;
+  const isDirty = JSON.stringify(form) !== serverSnapshot;
   const displayName = buildDisplayName(user);
-  const calorieTarget = profile?.dailyCalorieTarget ?? 2000;
+  const calorieTarget = profile?.dailyCalorieTarget ?? 0;
 
-  const applyProfile = (nextProfile: User) => {
-    const nextForm = toForm(nextProfile);
-    setProfile(nextProfile);
+  const applyProfile = (p: User) => {
+    const nextForm: ProfileFormState = {
+      weight: p.weight != null ? String(p.weight) : '',
+      height: p.height != null ? String(p.height) : '',
+      age: p.age != null ? String(p.age) : '',
+      gender: p.gender ?? '',
+      activityLevel: p.activityLevel ?? '',
+      dietType: p.dietType ?? '',
+      dietaryGoal: p.dietaryGoal ?? '',
+      allergies: normalizePreferenceList(p.allergies ?? []),
+      dislikedIngredients: normalizePreferenceList(p.dislikedIngredients ?? [])
+    };
+    setProfile(p);
     setForm(nextForm);
-    setServerSnapshot(snapshotForm(nextForm));
+    setServerSnapshot(JSON.stringify(nextForm));
     setFieldErrors({});
   };
 
   useEffect(() => {
-    let cancelled = false;
-
-    const syncProfile = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setPageError(null);
-      setSuccessMessage(null);
-
+    let active = true;
+    const sync = async () => {
+      if (!user?.id) { setLoading(false); return; }
       try {
-        const nextProfile = await loadProfile(user, userService);
-
-        if (!cancelled) {
-          applyProfile(nextProfile);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setPageError(getErrorMessage(error, 'Profil bilgileri yüklenemedi.'));
-        }
+        setLoading(true);
+        const data = await userService.getUserById(user.id).catch(err => {
+          if (err instanceof NotFoundError) {
+            return userService.upsertUser({ id: user.id, name: displayName, email: user.email });
+          }
+          throw err;
+        });
+        if (active) applyProfile(data);
+      } catch (err) {
+        if (active) showToast(err instanceof ApiError ? err.message : 'Yükleme başarısız.', 'error');
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     };
-
-    syncProfile();
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+    sync();
+    return () => { active = false; };
+  }, [user?.id, userService, displayName, showToast]);
 
   const updateField = <K extends keyof ProfileFormState>(field: K, value: ProfileFormState[K]) => {
-    setForm((current) => ({ ...current, [field]: value }));
-    setSuccessMessage(null);
-    setPageError(null);
-    setFieldErrors((current) => {
-      if (!current[field as string]) {
-        return current;
-      }
-
-      const next = { ...current };
+    setForm(prev => ({ ...prev, [field]: value }));
+    if (fieldErrors[field as string]) {
+      const next = { ...fieldErrors };
       delete next[field as string];
-      return next;
-    });
-  };
-
-  const addAllergy = () => {
-    const value = allergyInput.trim();
-    if (!value) {
-      return;
-    }
-
-    updateField('allergies', [...form.allergies, value]);
-    setAllergyInput('');
-  };
-
-  const reloadFromServer = async () => {
-    if (!user?.id) {
-      return;
-    }
-
-    setLoading(true);
-    setPageError(null);
-    setSuccessMessage(null);
-
-    try {
-      const nextProfile = await loadProfile(user, userService);
-      applyProfile(nextProfile);
-    } catch (error) {
-      setPageError(getErrorMessage(error, 'Sunucudaki profil bilgileri alınamadı.'));
-    } finally {
-      setLoading(false);
+      setFieldErrors(next);
     }
   };
 
-  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!user?.id) {
-      return;
-    }
-
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.id) return;
     setSaving(true);
-    setPageError(null);
-    setSuccessMessage(null);
-    setFieldErrors({});
 
     try {
-      const savedProfile = await userService.updateUserProfile(user.id, buildPayload(user, form));
-      applyProfile(savedProfile);
-      setSuccessMessage('Profil ayarlarınız başarıyla kaydedildi.');
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        setFieldErrors(error.fields ?? {});
-        setPageError(error.message);
+      const payload: Partial<User> = {
+        weight: form.weight ? Number(form.weight) : undefined,
+        height: form.height ? Number(form.height) : undefined,
+        age: form.age ? Number(form.age) : undefined,
+        gender: form.gender || undefined,
+        activityLevel: form.activityLevel || undefined,
+        dietType: form.dietType || undefined,
+        dietaryGoal: form.dietaryGoal || undefined,
+        allergies: normalizePreferenceList(form.allergies),
+        dislikedIngredients: normalizePreferenceList(form.dislikedIngredients)
+      };
+      const saved = await userService.updateUserProfile(user.id, payload);
+      applyProfile(saved);
+      showToast('Profil başarıyla güncellendi.', 'success');
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        setFieldErrors(err.fields ?? {});
+        showToast(err.message, 'error');
       } else {
-        setPageError(getErrorMessage(error, 'Profil kaydedilemedi.'));
+        showToast('Kaydedilirken bir hata oluştu.', 'error');
       }
     } finally {
       setSaving(false);
@@ -327,330 +190,177 @@ const Profile: React.FC = () => {
 
   if (loading && !profile) {
     return (
-      <div className="max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-sm px-8 py-10 flex items-center gap-4">
-          <Loader2 size={24} className="animate-spin text-orange-500" />
-          <div>
-            <p className="font-semibold text-gray-900">Profil yükleniyor</p>
-            <p className="text-sm text-gray-500">Kullanıcı bilgileri veritabanından okunuyor.</p>
+        <div className="max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
+          <div className="meal-card px-8 py-10 flex items-center gap-4">
+            <Loader2 size={24} className="animate-spin text-primary" />
+            <p className="font-semibold text-foreground">Profiliniz hazırlanıyor...</p>
           </div>
         </div>
-      </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="meal-section-title">Profil Ayarları</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Beslenme ve fiziksel profil bilgilerinizi backend ile senkron yönetin.</p>
-        </div>
-        <button
-          type="button"
-          onClick={reloadFromServer}
-          disabled={loading || saving || !user?.id}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
-          Sunucudaki Son Veriyi Getir
-        </button>
-      </header>
-
-      {pageError && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 flex items-start gap-3">
-          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+      <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between px-2">
           <div>
-            <p className="font-semibold">İşlem tamamlanamadı</p>
-            <p className="text-sm text-red-600 mt-1">{pageError}</p>
+            <span className="meal-overline">Kişiselleştirme</span>
+            <h1 className="meal-section-title text-4xl md:text-5xl">Profil Ayarları</h1>
           </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-700">
-          <p className="font-semibold">Kayıt başarılı</p>
-          <p className="text-sm text-green-600 mt-1">{successMessage}</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-8">
-        <aside className="space-y-6">
-          <div className="meal-card rounded-3xl overflow-hidden border-gray-100 p-0 shadow-sm dark:border-gray-800">
-            <div className="h-24 bg-orange-500" />
-            <div className="px-6 pb-6 -mt-12 text-center">
-              <div className="w-24 h-24 mx-auto rounded-full border-4 border-white dark:border-gray-800 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center text-3xl font-bold shadow-sm">
-                {getInitials(user)}
-              </div>
-              <h2 className="meal-section-title mt-4 text-xl">{displayName}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">@{user?.username}</p>
-
-              <div className="meal-metric-card mt-6 border-orange-100 bg-orange-50 px-4 text-left dark:border-orange-800/40 dark:bg-orange-900/20">
-                <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
-                  <Flame size={18} />
-                  <span className="meal-overline tracking-[0.18em] text-orange-600 dark:text-orange-400">Günlük Hedef</span>
-                </div>
-                <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100 font-serif">{calorieTarget}</div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sunucu tarafından otomatik hesaplanır.</p>
-              </div>
-
-              <div className="mt-6 space-y-3 text-left">
-                <div className="meal-metric-card border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
-                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">E-posta</p>
-                  <div className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <Mail size={16} className="text-gray-400 dark:text-gray-500 shrink-0" />
-                    <span className="truncate">{user?.email || 'Belirtilmedi'}</span>
-                  </div>
-                </div>
-                <div className="meal-metric-card border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
-                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Sistem ID</p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono break-all">{user?.id}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <button
-            onClick={() => logout()}
-            className="w-full flex items-center justify-center gap-2 p-4 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-colors"
+              type="button"
+              onClick={() => {
+                window.location.reload();
+                showToast("Veriler tazeleniyor...", "info");
+              }}
+              className="btn-secondary flex items-center gap-2 group"
           >
-            <LogOut size={20} />
-            Oturumu Kapat
+            <RefreshCcw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+            Verileri Yenile
           </button>
-        </aside>
+        </header>
 
-        <form onSubmit={handleSave} className="space-y-6">
-          <section className="meal-card rounded-3xl overflow-hidden border-gray-100 p-0 shadow-sm dark:border-gray-800">
-            <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center gap-3">
-              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 rounded-2xl">
-                <UserIcon size={20} />
-              </div>
-              <div>
-                <h3 className="meal-section-title text-xl">Fiziksel Bilgiler</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Kalori hesabında kullanılan temel veriler.</p>
-              </div>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Kilo (kg)</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={form.weight}
-                  onChange={(event) => updateField('weight', event.target.value)}
-                  className="base-input"
-                  placeholder="72.5"
-                />
-                {fieldErrors.weight && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.weight}</span>}
-              </label>
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-8">
+          <aside className="space-y-6">
+            <div className="meal-card p-0 overflow-hidden border-none shadow-brand-elevated">
+              <div className="h-28 bg-primary/90" />
+              <div className="px-6 pb-8 -mt-14 text-center">
+                <div className="w-28 h-28 mx-auto rounded-[2.5rem] border-8 border-background bg-card text-primary flex items-center justify-center text-4xl font-bold shadow-lg overflow-hidden">
+                  {getInitials(user)}
+                </div>
+                <h2 className="meal-section-title mt-4 text-2xl tracking-tight">{displayName}</h2>
+                <p className="text-xs font-bold uppercase tracking-widest text-foreground/30 mt-1 mb-6">
+                  {user?.email}
+                </p>
 
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Boy (cm)</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={form.height}
-                  onChange={(event) => updateField('height', event.target.value)}
-                  className="base-input"
-                  placeholder="178"
-                />
-                {fieldErrors.height && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.height}</span>}
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Yaş</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={form.age}
-                  onChange={(event) => updateField('age', event.target.value)}
-                  className="base-input"
-                  placeholder="24"
-                />
-                {fieldErrors.age && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.age}</span>}
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Cinsiyet</span>
-                <select
-                  value={form.gender}
-                  onChange={(event) => updateField('gender', event.target.value as Gender | '')}
-                  className="base-input"
-                >
-                  <option value="" className="dark:bg-gray-800">Seçiniz</option>
-                  {genderOptions.map((option) => (
-                    <option key={option.value} value={option.value} className="dark:bg-gray-800">
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.gender && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.gender}</span>}
-              </label>
-            </div>
-          </section>
-
-          <section className="meal-card rounded-3xl overflow-hidden border-gray-100 p-0 shadow-sm dark:border-gray-800">
-            <div className="p-6 border-b border-gray-50 dark:border-gray-800 flex items-center gap-3">
-              <div className="p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 rounded-2xl">
-                <Shield size={20} />
-              </div>
-              <div>
-                <h3 className="meal-section-title text-xl">Tercihler ve Alerjenler</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Sert kısıtlar ve kişisel damak tercihleri öneri akışına birlikte taşınır.</p>
+                <div className="meal-metric-card bg-primary/5 border-primary/10 text-left">
+                  <div className="flex items-center gap-2 text-primary mb-1">
+                    <Flame size={16} strokeWidth={2.5} />
+                    <span className="meal-overline text-primary opacity-100">Günlük Enerji</span>
+                  </div>
+                  <div className="text-3xl font-bold text-foreground font-serif tracking-tighter">
+                    {calorieTarget} <span className="text-lg font-sans opacity-60">kcal</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Aktivite Seviyesi</span>
-                <select
-                  value={form.activityLevel}
-                  onChange={(event) => updateField('activityLevel', event.target.value as ActivityLevel | '')}
-                  className="base-input"
-                >
-                  <option value="" className="dark:bg-gray-800">Seçiniz</option>
-                  {activityOptions.map((option) => (
-                    <option key={option.value} value={option.value} className="dark:bg-gray-800">
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.activityLevel && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.activityLevel}</span>}
-              </label>
 
-              <label className="space-y-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Hedef</span>
-                <select
-                  value={form.dietaryGoal}
-                  onChange={(event) => updateField('dietaryGoal', event.target.value as DietaryGoal | '')}
-                  className="base-input"
-                >
-                  <option value="" className="dark:bg-gray-800">Seçiniz</option>
-                  {goalOptions.map((option) => (
-                    <option key={option.value} value={option.value} className="dark:bg-gray-800">
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.dietaryGoal && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.dietaryGoal}</span>}
-              </label>
+            <button
+                onClick={() => logout()}
+                className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-600 rounded-[2rem] font-bold hover:bg-red-600 hover:text-white transition-all duration-300 border border-red-500/20 shadow-sm"
+            >
+              <LogOut size={20} /> Oturumu Kapat
+            </button>
+          </aside>
 
-              <label className="space-y-2 md:col-span-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Diyet Tipi</span>
-                <select
-                  value={form.dietType}
-                  onChange={(event) => updateField('dietType', event.target.value as DietType | '')}
-                  className="base-input"
-                >
-                  <option value="" className="dark:bg-gray-800">Seçiniz</option>
-                  {dietOptions.map((option) => (
-                    <option key={option.value} value={option.value} className="dark:bg-gray-800">
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.dietType && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.dietType}</span>}
-              </label>
+          <form onSubmit={handleSave} className="space-y-6">
+            <section className="meal-card space-y-6 border-none shadow-brand-soft">
+              <div className="flex items-center gap-3 border-b border-card-border pb-5">
+                <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                  <UserIcon size={20} />
+                </div>
+                <h3 className="meal-section-title text-xl">Fiziksel Detaylar</h3>
+              </div>
 
-              <div className="space-y-3 md:col-span-2">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Alerjenler</span>
-                <div className="flex flex-col sm:flex-row gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Ağırlık (kg)</span>
+                  <input type="number" step="0.1" value={form.weight} onChange={e => updateField('weight', e.target.value)} className="base-input" placeholder="0.0" />
+                  {fieldErrors.weight && <p className="text-xs text-red-500 font-bold ml-1 italic">{fieldErrors.weight}</p>}
+                </div>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Boy (cm)</span>
+                  <input type="number" step="0.1" value={form.height} onChange={e => updateField('height', e.target.value)} className="base-input" placeholder="0" />
+                </div>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Yaş</span>
+                  <input type="number" value={form.age} onChange={e => updateField('age', e.target.value)} className="base-input" placeholder="0" />
+                </div>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Biyolojik Cinsiyet</span>
+                  <select value={form.gender} onChange={e => updateField('gender', e.target.value as any)} className="base-input">
+                    <option value="">Belirtilmedi</option>
+                    {genderOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <section className="meal-card space-y-6 border-none shadow-brand-soft">
+              <div className="flex items-center gap-3 border-b border-card-border pb-5">
+                <div className="p-2 bg-sage/10 rounded-xl text-sage">
+                  <Shield size={20} />
+                </div>
+                <h3 className="meal-section-title text-xl">Beslenme & Yaşam Tarzı</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Aktivite Seviyesi</span>
+                  <select value={form.activityLevel} onChange={e => updateField('activityLevel', e.target.value as any)} className="base-input">
+                    <option value="">Seçiniz</option>
+                    {activityOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Beslenme Hedefi</span>
+                  <select value={form.dietaryGoal} onChange={e => updateField('dietaryGoal', e.target.value as any)} className="base-input">
+                    <option value="">Seçiniz</option>
+                    {goalOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <span className="meal-overline pl-1">Diyet Yaklaşımı</span>
+                  <select value={form.dietType} onChange={e => updateField('dietType', e.target.value as any)} className="base-input">
+                    {dietOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4">
+                <span className="meal-overline pl-1">Alerjenler & Hassasiyetler</span>
+                <div className="flex gap-2">
                   <input
-                    type="text"
-                    value={allergyInput}
-                    onChange={(event) => setAllergyInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ',') {
-                        event.preventDefault();
-                        addAllergy();
-                      }
-                    }}
-                    className="base-input flex-1"
-                    placeholder="Örn. Fıstık, Laktoz, Gluten"
+                      type="text"
+                      value={allergyInput}
+                      onChange={e => setAllergyInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), allergyInput && updateField('allergies', [...form.allergies, allergyInput.trim()]), setAllergyInput(''))}
+                      className="base-input"
+                      placeholder="Örn: Yer Fıstığı"
                   />
-                  <button
-                    type="button"
-                    onClick={addAllergy}
-                    className="px-5 py-3 rounded-2xl bg-gray-900 dark:bg-gray-700 text-white font-semibold hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    Ekle
-                  </button>
+                  <button type="button" onClick={() => { if(allergyInput) { updateField('allergies', [...form.allergies, allergyInput.trim()]); setAllergyInput(''); }}}
+                          className="btn-primary px-8">Ekle</button>
                 </div>
-
-                {form.allergies.length > 0 ? (
-                  <div className="flex flex-wrap gap-3">
-                    {form.allergies.map((allergy) => (
-                      <span key={allergy} className="meal-badge-neon border-orange-100 bg-orange-50 px-4 py-2 text-sm text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
-                        {allergy}
-                        <button
-                          type="button"
-                          onClick={() => updateField('allergies', form.allergies.filter((item) => item !== allergy))}
-                          className="text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300"
-                          aria-label={`${allergy} alerjenini kaldır`}
-                        >
-                          <X size={14} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 px-4 py-5 text-sm text-gray-500 dark:text-gray-400">
-                    Henüz alerjen eklenmedi.
-                  </div>
-                )}
-
-                {fieldErrors.allergies && <span className="text-sm text-red-600 dark:text-red-400">{fieldErrors.allergies}</span>}
+                <div className="flex flex-wrap gap-2">
+                  {form.allergies.map(a => (
+                      <span key={a} className="medical-badge pr-2">
+                      {a}
+                        <X size={12} className="ml-1 hover:text-red-500 cursor-pointer" onClick={() => updateField('allergies', form.allergies.filter(i => i !== a))} />
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <div className="space-y-3 md:col-span-2">
-                <div className="space-y-1">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Taste Preferences</span>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Sevmediğin gıdaları soft-constraint olarak kaydediyoruz; öneri motoru bunları alerjenlerden farklı şekilde ele alacak.
-                  </p>
-                </div>
+              <div className="mt-6 pt-6 border-t border-card-border">
+                <TastePreferencePicker values={form.dislikedIngredients} onChange={next => updateField('dislikedIngredients', next)} error={fieldErrors.dislikedIngredients} />
+              </div>
+            </section>
 
-                <TastePreferencePicker
-                  values={form.dislikedIngredients}
-                  onChange={(nextValues) => updateField('dislikedIngredients', nextValues)}
-                  error={fieldErrors.dislikedIngredients}
-                />
+            <div className="meal-card sticky bottom-6 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 border-none shadow-brand-elevated bg-card/90 backdrop-blur-xl z-10">
+              <div className="flex flex-col">
+                <p className="text-xs font-bold uppercase tracking-widest opacity-40">Durum</p>
+                <p className="text-sm font-semibold">{isDirty ? 'Kaydedilmemiş Değişiklikler' : 'Her Şey Güncel'}</p>
+              </div>
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button type="button" disabled={!isDirty || saving} onClick={() => profile && applyProfile(profile)} className="btn-secondary flex-1 sm:flex-none py-3">Geri Al</button>
+                <button type="submit" disabled={!isDirty || saving} className="btn-primary flex-1 sm:flex-none py-3 px-12 flex items-center justify-center gap-2">
+                  {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  Kaydet
+                </button>
               </div>
             </div>
-          </section>
-
-          <div className="meal-card rounded-3xl border-gray-100 px-6 py-5 shadow-sm dark:border-gray-800 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-gray-100">
-                {isDirty ? 'Kaydedilmemiş değişiklikleriniz var.' : 'Tüm bilgileriniz sunucu ile senkron.'}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Boş bıraktığınız alanlar kaydetme sırasında mevcut değerlerini korur.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => profile && applyProfile(profile)}
-                disabled={!profile || !isDirty || saving}
-                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                <RefreshCcw size={16} />
-                Son Kayda Dön
-              </button>
-              <button
-                type="submit"
-                disabled={saving || loading || !user?.id || !isDirty}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-orange-500 text-white font-semibold shadow-lg shadow-orange-100 dark:shadow-none hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-              >
-                {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                {saving ? 'Kaydediliyor' : 'Kaydet'}
-              </button>
-            </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
   );
 };
 

@@ -1,63 +1,91 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChefHat, LayoutDashboard, Utensils, User as UserIcon, LogOut, ChevronLeft, ChevronRight, Globe, Moon, Sun, Boxes, Sparkles } from 'lucide-react';
+import {
+    ChefHat, LayoutDashboard, Utensils, User as UserIcon,
+    LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles
+} from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { authenticated, user, logout, login } = useAuth();
+    const { authenticated, user, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
-    const [expanded, setExpanded] = React.useState(true);
-
     const location = useLocation();
     const { t, i18n } = useTranslation();
+
+    const [expanded, setExpanded] = useState(() => {
+        const saved = localStorage.getItem('sidebar-expanded');
+        return saved !== null ? JSON.parse(saved) : true;
+    });
+
+    useEffect(() => {
+        localStorage.setItem('sidebar-expanded', JSON.stringify(expanded));
+    }, [expanded]);
 
     const changeLanguage = (lng: string) => {
         i18n.changeLanguage(lng);
     };
 
     const menuItems = [
-        { id: 'dashboard', text: t('navigation.home'), icon: <LayoutDashboard size={24} strokeWidth={1.5} />, route: '/dashboard' },
-        { id: 'recipes', text: t('navigation.recipes'), icon: <Utensils size={24} strokeWidth={1.5} />, route: '/recipes', private: true },
-        { id: 'inventory', text: t('navigation.inventory'), icon: <Boxes size={24} strokeWidth={1.5} />, route: '/inventory', private: true },
-        { id: 'recommendations', text: t('navigation.recommendations'), icon: <Sparkles size={24} strokeWidth={1.5} />, route: '/recommendations', private: true },
-        { id: 'profile', text: t('navigation.profile'), icon: <UserIcon size={24} strokeWidth={1.5} />, route: '/profile', private: true },
+        { id: 'dashboard', text: t('navigation.home'), icon: <LayoutDashboard size={20} />, route: '/dashboard' },
+        { id: 'recipes', text: t('navigation.recipes'), icon: <Utensils size={20} />, route: '/recipes', private: true },
+        { id: 'inventory', text: t('navigation.inventory'), icon: <Boxes size={20} />, route: '/inventory', private: true },
+        { id: 'recommendations', text: t('navigation.recommendations'), icon: <Sparkles size={20} />, route: '/recommendations', private: true },
+        { id: 'profile', text: t('navigation.profile'), icon: <UserIcon size={20} />, route: '/profile', private: true },
     ];
 
     const visibleItems = menuItems.filter(item => !item.private || authenticated);
 
     return (
-        <div className="flex min-h-screen bg-alabaster dark:bg-[#1A1817] transition-colors duration-300">
-            {/* Sidebar */}
-            <aside className={`bg-espresso-midnight text-alabaster transition-all duration-500 flex flex-col shadow-2xl dark:bg-black/40 dark:backdrop-blur-xl ${expanded ? 'w-72' : 'w-24'}`}>
-                <div className="p-8 flex items-center justify-between">
-                    <Link to="/" className="flex items-center gap-3 overflow-hidden">
-                        <div className="p-2 bg-terracotta rounded-xl shadow-lg shadow-terracotta/20">
-                            <ChefHat className="text-white min-w-[24px] w-6 h-6" />
+        <div className="flex h-screen bg-alabaster dark:bg-espresso-midnight transition-colors duration-500 overflow-hidden font-sans text-espresso-midnight dark:text-alabaster">
+
+            {/* --- SIDEBAR --- */}
+            <aside className={`
+                relative z-50 flex flex-col bg-white dark:bg-black/40 dark:backdrop-blur-3xl border-r border-black/5 dark:border-white/5 transition-all duration-500 ease-in-out
+                ${expanded ? 'w-72' : 'w-24'}
+            `}>
+                <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="absolute -right-3.5 top-10 z-[70] flex h-7 w-7 items-center justify-center rounded-full bg-terracotta text-white shadow-xl hover:scale-110 active:scale-95 transition-all border border-white/20"
+                >
+                    {expanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                </button>
+
+                <div className={`p-8 mb-6 flex items-center ${expanded ? 'justify-start' : 'justify-center'}`}>
+                    <Link to="/" className="flex items-center gap-4 group">
+                        <div className="p-2 bg-terracotta rounded-xl shadow-lg shadow-terracotta/20 min-w-[40px] flex items-center justify-center group-hover:rotate-6 transition-transform">
+                            <ChefHat className="text-white w-6 h-6" />
                         </div>
-                        {expanded && <span className="text-2xl font-serif font-bold tracking-tight text-white whitespace-nowrap">Chef AI</span>}
+                        {expanded && (
+                            <span className="text-xl font-serif font-bold tracking-tight text-espresso-midnight dark:text-white animate-in fade-in slide-in-from-left-2 whitespace-nowrap">
+                                Meal<span className="text-terracotta">AI</span>
+                            </span>
+                        )}
                     </Link>
                 </div>
 
-                <nav className="flex-1 py-8 px-4">
-                    <ul className="space-y-4">
+                <nav className="flex-1 px-4 py-2 overflow-y-auto scrollbar-hide">
+                    <ul className="space-y-1.5">
                         {visibleItems.map((item) => {
                             const isActive = location.pathname === item.route;
                             return (
                                 <li key={item.id}>
                                     <Link
                                         to={item.route}
-                                        className={`group flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 ${
-                                            isActive 
-                                                ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20' 
-                                                : 'text-alabaster/60 hover:text-alabaster hover:bg-white/5'
-                                        }`}
+                                        className={`
+                                            group relative flex items-center px-4 py-3.5 rounded-xl transition-all duration-300
+                                            ${isActive
+                                            ? 'bg-black/5 dark:bg-white/10 text-espresso-midnight dark:text-white shadow-sm'
+                                            : 'text-black/40 dark:text-alabaster/40 hover:text-terracotta dark:hover:text-alabaster hover:bg-black/5 dark:hover:bg-white/5'}
+                                            ${expanded ? 'gap-4' : 'justify-center'}
+                                        `}
                                     >
-                                        <span className={`${isActive ? 'text-white' : 'text-alabaster/40 group-hover:text-terracotta'} transition-colors`}>
+                                        {isActive && <div className="absolute left-0 w-1 h-5 bg-terracotta rounded-r-full shadow-[0_0_10px_rgba(231,76,60,0.5)]" />}
+                                        <span className={`transition-colors duration-300 ${isActive ? 'text-terracotta' : 'text-black/20 dark:text-white/20 group-hover:text-terracotta'}`}>
                                             {item.icon}
                                         </span>
-                                        {expanded && <span className="font-medium tracking-wide">{item.text}</span>}
+                                        {expanded && <span className="text-sm font-medium tracking-wide whitespace-nowrap">{item.text}</span>}
                                     </Link>
                                 </li>
                             );
@@ -66,72 +94,52 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </nav>
 
                 <div className="p-6">
-                    <div className={`mb-6 p-4 rounded-2xl bg-white/5 border border-white/5 ${expanded ? 'block' : 'hidden'}`}>
-                        <div className="flex items-center justify-between mb-2">
-                             <Globe size={16} className="text-alabaster/40" />
-                             <div className="flex gap-3">
-                                <button 
-                                    onClick={toggleTheme}
-                                    className="p-2 rounded-lg bg-white/5 text-alabaster/40 hover:text-terracotta transition-colors"
-                                    title={isDark ? "Light Mode" : "Dark Mode"}
-                                >
-                                    {isDark ? <Sun size={14} /> : <Moon size={14} />}
-                                </button>
-                                <button 
-                                    onClick={() => changeLanguage('en')}
-                                    className={`text-[10px] font-bold tracking-widest px-2 py-1 rounded-md transition-all ${i18n.language === 'en' ? 'bg-terracotta text-white' : 'text-alabaster/40 hover:text-alabaster'}`}
-                                >
-                                    EN
-                                </button>
-                                <button 
-                                    onClick={() => changeLanguage('tr')}
-                                    className={`text-[10px] font-bold tracking-widest px-2 py-1 rounded-md transition-all ${i18n.language === 'tr' ? 'bg-terracotta text-white' : 'text-alabaster/40 hover:text-alabaster'}`}
-                                >
-                                    TR
-                                </button>
-                             </div>
-                        </div>
-                    </div>
-
-                    {authenticated ? (
-                        <div className="space-y-4">
-                            {expanded && (
-                                <div className="px-4 py-2">
-                                    <p className="text-sm font-serif font-bold text-white truncate">{user?.firstName} {user?.lastName}</p>
-                                    <p className="text-[10px] uppercase tracking-widest text-alabaster/40 truncate">{user?.email}</p>
-                                </div>
-                            )}
-                            <button
-                                onClick={() => logout()}
-                                className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-alabaster/40 hover:text-white hover:bg-red-500/20 transition-all`}
-                            >
-                                <LogOut size={20} />
-                                {expanded && <span className="font-medium tracking-wide">{t('actions.logout')}</span>}
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={() => login()}
-                            className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-terracotta text-white hover:bg-terracotta/90 transition-all shadow-xl shadow-terracotta/20`}
-                        >
-                            <UserIcon size={20} />
-                            {expanded && <span className="font-medium tracking-wide">{t('actions.login')}</span>}
+                    {authenticated && (
+                        <button onClick={logout} className={`w-full flex items-center rounded-xl text-black/40 dark:text-alabaster/40 hover:text-red-500 hover:bg-red-500/10 transition-all group ${expanded ? 'px-4 py-3.5 gap-4' : 'p-3.5 justify-center'}`}>
+                            <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
+                            {expanded && <span className="text-[10px] font-black uppercase tracking-widest">{t('actions.logout')}</span>}
                         </button>
                     )}
-                    
-                    <button 
-                        onClick={() => setExpanded(!expanded)}
-                        className="mt-6 w-full flex justify-center p-2 text-alabaster/20 hover:text-terracotta transition-colors"
-                    >
-                        {expanded ? <ChevronLeft size={24} /> : <ChevronRight size={24} />}
-                    </button>
                 </div>
             </aside>
 
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <main className="flex-1 p-10 overflow-y-auto">
-                    {children}
+            {/* --- ANA İÇERİK ALANI --- */}
+            <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden bg-alabaster dark:bg-espresso-midnight transition-colors duration-500">
+
+                {/* HEADER */}
+                <header className="h-20 z-40 flex items-center justify-end px-8 gap-6 bg-white/70 dark:bg-black/20 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
+
+                    <div className="flex items-center p-1 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                        {['en', 'tr'].map((lng) => (
+                            <button key={lng} onClick={() => changeLanguage(lng)} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${i18n.language === lng ? 'bg-white dark:bg-terracotta text-espresso-midnight dark:text-white shadow-sm' : 'text-black/40 dark:text-alabaster/40 hover:text-terracotta'}`}>
+                                {lng.toUpperCase()}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button onClick={toggleTheme} className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 text-black/40 dark:text-alabaster/40 hover:text-terracotta transition-all border border-black/5 dark:border-white/5">
+                        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+
+                    {authenticated && (
+                        <Link to="/profile" className="flex items-center gap-3 pl-6 border-l border-black/10 dark:border-white/10 group cursor-pointer">
+                            <div className="text-right hidden sm:block">
+                                <p className="text-xs font-bold group-hover:text-terracotta transition-colors">{user?.firstName}</p>
+                                <p className="text-[10px] uppercase text-black/40 dark:text-alabaster/25 tracking-wider font-medium">{user?.email}</p>
+                            </div>
+                            <div className="w-10 h-10 rounded-full bg-terracotta/10 border border-terracotta/20 flex items-center justify-center text-terracotta font-bold text-sm shadow-inner group-hover:scale-105 group-hover:shadow-lg transition-all duration-300">
+                                {user?.firstName?.charAt(0)}
+                            </div>
+                        </Link>
+                    )}
+                </header>
+
+                {/* MAIN */}
+                <main className="flex-1 overflow-y-auto scroll-smooth relative">
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-terracotta/[0.03] blur-[120px] rounded-full pointer-events-none" />
+                    <div className="mx-auto max-w-[1500px] min-h-full p-8 md:p-12 animate-in fade-in duration-700">
+                        {children}
+                    </div>
                 </main>
             </div>
         </div>

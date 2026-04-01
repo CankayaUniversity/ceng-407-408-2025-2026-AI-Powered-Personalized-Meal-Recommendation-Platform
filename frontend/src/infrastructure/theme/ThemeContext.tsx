@@ -9,6 +9,9 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isDark, setIsDark] = useState(() => {
+        // SSR güvenliği için (eğer ileride Next.js vb. geçersen)
+        if (typeof window === 'undefined') return false;
+
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
             return savedTheme === 'dark';
@@ -17,11 +20,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     useEffect(() => {
+        const root = window.document.documentElement;
+
         if (isDark) {
-            document.documentElement.classList.add('dark');
+            root.classList.add('dark');
+            // 'light' class'ı varsa temizliyoruz (bazı kütüphanelerle çakışmaması için)
+            root.classList.remove('light');
             localStorage.setItem('theme', 'dark');
         } else {
-            document.documentElement.classList.remove('dark');
+            root.classList.remove('dark');
+            root.classList.add('light');
             localStorage.setItem('theme', 'light');
         }
     }, [isDark]);
