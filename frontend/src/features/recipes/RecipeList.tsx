@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Filter, Clock, Zap, Star, ChevronRight, Plus, ChefHat, Flame } from 'lucide-react';
+import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame } from 'lucide-react';
 import { useRecipeService } from '../../services/recipeService';
 import type { RecipeListItem } from '../../types';
 

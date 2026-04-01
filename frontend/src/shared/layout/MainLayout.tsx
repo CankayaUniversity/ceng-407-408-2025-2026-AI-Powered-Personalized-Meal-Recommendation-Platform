@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     ChefHat, LayoutDashboard, Utensils, User as UserIcon,
-    LogOut, ChevronLeft, ChevronRight, Globe, Moon, Sun, Boxes, Sparkles
+    LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import {
-    ChefHat, Target, BrainCircuit, Star, Play, ShieldCheck,
+    ChefHat, BrainCircuit, Star, Play, ShieldCheck,
     Activity, Wind, Heart, Clock, Sun, Moon, Languages, ArrowRight
 } from 'lucide-react';
 

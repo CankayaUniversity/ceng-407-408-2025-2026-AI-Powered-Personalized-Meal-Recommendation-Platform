@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AlertCircle,
   Boxes,
   Briefcase,
-  CheckCircle2,
   Home,
   Leaf,
   Loader2,
@@ -16,15 +14,13 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
-import { ApiError } from '../../services/errors';
 import { useInventoryService } from '../../services/inventoryService';
 import { useToast } from '../../shared/hooks/useToast';
 import { type Ingredient, type Inventory, type InventoryGroup, type InventoryGroupRequest } from '../../types';
 
 /**
  * MealAI - Inventory Management Page
- * Bu sayfa kullanıcının lokasyon bazlı (Home, Office vb.) stoklarını yönetmesini sağlar.
- * Tasarım: Sage Green + Spiced Terracotta + Espresso Midnight
+ * Hatalardan arındırılmış, derleme (build) uyumlu versiyon.
  */
 
 type GroupDraft = { name: string; icon: string };
@@ -56,7 +52,6 @@ const InventoryPage: React.FC = () => {
   const { showToast } = useToast();
   const inventoryService = useInventoryService();
 
-  // State yönetimi - student style (temiz ama fazla karmaşık değil)
   const [groups, setGroups] = useState<InventoryGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +65,6 @@ const InventoryPage: React.FC = () => {
   const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
   const [searchingIngredients, setSearchingIngredients] = useState(false);
 
-  // Aktif lokasyonu bulalım
   const activeGroup = useMemo(
       () => groups.find((group) => group.id === selectedGroupId) ?? groups[0] ?? null,
       [groups, selectedGroupId]
@@ -91,7 +85,16 @@ const InventoryPage: React.FC = () => {
     setGroupDraft(createGroupDraft());
   };
 
-  // API'den lokasyonları çekme fonksiyonu
+  // Malzeme seçim fonksiyonu (Hatanın ana çözümü)
+  const handleIngredientSelect = (ing: Ingredient) => {
+    setItemDraft(prev => ({
+      ...prev,
+      ingredientQuery: ing.name,
+      selectedIngredient: ing
+    }));
+    setIngredientResults([]);
+  };
+
   const loadGroups = useCallback(async (options?: { preferredGroupId?: number | null; showLoader?: boolean }) => {
     if (options?.showLoader) setLoading(true);
     try {
@@ -115,7 +118,6 @@ const InventoryPage: React.FC = () => {
     void loadGroups({ showLoader: true });
   }, [authenticated, loadGroups]);
 
-  // Malzeme arama logic (Debounce yerine timeout ile öğrenci usulü kontrol)
   useEffect(() => {
     const query = itemDraft.ingredientQuery.trim();
     if (itemDraft.selectedIngredient && query === itemDraft.selectedIngredient.name) {
@@ -206,7 +208,6 @@ const InventoryPage: React.FC = () => {
     }
   };
 
-  // Silme işlemleri
   const handleDeleteGroup = async () => {
     if (!activeGroup) return;
     if (!window.confirm(`${activeGroup.name} lokasyonunu ve içindeki tüm stokları silmek istediğine emin misin?`)) return;
@@ -250,7 +251,6 @@ const InventoryPage: React.FC = () => {
   return (
       <>
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          {/* Header - Modern Night Style */}
           <header className="relative overflow-hidden rounded-[2.75rem] bg-espresso-midnight px-8 py-10 text-white shadow-brand-hero border border-white/5">
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute -top-16 right-0 h-48 w-48 rounded-full bg-terracotta/20 blur-[100px]" />
@@ -286,7 +286,6 @@ const InventoryPage: React.FC = () => {
             </div>
           </header>
 
-          {/* Location Selector */}
           <section className="space-y-4">
             <div className="flex items-center justify-between px-2">
               <div>
@@ -329,7 +328,6 @@ const InventoryPage: React.FC = () => {
           </section>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[380px_1fr]">
-            {/* Stock Editor Card */}
             <section className="meal-card shadow-brand-card self-start border border-card-border">
               <div className="flex items-start justify-between">
                 <div>
@@ -359,7 +357,6 @@ const InventoryPage: React.FC = () => {
                         className="base-input py-4 pl-12 pr-4 bg-background dark:bg-white/5"
                     />
 
-                    {/* Search Results Dropdown */}
                     {(ingredientResults.length > 0 || searchingIngredients) && (
                         <div className="absolute inset-x-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-2xl border border-card-border bg-background shadow-brand-hero animate-in fade-in zoom-in-95 duration-200">
                           {searchingIngredients ? (
@@ -427,7 +424,6 @@ const InventoryPage: React.FC = () => {
               </form>
             </section>
 
-            {/* Items List Section */}
             <section className="space-y-6">
               <div className="meal-card shadow-brand-card border border-card-border">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -503,7 +499,6 @@ const InventoryPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Location Modal */}
         {locationModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/40 backdrop-blur-sm animate-in fade-in duration-300">
               <div className="w-full max-w-xl bg-background rounded-[2.5rem] shadow-brand-hero border border-card-border overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
