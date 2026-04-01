@@ -8,23 +8,22 @@ export default {
   theme: {
     extend: {
       colors: {
-        alabaster: "#F9F6F0",
-        terracotta: {
-          DEFAULT: "#E2725B",
-          spiced: "#E2725B",
+        // CSS değişkenlerinden beslenen dinamik renkler
+        primary: {
+          DEFAULT: 'var(--color-primary)',
+          hover: 'var(--color-primary-hover)',
+          soft: 'var(--color-primary-soft)',
         },
-        moss: {
-          DEFAULT: "#4A5D4E",
-          forest: "#4A5D4E",
-          sage: "#8DA399",
+        background: 'var(--color-bg)',
+        foreground: 'var(--color-text)',
+        card: {
+          DEFAULT: 'var(--color-card-bg)',
+          border: 'var(--color-card-border)',
         },
-        ochre: {
-          soft: "#DAA520",
-        },
-        espresso: {
-          DEFAULT: "#282421",
-          midnight: "#282421",
-        },
+        // Sabit yardımcı renkler
+        sage: 'var(--color-sage)',
+        ochre: 'var(--color-ochre)',
+        moss: "#4A5D4E",
       },
       fontFamily: {
         serif: ["'Playfair Display'", "serif"],
@@ -33,6 +32,13 @@ export default {
       borderRadius: {
         '4xl': '2rem',
         '5xl': '2.5rem',
+      },
+      transitionTimingFunction: {
+        'brand': 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+      boxShadow: {
+        'brand-soft': 'var(--brand-shadow-soft)',
+        'brand-elevated': 'var(--brand-shadow-elevated)',
       }
     },
   },
