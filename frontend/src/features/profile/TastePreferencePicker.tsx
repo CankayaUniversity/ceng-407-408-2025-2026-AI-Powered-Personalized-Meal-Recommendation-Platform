@@ -1,5 +1,5 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Loader2, Plus, Search, X } from 'lucide-react';
+import { Loader2, Plus, Search, X, Ban } from 'lucide-react';
 import { useInventoryService } from '../../services/inventoryService';
 import { type Ingredient } from '../../types';
 
@@ -10,22 +10,15 @@ interface TastePreferencePickerProps {
 }
 
 const locale = 'tr-TR';
-
 const normalizeLabel = (value: string): string => value.trim();
-
 const normalizeKey = (value: string): string => normalizeLabel(value).toLocaleLowerCase(locale);
 
 const normalizeValues = (values: string[]): string[] => {
   const seen = new Set<string>();
-
   return values.reduce<string[]>((acc, item) => {
     const value = normalizeLabel(item);
     const key = normalizeKey(value);
-
-    if (!value || seen.has(key)) {
-      return acc;
-    }
-
+    if (!value || seen.has(key)) return acc;
     seen.add(key);
     acc.push(value);
     return acc;
@@ -48,7 +41,6 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
 
   useEffect(() => {
     const searchTerm = deferredQuery.trim();
-
     if (searchTerm.length < 2) {
       setResults([]);
       setSearching(false);
@@ -61,178 +53,163 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
       try {
         setSearching(true);
         setSearchError(null);
-
         const nextResults = await inventoryService.searchIngredients(searchTerm, 6);
-
-        if (!active) {
-          return;
-        }
-
+        if (!active) return;
         setResults(nextResults.filter((ingredient) => !selectedKeys.has(normalizeKey(ingredient.name))));
       } catch (_error) {
-        if (!active) {
-          return;
-        }
-
+        if (!active) return;
         setResults([]);
-        setSearchError('Malzeme araması şu anda yapılamıyor.');
+        setSearchError('Arama servisi şu an meşgul.');
       } finally {
-        if (active) {
-          setSearching(false);
-        }
+        if (active) setSearching(false);
       }
-    }, 180);
+    }, 200);
 
-    return () => {
-      active = false;
-      window.clearTimeout(timeoutId);
-    };
+    return () => { active = false; window.clearTimeout(timeoutId); };
   }, [deferredQuery, inventoryService, selectedKeys]);
 
   const commitValue = (value: string) => {
     const normalizedValue = normalizeLabel(value);
-
     if (!normalizedValue || selectedKeys.has(normalizeKey(normalizedValue))) {
       setQuery('');
       setResults([]);
       return;
     }
-
     onChange(normalizeValues([...values, normalizedValue]));
     setQuery('');
     setResults([]);
-    setSearchError(null);
   };
 
   const removeValue = (value: string) => {
     onChange(values.filter((item) => normalizeKey(item) !== normalizeKey(value)));
   };
 
-  const shouldShowResults = searching || results.length > 0 || trimmedQuery.length >= 2 || searchError;
-
   return (
-    <div className="rounded-[2rem] border border-terracotta/20 dark:border-terracotta/10 bg-gradient-to-br from-terracotta/10 via-white to-alabaster dark:from-terracotta/20 dark:via-gray-900/40 dark:to-gray-800/40 p-5 shadow-[0_24px_60px_-40px_rgba(226,114,91,0.45)] dark:shadow-none">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-terracotta/15 dark:bg-terracotta/20 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-terracotta dark:text-terracotta/90">
-            Taste Preferences
+      <div className="space-y-6">
+        {/* Header Kısmı */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-terracotta/10 rounded-lg text-terracotta">
+                <Ban size={18} />
+              </div>
+              <h4 className="meal-section-title text-lg tracking-tight">Lezzet Tercihleri</h4>
+            </div>
+            <p className="text-sm text-foreground/50 max-w-md italic">
+              Sevmediğin malzemeleri buraya ekle, MealAI sana özel tariflerde bunları geri plana atsın.
+            </p>
           </div>
-          <p className="mt-3 text-sm leading-6 text-espresso-midnight/65 dark:text-gray-400">
-            Alerji değil, sadece önerilerde geri planda kalmasını istediğin malzemeleri ekle.
-          </p>
+          <div className="flex items-center gap-2 px-4 py-2 bg-card border border-card-border rounded-2xl shadow-sm self-start sm:self-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-foreground/40">Liste</span>
+            <span className="text-sm font-bold text-terracotta">{values.length} Öge</span>
+          </div>
         </div>
-        <div className="meal-badge-neon bg-white/85 px-3 py-2 text-terracotta shadow-sm dark:bg-gray-800/80 dark:text-terracotta/90">
-          {values.length} dislike
-        </div>
-      </div>
 
-      <div className="mt-5 space-y-4">
-        <label className="space-y-2">
-          <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-gray-300">Malzeme Ara</span>
-          <div className="relative">
-            <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-terracotta/75 dark:text-terracotta/60" />
-            <input
+        {/* Arama Inputu */}
+        <div className="relative group">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-terracotta/50 group-focus-within:text-terracotta transition-colors">
+            <Search size={20} />
+          </div>
+          <input
               type="text"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if ((event.key === 'Enter' || event.key === ',') && trimmedQuery) {
-                  event.preventDefault();
-                  commitValue(trimmedQuery);
-                }
-              }}
-              className="base-input border-terracotta/20 bg-white/90 py-4 pl-12 pr-12 dark:border-gray-700 dark:bg-gray-800/50"
-              placeholder="Örn. Kişniş, kereviz, zeytin"
-            />
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && trimmedQuery && commitValue(trimmedQuery)}
+              className="base-input pl-12 pr-14 py-4 shadow-brand-soft border-terracotta/5 focus:border-terracotta/30"
+              placeholder="Örn: Patlıcan, dereotu, bamya..."
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
             {searching ? (
-              <Loader2 size={18} className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-terracotta" />
+                <Loader2 size={20} className="animate-spin text-terracotta/40 mr-2" />
             ) : canAddQuery ? (
-              <button
-                type="button"
-                onClick={() => commitValue(trimmedQuery)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-terracotta p-2 text-white shadow-lg shadow-terracotta/20 transition-transform hover:scale-105"
-                aria-label={`"${trimmedQuery}" malzemesini dislike listesine ekle`}
-              >
-                <Plus size={14} />
-              </button>
+                <button
+                    type="button"
+                    onClick={() => commitValue(trimmedQuery)}
+                    className="p-2 bg-terracotta text-white rounded-xl shadow-lg shadow-terracotta/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  <Plus size={18} />
+                </button>
             ) : null}
           </div>
-        </label>
 
-        <div className="meal-metric-card rounded-2xl border-white/70 bg-white/80 px-4 py-3 text-xs leading-5 text-espresso-midnight/55 dark:border-gray-800 dark:bg-gray-800/40 dark:text-gray-400">
-          Arama sonuçlarından hızlıca seçebilir, istersen yazdığın ifadeyi doğrudan listeye ekleyebilirsin.
+          {/* Canlı Arama Sonuçları ve Hata Paneli */}
+          {(searching || results.length > 0 || searchError || (trimmedQuery.length >= 2 && !searching)) && (
+              <div className="absolute top-full left-0 right-0 mt-2 z-50 overflow-hidden rounded-2xl border border-card-border bg-card shadow-brand-elevated animate-in slide-in-from-top-2 duration-300">
+                {searching ? (
+                    <div className="p-6 text-center text-sm text-foreground/40 flex items-center justify-center gap-3">
+                      <Loader2 size={18} className="animate-spin text-terracotta" /> Kütüphane taranıyor...
+                    </div>
+                ) : searchError ? (
+                    <div className="p-5 text-center text-sm text-red-500 bg-red-500/5 flex items-center justify-center gap-2 font-semibold">
+                      <Ban size={16} /> {searchError}
+                    </div>
+                ) : results.length > 0 ? (
+                    <div className="divide-y divide-card-border">
+                      {results.map((ingredient) => (
+                          <button
+                              key={ingredient.id}
+                              type="button"
+                              onClick={() => commitValue(ingredient.name)}
+                              className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-terracotta/5 transition-colors group/item"
+                          >
+                            <div>
+                              <p className="font-bold text-foreground group-hover/item:text-terracotta transition-colors">{ingredient.name}</p>
+                              <p className="text-[10px] uppercase tracking-widest text-foreground/30 mt-0.5">{formatCategory(ingredient.category)}</p>
+                            </div>
+                            <Plus size={16} className="text-terracotta opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                          </button>
+                      ))}
+                    </div>
+                ) : trimmedQuery.length >= 2 ? (
+                    <button
+                        type="button"
+                        onClick={() => commitValue(trimmedQuery)}
+                        className="w-full px-5 py-4 text-left hover:bg-terracotta/5 flex items-center justify-between group/add"
+                    >
+                      <div>
+                        <p className="text-sm font-bold text-foreground">"{trimmedQuery}" listeye eklensin mi?</p>
+                        <p className="text-xs text-foreground/40 mt-0.5">Eşleşme bulunamadı, manuel olarak eklenecek.</p>
+                      </div>
+                      <Plus size={18} className="text-terracotta" />
+                    </button>
+                ) : null}
+              </div>
+          )}
         </div>
 
-        {shouldShowResults && (
-          <div className="overflow-hidden rounded-[1.5rem] border border-terracotta/15 dark:border-gray-700 bg-white/90 dark:bg-gray-800 shadow-sm">
-            {searching ? (
-              <div className="flex items-center gap-3 px-4 py-4 text-sm text-espresso-midnight/60 dark:text-gray-400">
-                <Loader2 size={16} className="animate-spin text-terracotta" />
-                <span>Malzemeler getiriliyor...</span>
-              </div>
-            ) : searchError ? (
-              <div className="px-4 py-4 text-sm text-red-600 dark:text-red-400">{searchError}</div>
-            ) : results.length > 0 ? (
-              <div className="divide-y divide-terracotta/10 dark:divide-gray-700">
-                {results.map((ingredient) => (
-                  <button
-                    key={ingredient.id}
-                    type="button"
-                    onClick={() => commitValue(ingredient.name)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-terracotta/8 dark:hover:bg-terracotta/10"
-                  >
-                    <div>
-                      <p className="font-semibold text-espresso-midnight dark:text-gray-100">{ingredient.name}</p>
-                      <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-espresso-midnight/40 dark:text-gray-500">{formatCategory(ingredient.category)}</p>
+        {/* Dislike Edilenler Listesi (Badges) */}
+        <div className="min-h-[60px] p-4 rounded-3xl border-2 border-dashed border-card-border bg-card/30">
+          {values.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {values.map((value) => (
+                    <div
+                        key={value}
+                        className="meal-badge pr-2 group/badge border-terracotta/10 bg-terracotta/5 hover:bg-terracotta/10 hover:border-terracotta/20 transition-all duration-300"
+                    >
+                      <span className="text-terracotta font-semibold">{value}</span>
+                      <button
+                          type="button"
+                          onClick={() => removeValue(value)}
+                          className="ml-1 p-0.5 text-terracotta/40 group-hover/badge:text-terracotta group-hover/badge:bg-white dark:group-hover/badge:bg-gray-800 rounded-full transition-all"
+                      >
+                        <X size={12} strokeWidth={3} />
+                      </button>
                     </div>
-                    <Plus size={16} className="shrink-0 text-terracotta" />
-                  </button>
                 ))}
               </div>
-            ) : trimmedQuery.length >= 2 ? (
-              <button
-                type="button"
-                onClick={() => commitValue(trimmedQuery)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left transition-colors hover:bg-terracotta/8 dark:hover:bg-terracotta/10"
-              >
-                <div>
-                  <p className="font-semibold text-espresso-midnight dark:text-gray-100">"{trimmedQuery}" için eşleşme bulunamadı</p>
-                  <p className="mt-1 text-sm text-espresso-midnight/55 dark:text-gray-400">Yazdığın ifadeyi yine de dislike listene ekle.</p>
-                </div>
-                <Plus size={16} className="shrink-0 text-terracotta" />
-              </button>
-            ) : null}
-          </div>
-        )}
+          ) : (
+              <div className="h-full flex items-center justify-center text-sm text-foreground/30 font-medium italic">
+                Henüz sevmediğin bir malzeme eklemedin.
+              </div>
+          )}
+        </div>
 
-        {values.length > 0 ? (
-          <div className="flex flex-wrap gap-3">
-            {values.map((value) => (
-              <span
-                key={value}
-                className="meal-badge-neon px-4 py-2 text-sm dark:border-terracotta/40 dark:text-terracotta/90"
-              >
-                {value}
-                <button
-                  type="button"
-                  onClick={() => removeValue(value)}
-                  className="text-terracotta/75 hover:text-terracotta dark:text-terracotta/60 dark:hover:text-terracotta/90 transition-colors"
-                  aria-label={`${value} tercihini kaldır`}
-                >
-                  <X size={14} />
-                </button>
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="meal-metric-card rounded-2xl border-dashed border-terracotta/25 bg-white/70 px-4 py-5 text-sm text-espresso-midnight/55 dark:border-terracotta/40 dark:bg-gray-800/30 dark:text-gray-400">
-            Henüz dislike listesi oluşturulmadı.
-          </div>
+        {error && (
+            <div className="flex items-center gap-2 text-xs font-bold text-red-500 pl-1 uppercase tracking-widest">
+              <Ban size={12} /> {error}
+            </div>
         )}
-
-        {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
       </div>
-    </div>
   );
 };
 

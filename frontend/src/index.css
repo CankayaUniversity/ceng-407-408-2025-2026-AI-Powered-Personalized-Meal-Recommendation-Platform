@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  /* --- MEALAI ANA RENK PALETİ (SABİT) --- */
   --raw-terracotta: #E2725B;
   --raw-espresso: #282421;
   --raw-espresso-deep: #1A1817;
@@ -10,23 +11,36 @@
   --raw-sage: #8DA399;
   --raw-ochre: #DAA520;
 
-  --color-bg: var(--raw-alabaster);
+  /* --- LIGHT MODE AYARLARI --- */
+  --color-bg: #FDFBFA;
   --color-text: var(--raw-espresso);
+  --color-text-muted: rgba(40, 36, 33, 0.6);
+
   --color-primary: var(--raw-terracotta);
   --color-primary-hover: #C55D48;
-  --color-primary-soft: rgba(226, 114, 91, 0.1);
-  --color-card-bg: rgba(255, 255, 255, 0.75);
-  --color-card-border: rgba(40, 36, 33, 0.08);
+  --color-primary-soft: rgba(226, 114, 91, 0.08);
+
+  --color-card-bg: #FFFFFF;
+  --color-card-border: rgba(40, 36, 33, 0.06);
 
   --brand-shadow-soft: 0 12px 40px -12px rgba(40, 36, 33, 0.08);
+  --brand-shadow-hero: 0 24px 60px -15px rgba(40, 36, 33, 0.12);
 }
 
 .dark {
+  /* --- DARK MODE AYARLARI --- */
   --color-bg: var(--raw-espresso-deep);
   --color-text: var(--raw-alabaster);
+  --color-text-muted: rgba(249, 246, 240, 0.5);
+
   --color-primary-hover: #EC8B76;
-  --color-card-bg: rgba(40, 36, 33, 0.5);
-  --color-card-border: rgba(255, 255, 255, 0.06);
+  --color-primary-soft: rgba(226, 114, 91, 0.15);
+
+  --color-card-bg: var(--raw-espresso);
+  --color-card-border: rgba(255, 255, 255, 0.04);
+
+  --brand-shadow-soft: 0 12px 40px -12px rgba(0, 0, 0, 0.4);
+  --brand-shadow-hero: 0 30px 70px -10px rgba(0, 0, 0, 0.6);
 }
 
 @layer base {
@@ -36,23 +50,43 @@
     color: var(--color-text);
     font-family: 'Montserrat', system-ui, sans-serif;
   }
+
+  /* HAYALET İKON ÇÖZÜMÜ: İkonlar her zaman yazının rengini takip eder */
+  svg {
+    @apply transition-colors duration-300;
+    color: currentColor;
+  }
+
+  /* Yan menü (aside) ve navigasyon için temel renk sigortası */
+  aside, nav {
+    @apply transition-colors duration-500;
+    color: var(--color-text);
+  }
+
   h1, h2, h3, h4, .font-serif {
     font-family: 'Playfair Display', serif;
     @apply tracking-tight;
   }
+
+  ::selection {
+    background-color: var(--color-primary-soft);
+    color: var(--raw-terracotta);
+  }
 }
 
 @layer components {
+  /* MEAL-CARD */
   .meal-card {
     background-color: var(--color-card-bg);
     border-color: var(--color-card-border);
-    @apply rounded-[2.5rem] border p-6 backdrop-blur-md shadow-brand-soft transition-all duration-300;
+    @apply rounded-[2.5rem] border p-6 backdrop-blur-md shadow-[var(--brand-shadow-soft)] transition-all duration-300;
   }
 
+  /* METRIC-CARD: Dashboard bento kutuları */
   .meal-metric-card {
     background-color: var(--color-card-bg);
     border-color: var(--color-card-border);
-    @apply rounded-3xl border px-5 py-4 shadow-sm;
+    @apply rounded-3xl border px-5 py-4 shadow-sm transition-colors;
   }
 
   .meal-section-title {
@@ -60,48 +94,73 @@
     color: var(--color-text);
   }
 
+  .meal-overline {
+    @apply text-[10px] uppercase tracking-[0.2em] font-black mb-1 block;
+    color: var(--color-text-muted);
+  }
+
+  /* BUTONLAR: text-white burada kalmalı çünkü primary her zaman renklidir */
   .btn-primary {
     background-color: var(--color-primary);
-    @apply text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-lg;
+    @apply text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-300 shadow-lg shadow-terracotta/20;
   }
 
   .btn-primary:hover {
     background-color: var(--color-primary-hover);
-    @apply -translate-y-0.5;
+    @apply -translate-y-0.5 shadow-xl shadow-terracotta/30;
   }
 
+  .btn-secondary {
+    @apply px-6 py-3 rounded-2xl font-semibold transition-all duration-300 border;
+    background-color: var(--color-card-bg);
+    border-color: var(--color-card-border);
+    color: var(--color-text);
+  }
+
+  .btn-secondary:hover {
+    @apply bg-opacity-80 border-terracotta/20 text-terracotta;
+  }
+
+  /* INPUTS */
   .base-input {
-    @apply w-full px-4 py-3 rounded-2xl outline-none transition-all duration-200 bg-white/50 border border-gray-200;
+    @apply w-full px-4 py-4 rounded-2xl outline-none transition-all duration-200 border;
+    background-color: var(--color-card-bg);
+    border-color: var(--color-card-border);
     color: var(--color-text);
   }
 
   .base-input:focus {
     border-color: var(--color-primary);
-    /* focus:ring-primary/20 hatası için manuel çözüm: */
-    box-shadow: 0 0 0 3px var(--color-primary-soft);
+    box-shadow: 0 0 0 4px var(--color-primary-soft);
   }
 
-  /* medical-badge: bg-sage/10 hatası için manuel çözüm */
+  /* BADGELER */
   .medical-badge {
-    @apply text-[0.65rem] font-bold uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-2;
+    @apply text-[0.65rem] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full flex items-center gap-2 border;
     background-color: rgba(141, 163, 153, 0.1);
-    border: 1px solid rgba(141, 163, 153, 0.2);
+    border-color: rgba(141, 163, 153, 0.2);
     color: var(--raw-sage);
   }
 
-  /* meal-badge-neon: border-primary/20 hatası için manuel çözüm */
   .meal-badge-neon {
-    @apply px-4 py-2 rounded-2xl flex items-center gap-2 transition-all duration-200;
+    @apply px-4 py-2 rounded-2xl flex items-center gap-2 transition-all duration-200 border;
     background-color: var(--color-primary-soft);
-    border: 1px solid rgba(226, 114, 91, 0.2);
+    border-color: rgba(226, 114, 91, 0.2);
     color: var(--color-primary);
   }
 
-  .meal-badge-neon:hover {
-    background-color: rgba(226, 114, 91, 0.15);
+  /* SCROLLBAR */
+  ::-webkit-scrollbar {
+    width: 8px;
   }
-}
-
-.meal-overline {
-  @apply text-[10px] uppercase tracking-[0.2em] font-black opacity-60 mb-1 block;
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-card-border);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary-soft);
+  }
 }

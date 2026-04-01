@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  AlertCircle,
   Flame,
   Loader2,
   LogOut,
-  Mail,
   RefreshCcw,
   Save,
   Shield,
@@ -16,6 +14,7 @@ import { ApiError, NotFoundError, ValidationError } from '../../services/errors'
 import { useUserService } from '../../services/userService';
 import { ActivityLevel, DietaryGoal, DietType, Gender, type User } from '../../types';
 import TastePreferencePicker from './TastePreferencePicker';
+import { useToast } from '../../shared/hooks/useToast';
 
 interface ProfileFormState {
   weight: string;
@@ -92,15 +91,15 @@ const normalizePreferenceList = (values: string[]): string[] => {
 
 const Profile: React.FC = () => {
   const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const userService = useUserService();
+
   const [profile, setProfile] = useState<User | null>(null);
   const [form, setForm] = useState<ProfileFormState>(emptyForm());
   const [allergyInput, setAllergyInput] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [pageError, setPageError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverSnapshot, setServerSnapshot] = useState(JSON.stringify(emptyForm()));
 
   const isDirty = JSON.stringify(form) !== serverSnapshot;
@@ -139,19 +138,17 @@ const Profile: React.FC = () => {
         });
         if (active) applyProfile(data);
       } catch (err) {
-        if (active) setPageError(err instanceof ApiError ? err.message : 'Yükleme başarısız.');
+        if (active) showToast(err instanceof ApiError ? err.message : 'Yükleme başarısız.', 'error');
       } finally {
         if (active) setLoading(false);
       }
     };
     sync();
     return () => { active = false; };
-  }, [user?.id, userService, displayName]);
+  }, [user?.id, userService, displayName, showToast]);
 
   const updateField = <K extends keyof ProfileFormState>(field: K, value: ProfileFormState[K]) => {
     setForm(prev => ({ ...prev, [field]: value }));
-    setSuccessMessage(null);
-    setPageError(null);
     if (fieldErrors[field as string]) {
       const next = { ...fieldErrors };
       delete next[field as string];
@@ -163,8 +160,6 @@ const Profile: React.FC = () => {
     e.preventDefault();
     if (!user?.id) return;
     setSaving(true);
-    setPageError(null);
-    setSuccessMessage(null);
 
     try {
       const payload: Partial<User> = {
@@ -180,13 +175,13 @@ const Profile: React.FC = () => {
       };
       const saved = await userService.updateUserProfile(user.id, payload);
       applyProfile(saved);
-      setSuccessMessage('Profil başarıyla kaydedildi.');
+      showToast('Profil başarıyla güncellendi.', 'success');
     } catch (err) {
       if (err instanceof ValidationError) {
         setFieldErrors(err.fields ?? {});
-        setPageError(err.message);
+        showToast(err.message, 'error');
       } else {
-        setPageError(err instanceof Error ? err.message : 'Kaydedilemedi.');
+        showToast('Kaydedilirken bir hata oluştu.', 'error');
       }
     } finally {
       setSaving(false);
@@ -198,62 +193,52 @@ const Profile: React.FC = () => {
         <div className="max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
           <div className="meal-card px-8 py-10 flex items-center gap-4">
             <Loader2 size={24} className="animate-spin text-primary" />
-            <p className="font-semibold text-foreground">Profil yükleniyor...</p>
+            <p className="font-semibold text-foreground">Profiliniz hazırlanıyor...</p>
           </div>
         </div>
     );
   }
 
   return (
-      <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between px-2">
           <div>
-            <h1 className="meal-section-title text-4xl">Profil Ayarları</h1>
-            <p className="text-foreground/50 mt-1">Beslenme ve fiziksel verilerinizi yönetin.</p>
+            <span className="meal-overline">Kişiselleştirme</span>
+            <h1 className="meal-section-title text-4xl md:text-5xl">Profil Ayarları</h1>
           </div>
           <button
               type="button"
-              onClick={() => window.location.reload()}
-              className="btn-secondary px-4 py-2 flex items-center gap-2 border border-card-border bg-card rounded-2xl"
+              onClick={() => {
+                window.location.reload();
+                showToast("Veriler tazeleniyor...", "info");
+              }}
+              className="btn-secondary flex items-center gap-2 group"
           >
-            <RefreshCcw size={16} /> Verileri Yenile
+            <RefreshCcw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+            Verileri Yenile
           </button>
         </header>
 
-        {/* Mesaj Panelleri */}
-        {pageError && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 flex items-center gap-3">
-              <AlertCircle size={20} />
-              <p className="text-sm font-medium">{pageError}</p>
-            </div>
-        )}
-        {successMessage && (
-            <div className="p-4 bg-green-50 text-green-600 rounded-2xl border border-green-100">
-              <p className="text-sm font-medium">{successMessage}</p>
-            </div>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-8">
           <aside className="space-y-6">
-            <div className="meal-card p-0 overflow-hidden shadow-brand-soft">
-              <div className="h-24 bg-primary" />
-              <div className="px-6 pb-6 -mt-12 text-center">
-                <div className="w-24 h-24 mx-auto rounded-full border-4 border-background bg-primary/10 text-primary flex items-center justify-center text-3xl font-bold shadow-md">
+            <div className="meal-card p-0 overflow-hidden border-none shadow-brand-elevated">
+              <div className="h-28 bg-primary/90" />
+              <div className="px-6 pb-8 -mt-14 text-center">
+                <div className="w-28 h-28 mx-auto rounded-[2.5rem] border-8 border-background bg-card text-primary flex items-center justify-center text-4xl font-bold shadow-lg overflow-hidden">
                   {getInitials(user)}
                 </div>
-                <h2 className="meal-section-title mt-4 text-xl">{displayName}</h2>
+                <h2 className="meal-section-title mt-4 text-2xl tracking-tight">{displayName}</h2>
+                <p className="text-xs font-bold uppercase tracking-widest text-foreground/30 mt-1 mb-6">
+                  {user?.email}
+                </p>
 
-                <div className="meal-metric-card mt-6 border-primary/20 bg-primary/5 text-left">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Flame size={18} />
-                    <span className="meal-overline text-primary">Günlük Hedef</span>
+                <div className="meal-metric-card bg-primary/5 border-primary/10 text-left">
+                  <div className="flex items-center gap-2 text-primary mb-1">
+                    <Flame size={16} strokeWidth={2.5} />
+                    <span className="meal-overline text-primary opacity-100">Günlük Enerji</span>
                   </div>
-                  <div className="mt-2 text-3xl font-bold text-foreground font-serif">{calorieTarget} kcal</div>
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-foreground/60 justify-center">
-                    <Mail size={14} /> <span>{user?.email}</span>
+                  <div className="text-3xl font-bold text-foreground font-serif tracking-tighter">
+                    {calorieTarget} <span className="text-lg font-sans opacity-60">kcal</span>
                   </div>
                 </div>
               </div>
@@ -261,86 +246,96 @@ const Profile: React.FC = () => {
 
             <button
                 onClick={() => logout()}
-                className="w-full flex items-center justify-center gap-2 p-4 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-colors"
+                className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-600 rounded-[2rem] font-bold hover:bg-red-600 hover:text-white transition-all duration-300 border border-red-500/20 shadow-sm"
             >
               <LogOut size={20} /> Oturumu Kapat
             </button>
           </aside>
 
           <form onSubmit={handleSave} className="space-y-6">
-            {/* Fiziksel Bilgiler */}
-            <section className="meal-card p-6 space-y-6">
-              <div className="flex items-center gap-3 border-b border-card-border pb-4">
-                <UserIcon className="text-primary" />
-                <h3 className="meal-section-title text-xl">Fiziksel Veriler</h3>
+            <section className="meal-card space-y-6 border-none shadow-brand-soft">
+              <div className="flex items-center gap-3 border-b border-card-border pb-5">
+                <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                  <UserIcon size={20} />
+                </div>
+                <h3 className="meal-section-title text-xl">Fiziksel Detaylar</h3>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold">Kilo (kg)</span>
-                  <input type="number" step="0.1" value={form.weight} onChange={e => updateField('weight', e.target.value)} className="base-input" />
-                  {fieldErrors.weight && <p className="text-xs text-red-500">{fieldErrors.weight}</p>}
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold">Boy (cm)</span>
-                  <input type="number" step="0.1" value={form.height} onChange={e => updateField('height', e.target.value)} className="base-input" />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold">Yaş</span>
-                  <input type="number" value={form.age} onChange={e => updateField('age', e.target.value)} className="base-input" />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold">Cinsiyet</span>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Ağırlık (kg)</span>
+                  <input type="number" step="0.1" value={form.weight} onChange={e => updateField('weight', e.target.value)} className="base-input" placeholder="0.0" />
+                  {fieldErrors.weight && <p className="text-xs text-red-500 font-bold ml-1 italic">{fieldErrors.weight}</p>}
+                </div>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Boy (cm)</span>
+                  <input type="number" step="0.1" value={form.height} onChange={e => updateField('height', e.target.value)} className="base-input" placeholder="0" />
+                </div>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Yaş</span>
+                  <input type="number" value={form.age} onChange={e => updateField('age', e.target.value)} className="base-input" placeholder="0" />
+                </div>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Biyolojik Cinsiyet</span>
                   <select value={form.gender} onChange={e => updateField('gender', e.target.value as any)} className="base-input">
-                    <option value="">Seçiniz</option>
+                    <option value="">Belirtilmedi</option>
                     {genderOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                </label>
+                </div>
               </div>
             </section>
 
-            {/* Tercihler */}
-            <section className="meal-card p-6 space-y-6">
-              <div className="flex items-center gap-3 border-b border-card-border pb-4">
-                <Shield className="text-primary" />
-                <h3 className="meal-section-title text-xl">Beslenme Tercihleri</h3>
+            <section className="meal-card space-y-6 border-none shadow-brand-soft">
+              <div className="flex items-center gap-3 border-b border-card-border pb-5">
+                <div className="p-2 bg-sage/10 rounded-xl text-sage">
+                  <Shield size={20} />
+                </div>
+                <h3 className="meal-section-title text-xl">Beslenme & Yaşam Tarzı</h3>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold">Aktivite Seviyesi</span>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Aktivite Seviyesi</span>
                   <select value={form.activityLevel} onChange={e => updateField('activityLevel', e.target.value as any)} className="base-input">
                     <option value="">Seçiniz</option>
                     {activityOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-semibold">Hedef</span>
+                </div>
+                <div className="space-y-2">
+                  <span className="meal-overline pl-1">Beslenme Hedefi</span>
                   <select value={form.dietaryGoal} onChange={e => updateField('dietaryGoal', e.target.value as any)} className="base-input">
                     <option value="">Seçiniz</option>
                     {goalOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                </label>
-                <label className="space-y-2 md:col-span-2">
-                  <span className="text-sm font-semibold">Diyet Tipi</span>
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <span className="meal-overline pl-1">Diyet Yaklaşımı</span>
                   <select value={form.dietType} onChange={e => updateField('dietType', e.target.value as any)} className="base-input">
                     {dietOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                </label>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <span className="text-sm font-semibold">Alerjenler</span>
+              <div className="space-y-4 pt-4">
+                <span className="meal-overline pl-1">Alerjenler & Hassasiyetler</span>
                 <div className="flex gap-2">
-                  <input type="text" value={allergyInput} onChange={e => setAllergyInput(e.target.value)}
-                         onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), updateField('allergies', [...form.allergies, allergyInput.trim()]), setAllergyInput(''))}
-                         className="base-input" placeholder="Örn: Fıstık" />
+                  <input
+                      type="text"
+                      value={allergyInput}
+                      onChange={e => setAllergyInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), allergyInput && updateField('allergies', [...form.allergies, allergyInput.trim()]), setAllergyInput(''))}
+                      className="base-input"
+                      placeholder="Örn: Yer Fıstığı"
+                  />
                   <button type="button" onClick={() => { if(allergyInput) { updateField('allergies', [...form.allergies, allergyInput.trim()]); setAllergyInput(''); }}}
-                          className="btn-primary px-6">Ekle</button>
+                          className="btn-primary px-8">Ekle</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {form.allergies.map(a => (
-                      <span key={a} className="medical-badge flex items-center gap-1">
-                    {a} <X size={14} className="cursor-pointer" onClick={() => updateField('allergies', form.allergies.filter(i => i !== a))} />
-                  </span>
+                      <span key={a} className="medical-badge pr-2">
+                      {a}
+                        <X size={12} className="ml-1 hover:text-red-500 cursor-pointer" onClick={() => updateField('allergies', form.allergies.filter(i => i !== a))} />
+                    </span>
                   ))}
                 </div>
               </div>
@@ -350,14 +345,16 @@ const Profile: React.FC = () => {
               </div>
             </section>
 
-            {/* Alt Panel: Kaydetme */}
-            <div className="meal-card p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-sm text-foreground/50">{isDirty ? 'Kaydedilmemiş değişiklikler var.' : 'Sunucu ile senkronize.'}</p>
-              <div className="flex gap-3">
-                <button type="button" disabled={!isDirty || saving} onClick={() => profile && applyProfile(profile)} className="btn-secondary px-6 py-2 border rounded-xl">İptal</button>
-                <button type="submit" disabled={!isDirty || saving} className="btn-primary px-10 py-3 flex items-center gap-2">
+            <div className="meal-card sticky bottom-6 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 border-none shadow-brand-elevated bg-card/90 backdrop-blur-xl z-10">
+              <div className="flex flex-col">
+                <p className="text-xs font-bold uppercase tracking-widest opacity-40">Durum</p>
+                <p className="text-sm font-semibold">{isDirty ? 'Kaydedilmemiş Değişiklikler' : 'Her Şey Güncel'}</p>
+              </div>
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button type="button" disabled={!isDirty || saving} onClick={() => profile && applyProfile(profile)} className="btn-secondary flex-1 sm:flex-none py-3">Geri Al</button>
+                <button type="submit" disabled={!isDirty || saving} className="btn-primary flex-1 sm:flex-none py-3 px-12 flex items-center justify-center gap-2">
                   {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                  Değişiklikleri Kaydet
+                  Kaydet
                 </button>
               </div>
             </div>

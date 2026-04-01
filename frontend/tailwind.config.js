@@ -8,26 +8,40 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Dinamik Renkler (CSS Variables)
+        // --- DİNAMİK RENKLER (index.css Değişkenleri) ---
+        background: 'var(--color-bg)',
+        foreground: {
+          DEFAULT: 'var(--color-text)',
+          muted: 'var(--color-text-muted)', // Sidebar ve alt metinler için kritik
+        },
         primary: {
           DEFAULT: 'var(--color-primary)',
           hover: 'var(--color-primary-hover)',
-          soft: 'var(--color-primary-soft)', // Bu zaten rgba(226, 114, 91, 0.1) değerinde
+          soft: 'var(--color-primary-soft)',
         },
-        background: 'var(--color-bg)',
-        foreground: 'var(--color-text)',
         card: {
           DEFAULT: 'var(--color-card-bg)',
           border: 'var(--color-card-border)',
         },
+
+        // --- SABİT MARKA RENKLERİ ---
+        terracotta: "#E2725B",
+        espresso: {
+          DEFAULT: "#282421",
+          midnight: "#1A1817", // Dark mode Hero ve Sidebar derinliği için
+          deep: "#1A1817",
+        },
+        alabaster: "#F9F6F0",
         sage: {
           DEFAULT: '#8DA399',
           10: 'rgba(141, 163, 153, 0.1)',
           20: 'rgba(141, 163, 153, 0.2)',
         },
+        moss: {
+          forest: "#3A4D39",
+          sage: "#8B9D83",
+        },
         ochre: '#DAA520',
-        moss: "#4A5D4E",
-        terracotta: "#E2725B",
       },
       fontFamily: {
         serif: ["'Playfair Display'", "serif"],
@@ -36,14 +50,16 @@ export default {
       borderRadius: {
         '3xl': '1.5rem',
         '4xl': '2rem',
-        '5xl': '2.5rem',
+        '5xl': '2.5rem', // .meal-card'ın kavisli yapısı için
       },
       transitionTimingFunction: {
         'brand': 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
       boxShadow: {
+        // CSS variables üzerinden dinamik gölgeler
         'brand-soft': 'var(--brand-shadow-soft)',
-        'brand-elevated': 'var(--brand-shadow-elevated)',
+        'brand-hero': 'var(--brand-shadow-hero)',
+        'brand-elevated': '0 20px 50px rgba(0, 0, 0, 0.1)',
       }
     },
   },

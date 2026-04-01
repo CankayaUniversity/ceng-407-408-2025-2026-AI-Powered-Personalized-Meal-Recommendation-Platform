@@ -1,8 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, Filter, Clock, Zap, Star, ChevronRight } from 'lucide-react';
+import { Search, Filter, Clock, Zap, Star, ChevronRight, Plus, ChefHat, Flame } from 'lucide-react';
 import { useRecipeService } from '../../services/recipeService';
 import type { RecipeListItem } from '../../types';
 
+/**
+ * MealAI Recipe Explorer
+ * Tasarım Dili: Terracotta (Accent), Espresso Midnight (Text), Moss Sage (Health/Green)
+ */
 const RecipeList: React.FC = () => {
   const recipeService = useRecipeService();
   const [searchTerm, setSearchTerm] = useState('');
@@ -10,11 +14,10 @@ const RecipeList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [activeCategory, setActiveCategory] = useState('Hepsi');
   const size = 12;
 
-  // Debounce edilmiş arama terimi
   const debouncedSearch = useDebounce(searchTerm, 400);
-  // Aynı parametrelerle tekrarlı istekleri engellemek için son sorgu anahtarını tutar
   const lastQueryRef = useRef<string>('');
 
   useEffect(() => {
@@ -23,17 +26,16 @@ const RecipeList: React.FC = () => {
 
     const fetchData = async () => {
       const queryKey = `${debouncedSearch ?? ''}|${page}|${size}`;
-      // Aynı parametrelerle ardışık çağrıları önle
-      if (lastQueryRef.current === queryKey) {
-        return;
-      }
+      if (lastQueryRef.current === queryKey) return;
+
       lastQueryRef.current = queryKey;
       setLoading(true);
       setError(null);
+
       try {
-        const data = await recipeService.getRecipes({ 
-          title: debouncedSearch || undefined, 
-          page, 
+        const data = await recipeService.getRecipes({
+          title: debouncedSearch || undefined,
+          page,
           size,
           signal: abortController.signal
         });
@@ -51,138 +53,177 @@ const RecipeList: React.FC = () => {
       mounted = false;
       abortController.abort();
     };
-  }, [debouncedSearch, page]); // recipeService bağımlılıktan çıkarıldı
+  }, [debouncedSearch, page]);
 
-  // Arama değiştiğinde sayfayı sıfırla
   useEffect(() => {
     setPage(0);
   }, [debouncedSearch]);
 
   return (
-    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 font-serif">Tarif Kütüphanesi</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Damak tadına uygun yüzlerce sağlıklı tarif.</p>
-        </div>
-        <div className="flex items-center gap-2">
-           <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm">
-             <Filter size={18} />
-             Filtrele
-           </button>
-           <button className="px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-100 dark:shadow-none">
-             Yeni Tarif Ekle
-           </button>
-        </div>
-      </header>
-
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
-        <input 
-          type="text"
-          placeholder="Tarif, malzeme veya kategori ara..."
-          className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-gray-900 dark:text-gray-100 transition-all"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {/* Category Pills */}
-      <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        {['Hepsi', 'Ana Yemek', 'Kahvaltı', 'Salata', 'Tatlı', 'Atıştırmalık'].map((cat, i) => (
-          <button 
-            key={i}
-            className={`px-6 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-all ${
-              i === 0 
-                ? 'bg-gray-900 dark:bg-orange-500 text-white shadow-lg' 
-                : 'bg-white dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Recipe Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading && (
-          <div className="col-span-full text-center text-gray-500">Yükleniyor...</div>
-        )}
-        {error && (
-          <div className="col-span-full text-center text-red-600">{error}</div>
-        )}
-        {!loading && !error && recipes.map((recipe) => (
-          <div key={recipe.id} className="group glass-card rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-            <div className="h-52 bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-6xl relative">
-               {/* Image or emoji fallback */}
-               {recipe.imageUrl ? (
-                 // eslint-disable-next-line @next/next/no-img-element
-                 <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover" />
-               ) : (
-                 <span role="img" aria-label="recipe">🍽️</span>
-               )}
-               <div className="absolute top-4 left-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-orange-600 dark:text-orange-400 shadow-sm">
-                 {recipe.category || 'Genel'}
-               </div>
-               <button className="absolute bottom-4 right-4 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md text-gray-400 hover:text-red-500 transition-colors">
-                  <Star size={20} className={((recipe.averageRating || 0) > 4.7) ? 'fill-yellow-500 text-yellow-500' : ''} />
-               </button>
+      <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto px-4 py-8">
+        {/* Dynamic Header Area */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 bg-moss-sage/10 text-moss-forest dark:text-moss-sage px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <ChefHat size={12} />
+              <span>Küratör Seçimleri</span>
             </div>
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 font-serif group-hover:text-orange-500 transition-colors">{recipe.title}</h3>
-                <div className="flex items-center gap-1 text-sm font-bold bg-green-50 dark:bg-emerald-900/20 text-green-700 dark:text-emerald-400 px-2 py-1 rounded-lg">
-                  <Star size={14} className="fill-green-700 dark:fill-emerald-400" />
-                  {recipe.averageRating ?? '-'}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mt-4">
-                <div className="flex items-center gap-1">
-                  <Clock size={16} />
-                  {recipe.preparationTimeMinutes ? `${recipe.preparationTimeMinutes} dk` : '-'}
-                </div>
-                <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 font-semibold">
-                  <Zap size={16} />
-                  {recipe.totalCalories ? Math.round(recipe.totalCalories) : '-'} kcal
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-gray-50 dark:border-gray-800 flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Detayları Gör</span>
-                <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400 group-hover:bg-orange-500 group-hover:text-white transition-all">
-                  <ChevronRight size={18} />
-                </div>
-              </div>
-            </div>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold text-espresso-midnight dark:text-white tracking-tight">
+              Tarif <span className="text-terracotta italic font-normal">Kütüphanesi</span>
+            </h1>
+            <p className="text-foreground-muted text-lg italic border-l-2 border-terracotta/20 pl-4">
+              Damak tadınıza ve hedeflerinize uygun, yapay zeka destekli tarifler.
+            </p>
           </div>
-        ))}
-      </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center gap-3 mt-4">
-        <button
-          className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 disabled:opacity-50"
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-          disabled={page === 0 || loading}
-        >
-          Önceki
-        </button>
-        <span className="text-sm text-gray-500 dark:text-gray-400">Sayfa {page + 1}</span>
-        <button
-          className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 disabled:opacity-50"
-          onClick={() => setPage((p) => p + 1)}
-          disabled={loading || (recipes.length < size)}
-        >
-          Sonraki
-        </button>
+          <div className="flex items-center gap-3">
+            <button className="flex items-center gap-2 px-5 py-3 glass-card rounded-2xl text-sm font-bold text-espresso-midnight dark:text-alabaster border-card-border hover:text-terracotta transition-all">
+              <Filter size={18} strokeWidth={2} />
+              Filtrele
+            </button>
+            <button className="flex items-center gap-2 px-6 py-3 bg-terracotta text-white rounded-2xl text-sm font-bold hover:bg-terracotta-spiced transition-all shadow-brand-hero hover:scale-105 active:scale-95">
+              <Plus size={18} strokeWidth={3} />
+              Yeni Tarif
+            </button>
+          </div>
+        </header>
+
+        {/* Advanced Search Bar */}
+        <div className="relative group">
+          <div className="absolute inset-0 bg-terracotta/5 blur-2xl rounded-3xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-espresso-midnight/30 dark:text-alabaster/20 group-focus-within:text-terracotta transition-colors" size={22} />
+          <input
+              type="text"
+              placeholder="Tarif, malzeme veya mutfak tipi ara..."
+              className="w-full pl-16 pr-6 py-5 bg-white dark:bg-white/[0.03] border border-card-border rounded-[2rem] shadow-brand-card focus:outline-none focus:ring-4 focus:ring-terracotta/10 focus:border-terracotta text-espresso-midnight dark:text-white placeholder:text-espresso-midnight/20 dark:placeholder:text-alabaster/20 text-lg transition-all relative z-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Category Pills - Bento Style */}
+        <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
+          {['Hepsi', 'Ana Yemek', 'Kahvaltı', 'Salata', 'Tatlı', 'Fit & Sağlıklı'].map((cat) => (
+              <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-8 py-3 rounded-2xl whitespace-nowrap text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                      activeCategory === cat
+                          ? 'bg-espresso-midnight dark:bg-terracotta text-white shadow-brand-hero scale-105'
+                          : 'bg-white dark:bg-white/5 text-espresso-midnight/50 dark:text-alabaster/40 border border-card-border hover:border-terracotta/50'
+                  }`}
+              >
+                {cat}
+              </button>
+          ))}
+        </div>
+
+        {/* Recipe Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {loading && (
+              <div className="col-span-full py-20 text-center space-y-4">
+                <div className="w-12 h-12 border-4 border-terracotta/20 border-t-terracotta rounded-full animate-spin mx-auto" />
+                <p className="text-foreground-muted font-medium italic italic">Mutfağa göz atılıyor...</p>
+              </div>
+          )}
+
+          {error && (
+              <div className="col-span-full py-12 px-6 glass-card border-red-500/20 text-center rounded-[2rem]">
+                <p className="text-red-500 font-bold">{error}</p>
+              </div>
+          )}
+
+          {!loading && !error && recipes.map((recipe) => (
+              <div key={recipe.id} className="group meal-card rounded-[2.5rem] overflow-hidden border-card-border hover:-translate-y-2 transition-all duration-500">
+                {/* Card Image Area */}
+                <div className="h-64 relative overflow-hidden">
+                  {recipe.imageUrl ? (
+                      <img src={recipe.imageUrl} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                  ) : (
+                      <div className="w-full h-full bg-terracotta/5 flex items-center justify-center text-7xl opacity-40">
+                        🍽️
+                      </div>
+                  )}
+
+                  {/* Badges Overlay */}
+                  <div className="absolute top-5 left-5 flex flex-col gap-2">
+                    <div className="glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter text-white">
+                      {recipe.category || 'Gurme'}
+                    </div>
+                  </div>
+
+                  <button className="absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl text-white/60 hover:text-terracotta transition-colors group/fav">
+                    <Star size={18} className={(recipe.averageRating || 0) > 4.7 ? 'fill-terracotta text-terracotta' : ''} />
+                  </button>
+
+                  <div className="absolute bottom-4 left-5 right-5 flex justify-between items-center">
+                    <div className="glass-card-dark px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                      <Flame size={14} className="text-terracotta" />
+                      <span className="text-xs font-bold text-white">{recipe.totalCalories ? Math.round(recipe.totalCalories) : '-'} kcal</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Content Area */}
+                <div className="p-8 space-y-6">
+                  <div className="flex justify-between items-start gap-4">
+                    <h3 className="text-2xl font-serif font-bold text-espresso-midnight dark:text-white group-hover:text-terracotta transition-colors leading-tight">
+                      {recipe.title}
+                    </h3>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-moss-sage/10 text-moss-forest dark:text-moss-sage rounded-lg shrink-0">
+                      <Star size={14} className="fill-current" />
+                      <span className="text-xs font-black">{recipe.averageRating?.toFixed(1) ?? 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 text-foreground-muted">
+                      <Clock size={16} strokeWidth={2.5} className="text-terracotta" />
+                      <span className="text-xs font-bold uppercase tracking-widest">{recipe.preparationTimeMinutes || 30} Dakika</span>
+                    </div>
+                    <div className="h-4 w-px bg-card-border" />
+                    <div className="text-[10px] font-black uppercase tracking-widest text-foreground-muted/60">
+                      {recipe.preparationTimeMinutes && recipe.preparationTimeMinutes < 20 ? 'Hızlı Seçim' : 'Gurme Hazırlık'}
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-card-border flex items-center justify-between">
+                    <span className="text-[10px] font-black text-espresso-midnight/30 dark:text-alabaster/30 uppercase tracking-[0.2em]">Tarifi İncele</span>
+                    <div className="w-10 h-10 rounded-2xl bg-terracotta/5 text-terracotta flex items-center justify-center group-hover:bg-terracotta group-hover:text-white transition-all duration-300">
+                      <ChevronRight size={20} strokeWidth={3} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+          ))}
+        </div>
+
+        {/* Enhanced Pagination */}
+        <div className="flex items-center justify-center gap-4 mt-12 pb-10">
+          <button
+              className="p-4 glass-card border-card-border rounded-2xl text-espresso-midnight dark:text-alabaster disabled:opacity-30 hover:text-terracotta transition-all"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0 || loading}
+          >
+            <ChevronRight size={20} className="rotate-180" />
+          </button>
+
+          <div className="glass-card px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-foreground-muted border-card-border">
+            SAYFA <span className="text-espresso-midnight dark:text-white text-sm ml-2">{page + 1}</span>
+          </div>
+
+          <button
+              className="p-4 glass-card border-card-border rounded-2xl text-espresso-midnight dark:text-alabaster disabled:opacity-30 hover:text-terracotta transition-all"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={loading || (recipes.length < size)}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
       </div>
-    </div>
   );
 };
 
-// Basit debounce hook'u
 function useDebounce<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
