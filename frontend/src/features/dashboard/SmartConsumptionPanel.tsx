@@ -455,21 +455,28 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                   <MapPin size={16} />
                   Disari / Diger
                 </button>
-                {inventoryGroups.map((group) => (
-                    <button
-                        key={group.id}
-                        type="button"
-                        onClick={() => setSelectedLocationId(String(group.id))}
-                        className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition-all ${
-                            selectedLocationId === String(group.id)
-                                ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                : 'border border-card-border bg-white/75 text-espresso-midnight/65 hover:text-terracotta dark:bg-white/5 dark:text-alabaster/65'
-                        }`}
-                    >
-                      <Home size={16} />
-                      {group.name}
-                    </button>
-                ))}
+                {loadingGroups ? (
+                    <div className="inline-flex items-center gap-2 px-4 py-3 text-sm text-espresso-midnight/40 dark:text-alabaster/40">
+                      <Loader2 size={16} className="animate-spin" />
+                      Yükleniyor...
+                    </div>
+                ) : (
+                    inventoryGroups.map((group) => (
+                        <button
+                            key={group.id}
+                            type="button"
+                            onClick={() => setSelectedLocationId(String(group.id))}
+                            className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition-all ${
+                                selectedLocationId === String(group.id)
+                                    ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
+                                    : 'border border-card-border bg-white/75 text-espresso-midnight/65 hover:text-terracotta dark:bg-white/5 dark:text-alabaster/65'
+                            }`}
+                        >
+                          <Home size={16} />
+                          {group.name}
+                        </button>
+                    ))
+                )}
               </div>
 
               <div className="mt-5 flex flex-wrap gap-3">
@@ -545,7 +552,6 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               </div>
             </div>
 
-            {/* QUICK SUMMARY - NUTRITIONPREVIEW BAĞLANTILARI YAPILDI */}
             <div className="rounded-[2rem] border-2 border-terracotta/20 bg-white p-5 text-espresso-midnight shadow-brand-hero dark:bg-espresso-midnight dark:text-white">
               <div className="flex items-start justify-between gap-4">
                 <div>
