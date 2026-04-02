@@ -11,7 +11,8 @@ import {
   Sparkles,
   Target,
   TrendingUp,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Info
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useConsumptionService } from '../../services/consumptionService';
@@ -20,8 +21,6 @@ import { useInventoryService } from '../../services/inventoryService';
 import { useUserService } from '../../services/userService';
 import type { ConsumptionSummary, Inventory, InventoryGroup, User } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
-
-// YENİ: Global UI Context'i ekledik
 import { useUI } from '../../infrastructure/ui/UIContext';
 
 const formatNumber = (value: number) =>
@@ -55,7 +54,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user: authUser, authenticated, login } = useAuth();
   const { showToast } = useToast();
-  const { openConsumption } = useUI(); // Global paneli açma fonksiyonu
+  const { openConsumption } = useUI();
   const inventoryService = useInventoryService();
   const consumptionService = useConsumptionService();
   const userService = useUserService();
@@ -136,10 +135,9 @@ const Dashboard: React.FC = () => {
   }, [profile]);
 
   if (!authenticated) {
-    // ... (Giriş yapılmamış ekranı aynı kalıyor)
     return (
         <div className="max-w-5xl mx-auto py-12 px-4 animate-in fade-in duration-700">
-          <header className="relative overflow-hidden rounded-5xl bg-card p-12 shadow-brand-elevated meal-highlight-frame dark:bg-espresso-midnight">
+          <header className="relative overflow-hidden rounded-5xl bg-card p-12 shadow-brand-elevated meal-highlight-frame dark:bg-espresso-midnight border border-card-border">
             <div className="absolute inset-0 opacity-10 dark:opacity-20 pointer-events-none">
               <div className="absolute -top-10 -right-10 w-64 h-64 bg-terracotta blur-[100px]" />
               <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-sage blur-[100px]" />
@@ -175,7 +173,7 @@ const Dashboard: React.FC = () => {
   return (
       <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 px-4 pb-20">
         {/* Hero Header */}
-        <header className="relative overflow-hidden rounded-5xl bg-card p-8 md:p-12 shadow-brand-hero meal-highlight-frame dark:bg-espresso-midnight">
+        <header className="relative overflow-hidden rounded-5xl bg-card p-8 md:p-12 shadow-brand-hero meal-highlight-frame dark:bg-espresso-midnight border border-card-border">
           <div className="absolute inset-0 pointer-events-none opacity-20 dark:opacity-40">
             <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-terracotta/40 blur-[100px]" />
             <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-sage/20 blur-[100px]" />
@@ -197,7 +195,6 @@ const Dashboard: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              {/* Değişiklik Burda: Artık Sayfayı Kaydırmıyor, Global Paneli Açıyor */}
               <button onClick={openConsumption} className="btn-primary py-3 px-6 flex items-center gap-2">
                 <UtensilsCrossed size={18} /> Öğün Ekle
               </button>
@@ -224,12 +221,10 @@ const Dashboard: React.FC = () => {
           </div>
         </header>
 
-        {/* Bento Grid */}
+        {/* Main Bento Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* Inventory Summary */}
-          <section className="lg:col-span-8 meal-card flex flex-col justify-between group">
-            {/* ... Mevcut Envanter Kartı İçeriği (Değişmedi) ... */}
           <section className="lg:col-span-8 meal-card meal-highlight-frame flex flex-col justify-between group">
             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
               <div className="space-y-2">
@@ -274,7 +269,6 @@ const Dashboard: React.FC = () => {
 
           {/* Daily Nutrition */}
           <section className="lg:col-span-4 meal-card space-y-6">
-            {/* ... Mevcut Beslenme Kartı İçeriği (Değişmedi) ... */}
             <div className="flex items-center justify-between">
               <div>
                 <span className="meal-overline">Beslenme Takibi</span>
@@ -287,7 +281,7 @@ const Dashboard: React.FC = () => {
 
             <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <p className="text-3xl font-serif font-bold text-foreground">
+                <p className="text-3xl font-serif font-bold text-foreground dark:text-white">
                   {formatNumber(consumedCalories)}
                   <span className="text-sm font-sans text-foreground-muted ml-1">/ {formatNumber(dailyGoal)} kcal</span>
                 </p>
@@ -304,7 +298,7 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Protein', val: dailySummary?.totalProtein || 0, color: 'text-terracotta' },
-                { label: 'Karb.', val: dailySummary?.totalCarbs || 0, color: 'text-foreground' },
+                { label: 'Karb.', val: dailySummary?.totalCarbs || 0, color: 'text-foreground dark:text-white' },
                 { label: 'Yağ', val: dailySummary?.totalFat || 0, color: 'text-sage' }
               ].map((macro, i) => (
                   <div key={i} className="meal-metric-card p-3 text-center border-card-border">
@@ -316,9 +310,8 @@ const Dashboard: React.FC = () => {
           </section>
 
           {/* User DNA */}
-          <section className="lg:col-span-4 meal-card">
-            {/* ... Mevcut DNA Kartı (Değişmedi) ... */}
-            <div className="flex items-center gap-3 mb-6">
+          <section className="lg:col-span-4 meal-card space-y-6">
+            <div className="flex items-center gap-3">
               <div className="p-2.5 bg-sage/10 text-sage rounded-xl">
                 <ShieldCheck size={20} />
               </div>
@@ -331,12 +324,18 @@ const Dashboard: React.FC = () => {
                   <p className="text-sm italic text-foreground-muted">Profil tercihleri ayarlanmamış.</p>
               )}
             </div>
+            <div className="p-4 rounded-2xl bg-sage/5 border border-sage/10">
+              <div className="flex items-center gap-2 text-sage mb-2">
+                <Info size={14} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Algoritma Notu</span>
+              </div>
+              <p className="text-xs text-foreground-muted leading-relaxed font-medium">
+                Önerileriniz {profile?.dietaryGoal ? formatEnumLabel(profile.dietaryGoal)?.toLowerCase() : 'genel'} hedeflerinize göre filtreleniyor.
+              </p>
+            </div>
           </section>
 
-          {/* AI Teaser */}
-          <section className="lg:col-span-8 rounded-5xl bg-sage p-8 md:p-10 text-white shadow-brand-elevated flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-            {/* ... Mevcut AI Kartı (Değişmedi) ... */}
-          {/* Quick Actions / Recommendations Teaser */}
+          {/* AI Teaser / Recommendations */}
           <section className="lg:col-span-8 rounded-5xl bg-sage p-8 md:p-10 text-white shadow-brand-elevated meal-highlight-frame flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
               <ChefHat size={200} />
@@ -346,6 +345,9 @@ const Dashboard: React.FC = () => {
               <h2 className="text-3xl md:text-4xl font-serif font-bold leading-tight max-w-md">
                 Mevcut malzemelerinle ne pişirebilirsin?
               </h2>
+              <p className="text-white/70 text-sm max-w-sm font-medium">
+                Envanterindeki {inventoryMetrics.totalItems} malzemeyi analiz edip sana en uygun tarifleri saniyeler içinde getirebiliriz.
+              </p>
             </div>
             <button
                 onClick={() => navigate('/recommendations')}
@@ -354,9 +356,8 @@ const Dashboard: React.FC = () => {
               Önerileri Gör <Sparkles size={20} />
             </button>
           </section>
-        </div>
 
-        {/* NOT: SmartConsumptionPanel burdan kaldırıldı, çünkü artık Global Slide-over olarak çalışıyor! */}
+        </div>
       </div>
   );
 };
