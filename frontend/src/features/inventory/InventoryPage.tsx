@@ -416,7 +416,7 @@ const InventoryPage: React.FC = () => {
                 <button
                     type="submit"
                     disabled={savingItem || !activeGroup}
-                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-espresso-midnight dark:bg-terracotta text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-terracotta text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   {savingItem ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
                   {editingItemId ? 'STOK GÜNCELLE' : 'LOKASYONA EKLE'}
