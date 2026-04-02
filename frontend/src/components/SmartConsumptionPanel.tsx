@@ -12,11 +12,11 @@ import {
   Sparkles,
   UtensilsCrossed
 } from 'lucide-react';
-import { useAuth } from '../../infrastructure/auth/AuthContext';
-import { useConsumptionService } from '../../services/consumptionService';
-import { ApiError } from '../../services/errors';
-import { useInventoryService } from '../../services/inventoryService';
-import { useRecipeService } from '../../services/recipeService';
+import { useAuth } from '../infrastructure/auth/AuthContext';
+import { useConsumptionService } from '../services/consumptionService';
+import { ApiError } from '../services/errors';
+import { useInventoryService } from '../services/inventoryService';
+import { useRecipeService } from '../services/recipeService';
 import {
   type ConsumptionResponse,
   type Ingredient,
@@ -24,7 +24,7 @@ import {
   MealType,
   PortionSize,
   type RecipeListItem
-} from '../../types';
+} from '../types';
 
 type EntryMode = 'RECIPE' | 'INGREDIENT';
 

@@ -2,15 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     ChefHat, LayoutDashboard, Utensils, User as UserIcon,
-    LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles
-} from 'lucide-react';
+    LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus
+} from 'lucide-react'; // Plus ikonunu ekledik
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
-const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+import { UIProvider, useUI } from '../../infrastructure/ui/UIContext';
+import ConsumptionModal from '../../components/ConsumptionModal';
+
+// İçerik kısmını ayrı bir bileşene alıyoruz ki useUI hook'unu Layout içinde kullanabilelim
+const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { authenticated, user, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
+    const { openConsumption } = useUI(); // UIContext'ten açma fonksiyonunu aldık
     const location = useLocation();
     const { t, i18n } = useTranslation();
 
@@ -109,6 +114,17 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 {/* HEADER */}
                 <header className="h-20 z-40 flex items-center justify-end px-8 gap-6 bg-white/70 dark:bg-black/20 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
 
+                    {/* --- YENİ: ÖĞÜN EKLE BUTONU (Global Trigger) --- */}
+                    {authenticated && (
+                        <button
+                            onClick={openConsumption}
+                            className="mr-auto flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-terracotta/20 bg-terracotta/5 hover:bg-terracotta hover:text-white transition-all text-terracotta font-bold text-xs shadow-sm hover:shadow-terracotta/20 active:scale-95"
+                        >
+                            <Plus size={16} strokeWidth={3} />
+                            <span className="hidden md:block tracking-wide">ÖĞÜN EKLE</span>
+                        </button>
+                    )}
+
                     <div className="flex items-center p-1 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                         {['en', 'tr'].map((lng) => (
                             <button key={lng} onClick={() => changeLanguage(lng)} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${i18n.language === lng ? 'bg-white dark:bg-terracotta text-espresso-midnight dark:text-white shadow-sm' : 'text-black/40 dark:text-alabaster/40 hover:text-terracotta'}`}>
@@ -142,7 +158,19 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </div>
                 </main>
             </div>
+
+            {/* PANEL BURADA GİZLİ BEKLİYOR */}
+            <ConsumptionModal />
         </div>
+    );
+};
+
+// Ana Layout: Provider sarmalamasını burada yapıyoruz
+const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    return (
+        <UIProvider>
+            <LayoutContent>{children}</LayoutContent>
+        </UIProvider>
     );
 };
 
