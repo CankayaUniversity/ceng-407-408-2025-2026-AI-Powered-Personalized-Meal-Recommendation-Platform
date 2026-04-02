@@ -306,33 +306,33 @@ const RecommendationPage: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="relative overflow-hidden rounded-[2.9rem] bg-espresso-midnight px-8 py-8 text-white shadow-[0_30px_90px_-36px_rgba(40,36,33,0.78)]">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-16 right-0 h-56 w-56 rounded-full bg-terracotta/35 blur-[100px]" />
-          <div className="absolute bottom-0 left-0 h-56 w-56 rounded-full bg-moss-sage/20 blur-[100px]" />
+      <header className="relative overflow-hidden rounded-[2.9rem] border border-card-border bg-card px-8 py-8 text-foreground shadow-[0_30px_90px_-36px_rgba(40,36,33,0.18)] dark:border-white/5 dark:bg-espresso-midnight dark:text-white dark:shadow-[0_30px_90px_-36px_rgba(40,36,33,0.78)]">
+        <div className="absolute inset-0 pointer-events-none opacity-75 dark:opacity-100">
+          <div className="absolute -top-16 right-0 h-56 w-56 rounded-full bg-terracotta/25 blur-[100px] dark:bg-terracotta/35" />
+          <div className="absolute bottom-0 left-0 h-56 w-56 rounded-full bg-moss-sage/15 blur-[100px] dark:bg-moss-sage/20" />
         </div>
         <div className="relative z-10 flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-alabaster/80">
+            <div className="inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-primary dark:border-white/10 dark:bg-white/5 dark:text-alabaster/80">
               <Sparkles size={14} className="text-terracotta" />
               AI Recommendation Engine
             </div>
             <div>
-              <h1 className="font-serif text-4xl font-bold leading-tight sm:text-5xl">Canin ne cekiyorsa onu veriye bagla.</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-alabaster/70 sm:text-lg">
+              <h1 className="font-serif text-4xl font-bold leading-tight text-foreground dark:text-white sm:text-5xl">Canin ne cekiyorsa onu veriye bagla.</h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-foreground-muted dark:text-alabaster/70 sm:text-lg">
                 Profilindeki sert kisitlar, sevmediklerin, sectigin inventory lokasyonu ve bugunku craving sinyalin tek prompt icinde Gemini&apos;ye tasinir.
               </p>
             </div>
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="rounded-[2rem] border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-sm">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-alabaster/40">Active Pantry</p>
-              <p className="mt-2 font-serif text-3xl font-bold">{activeGroup?.name || 'None'}</p>
+            <div className="rounded-[2rem] border border-card-border bg-white/70 px-5 py-4 text-foreground backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">Active Pantry</p>
+              <p className="mt-2 font-serif text-3xl font-bold text-foreground dark:text-white">{activeGroup?.name || 'None'}</p>
             </div>
-            <div className="rounded-[2rem] border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-sm">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-alabaster/40">Ingredients</p>
-              <p className="mt-2 font-serif text-3xl font-bold">{availableIngredients.length}</p>
+            <div className="rounded-[2rem] border border-card-border bg-white/70 px-5 py-4 text-foreground backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">Ingredients</p>
+              <p className="mt-2 font-serif text-3xl font-bold text-foreground dark:text-white">{availableIngredients.length}</p>
             </div>
           </div>
         </div>
@@ -534,18 +534,18 @@ const RecommendationPage: React.FC = () => {
                 />
               </label>
 
-              <div className="rounded-[2rem] bg-espresso-midnight px-5 py-5 text-white shadow-[0_24px_60px_-36px_rgba(40,36,33,0.7)]">
+              <div className="rounded-[2rem] border border-card-border bg-card px-5 py-5 text-foreground shadow-[0_24px_60px_-36px_rgba(40,36,33,0.12)] dark:border-white/10 dark:bg-espresso-midnight dark:text-white dark:shadow-[0_24px_60px_-36px_rgba(40,36,33,0.7)]">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-2xl bg-white/10 p-3 text-terracotta">
+                  <div className="rounded-2xl bg-primary/10 p-3 text-terracotta dark:bg-white/10">
                     <ChefHat size={18} />
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Prompt Payload</p>
-                    <p className="mt-1 font-serif text-2xl font-bold">Gemini Context</p>
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted dark:text-white/45">Prompt Payload</p>
+                    <p className="mt-1 font-serif text-2xl font-bold text-foreground dark:text-white">Gemini Context</p>
                   </div>
                 </div>
 
-                <div className="mt-5 space-y-3 text-sm text-white/75">
+                <div className="mt-5 space-y-3 text-sm text-foreground/75 dark:text-white/75">
                   <div className="flex items-start gap-3">
                     <ShieldAlert size={15} className="mt-0.5 shrink-0 text-red-300" />
                     <span>Allergies are treated as hard constraints.</span>
@@ -600,28 +600,28 @@ const RecommendationPage: React.FC = () => {
                   return (
                     <article key={recipe.recipeId} className="meal-card overflow-hidden rounded-[2.8rem] p-0 shadow-[0_24px_70px_-32px_rgba(40,36,33,0.38)]">
                       <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)]">
-                        <div className="relative min-h-[260px] overflow-hidden bg-gradient-to-br from-terracotta via-terracotta/90 to-espresso-midnight">
+                        <div className="relative min-h-[260px] overflow-hidden bg-gradient-to-br from-terracotta/90 via-ochre-soft/55 to-alabaster dark:from-terracotta dark:via-terracotta/90 dark:to-espresso-midnight">
                           {recipe.imageUrl ? (
                             <img src={recipe.imageUrl} alt={recipe.recipeTitle} className="absolute inset-0 h-full w-full object-cover" />
                           ) : null}
-                          <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight/90 via-espresso-midnight/25 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-alabaster/95 via-alabaster/35 to-transparent dark:from-espresso-midnight/90 dark:via-espresso-midnight/25 dark:to-transparent" />
 
                           <div className="absolute left-5 top-5 flex flex-wrap gap-2">
                             <span className="match-score-badge text-xs">{matchPercentage}% pantry fit</span>
                             {cravings.trim() && (
-                              <span className="meal-badge-neon border-white/20 bg-white/10 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                              <span className="meal-badge-neon border-card-border bg-white/80 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground dark:border-white/20 dark:bg-white/10 dark:text-white">
                                 Craving active
                               </span>
                             )}
                           </div>
 
                           <div className="absolute bottom-5 left-5 right-5">
-                            <div className="meal-card rounded-[2rem] border-white/20 bg-white/10 p-5 shadow-none dark:border-white/20 dark:bg-white/10">
-                              <p className="text-[10px] uppercase tracking-[0.2em] text-white/65">AI Pick</p>
-                              <h3 className="mt-2 font-serif text-3xl font-bold text-white">{recipe.recipeTitle}</h3>
+                            <div className="meal-card rounded-[2rem] border-card-border bg-white/85 p-5 shadow-none dark:border-white/20 dark:bg-white/10">
+                              <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted dark:text-white/65">AI Pick</p>
+                              <h3 className="mt-2 font-serif text-3xl font-bold text-foreground dark:text-white">{recipe.recipeTitle}</h3>
                               <div className="mt-3 flex flex-wrap gap-2">
                                 {recipe.matchedIngredients.slice(0, 3).map((item) => (
-                                  <span key={item} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white">
+                                  <span key={item} className="rounded-full border border-card-border bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-foreground dark:border-white/20 dark:bg-white/10 dark:text-white">
                                     {item}
                                   </span>
                                 ))}

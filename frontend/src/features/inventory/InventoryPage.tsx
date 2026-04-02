@@ -251,10 +251,10 @@ const InventoryPage: React.FC = () => {
   return (
       <>
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <header className="relative overflow-hidden rounded-[2.75rem] bg-espresso-midnight px-8 py-10 text-white shadow-brand-hero border border-white/5">
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute -top-16 right-0 h-48 w-48 rounded-full bg-terracotta/20 blur-[100px]" />
-              <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-moss-sage/10 blur-[100px]" />
+          <header className="relative overflow-hidden rounded-[2.75rem] border border-card-border bg-card px-8 py-10 text-foreground shadow-brand-hero dark:border-white/5 dark:bg-espresso-midnight dark:text-white">
+            <div className="absolute inset-0 pointer-events-none opacity-70 dark:opacity-100">
+              <div className="absolute -top-16 right-0 h-48 w-48 rounded-full bg-terracotta/20 blur-[100px] dark:bg-terracotta/25" />
+              <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-moss-sage/15 blur-[100px] dark:bg-moss-sage/10" />
             </div>
             <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl space-y-4">
@@ -263,16 +263,16 @@ const InventoryPage: React.FC = () => {
                   Multi-Inventory
                 </div>
                 <div>
-                  <h1 className="font-serif text-4xl font-bold leading-tight sm:text-5xl">Stoklarını lokasyon bazlı yönet.</h1>
-                  <p className="mt-4 max-w-2xl text-base leading-7 text-alabaster/60 sm:text-lg">
+                  <h1 className="font-serif text-4xl font-bold leading-tight text-foreground dark:text-white sm:text-5xl">Stoklarını lokasyon bazlı yönet.</h1>
+                  <p className="mt-4 max-w-2xl text-base leading-7 text-foreground-muted dark:text-alabaster/60 sm:text-lg">
                     Ev, ofis veya yazlık için ayrı envanterler oluştur; elindeki malzemeleri MealAI ile takip et.
                   </p>
                 </div>
               </div>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="rounded-[1.8rem] border border-white/10 bg-white/5 px-6 py-4 backdrop-blur-md">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-alabaster/40">Lokasyonlar</p>
-                  <p className="mt-1 text-3xl font-serif font-bold">{groups.length}</p>
+                <div className="rounded-[1.8rem] border border-card-border bg-white/70 px-6 py-4 text-foreground backdrop-blur-md dark:border-white/10 dark:bg-white/5 dark:text-white">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">Lokasyonlar</p>
+                  <p className="mt-1 text-3xl font-serif font-bold text-foreground dark:text-white">{groups.length}</p>
                 </div>
                 <button
                     type="button"
