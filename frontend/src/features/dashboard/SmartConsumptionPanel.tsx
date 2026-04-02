@@ -80,6 +80,8 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const normalizeSearchText = (value: string) => value.trim().toLocaleLowerCase('tr-TR');
+
 const formatMacro = (value?: number | null) =>
     value == null ? '--' : `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(value)}g`;
 
@@ -120,6 +122,13 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const selectedGroup = useMemo(
       () => inventoryGroups.find((group) => String(group.id) === selectedLocationId) ?? null,
       [inventoryGroups, selectedLocationId]
+  );
+  const stockedIngredients = useMemo(
+      () =>
+          (selectedGroup?.items ?? [])
+              .flatMap((item) => (item.ingredient ? [item.ingredient] : []))
+              .sort((left, right) => left.name.localeCompare(right.name, 'tr-TR')),
+      [selectedGroup]
   );
   const isOutside = selectedLocationId === OUTSIDE_LOCATION;
   const isSearchStale = searchQuery.trim() !== deferredQuery;
@@ -204,6 +213,19 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           return;
         }
 
+        if (!isOutside) {
+          const normalizedQuery = normalizeSearchText(deferredQuery);
+          const ingredients = stockedIngredients
+              .filter((ingredient) => normalizeSearchText(ingredient.name).includes(normalizedQuery))
+              .slice(0, 6);
+          if (!active) return;
+          startTransition(() => {
+            setIngredientResults(ingredients);
+            setRecipeResults([]);
+          });
+          return;
+        }
+
         const ingredients = await inventoryService.searchIngredients(deferredQuery, 6);
         if (!active) return;
         startTransition(() => {
@@ -224,7 +246,17 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
       active = false;
       abortController.abort();
     };
-  }, [authenticated, deferredQuery, entryMode, inventoryService, recipeService]);
+  }, [authenticated, deferredQuery, entryMode, inventoryService, isOutside, recipeService, stockedIngredients]);
+
+  useEffect(() => {
+    if (entryMode !== 'INGREDIENT' || isOutside || !selectedIngredient) return;
+
+    const isStillInSelectedLocation = stockedIngredients.some((ingredient) => ingredient.id === selectedIngredient.id);
+    if (isStillInSelectedLocation) return;
+
+    setSelectedIngredient(null);
+    setSuccess(null);
+  }, [entryMode, isOutside, selectedIngredient, stockedIngredients]);
 
   if (!authenticated || !user) return null;
 
