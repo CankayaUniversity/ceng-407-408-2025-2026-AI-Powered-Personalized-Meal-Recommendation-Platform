@@ -306,7 +306,7 @@ const RecommendationPage: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <header className="relative overflow-hidden rounded-[2.9rem] border border-card-border bg-card px-8 py-8 text-foreground shadow-[0_30px_90px_-36px_rgba(40,36,33,0.18)] dark:border-white/5 dark:bg-espresso-midnight dark:text-white dark:shadow-[0_30px_90px_-36px_rgba(40,36,33,0.78)]">
+      <header className="relative overflow-hidden rounded-[2.9rem] bg-card px-8 py-8 text-foreground shadow-[0_30px_90px_-36px_rgba(40,36,33,0.18)] meal-highlight-frame dark:bg-espresso-midnight dark:text-white dark:shadow-[0_30px_90px_-36px_rgba(40,36,33,0.78)]">
         <div className="absolute inset-0 pointer-events-none opacity-75 dark:opacity-100">
           <div className="absolute -top-16 right-0 h-56 w-56 rounded-full bg-terracotta/25 blur-[100px] dark:bg-terracotta/35" />
           <div className="absolute bottom-0 left-0 h-56 w-56 rounded-full bg-moss-sage/15 blur-[100px] dark:bg-moss-sage/20" />
@@ -501,7 +501,7 @@ const RecommendationPage: React.FC = () => {
         </aside>
 
         <section className="space-y-6">
-          <div className="meal-card shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
+          <div className="meal-card meal-highlight-frame shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
                 <p className="meal-overline">Get Recommendation</p>
@@ -598,7 +598,7 @@ const RecommendationPage: React.FC = () => {
                     : 100;
 
                   return (
-                    <article key={recipe.recipeId} className="meal-card overflow-hidden rounded-[2.8rem] p-0 shadow-[0_24px_70px_-32px_rgba(40,36,33,0.38)]">
+                    <article key={recipe.recipeId} className="meal-card meal-highlight-frame overflow-hidden rounded-[2.8rem] p-0 shadow-[0_24px_70px_-32px_rgba(40,36,33,0.38)]">
                       <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)]">
                         <div className="relative min-h-[260px] overflow-hidden bg-gradient-to-br from-terracotta/90 via-ochre-soft/55 to-alabaster dark:from-terracotta dark:via-terracotta/90 dark:to-espresso-midnight">
                           {recipe.imageUrl ? (

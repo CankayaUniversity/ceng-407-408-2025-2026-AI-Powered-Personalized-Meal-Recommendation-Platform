@@ -221,7 +221,7 @@ const Profile: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-8">
           <aside className="space-y-6">
-            <div className="meal-card p-0 overflow-hidden border-none shadow-brand-elevated">
+            <div className="meal-card meal-highlight-frame p-0 overflow-hidden shadow-brand-elevated">
               <div className="h-28 bg-primary/90" />
               <div className="px-6 pb-8 -mt-14 text-center">
                 <div className="w-28 h-28 mx-auto rounded-[2.5rem] border-8 border-background bg-card text-primary flex items-center justify-center text-4xl font-bold shadow-lg overflow-hidden">
@@ -345,7 +345,7 @@ const Profile: React.FC = () => {
               </div>
             </section>
 
-            <div className="meal-card sticky bottom-6 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 border-none shadow-brand-elevated bg-card/90 backdrop-blur-xl z-10">
+            <div className="meal-card meal-highlight-frame sticky bottom-6 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-brand-elevated bg-card/90 backdrop-blur-xl z-10">
               <div className="flex flex-col">
                 <p className="text-xs font-bold uppercase tracking-widest opacity-40">Durum</p>
                 <p className="text-sm font-semibold">{isDirty ? 'Kaydedilmemiş Değişiklikler' : 'Her Şey Güncel'}</p>

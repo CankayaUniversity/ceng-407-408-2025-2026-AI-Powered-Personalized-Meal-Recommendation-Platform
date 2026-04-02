@@ -584,7 +584,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               </div>
             </div>
 
-            <div className="rounded-[2rem] border-2 border-terracotta/20 bg-white p-5 text-espresso-midnight shadow-brand-hero dark:bg-espresso-midnight dark:text-white">
+            <div className="rounded-[2rem] meal-highlight-frame bg-white p-5 text-espresso-midnight shadow-brand-hero dark:bg-espresso-midnight dark:text-white">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="meal-overline tracking-[0.18em] text-espresso-midnight/45 dark:text-white/45">Quick Summary</p>

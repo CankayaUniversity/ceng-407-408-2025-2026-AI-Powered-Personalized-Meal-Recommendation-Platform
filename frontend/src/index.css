@@ -82,6 +82,10 @@
     @apply rounded-[2.5rem] border p-6 backdrop-blur-md shadow-[var(--brand-shadow-soft)] transition-all duration-300;
   }
 
+  .meal-highlight-frame {
+    @apply border-2 border-terracotta/20;
+  }
+
   /* METRIC-CARD: Dashboard bento kutuları */
   .meal-metric-card {
     background-color: var(--color-card-bg);

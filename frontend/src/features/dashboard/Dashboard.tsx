@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
   if (!authenticated) {
     return (
         <div className="max-w-5xl mx-auto py-12 px-4 animate-in fade-in duration-700">
-          <header className="relative overflow-hidden rounded-5xl bg-card dark:bg-espresso-midnight p-12 shadow-brand-elevated border border-card-border">
+          <header className="relative overflow-hidden rounded-5xl bg-card p-12 shadow-brand-elevated meal-highlight-frame dark:bg-espresso-midnight">
             <div className="absolute inset-0 opacity-10 dark:opacity-20 pointer-events-none">
               <div className="absolute -top-10 -right-10 w-64 h-64 bg-terracotta blur-[100px]" />
               <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-sage blur-[100px]" />
@@ -184,7 +184,7 @@ const Dashboard: React.FC = () => {
   return (
       <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000 px-4">
         {/* Hero Header */}
-        <header className="relative overflow-hidden rounded-5xl bg-card dark:bg-espresso-midnight p-8 md:p-12 shadow-brand-hero border border-card-border">
+        <header className="relative overflow-hidden rounded-5xl bg-card p-8 md:p-12 shadow-brand-hero meal-highlight-frame dark:bg-espresso-midnight">
           <div className="absolute inset-0 pointer-events-none opacity-20 dark:opacity-40">
             <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-terracotta/40 blur-[100px]" />
             <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-sage/20 blur-[100px]" />
@@ -236,7 +236,7 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* Inventory Summary */}
-          <section className="lg:col-span-8 meal-card flex flex-col justify-between group">
+          <section className="lg:col-span-8 meal-card meal-highlight-frame flex flex-col justify-between group">
             <div className="flex flex-col md:flex-row justify-between items-start gap-6">
               <div className="space-y-2">
                 <span className="meal-overline">Envanter Sağlığı</span>
@@ -354,7 +354,7 @@ const Dashboard: React.FC = () => {
           </section>
 
           {/* Quick Actions / Recommendations Teaser */}
-          <section className="lg:col-span-8 rounded-5xl bg-sage p-8 md:p-10 text-white shadow-brand-elevated flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+          <section className="lg:col-span-8 rounded-5xl bg-sage p-8 md:p-10 text-white shadow-brand-elevated meal-highlight-frame flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
               <ChefHat size={200} />
             </div>

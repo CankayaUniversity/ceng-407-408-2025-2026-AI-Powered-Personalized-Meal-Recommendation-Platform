@@ -251,7 +251,7 @@ const InventoryPage: React.FC = () => {
   return (
       <>
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <header className="relative overflow-hidden rounded-[2.75rem] border border-card-border bg-card px-8 py-10 text-foreground shadow-brand-hero dark:border-white/5 dark:bg-espresso-midnight dark:text-white">
+          <header className="relative overflow-hidden rounded-[2.75rem] bg-card px-8 py-10 text-foreground shadow-brand-hero meal-highlight-frame dark:bg-espresso-midnight dark:text-white">
             <div className="absolute inset-0 pointer-events-none opacity-70 dark:opacity-100">
               <div className="absolute -top-16 right-0 h-48 w-48 rounded-full bg-terracotta/20 blur-[100px] dark:bg-terracotta/25" />
               <div className="absolute bottom-0 left-0 h-48 w-48 rounded-full bg-moss-sage/15 blur-[100px] dark:bg-moss-sage/10" />
@@ -328,7 +328,7 @@ const InventoryPage: React.FC = () => {
           </section>
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[380px_1fr]">
-            <section className="meal-card shadow-brand-card self-start border border-card-border">
+            <section className="meal-card meal-highlight-frame shadow-brand-card self-start">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="meal-overline">Stock Editor</p>
@@ -425,7 +425,7 @@ const InventoryPage: React.FC = () => {
             </section>
 
             <section className="space-y-6">
-              <div className="meal-card shadow-brand-card border border-card-border">
+              <div className="meal-card meal-highlight-frame shadow-brand-card">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="meal-overline">Current Inventory</p>
