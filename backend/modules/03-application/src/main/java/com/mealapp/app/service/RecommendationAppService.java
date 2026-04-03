@@ -13,6 +13,7 @@ import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +36,7 @@ public class RecommendationAppService {
     /**
      * Öneri akışını yöneten ana metod.
      */
+    @Transactional(readOnly = true)
     public RecommendationResponse getRecommendations(RecommendationRequest request) {
         // 1. Kullanıcıyı bul
         User user = userService.findById(request.getUserId())

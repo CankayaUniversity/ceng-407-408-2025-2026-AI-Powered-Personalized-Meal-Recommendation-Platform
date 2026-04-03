@@ -3,10 +3,14 @@ import {
   AlertCircle,
   CheckCircle2,
   ChefHat,
+  ChevronDown,
+  ChevronUp,
   Clock3,
   Home,
   Loader2,
   MapPin,
+  Minus,
+  Plus,
   Search,
   Soup,
   Sparkles,
@@ -240,6 +244,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const [unitWeights, setUnitWeights] = useState<Record<string, number>>({});
   const [ingredientSpecificWeights, setIngredientSpecificWeights] = useState<Record<number, Record<string, number>>>({});
 
+  const standardUnitsSet = useMemo(() => ['GRAM', 'ML', 'KG', 'LITRE', 'L'], []);
+
   const loadUnitWeights = async (ingredientId?: number) => {
     try {
       const weights = await consumptionService.getUnitWeights(ingredientId);
@@ -253,48 +259,55 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     }
   };
 
-  useEffect(() => {
-    if (authenticated) {
-      void loadUnitWeights();
-    }
-  }, [authenticated]);
-
-  const getIngredientOptions = (ingredientId?: number) => {
-    const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
-    
-    // Malzemenin fiziksel durumunu bul (Eğer stoklanmış bir malzemeyse)
+  const getIngredientUnits = (ingredientId?: number) => {
     const ingredient = ingredientId ? (ingredientResults.find(i => i.id === ingredientId) || stockedIngredients.find(i => i.id === ingredientId)) : null;
     const physicalState = ingredient?.physicalState;
 
-    const options: IngredientPortionOption[] = [];
+    // Temel birim setleri
+    const solidBase = ['GRAM', 'KG'];
+    const liquidBase = ['ML', 'LITRE', 'L'];
+    const commonBase = ['GRAM', 'ML', 'KG', 'LITRE', 'L'];
 
-    // Fiziksel duruma göre varsayılan kütle/hacim birimi ekle
-    if (physicalState === 'LIQUID') {
-      options.push({ id: 'ing-100ml', label: '100ml', grams: 100 * (ingredient?.density || 1.0), portionSize: PortionSize.MEDIUM, note: 'Standart' });
-    } else {
-      options.push({ id: 'ing-100g', label: '100g', grams: 100, portionSize: PortionSize.MEDIUM, note: 'Standart' });
-    }
+    let base = commonBase;
+    if (physicalState === 'SOLID') base = solidBase;
+    if (physicalState === 'LIQUID') base = liquidBase;
 
-    // Standart kütle/hacim birimleri dışındaki birimleri filtrele
-    const standardMassUnits = ['g', 'gram', 'kg', 'kilogram', 'ml', 'litre', 'liter'];
+    const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
     
-    Object.entries(weights).forEach(([unit, weight]) => {
-      const lowerUnit = unit.toLowerCase();
-      if (standardMassUnits.includes(lowerUnit)) return;
-      
-      options.push({
-        id: `ing-${unit}`,
-        label: `1 ${unit} (~${weight}g)`,
-        grams: weight,
-        portionSize: weight > 200 ? PortionSize.LARGE : weight < 50 ? PortionSize.SMALL : PortionSize.MEDIUM,
-        note: ingredientId ? 'Malzemeye özel' : 'Dinamik'
-      });
-    });
+    // Backend'den gelen birimleri al
+    const extra = Object.keys(weights).map(u => u.toUpperCase());
+    
+    // Birleştir
+    const allUnits = Array.from(new Set([...base, ...extra]));
+    
+    // Hızlı birimler için izin verilen liste
+    const allowedQuickUnits = ['PAKET', 'PORSIYON', 'DILIM', 'CUP', 'ADET', 'KASE', 'BARDAK'];
 
-    return options;
+    // Hızlı birimler
+    const quick = allUnits
+      .filter(u => allowedQuickUnits.includes(u))
+      .sort((a, b) => {
+          const idxA = allowedQuickUnits.indexOf(a);
+          const idxB = allowedQuickUnits.indexOf(b);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          return a.localeCompare(b);
+      });
+
+    // Standart birimler (Hızlı olmayan ve base olanlar + diğer her şey)
+    const standard = allUnits.filter(u => !allowedQuickUnits.includes(u));
+
+    return {
+      quickUnits: quick,
+      standardUnits: standard.sort((a, b) => {
+          if (a === 'GRAM') return -1;
+          if (b === 'GRAM') return 1;
+          if (a === 'ML') return -1;
+          if (b === 'ML') return 1;
+          return a.localeCompare(b);
+      })
+    };
   };
   const [inventoryGroups, setInventoryGroups] = useState<InventoryGroup[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(true);
   const [selectedLocationId, setSelectedLocationId] = useState<string>(OUTSIDE_LOCATION);
   const [entryMode, setEntryMode] = useState<EntryMode>('RECIPE');
   const [mealType, setMealType] = useState<MealType>(MealType.LUNCH);
@@ -352,14 +365,92 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
       [submitSummary]
   );
 
+  useEffect(() => {
+    if (authenticated) {
+      void loadUnitWeights();
+    }
+  }, [authenticated]);
+
+  const [expandedManualInputs, setExpandedManualInputs] = useState<Record<string, boolean>>({});
+
+  const toggleManualInput = (itemKey: string) => {
+    setExpandedManualInputs(prev => ({ ...prev, [itemKey]: !prev[itemKey] }));
+  };
+
+  const handleManualPortionUpdate = (itemKey: string, ingredient: Ingredient, value: string, unit: string) => {
+    const quantity = parseFloat(value);
+    if (isNaN(quantity) || quantity <= 0) return;
+
+    const weights = (ingredient.id && ingredientSpecificWeights[ingredient.id]) || unitWeights;
+    const upperUnit = unit.toUpperCase();
+    
+    let grams = quantity;
+    if (upperUnit === 'KG') grams = quantity * 1000;
+    else if (upperUnit === 'ML' || upperUnit === 'LITRE') {
+        const density = ingredient.density || 1.0;
+        const volumeMl = upperUnit === 'LITRE' ? quantity * 1000 : quantity;
+        grams = volumeMl * density;
+    } else if (!standardUnitsSet.includes(upperUnit)) {
+        const unitWeight = weights[unit.toLowerCase()] || 0;
+        grams = quantity * unitWeight;
+    }
+
+    handleIngredientPortionChange(itemKey, {
+        id: `manual-${unit}-${value}`,
+        label: `${value} ${unit}`,
+        grams: grams,
+        portionSize: PortionSize.MEDIUM,
+        note: 'Manuel giris'
+    });
+  };
+
+  const handleQuickUnitAdjust = (itemKey: string, ingredient: Ingredient, unit: string, delta: number) => {
+    const item = selectedItems.find(i => i.key === itemKey);
+    if (!item || item.kind !== 'INGREDIENT') return;
+
+    const currentParts = item.portion.label.split(' ');
+    const currentQty = parseFloat(currentParts[0]) || 0;
+    const currentUnit = currentParts.length > 1 ? currentParts[1] : '';
+
+    let nextQty: number;
+    let nextUnit: string;
+
+    if (currentUnit.toLowerCase() === unit.toLowerCase()) {
+      nextQty = Math.max(0, currentQty + delta);
+      nextUnit = unit;
+    } else {
+      nextQty = delta > 0 ? delta : 0;
+      nextUnit = unit;
+    }
+
+    if (nextQty === 0) {
+      // If we reach 0, maybe we should keep it at 0 or a small default, 
+      // but usually for increment/decrement we want at least a small amount if it was selected.
+      // However, the user said "add/remove from cart" logic.
+      // If it becomes 0, we'll just set it to 0. handleManualPortionUpdate handles NaN/<=0 check though.
+      // Let's allow 0 for internal state if needed, but handleManualPortionUpdate currently ignores it.
+      // We'll use 0.001 or just allow it to be handled.
+      if (delta < 0 && currentQty <= Math.abs(delta)) {
+          nextQty = 0;
+      }
+    }
+
+    if (nextQty > 0) {
+      handleManualPortionUpdate(itemKey, ingredient, nextQty.toString(), nextUnit);
+    } else {
+        // If 0, we might want to reset to a default or just leave it at a very small value
+        // or actually remove the item? No, user just wants to adjust amount.
+        // Let's set it to a minimum or just don't update if it's already small.
+        handleManualPortionUpdate(itemKey, ingredient, "0.1", nextUnit);
+    }
+  };
+
   const loadInventoryGroups = async () => {
     try {
       const groups = await inventoryService.getInventoryGroups();
       setInventoryGroups(groups);
     } catch (error) {
       setErrorMessage(getErrorMessage(error, 'Lokasyon bilgileri yüklenemedi.'));
-    } finally {
-      setLoadingGroups(false);
     }
   };
 
@@ -507,7 +598,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           key,
           kind: 'INGREDIENT',
           ingredient,
-          portion: getIngredientOptions(ingredient.id)[0] || INGREDIENT_PORTION_OPTIONS[1]
+          portion: INGREDIENT_PORTION_OPTIONS[1] || { label: '100g', grams: 100, portionSize: 100 }
         }
       ];
     });
@@ -641,35 +732,100 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
   return (
       <section className="meal-card rounded-[2.75rem] shadow-brand-hero">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="meal-badge-neon px-4 text-[11px] font-bold tracking-[0.22em]">
-              <Sparkles size={14} />
-              Smart Consumption
+        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="meal-badge-neon px-4 text-[11px] font-bold tracking-[0.22em]">
+                <Sparkles size={14} />
+                Smart Consumption
+              </div>
+              <h2 className="meal-section-title mt-4 text-4xl lg:text-5xl">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-espresso-midnight/60 dark:text-alabaster/60">
+                Home veya Office seçersen tarifin içindeki malzemeler seçili lokasyondan otomatik düşülür. Outside / Other seçeneğinde ise yalnızca kalori ve makrolar loglanır.
+              </p>
             </div>
-            <h2 className="meal-section-title mt-4">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
-            <p className="mt-3 max-w-xl text-sm leading-7 text-espresso-midnight/60 dark:text-alabaster/60">
-              Home veya Office seçersen tarifin içindeki malzemeler seçili lokasyondan otomatik düşülür. Outside / Other seçeneğinde ise yalnızca kalori ve makrolar loglanır.
-            </p>
+
+            <div className="grid min-w-[280px] grid-cols-2 gap-4 sm:grid-cols-3">
+              <div className="meal-metric-card px-5 py-4 dark:bg-white/5">
+                <p className="meal-overline tracking-[0.18em]">Mode</p>
+                <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{activeEntryModeLabel}</p>
+              </div>
+              <div className="meal-metric-card px-5 py-4 dark:bg-white/5">
+                <p className="meal-overline tracking-[0.18em]">Location</p>
+                <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{locationLabel(selectedGroup)}</p>
+              </div>
+              <div className="meal-metric-card col-span-2 px-5 py-4 dark:bg-white/5 sm:col-span-1 border-terracotta/20">
+                <p className="meal-overline tracking-[0.18em]">Selected</p>
+                <p className="mt-3 text-sm font-bold text-terracotta">{selectionLabel}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="grid min-w-[260px] grid-cols-2 gap-3 sm:grid-cols-3">
-            <div className="meal-metric-card px-4 dark:bg-white/5">
-              <p className="meal-overline tracking-[0.18em]">Mode</p>
-              <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{activeEntryModeLabel}</p>
-            </div>
-            <div className="meal-metric-card px-4 dark:bg-white/5">
-              <p className="meal-overline tracking-[0.18em]">Location</p>
-              <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{locationLabel(selectedGroup)}</p>
-            </div>
-            <div className="meal-metric-card col-span-2 px-4 dark:bg-white/5 sm:col-span-1 border-terracotta/20">
-              <p className="meal-overline tracking-[0.18em]">Selected</p>
-              <p className="mt-3 text-sm font-semibold text-terracotta">{selectionLabel}</p>
+          <div className="rounded-[2.5rem] bg-white/40 p-6 backdrop-blur-sm dark:bg-white/[0.02]">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="meal-overline tracking-[0.18em] text-espresso-midnight/50 dark:text-alabaster/50">Meal Context</p>
+                <h3 className="text-xl font-bold text-espresso-midnight dark:text-alabaster">Nerede ve hangi öğünde yedin?</h3>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap gap-2 rounded-2xl bg-white/50 p-1.5 dark:bg-white/5">
+                  <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedLocationId(OUTSIDE_LOCATION);
+                        setSubmitSummary(null);
+                      }}
+                      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
+                          isOutside ? 'bg-espresso-midnight text-white shadow-lg' : 'text-espresso-midnight/60 hover:text-terracotta dark:text-alabaster/60'
+                      }`}
+                  >
+                    <MapPin size={16} />
+                    Dışarı
+                  </button>
+                  {inventoryGroups.map((group) => (
+                      <button
+                          key={group.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedLocationId(String(group.id));
+                            setSubmitSummary(null);
+                          }}
+                          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
+                              selectedLocationId === String(group.id)
+                                  ? 'bg-terracotta text-white shadow-lg'
+                                  : 'text-espresso-midnight/60 hover:text-terracotta dark:text-alabaster/60'
+                          }`}
+                      >
+                        <Home size={16} />
+                        {group.name}
+                      </button>
+                  ))}
+                </div>
+                <div className="h-8 w-px bg-card-border/50 hidden md:block" />
+                <div className="flex flex-wrap gap-2 rounded-2xl bg-white/50 p-1.5 dark:bg-white/5">
+                  {MEAL_OPTIONS.map((option) => (
+                      <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setMealType(option.value);
+                            setSubmitSummary(null);
+                          }}
+                          className={`rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
+                              mealType === option.value
+                                  ? 'bg-moss-sage text-espresso-midnight shadow-lg'
+                                  : 'text-espresso-midnight/60 hover:text-terracotta dark:text-alabaster/60'
+                          }`}
+                      >
+                        {option.label}
+                      </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="mt-2 grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
             <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-sm dark:bg-white/5">
               <div className="flex items-center justify-between gap-4">
@@ -789,14 +945,14 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       Henuz secim yapmadin. Arama sonuclarindan ogeleri ekledikce burada gorunecekler.
                     </div>
                 ) : (
-                    <div className="mt-4 grid gap-4">
+                    <div className="mt-4 grid gap-6">
                       {selectedItems.map((item) => {
                         const itemNutrition = getSelectedItemNutrition(item);
 
                         return (
                             <article
                                 key={item.key}
-                                className="rounded-[1.7rem] border border-card-border bg-white/85 p-4 shadow-sm dark:bg-white/[0.04]"
+                                className="rounded-[2rem] border border-card-border bg-white/90 p-6 shadow-md transition-all hover:shadow-lg dark:bg-white/[0.04]"
                             >
                               <div className="flex items-start justify-between gap-4">
                                 <div>
@@ -818,67 +974,166 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                               </div>
 
                               <div className="mt-4">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-alabaster/40">
-                                  Porsiyon
-                                </p>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  {item.kind === 'RECIPE' && RECIPE_PORTION_OPTIONS.map((option) => (
-                                      <button
-                                          key={option.id}
-                                          type="button"
-                                          onClick={() => handleRecipePortionChange(item.key, option)}
-                                          disabled={submitting}
-                                          className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
-                                              item.portion.id === option.id
-                                                  ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                                  : 'border border-card-border bg-white text-espresso-midnight/70 hover:text-terracotta dark:bg-white/[0.03] dark:text-alabaster/70'
-                                          }`}
-                                      >
-                                        {option.label}
-                                      </button>
-                                  ))}
-
-                                  {item.kind === 'INGREDIENT' && getIngredientOptions(item.ingredient.id).map((option) => (
-                                      <button
-                                          key={option.id}
-                                          type="button"
-                                          onClick={() => handleIngredientPortionChange(item.key, option)}
-                                          disabled={submitting}
-                                          className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
-                                              item.portion.id === option.id
-                                                  ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                                  : 'border border-card-border bg-white text-espresso-midnight/70 hover:text-terracotta dark:bg-white/[0.03] dark:text-alabaster/70'
-                                          }`}
-                                      >
-                                        {option.label}
-                                      </button>
-                                  ))}
+                                <div className="space-y-4">
+                                  {item.kind === 'RECIPE' && (
+                                    <div className="mt-4 space-y-3">
+                                      <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Porsiyon</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {RECIPE_PORTION_OPTIONS.map((option) => (
+                                            <button
+                                                key={option.id}
+                                                type="button"
+                                                onClick={() => handleRecipePortionChange(item.key, option)}
+                                                disabled={submitting}
+                                                className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
+                                                    item.portion.id === option.id
+                                                        ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
+                                                        : 'border border-card-border bg-white text-espresso-midnight/70 hover:text-terracotta dark:bg-white/[0.03] dark:text-alabaster/70'
+                                                }`}
+                                            >
+                                              {option.label}
+                                            </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
 
                                   {item.kind === 'INGREDIENT' && (
-                                      <div className="flex flex-col gap-2 w-full mt-2">
-                                        <div className="flex items-center gap-2 rounded-full border border-card-border bg-white px-3 py-1 dark:bg-white/[0.03]">
-                                          <input
-                                              type="number"
-                                              placeholder="Grams"
-                                              className="w-full bg-transparent text-xs font-semibold outline-none text-espresso-midnight dark:text-alabaster"
-                                              onChange={(e) => {
-                                                const val = parseFloat(e.target.value);
-                                                if (!isNaN(val) && val > 0) {
-                                                  handleIngredientPortionChange(item.key, {
-                                                    id: 'custom-grams',
-                                                    label: `${val}g`,
-                                                    grams: val,
-                                                    portionSize: PortionSize.MEDIUM,
-                                                    note: 'Ozel miktar'
-                                                  });
-                                                }
-                                              }}
-                                          />
-                                          <span className="text-[10px] font-bold text-terracotta">g</span>
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-[10px] text-terracotta/70 italic px-2">
-                                          <AlertCircle size={10} />
-                                          En yüksek hassasiyet için doğrudan gram/ml girilmesi önerilir.
+                                      <div className="mt-4 space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          {/* Step 1: Quick Selection */}
+                                          <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                              <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Hızlı Seçim</p>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {getIngredientUnits(item.ingredient.id).quickUnits.map((unit: string) => {
+                                                const weights = (item.ingredient.id && ingredientSpecificWeights[item.ingredient.id]) || unitWeights;
+                                                const weight = weights[unit.toLowerCase()];
+                                                const currentParts = item.portion.label.split(' ');
+                                                const currentQty = parseFloat(currentParts[0]) || 0;
+                                                const currentUnit = currentParts.length > 1 ? currentParts[1] : '';
+                                                const isSelected = currentUnit.toLowerCase() === unit.toLowerCase() && currentQty > 0;
+
+                                                return (
+                                                  <div
+                                                    key={unit}
+                                                    className={`group relative flex items-center overflow-hidden rounded-xl border transition-all ${
+                                                      isSelected
+                                                        ? 'bg-espresso-midnight text-white border-transparent'
+                                                        : 'border-card-border bg-espresso-midnight/5 text-espresso-midnight/80 hover:border-terracotta/40 dark:bg-white/10 dark:text-alabaster/80'
+                                                    }`}
+                                                  >
+                                                    {/* Decrease Button */}
+                                                    <button
+                                                      type="button"
+                                                      disabled={submitting}
+                                                      onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, -1)}
+                                                      className={`flex h-full items-center justify-center border-r px-2 py-2 transition-colors ${
+                                                        isSelected
+                                                          ? 'border-white/10 hover:bg-white/10'
+                                                          : 'border-espresso-midnight/5 hover:bg-terracotta/10 hover:text-terracotta'
+                                                      }`}
+                                                    >
+                                                      <Minus size={12} />
+                                                    </button>
+
+                                                    {/* Unit Display / Increment */}
+                                                    <button
+                                                      type="button"
+                                                      disabled={submitting}
+                                                      onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, 1)}
+                                                      className="px-3 py-2 text-left"
+                                                    >
+                                                      <span className="text-xs font-bold leading-none">
+                                                        {isSelected ? `${currentQty} ` : ''}{unit}
+                                                      </span>
+                                                      {weight && (
+                                                        <span className={`block text-[8px] mt-0.5 leading-none ${isSelected ? 'text-white/60' : 'text-foreground/30'}`}>
+                                                          ~{(weight * (isSelected ? currentQty : 1)).toFixed(0)}g
+                                                        </span>
+                                                      )}
+                                                    </button>
+
+                                                    {/* Increase Button (Plus) - if we want it separate, but clicking the middle usually increments too. 
+                                                       User said "sağına + soluna - koyarak". 
+                                                       Let's add a clear Plus on the right too. */}
+                                                    <button
+                                                      type="button"
+                                                      disabled={submitting}
+                                                      onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, 1)}
+                                                      className={`flex h-full items-center justify-center border-l px-2 py-2 transition-colors ${
+                                                        isSelected
+                                                          ? 'border-white/10 hover:bg-white/10'
+                                                          : 'border-espresso-midnight/5 hover:bg-emerald-500/10 hover:text-emerald-500'
+                                                      }`}
+                                                    >
+                                                      <Plus size={12} />
+                                                    </button>
+                                                  </div>
+                                                );
+                                              })}
+                                              {getIngredientUnits(item.ingredient.id).quickUnits.length === 0 && (
+                                                <p className="text-[10px] italic text-foreground/30">Ozel birim bulunamadi.</p>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {/* Step 2: Amount and Standard Unit - Optional */}
+                                          <div className="space-y-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleManualInput(item.key)}
+                                                className="flex w-full items-center justify-between rounded-xl bg-espresso-midnight/5 px-3 py-2 text-left transition-all hover:bg-espresso-midnight/10 dark:bg-white/5 dark:hover:bg-white/10"
+                                            >
+                                              <span className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Spesifik Miktar / Birim</span>
+                                              {expandedManualInputs[item.key] ? <ChevronUp size={14} className="text-espresso-midnight/30" /> : <ChevronDown size={14} className="text-espresso-midnight/30" />}
+                                            </button>
+
+                                            {expandedManualInputs[item.key] && (
+                                              <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                <div className="flex gap-2">
+                                                  <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    disabled={submitting}
+                                                    value={item.portion.label.split(' ')[0] || ''}
+                                                    className="w-1/2 rounded-xl border border-card-border bg-white px-3 py-2 text-sm font-bold outline-none focus:border-terracotta dark:bg-white/5"
+                                                    onChange={(e) => {
+                                                      const parts = item.portion.label.split(' ');
+                                                      const unit = parts.length > 1 ? parts[1] : (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
+                                                      handleManualPortionUpdate(item.key, item.ingredient, e.target.value, unit);
+                                                    }}
+                                                  />
+                                                  <select
+                                                    disabled={submitting}
+                                                    className="w-1/2 rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold outline-none cursor-pointer dark:bg-white/5"
+                                                    value={(() => {
+                                                        const parts = item.portion.label.split(' ');
+                                                        return (parts.length > 1 ? parts[1] : (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM')).toUpperCase();
+                                                    })()}
+                                                    onChange={(e) => {
+                                                      const val = item.portion.label.split(' ')[0] || '100';
+                                                      handleManualPortionUpdate(item.key, item.ingredient, val, e.target.value);
+                                                    }}
+                                                  >
+                                                    {getIngredientUnits(item.ingredient.id).standardUnits.map((unit: string) => (
+                                                      <option key={unit} value={unit}>{unit}</option>
+                                                    ))}
+                                                    {getIngredientUnits(item.ingredient.id).quickUnits.map((unit: string) => (
+                                                      <option key={unit} value={unit}>{unit}</option>
+                                                    ))}
+                                                  </select>
+                                                </div>
+                                              </div>
+                                            )}
+                                            
+                                            <div className="flex items-center gap-1.5 text-[9px] text-terracotta/70 italic px-1">
+                                              <AlertCircle size={10} />
+                                              Seçili: {item.portion.grams.toFixed(1)}g eşdeğeri
+                                            </div>
+                                          </div>
                                         </div>
                                       </div>
                                   )}
@@ -911,71 +1166,6 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               </div>
             </div>
 
-            <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-sm dark:bg-white/5">
-              <p className="meal-overline tracking-[0.18em]">Meal Context</p>
-              <h3 className="meal-section-title mt-2 text-2xl">Nerede ve hangi ogunde yedin?</h3>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedLocationId(OUTSIDE_LOCATION);
-                      setSubmitSummary(null);
-                    }}
-                    className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition-all ${
-                        isOutside ? 'bg-espresso-midnight text-white shadow-lg shadow-black/10' : 'border border-card-border bg-white/75 text-espresso-midnight/65 hover:text-terracotta dark:bg-white/5 dark:text-alabaster/65'
-                    }`}
-                >
-                  <MapPin size={16} />
-                  Disari / Diger
-                </button>
-                {loadingGroups ? (
-                    <div className="inline-flex items-center gap-2 px-4 py-3 text-sm text-espresso-midnight/40 dark:text-alabaster/40">
-                      <Loader2 size={16} className="animate-spin" />
-                      Yükleniyor...
-                    </div>
-                ) : (
-                    inventoryGroups.map((group) => (
-                        <button
-                            key={group.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedLocationId(String(group.id));
-                              setSubmitSummary(null);
-                            }}
-                            className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition-all ${
-                                selectedLocationId === String(group.id)
-                                    ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                    : 'border border-card-border bg-white/75 text-espresso-midnight/65 hover:text-terracotta dark:bg-white/5 dark:text-alabaster/65'
-                            }`}
-                        >
-                          <Home size={16} />
-                          {group.name}
-                        </button>
-                    ))
-                )}
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-3">
-                {MEAL_OPTIONS.map((option) => (
-                    <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => {
-                          setMealType(option.value);
-                          setSubmitSummary(null);
-                        }}
-                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                            mealType === option.value
-                                ? 'bg-moss-sage text-espresso-midnight shadow-lg shadow-moss-sage/20'
-                                : 'border border-card-border bg-white/75 text-espresso-midnight/65 hover:text-terracotta dark:bg-white/5 dark:text-alabaster/65'
-                        }`}
-                    >
-                      {option.label}
-                    </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="space-y-6">
@@ -996,56 +1186,6 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               </div>
             </div>
 
-            <div className="rounded-[2rem] meal-highlight-frame bg-white p-5 text-espresso-midnight shadow-brand-hero dark:bg-espresso-midnight dark:text-white">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="meal-overline tracking-[0.18em] text-espresso-midnight/45 dark:text-white/45">Quick Summary</p>
-                  <h3 className="meal-section-title mt-2 text-2xl text-espresso-midnight dark:text-white">
-                    {summaryTitle}
-                  </h3>
-                  {summarySubtitle ? (
-                      <p className="mt-2 text-sm text-espresso-midnight/60 dark:text-white/60">{summarySubtitle}</p>
-                  ) : null}
-                </div>
-                <div className="rounded-full bg-terracotta/10 p-3 text-terracotta">
-                  {entryMode === 'RECIPE' ? <Soup size={18} /> : <UtensilsCrossed size={18} />}
-                </div>
-              </div>
-
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-4 py-4 dark:bg-white/5">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Calories</p>
-                  <p className="mt-2 font-serif text-3xl font-bold">{formatCalories(nutritionPreview.calories)}</p>
-                </div>
-                <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-4 py-4 dark:bg-white/5">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Protein</p>
-                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.protein)}</p>
-                </div>
-                <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-4 py-4 dark:bg-white/5">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Carbs</p>
-                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.carbs)}</p>
-                </div>
-                <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-4 py-4 dark:bg-white/5">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Fat</p>
-                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.fat)}</p>
-                </div>
-              </div>
-
-              <div className="mt-5 rounded-[1.5rem] border border-card-border bg-espresso-midnight/[0.02] px-4 py-4 text-sm text-espresso-midnight/70 dark:border-white/10 dark:bg-white/5 dark:text-white/70">
-                {isOutside
-                    ? 'Outside / Other seçildi. Yalnızca günlük tüketim özeti güncellenecek.'
-                    : `${locationLabel(selectedGroup)} stokundan otomatik düşüm yapılacak.`}
-              </div>
-
-              <button
-                  type="submit"
-                  disabled={submitting || selectedItems.length === 0}
-                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-[1.6rem] bg-terracotta px-5 py-4 font-semibold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.01] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {submitting ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                {submitting ? 'Kaydediliyor...' : selectedItems.length > 1 ? 'Tuketimleri Kaydet' : 'Tuketimi Kaydet'}
-              </button>
-            </div>
 
             {errorMessage && (
                 <div className="rounded-[1.8rem] border border-red-200/70 bg-red-50/90 px-4 py-4 text-red-700">
@@ -1078,7 +1218,61 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                 </div>
             )}
           </div>
-        </form>
+        </div>
+
+        <div className="mt-4 rounded-[2rem] meal-highlight-frame bg-white p-6 text-espresso-midnight shadow-brand-hero dark:bg-espresso-midnight dark:text-white">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="meal-overline tracking-[0.18em] text-espresso-midnight/45 dark:text-white/45">Quick Summary</p>
+              <h3 className="meal-section-title mt-2 text-2xl text-espresso-midnight dark:text-white">
+                {summaryTitle}
+              </h3>
+              {summarySubtitle ? (
+                  <p className="mt-2 text-sm text-espresso-midnight/60 dark:text-white/60">{summarySubtitle}</p>
+              ) : null}
+            </div>
+            <div className="rounded-full bg-terracotta/10 p-3 text-terracotta">
+              {entryMode === 'RECIPE' ? <Soup size={18} /> : <UtensilsCrossed size={18} />}
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-5 py-5 dark:bg-white/5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Calories</p>
+              <p className="mt-2 font-serif text-3xl font-bold">{formatCalories(nutritionPreview.calories)}</p>
+            </div>
+            <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-5 py-5 dark:bg-white/5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Protein</p>
+              <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.protein)}</p>
+            </div>
+            <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-5 py-5 dark:bg-white/5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Carbs</p>
+              <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.carbs)}</p>
+            </div>
+            <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-5 py-5 dark:bg-white/5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Fat</p>
+              <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.fat)}</p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col items-center justify-between gap-6 md:flex-row">
+            <div className="flex-1 rounded-[1.5rem] border border-card-border bg-espresso-midnight/[0.02] px-5 py-4 text-sm text-espresso-midnight/70 dark:border-white/10 dark:bg-white/5 dark:text-white/70">
+              {isOutside
+                  ? 'Outside / Other seçildi. Yalnızca günlük tüketim özeti güncellenecek.'
+                  : `${locationLabel(selectedGroup)} stokundan otomatik düşüm yapılacak.`}
+            </div>
+
+            <button
+                type="submit"
+                disabled={submitting || selectedItems.length === 0}
+                className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-[1.6rem] bg-terracotta px-8 py-5 font-bold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.01] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+              {submitting ? 'Kaydediliyor...' : selectedItems.length > 1 ? 'Tüketimleri Kaydet' : 'Tüketimi Kaydet'}
+            </button>
+          </div>
+        </div>
+      </form>
       </section>
   );
 };

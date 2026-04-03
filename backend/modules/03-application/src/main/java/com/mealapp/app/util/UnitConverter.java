@@ -151,30 +151,52 @@ public class UnitConverter {
     /**
      * Tüm desteklenen birimleri ve gram karşılıklarını döner.
      * Eğer malzeme verilirse, o malzemeye özel olanları da ekler.
-     * Eğer malzeme bazlı özel birim yoksa sadece standart kütle birimlerini (g, kg, ml, l) döner.
+     * Ayrıca standart yardımcı birimleri (adet, paket, kase vb.) de ekler.
      */
     public static Map<String, Double> getAllUnitWeights(Ingredient ingredient) {
-        // Eğer malzeme verilmişse ve özel birimleri varsa hepsini dön
+        Map<String, Double> allWeights = new HashMap<>();
+        
+        // 1. Temel kütle/hacim birimleri
+        allWeights.put("g", 1.0);
+        allWeights.put("gram", 1.0);
+        allWeights.put("kg", 1000.0);
+        allWeights.put("kilogram", 1000.0);
+        allWeights.put("ml", 1.0);
+        allWeights.put("litre", 1000.0);
+        allWeights.put("liter", 1000.0);
+
+        // 2. Standart yardımcı birimler (Her zaman ekle, kullanıcı dostu etiketler için)
+        allWeights.put("adet", 50.0);
+        allWeights.put("tane", 50.0);
+        allWeights.put("unit", 50.0);
+        allWeights.put("piece", 50.0);
+        allWeights.put("paket", 500.0);
+        allWeights.put("packet", 500.0);
+        allWeights.put("package", 500.0);
+        allWeights.put("slice", 30.0);
+        allWeights.put("cup", 240.0);
+        allWeights.put("bowl", 350.0);
+        allWeights.put("tablespoon", 15.0);
+        allWeights.put("teaspoon", 5.0);
+        allWeights.put("clove", 5.0);
+        allWeights.put("handful", 30.0);
+        allWeights.put("pinch", 1.0);
+
+        // 3. Eğer malzeme verilmişse ve özel birimleri varsa onları ekle (Standartları ezebilir)
         if (ingredient != null && ingredient.getIngredientUnits() != null && !ingredient.getIngredientUnits().isEmpty()) {
-            Map<String, Double> allWeights = new HashMap<>(UNIT_TO_GRAMS);
             for (IngredientUnit iu : ingredient.getIngredientUnits()) {
-                allWeights.put(iu.getUnitName(), iu.getGrams());
+                allWeights.put(iu.getUnitName().toLowerCase().trim(), iu.getGrams());
             }
-            return allWeights;
         }
 
-        // Eğer malzeme bazlı özel birim yoksa, sadece "standart kütle/hacim" birimlerini dönelim
-        // Bu sayede UI'da bowl, slice gibi belirsiz birimler kısıtlanır.
-        Map<String, Double> restrictedWeights = new HashMap<>();
-        restrictedWeights.put("g", 1.0);
-        restrictedWeights.put("gram", 1.0);
-        restrictedWeights.put("kg", 1000.0);
-        restrictedWeights.put("kilogram", 1000.0);
-        restrictedWeights.put("ml", 1.0);
-        restrictedWeights.put("litre", 1000.0);
-        restrictedWeights.put("liter", 1000.0);
+        // Sıvı birimler için yoğunluk katsayısını uygulayalım (Eğer malzeme verilmişse)
+        if (ingredient != null && ingredient.getDensity() != 1.0) {
+            allWeights.computeIfPresent("ml", (k, v) -> v * ingredient.getDensity());
+            allWeights.computeIfPresent("litre", (k, v) -> v * ingredient.getDensity());
+            allWeights.computeIfPresent("liter", (k, v) -> v * ingredient.getDensity());
+        }
         
-        return restrictedWeights;
+        return allWeights;
     }
 
     /**

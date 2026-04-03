@@ -5,6 +5,7 @@ import com.mealapp.app.model.mapper.recipe.RecipeMapper;
 import com.mealapp.domain.recipe.service.RecipeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +23,7 @@ public class RecipeController {
     private final RecipeMapper recipeMapper;
 
     @GetMapping
+    @Transactional(readOnly = true)
     public List<RecipeResponse> getAllRecipes(
             @RequestParam(required = false) String title,
             @RequestParam(defaultValue = "0") int page,
@@ -37,6 +39,7 @@ public class RecipeController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public RecipeResponse getRecipeById(@PathVariable Long id) {
         return recipeService.findById(id)
             .map(recipeMapper::toResponse) // Recipe -> RecipeResponse dönüşümü

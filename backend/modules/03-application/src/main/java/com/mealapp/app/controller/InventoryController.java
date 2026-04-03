@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class InventoryController {
     private final IngredientRepository ingredientRepository;
 
     @GetMapping
+    @Transactional(readOnly = true)
     public List<InventoryGroupResponse> getGroups(@AuthenticationPrincipal Jwt jwt) {
         return inventoryMapper.toGroupResponses(inventoryService.getUserInventoryGroups(requireAuthenticatedUserId(jwt)));
     }
@@ -60,6 +62,7 @@ public class InventoryController {
 
     @PostMapping("/{groupId}/items")
     @ResponseStatus(HttpStatus.CREATED)
+    @Transactional
     public InventoryItemResponse createItem(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long groupId,
@@ -83,6 +86,7 @@ public class InventoryController {
     }
 
     @PutMapping("/{groupId}/items/{itemId}")
+    @Transactional
     public InventoryItemResponse updateItem(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long groupId,

@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -67,6 +68,7 @@ public class ConsumptionController {
      * Eğer ingredientId verilirse, o malzemeye özel birimleri de ekler.
      */
     @GetMapping("/units")
+    @Transactional(readOnly = true)
     public java.util.Map<String, Double> getStandardUnits(@RequestParam(required = false) Long ingredientId) {
         Ingredient ingredient = null;
         if (ingredientId != null) {
@@ -79,6 +81,7 @@ public class ConsumptionController {
      * Bir miktar ve birimi gram cinsine dönüştürür.
      */
     @GetMapping("/convert")
+    @Transactional(readOnly = true)
     public Double convertToGrams(
             @RequestParam Double amount, 
             @RequestParam String unit,

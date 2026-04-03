@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.mealapp.domain.recipe.repository.IngredientRepository;
@@ -151,6 +152,73 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(3L),
                 eq(1030.0), // 1000 * 1.03
+                eq("ml")
+        );
+    }
+
+    @Test
+    void shouldUpdateInventoryItem() throws Exception {
+        Ingredient ingredient = Ingredient.builder().id(1L).name("Domates").build();
+        Inventory inventory = Inventory.builder()
+                .id(10L)
+                .ingredient(ingredient)
+                .quantity(500.0)
+                .unit("g")
+                .build();
+
+        when(inventoryService.updateInventoryItem(anyString(), anyLong(), anyLong(), anyLong(), anyDouble(), anyString()))
+                .thenReturn(inventory);
+
+        mockMvc.perform(put("/api/v1/inventory-groups/1/items/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "ingredientId": 1,
+                                  "quantity": 500,
+                                  "unit": "g"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        verify(inventoryService).updateInventoryItem(
+                eq("system-user"),
+                eq(1L),
+                eq(10L),
+                eq(1L),
+                eq(500.0),
+                eq("g")
+        );
+    }
+    @Test
+    void shouldCreateInventoryItemWithMlUnit() throws Exception {
+        Ingredient ingredient = Ingredient.builder().id(1L).name("Alfredo Sauce").density(1.1).build();
+        Inventory inventory = Inventory.builder()
+                .id(10L)
+                .ingredient(ingredient)
+                .quantity(433.0 * 1.1)
+                .unit("ml")
+                .build();
+
+        when(ingredientRepository.findById(1L)).thenReturn(Optional.of(ingredient));
+        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString()))
+                .thenReturn(inventory);
+
+        mockMvc.perform(post("/api/v1/inventory-groups/3/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "ingredientId": 1,
+                                  "quantity": 433,
+                                  "unit": "ml"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        verify(inventoryService).upsertInventoryItem(
+                eq("system-user"),
+                eq(3L),
+                eq(1L),
+                eq(433.0 * 1.1),
                 eq("ml")
         );
     }

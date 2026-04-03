@@ -7,12 +7,15 @@ import {
   Leaf,
   Loader2,
   MapPin,
+  Minus,
   Package,
   Pencil,
   Plus,
   Search,
   Trash2,
-  X
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useConsumptionService } from '../../services/consumptionService';
@@ -94,6 +97,30 @@ const InventoryPage: React.FC = () => {
     setGroupDraft(createGroupDraft());
   };
 
+  const [expandedManualInput, setExpandedManualInput] = useState(false);
+
+  const handleQuickUnitAdjust = (unit: string, delta: number) => {
+    setItemDraft(prev => {
+      const currentQty = parseFloat(prev.quantity) || 0;
+      const currentUnit = prev.unit;
+
+      let nextQty: number;
+      if (currentUnit.toLowerCase() === unit.toLowerCase()) {
+        nextQty = Math.max(0, currentQty + delta);
+      } else {
+        nextQty = delta > 0 ? delta : 0;
+      }
+      
+      const qtyStr = nextQty > 0 ? nextQty.toString() : "0";
+      
+      return {
+        ...prev,
+        quantity: qtyStr,
+        unit: unit.toUpperCase()
+      };
+    });
+  };
+
   // Malzeme seçim fonksiyonu (Hatanın ana çözümü)
   const handleIngredientSelect = async (ing: Ingredient) => {
     setItemDraft(prev => ({
@@ -153,14 +180,16 @@ const InventoryPage: React.FC = () => {
     void initData();
   }, [authenticated, inventoryService, consumptionService]);
 
-  const dynamicUnits = useMemo(() => {
+  const standardUnitsSet = useMemo(() => ['GRAM', 'ML', 'KG', 'LITRE', 'L'], []);
+
+  const { quickUnits, standardUnits } = useMemo(() => {
     const selectedIng = itemDraft.selectedIngredient;
     const physicalState = selectedIng?.physicalState;
 
     // Temel birim setleri
     const solidBase = ['GRAM', 'KG'];
-    const liquidBase = ['ML', 'LITRE'];
-    const commonBase = ['GRAM', 'ML', 'KG', 'LITRE']; // YARI-KATI veya Bilinmeyen durumlar için
+    const liquidBase = ['ML', 'LITRE', 'L'];
+    const commonBase = ['GRAM', 'ML', 'KG', 'LITRE', 'L'];
 
     let base = commonBase;
     if (physicalState === 'SOLID') base = solidBase;
@@ -172,17 +201,34 @@ const InventoryPage: React.FC = () => {
     // Backend'den gelen birimleri al
     const extra = Object.keys(weights).map(u => u.toUpperCase());
     
-    // Birleştir ve filtrele
-    const finalUnits = Array.from(new Set([...base, ...extra]));
+    // Birleştir
+    const allUnits = Array.from(new Set([...base, ...extra]));
     
-    return finalUnits.sort((a, b) => {
-        if (a === 'GRAM') return -1;
-        if (b === 'GRAM') return 1;
-        if (a === 'ML') return -1;
-        if (b === 'ML') return 1;
-        return a.localeCompare(b);
-    });
-  }, [unitWeights, ingredientSpecificWeights, itemDraft.selectedIngredient]);
+    // Hızlı birimler için izin verilen liste
+    const allowedQuickUnits = ['PAKET', 'PORSIYON', 'DILIM', 'CUP', 'ADET', 'KASE', 'BARDAK'];
+    
+    const quick = allUnits.filter(u => allowedQuickUnits.includes(u));
+    const standard = allUnits.filter(u => standardUnitsSet.includes(u) || (!allowedQuickUnits.includes(u) && !standardUnitsSet.includes(u)));
+
+    // Sıralama Önceliği
+    const quickPriority = ['PAKET', 'PORSIYON', 'DILIM', 'CUP', 'ADET', 'KASE', 'BARDAK'];
+
+    return {
+      quickUnits: quick.sort((a, b) => {
+          const idxA = quickPriority.indexOf(a);
+          const idxB = quickPriority.indexOf(b);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          return a.localeCompare(b);
+      }),
+      standardUnits: standard.sort((a, b) => {
+          if (a === 'GRAM') return -1;
+          if (b === 'GRAM') return 1;
+          if (a === 'ML') return -1;
+          if (b === 'ML') return 1;
+          return a.localeCompare(b);
+      })
+    };
+  }, [unitWeights, ingredientSpecificWeights, itemDraft.selectedIngredient, standardUnitsSet]);
 
   useEffect(() => {
     const query = itemDraft.ingredientQuery.trim();
@@ -408,8 +454,8 @@ const InventoryPage: React.FC = () => {
             </div>
           </section>
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[380px_1fr]">
-            <section className="meal-card meal-highlight-frame shadow-brand-card self-start">
+          <div className="grid grid-cols-1 gap-6">
+            <section className="meal-card meal-highlight-frame shadow-brand-card">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="meal-overline">Stock Editor</p>
@@ -422,102 +468,187 @@ const InventoryPage: React.FC = () => {
                 )}
               </div>
 
-              <form onSubmit={handleItemSubmit} className="mt-8 space-y-6">
-                <div className="space-y-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Malzeme Ara</span>
-                  <div className="relative">
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30" />
-                    <input
-                        type="text"
-                        value={itemDraft.ingredientQuery}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setItemDraft(prev => ({ ...prev, ingredientQuery: val, selectedIngredient: prev.selectedIngredient?.name === val ? prev.selectedIngredient : null }));
-                        }}
-                        placeholder="Domates, pirinç..."
-                        className="base-input py-4 pl-12 pr-4 bg-background dark:bg-white/5"
-                    />
+              <form onSubmit={handleItemSubmit} className="mt-8">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                  {/* Kısım 1: Malzeme Arama */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-terracotta/10 text-[10px] font-bold text-terracotta">1</div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Malzeme Ara</span>
+                    </div>
+                    <div className="relative">
+                      <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30" />
+                      <input
+                          type="text"
+                          value={itemDraft.ingredientQuery}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setItemDraft(prev => ({ ...prev, ingredientQuery: val, selectedIngredient: prev.selectedIngredient?.name === val ? prev.selectedIngredient : null }));
+                          }}
+                          placeholder="Domates, pirinç..."
+                          className="base-input py-4 pl-12 pr-4 bg-background dark:bg-white/5"
+                      />
 
-                    {(ingredientResults.length > 0 || searchingIngredients) && (
-                        <div className="absolute inset-x-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-2xl border border-card-border bg-background shadow-brand-hero animate-in fade-in zoom-in-95 duration-200">
-                          {searchingIngredients ? (
-                              <div className="flex items-center gap-3 p-4 text-xs font-bold text-foreground/40">
-                                <Loader2 size={14} className="animate-spin text-terracotta" />
-                                ARANIYOR...
-                              </div>
-                          ) : (
-                              ingredientResults.map((ing) => (
-                                  <button key={ing.id} type="button" onClick={() => handleIngredientSelect(ing)} className="flex w-full items-center justify-between p-4 text-left hover:bg-terracotta/5 group transition-colors">
-                                    <div>
-                                      <p className="font-bold text-foreground text-sm">{ing.name}</p>
-                                      <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/30">{formatCategory(ing.category)}</p>
-                                    </div>
-                                    <Plus size={14} className="text-terracotta opacity-0 group-hover:opacity-100 transition-opacity" />
-                                  </button>
-                              ))
-                          )}
-                        </div>
+                      {(ingredientResults.length > 0 || searchingIngredients) && (
+                          <div className="absolute inset-x-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-2xl border border-card-border bg-background shadow-brand-hero animate-in fade-in zoom-in-95 duration-200">
+                            {searchingIngredients ? (
+                                <div className="flex items-center gap-3 p-4 text-xs font-bold text-foreground/40">
+                                  <Loader2 size={14} className="animate-spin text-terracotta" />
+                                  ARANIYOR...
+                                </div>
+                            ) : (
+                                ingredientResults.map((ing) => (
+                                    <button key={ing.id} type="button" onClick={() => handleIngredientSelect(ing)} className="flex w-full items-center justify-between p-4 text-left hover:bg-terracotta/5 group transition-colors">
+                                      <div>
+                                        <p className="font-bold text-foreground text-sm">{ing.name}</p>
+                                        <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/30">{formatCategory(ing.category)}</p>
+                                      </div>
+                                      <Plus size={14} className="text-terracotta opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </button>
+                                ))
+                            )}
+                          </div>
+                      )}
+                    </div>
+                    {itemDraft.selectedIngredient && (
+                      <div className="rounded-2xl bg-moss-sage/5 border border-moss-sage/10 p-4 animate-in fade-in zoom-in-95">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-moss-sage">Seçili Malzeme</p>
+                        <p className="mt-1 font-serif text-lg font-bold text-espresso-midnight dark:text-alabaster">{itemDraft.selectedIngredient.name}</p>
+                        <p className="text-[10px] text-foreground/40">{formatCategory(itemDraft.selectedIngredient.category)}</p>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Miktar</span>
-                    <input
-                        type="number"
-                        step="0.01"
-                        value={itemDraft.quantity}
-                        onChange={(e) => setItemDraft(prev => ({ ...prev, quantity: e.target.value }))}
-                        placeholder="0.00"
-                        className="base-input py-4 bg-background dark:bg-white/5 text-center font-serif text-xl"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Birim</span>
-                    <div className="grid grid-cols-2 gap-1.5 h-full content-start">
-                      {dynamicUnits.slice(0, 8).map((unit) => {
-                        const selectedIngId = itemDraft.selectedIngredient?.id;
-                        const weights = (selectedIngId && ingredientSpecificWeights[selectedIngId]) || unitWeights;
-                        let weight = weights[unit.toLowerCase()];
-                        
-                        // ML/Litre için yoğunluk bazlı gösterim
-                        if (!weight && itemDraft.selectedIngredient?.density && itemDraft.selectedIngredient.density !== 1.0) {
-                          if (unit === 'ML') weight = itemDraft.selectedIngredient.density;
-                          if (unit === 'LITRE') weight = 1000 * itemDraft.selectedIngredient.density;
-                        }
-
-                        return (
-                          <button
-                              key={unit}
-                              type="button"
-                              onClick={() => setItemDraft(prev => ({ ...prev, unit }))}
-                              className={`py-2.5 rounded-xl text-[10px] font-bold transition-all border ${
-                                  itemDraft.unit === unit
-                                      ? 'bg-espresso-midnight text-white border-transparent dark:bg-terracotta'
-                                      : 'bg-background border-card-border text-espresso-midnight/60 hover:border-terracotta/40 dark:bg-white/5 dark:text-alabaster/60'
-                              }`}
-                          >
-                            {unit}{weight && Math.abs(weight - 1) > 0.001 ? ` (~${weight.toFixed(0)}g)` : ''}
-                          </button>
-                        );
-                      })}
+                  {/* Kısım 2: Hızlı Birimler */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-terracotta/10 text-[10px] font-bold text-terracotta">2</div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Hızlı Seçim (Dilim/Paket/Adet...)</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-terracotta/70 italic mt-1">
+                    {quickUnits.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {quickUnits.map((unit: string) => {
+                          const selectedIngId = itemDraft.selectedIngredient?.id;
+                          const weights = (selectedIngId && ingredientSpecificWeights[selectedIngId]) || unitWeights;
+                          let weight = weights[unit.toLowerCase()];
+                          const currentQty = parseFloat(itemDraft.quantity) || 0;
+                          const isSelected = itemDraft.unit.toLowerCase() === unit.toLowerCase() && currentQty > 0;
+
+                          return (
+                            <div
+                                key={unit}
+                                className={`flex items-center overflow-hidden rounded-2xl border transition-all ${
+                                    isSelected
+                                        ? 'bg-espresso-midnight text-white border-transparent shadow-md'
+                                        : 'bg-background border-card-border text-foreground/60 hover:border-terracotta/40 hover:bg-terracotta/5'
+                                }`}
+                            >
+                              {/* Decrease Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleQuickUnitAdjust(unit, -1)}
+                                className={`flex h-full items-center justify-center border-r px-2 py-4 transition-colors ${
+                                  isSelected ? 'border-white/10 hover:bg-white/10' : 'border-card-border hover:bg-terracotta/10 hover:text-terracotta'
+                                }`}
+                              >
+                                <Minus size={14} />
+                              </button>
+
+                              {/* Unit Display / Increment */}
+                              <button
+                                type="button"
+                                onClick={() => handleQuickUnitAdjust(unit, 1)}
+                                className="flex flex-1 flex-col items-center justify-center py-3 px-1 text-center"
+                              >
+                                <span className="text-xs font-bold uppercase tracking-wider">
+                                  {isSelected ? `${currentQty} ` : ''}{unit}
+                                </span>
+                                {weight && (
+                                  <span className={`text-[10px] mt-1 ${isSelected ? 'text-white/60' : 'text-foreground/30 font-medium'}`}>
+                                    ~{(weight * (isSelected ? currentQty : 1)).toFixed(0)}g
+                                  </span>
+                                )}
+                              </button>
+
+                              {/* Increase Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleQuickUnitAdjust(unit, 1)}
+                                className={`flex h-full items-center justify-center border-l px-2 py-4 transition-colors ${
+                                  isSelected ? 'border-white/10 hover:bg-white/10' : 'border-card-border hover:bg-emerald-500/10 hover:text-emerald-500'
+                                }`}
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex h-24 items-center justify-center rounded-2xl border border-dashed border-card-border bg-background/50 text-center px-6">
+                        <p className="text-[10px] font-medium text-foreground/40 italic">Bu malzeme için özel birim bulunamadı.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Kısım 3: Miktar ve Standart Birim */}
+                  <div className="space-y-4">
+                    <button
+                        type="button"
+                        onClick={() => setExpandedManualInput(!expandedManualInput)}
+                        className="flex w-full items-center justify-between rounded-xl bg-espresso-midnight/[0.03] px-3 py-2 text-left transition-all hover:bg-espresso-midnight/[0.06] dark:bg-white/5"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-terracotta/10 text-[10px] font-bold text-terracotta">3</div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Spesifik Miktar / Birim</span>
+                      </div>
+                      {expandedManualInput ? <ChevronUp size={16} className="text-foreground/30" /> : <ChevronDown size={16} className="text-foreground/30" />}
+                    </button>
+
+                    {expandedManualInput && (
+                      <div className="flex gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex-1">
+                          <input
+                              type="number"
+                              step="0.01"
+                              value={itemDraft.quantity}
+                              onChange={(e) => setItemDraft(prev => ({ ...prev, quantity: e.target.value }))}
+                              placeholder="0.00"
+                              className="base-input py-4 bg-background dark:bg-white/5 text-center font-serif text-xl"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <select
+                              value={itemDraft.unit}
+                              onChange={(e) => setItemDraft(prev => ({ ...prev, unit: e.target.value }))}
+                              className="base-input py-4 bg-background dark:bg-white/5 text-center font-bold text-xs appearance-none cursor-pointer"
+                          >
+                            {standardUnits.map((unit: string) => (
+                                <option key={unit} value={unit}>{unit}</option>
+                            ))}
+                            {quickUnits.map((unit: string) => (
+                                <option key={unit} value={unit}>{unit}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <button
+                        type="submit"
+                        disabled={savingItem || !activeGroup || !itemDraft.selectedIngredient}
+                        className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-terracotta text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 mt-4"
+                    >
+                      {savingItem ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+                      {editingItemId ? 'GÜNCELLE' : 'EKLE'}
+                    </button>
+
+                    <div className="flex items-center gap-1.5 text-[10px] text-terracotta/70 italic justify-center">
                       <AlertCircle size={10} />
                       Yüksek hassasiyet için GRAM/ML kullanın.
                     </div>
                   </div>
                 </div>
-
-                <button
-                    type="submit"
-                    disabled={savingItem || !activeGroup}
-                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-terracotta text-white font-bold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
-                >
-                  {savingItem ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
-                  {editingItemId ? 'STOK GÜNCELLE' : 'LOKASYONA EKLE'}
-                </button>
               </form>
             </section>
 

@@ -9,6 +9,8 @@ import com.mealapp.domain.recommendation.strategy.RecommendationStrategy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 /**
@@ -26,6 +28,7 @@ public class RecommendationService {
      * Kullanıcı ve envanter bilgilerine dayanarak yemek tarifleri önerir.
      * Sonuçlar kullanıcı ID'si ve envanterdeki malzeme listesine göre önbelleğe alınır.
      */
+    @Transactional(readOnly = true)
     @Cacheable(
             value = "recommendations",
             key = "#user.id + ':' + (#user.dietType != null ? #user.dietType.name() : 'NONE') + ':' + (#user.dietaryGoal != null ? #user.dietaryGoal.name() : 'NONE') + ':' + (#user.allergies != null ? #user.allergies.hashCode() : 0) + ':' + (#user.dislikedIngredients != null ? #user.dislikedIngredients.hashCode() : 0) + ':' + (#cravings != null ? #cravings.toLowerCase() : 'none') + ':' + #inventory.hashCode()"

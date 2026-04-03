@@ -33,6 +33,7 @@ public class InventoryService {
     /**
      * Kullanıcının tüm lokasyonlardaki envanterini getirir.
      */
+    @Transactional(readOnly = true)
     public List<Inventory> getUserInventory(String userId) {
         ensureUserHasDefaultGroup(userId);
         return inventoryRepository.findByUserIdOrderByInventoryGroupIdAscIngredientNameAsc(userId);
@@ -50,6 +51,7 @@ public class InventoryService {
     /**
      * Kullanıcıya ait envanter lokasyonlarını ve içeriklerini getirir.
      */
+    @Transactional(readOnly = true)
     public List<InventoryGroup> getUserInventoryGroups(String userId) {
         ensureUserHasDefaultGroup(userId);
         List<InventoryGroup> groups = inventoryGroupRepository.findByUserIdOrderByIdAsc(userId);
@@ -102,6 +104,7 @@ public class InventoryService {
     /**
      * Belirli bir lokasyona malzeme ekler ya da aynı malzemeyi günceller.
      */
+    @Transactional
     public Inventory upsertInventoryItem(String userId, Long inventoryGroupId, Long ingredientId, Double quantity, String unit) {
         InventoryGroup group = getRequiredGroup(userId, inventoryGroupId);
         Ingredient ingredient = getRequiredIngredient(ingredientId);
@@ -124,6 +127,7 @@ public class InventoryService {
     /**
      * Mevcut bir envanter kalemini günceller.
      */
+    @Transactional
     public Inventory updateInventoryItem(String userId, Long inventoryGroupId, Long itemId, Long ingredientId, Double quantity, String unit) {
         Inventory item = inventoryRepository.findByIdAndUserIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Envanter kalemi bulunamadı ID: " + itemId));
@@ -299,6 +303,9 @@ public class InventoryService {
             group.getItems().forEach(item -> {
                 if (item.getIngredient() != null) {
                     item.getIngredient().getName();
+                    if (item.getIngredient().getIngredientUnits() != null) {
+                        item.getIngredient().getIngredientUnits().size();
+                    }
                 }
             });
         }

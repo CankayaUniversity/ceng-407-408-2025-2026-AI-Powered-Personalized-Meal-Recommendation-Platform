@@ -158,7 +158,7 @@ const RecipeList: React.FC = () => {
                   className="group meal-card cursor-pointer rounded-[2.5rem] overflow-hidden border border-card-border hover:-translate-y-2 transition-all duration-500 bg-white dark:bg-white/[0.02]"
               >
                 <div className="h-64 relative overflow-hidden">
-                  <img src={recipe.imageUrl || 'https://via.placeholder.com/400'} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+                  <img src={recipe.imageUrl || 'https://placehold.co/400'} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                   <div className="absolute top-5 left-5 glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-white">
                     {recipe.category || 'Gurme'}
                   </div>
@@ -228,7 +228,7 @@ const RecipeList: React.FC = () => {
 
                 <div className="overflow-y-auto custom-scrollbar">
                   <div className="h-64 md:h-96 relative shrink-0">
-                    <img src={selectedRecipe.imageUrl || 'https://via.placeholder.com/800'} alt={selectedRecipe.title} className="w-full h-full object-cover" />
+                    <img src={selectedRecipe.imageUrl || 'https://placehold.co/800'} alt={selectedRecipe.title} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight via-transparent to-transparent" />
                     <div className="absolute bottom-10 left-10 right-10">
                       <h2 className="text-4xl md:text-5xl font-serif font-bold text-white drop-shadow-lg">{selectedRecipe.title}</h2>
