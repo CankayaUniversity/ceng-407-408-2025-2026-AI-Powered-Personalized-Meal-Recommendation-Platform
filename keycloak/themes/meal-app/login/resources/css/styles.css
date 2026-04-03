@@ -1,161 +1,157 @@
-/* AI Meal App - Keycloak Custom Theme Styles */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&display=swap');
+/* MealAI - THE ABSOLUTE FINAL KEYCLOAK THEME (v10 - No Gray Gaps) */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Montserrat:wght@400;500;600;700&display=swap');
 
 :root {
-    --primary-color: #E2725B; /* Spiced Terracotta */
+    --primary-color: #E2725B;
     --primary-hover: #C55D49;
-    --bg-color: #F9F6F0;      /* Alabaster */
-    --text-color: #282421;    /* Midnight Espresso */
-    --card-bg: rgba(255, 255, 255, 0.4);
-    --card-border: rgba(255, 255, 255, 0.3);
+    --bg-color: #1A1817;      /* Midnight Espresso */
+    --text-white: #F9F6F0;
+    --card-bg: rgba(40, 36, 33, 0.9);
+    --card-border: rgba(255, 255, 255, 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-color: #1A1817;
-        --text-color: #F9F6F0;
-        --card-bg: rgba(40, 36, 33, 0.4);
-        --card-border: rgba(255, 255, 255, 0.05);
-    }
+/* --- 1. ARKA PLAN VE GLOBAL SIFIRLAMA (KESİN ÇÖZÜM) --- */
+html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    /* En dış katmanlara rengi çiviliyoruz */
+    background-color: var(--bg-color) !important;
 }
 
 body {
-    background-color: var(--bg-color) !important;
-    font-family: 'Montserrat', -apple-system, sans-serif !important;
+    background: radial-gradient(circle at top right, rgba(226, 114, 91, 0.1), transparent), var(--bg-color) !important;
+    background-attachment: fixed !important;
+    background-size: cover !important;
+    font-family: 'Montserrat', sans-serif !important;
     display: flex !important;
+    flex-direction: column !important;
     align-items: center !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;
     min-height: 100vh !important;
-    margin: 0 !important;
-    color: var(--text-color) !important;
-    transition: background-color 0.3s ease, color 0.3s ease !important;
+    padding: 60px 20px !important;
+    color: var(--text-white) !important;
 }
 
+/* Register sayfasındaki o sinsi gri katmanı yok et */
+.login-pf-page, .login-container, #kc-container-wrapper {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* --- 2. KART VE KONTEYNER --- */
 #kc-container-wrapper {
-    width: 100% !important;
-    max-width: 480px !important;
-    margin: 20px auto !important;
+    width: 480px !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
 }
 
-#kc-header {
-    text-align: center !important;
-    padding-bottom: 20px !important;
+.card-pf {
+    width: 100% !important;
+    background: var(--card-bg) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-radius: 40px !important;
+    padding: 45px !important;
+    border: 1px solid var(--card-border) !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5) !important;
 }
+
+/* --- 3. HATA MESAJLARI --- */
+#kc-feedback, .alert {
+    display: block !important;
+    width: 100% !important;
+    background: rgba(226, 114, 91, 0.25) !important;
+    color: #FFD1C9 !important;
+    border: 1px solid rgba(226, 114, 91, 0.4) !important;
+    border-radius: 16px !important;
+    padding: 15px !important;
+    margin-bottom: 25px !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+}
+
+/* --- 4. YAZILAR VE ETİKETLER --- */
+label, .form-group label, .checkbox label, .subtitle, .required, #kc-registration, .login-pf-signup {
+    color: var(--text-white) !important;
+    font-weight: 600 !important;
+}
+span.required { color: var(--primary-color) !important; }
+
+/* --- 5. DİL SEÇİCİ --- */
+#kc-locale { display: flex !important; justify-content: center !important; margin-bottom: 25px !important; }
+#kc-locale-wrapper { position: relative !important; display: inline-block !important; }
+#kc-current-locale-link {
+    color: var(--text-white) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    padding: 8px 18px !important;
+    border-radius: 20px !important;
+    text-decoration: none !important;
+}
+#kc-locale-wrapper ul {
+    display: none !important;
+    position: absolute !important;
+    top: 110% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: #2D2926 !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+    z-index: 9999 !important;
+    min-width: 140px !important;
+}
+#kc-locale-wrapper:hover ul { display: block !important; }
+#kc-locale-wrapper li a { color: white !important; display: block !important; padding: 8px 12px !important; text-decoration: none !important; }
+#kc-locale-wrapper li a:hover { background: var(--primary-color) !important; border-radius: 8px !important; }
+
+/* --- 6. MAVİ FOCUS VE INPUTLAR --- */
+input.form-control:focus, .form-control:focus, input:focus {
+    outline: none !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(226, 114, 91, 0.2) !important;
+}
+
+input.form-control {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: white !important;
+    border-radius: 16px !important;
+    border: 1px solid var(--card-border) !important;
+    padding: 14px !important;
+    width: 100% !important;
+}
+
+/* --- 7. BUTONLAR VE BAŞLIKLAR --- */
+#kc-login, #kc-register-confirm, .btn-primary, input[type="submit"] {
+    background-color: var(--primary-color) !important;
+    border-radius: 20px !important;
+    height: 55px !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 700 !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    margin-top: 10px !important;
+}
+
+#kc-login:hover, .btn-primary:hover { background-color: var(--primary-hover) !important; }
 
 #kc-header-wrapper {
     color: var(--primary-color) !important;
     font-family: 'Playfair Display', serif !important;
-    font-size: 36px !important;
-    font-weight: 800 !important;
-    text-transform: none !important;
-    letter-spacing: -0.02em !important;
+    font-size: 42px !important;
+    text-align: center !important;
     margin-bottom: 10px !important;
 }
 
-#kc-header-wrapper::after {
-    content: " AI";
-    color: var(--text-color);
-}
-
-.card-pf {
-    background: var(--card-bg) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border-radius: 40px !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
-    border: 1px solid var(--card-border) !important;
-    padding: 48px !important;
-    margin-top: 0 !important;
-}
-
-#kc-content {
-    padding: 0 !important;
-}
-
-.btn-primary {
-    background-color: var(--primary-color) !important;
-    background-image: none !important;
-    border: none !important;
-    border-radius: 16px !important;
-    padding: 16px 24px !important;
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    width: 100% !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    margin-top: 20px !important;
-    color: white !important;
-    box-shadow: 0 10px 20px -5px rgba(226, 114, 91, 0.3) !important;
-}
-
-.btn-primary:hover {
-    background-color: var(--primary-hover) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 15px 25px -5px rgba(226, 114, 91, 0.4) !important;
-}
-
-#kc-registration a, #kc-login-reset-password a {
-    color: var(--primary-color) !important;
-    font-weight: 600 !important;
-    text-decoration: none !important;
-    transition: color 0.2s !important;
-}
-
-#kc-registration a:hover, #kc-login-reset-password a:hover {
-    color: var(--primary-hover) !important;
-    text-decoration: underline !important;
-}
-
 #kc-page-title {
-    color: var(--text-color) !important;
+    color: white !important;
     font-family: 'Playfair Display', serif !important;
-    font-weight: 700 !important;
-    font-size: 28px !important;
+    font-size: 26px !important;
     text-align: center !important;
-    margin-bottom: 32px !important;
+    margin-bottom: 25px !important;
 }
 
-.form-group label {
-    font-weight: 600 !important;
-    color: var(--text-color) !important;
-    opacity: 0.7 !important;
-    margin-bottom: 8px !important;
-    font-size: 14px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-}
-
-input.form-control {
-    border-radius: 16px !important;
-    border: 1px solid var(--card-border) !important;
-    padding: 14px 18px !important;
-    font-size: 16px !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    color: var(--text-color) !important;
-    transition: all 0.2s !important;
-}
-
-input.form-control:focus {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 4px rgba(226, 114, 91, 0.1) !important;
-    outline: none !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.checkbox label {
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    font-weight: 500 !important;
-    color: var(--text-color) !important;
-    opacity: 0.8 !important;
-}
-
-.alert {
-    border-radius: 16px !important;
-    border: none !important;
-}
-
-.alert-error {
-    background-color: rgba(226, 114, 91, 0.1) !important;
-    color: #E2725B !important;
-}
+a { color: var(--primary-color) !important; text-decoration: none !important; font-weight: 700 !important; }
