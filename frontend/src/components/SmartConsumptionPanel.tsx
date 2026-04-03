@@ -745,18 +745,33 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               </p>
             </div>
 
-            <div className="grid min-w-[280px] grid-cols-2 gap-4 sm:grid-cols-3">
-              <div className="meal-metric-card px-5 py-4 dark:bg-white/5">
+            <div className="flex min-w-0 w-full flex-col gap-3 sm:max-w-[27rem]">
+              <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between px-4 py-2 dark:bg-white/5">
                 <p className="meal-overline tracking-[0.18em]">Mode</p>
-                <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{activeEntryModeLabel}</p>
+                <p
+                  title={activeEntryModeLabel}
+                  className="mt-1.5 line-clamp-2 min-h-[1.6rem] break-words font-serif text-[1.02rem] font-bold leading-[1.02] text-espresso-midnight dark:text-alabaster"
+                >
+                  {activeEntryModeLabel}
+                </p>
               </div>
-              <div className="meal-metric-card px-5 py-4 dark:bg-white/5">
+              <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between px-4 py-2 dark:bg-white/5">
                 <p className="meal-overline tracking-[0.18em]">Location</p>
-                <p className="mt-3 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{locationLabel(selectedGroup)}</p>
+                <p
+                  title={locationLabel(selectedGroup)}
+                  className="mt-1.5 line-clamp-2 min-h-[1.6rem] break-words font-serif text-[1.02rem] font-bold leading-[1.02] text-espresso-midnight dark:text-alabaster"
+                >
+                  {locationLabel(selectedGroup)}
+                </p>
               </div>
-              <div className="meal-metric-card col-span-2 px-5 py-4 dark:bg-white/5 sm:col-span-1 border-terracotta/20">
+              <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between border-terracotta/20 px-4 py-2 dark:bg-white/5">
                 <p className="meal-overline tracking-[0.18em]">Selected</p>
-                <p className="mt-3 text-sm font-bold text-terracotta">{selectionLabel}</p>
+                <p
+                  title={selectionLabel}
+                  className="mt-1.5 line-clamp-2 min-h-[1.6rem] break-words font-serif text-[1.02rem] font-bold leading-[1.02] text-terracotta"
+                >
+                  {selectionLabel}
+                </p>
               </div>
             </div>
           </div>
