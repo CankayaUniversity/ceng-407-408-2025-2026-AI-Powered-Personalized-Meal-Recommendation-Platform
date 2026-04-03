@@ -154,18 +154,27 @@ const InventoryPage: React.FC = () => {
   }, [authenticated, inventoryService, consumptionService]);
 
   const dynamicUnits = useMemo(() => {
-    const base = ['GRAM', 'ML', 'KG', 'LITRE'];
-    const selectedIngId = itemDraft.selectedIngredient?.id;
+    const selectedIng = itemDraft.selectedIngredient;
+    const physicalState = selectedIng?.physicalState;
+
+    // Temel birim setleri
+    const solidBase = ['GRAM', 'KG'];
+    const liquidBase = ['ML', 'LITRE'];
+    const commonBase = ['GRAM', 'ML', 'KG', 'LITRE']; // YARI-KATI veya Bilinmeyen durumlar için
+
+    let base = commonBase;
+    if (physicalState === 'SOLID') base = solidBase;
+    if (physicalState === 'LIQUID') base = liquidBase;
+
+    const selectedIngId = selectedIng?.id;
     const weights = (selectedIngId && ingredientSpecificWeights[selectedIngId]) || unitWeights;
     
-    // Sadece backend'den gelen (kısıtlanmış veya malzemeye özel) birimleri listele
+    // Backend'den gelen birimleri al
     const extra = Object.keys(weights).map(u => u.toUpperCase());
     
-    // Eğer seçili malzeme için özel birim yoksa base birimler baskın olur
-    // Eğer varsa hepsi birleşir
+    // Birleştir ve filtrele
     const finalUnits = Array.from(new Set([...base, ...extra]));
     
-    // Sıralama: Gram ve ML her zaman en başta olsun
     return finalUnits.sort((a, b) => {
         if (a === 'GRAM') return -1;
         if (b === 'GRAM') return 1;

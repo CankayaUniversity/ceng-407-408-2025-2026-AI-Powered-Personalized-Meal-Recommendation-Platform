@@ -53,6 +53,12 @@ export enum IngredientCategory {
   OTHER = 'OTHER'
 }
 
+export enum PhysicalState {
+  SOLID = 'SOLID',
+  LIQUID = 'LIQUID',
+  SEMI_SOLID = 'SEMI_SOLID'
+}
+
 export enum MealType {
   BREAKFAST = 'BREAKFAST',
   LUNCH = 'LUNCH',
@@ -113,6 +119,7 @@ export interface Ingredient {
   category: IngredientCategory;
   nutrition?: IngredientNutrition;
   density?: number;
+  physicalState?: PhysicalState;
   caloriesPer100g?: number;
   proteinPer100g?: number;
   carbsPer100g?: number;

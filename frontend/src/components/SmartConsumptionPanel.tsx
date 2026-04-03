@@ -261,13 +261,21 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
   const getIngredientOptions = (ingredientId?: number) => {
     const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
-    const options: IngredientPortionOption[] = [
-      { id: 'ing-100g', label: '100g', grams: 100, portionSize: PortionSize.MEDIUM, note: 'Standart' },
-    ];
+    
+    // Malzemenin fiziksel durumunu bul (Eğer stoklanmış bir malzemeyse)
+    const ingredient = ingredientId ? (ingredientResults.find(i => i.id === ingredientId) || stockedIngredients.find(i => i.id === ingredientId)) : null;
+    const physicalState = ingredient?.physicalState;
+
+    const options: IngredientPortionOption[] = [];
+
+    // Fiziksel duruma göre varsayılan kütle/hacim birimi ekle
+    if (physicalState === 'LIQUID') {
+      options.push({ id: 'ing-100ml', label: '100ml', grams: 100 * (ingredient?.density || 1.0), portionSize: PortionSize.MEDIUM, note: 'Standart' });
+    } else {
+      options.push({ id: 'ing-100g', label: '100g', grams: 100, portionSize: PortionSize.MEDIUM, note: 'Standart' });
+    }
 
     // Standart kütle/hacim birimleri dışındaki birimleri filtrele
-    // Eğer malzemeye özel bir veri yoksa (yani backend sadece g, kg, ml, l döndüyse)
-    // sadece 100g seçeneği kalacak.
     const standardMassUnits = ['g', 'gram', 'kg', 'kilogram', 'ml', 'litre', 'liter'];
     
     Object.entries(weights).forEach(([unit, weight]) => {

@@ -45,6 +45,21 @@ public class Ingredient {
     @Column(name = "density", nullable = false)
     private Double density = 1.0;
 
+    /**
+     * Malzemenin fiziksel durumu (KATI, SIVI, YARI-KATI).
+     * UI'da birim filtreleme için kullanılır.
+     */
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "physical_state")
+    private PhysicalState physicalState = PhysicalState.SOLID;
+
+    public enum PhysicalState {
+        SOLID,      // Katı (g, kg, adet, dilim vb.)
+        LIQUID,     // Sıvı (ml, l)
+        SEMI_SOLID  // Yarı-katı (yoğurt, bal vb. - her iki grup da aktif)
+    }
+
     public enum Category {
         MEAT,
         VEGETABLE,

@@ -76,7 +76,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(1L),
                 eq(300.0), // 2 * 150
-                eq("g")
+                eq("adet")
         );
     }
 
@@ -110,7 +110,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(2L),
                 eq(2500.0), // 5 * 500
-                eq("g")
+                eq("paket")
         );
     }
 
@@ -151,7 +151,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(3L),
                 eq(1030.0), // 1000 * 1.03
-                eq("g")
+                eq("ml")
         );
     }
 }

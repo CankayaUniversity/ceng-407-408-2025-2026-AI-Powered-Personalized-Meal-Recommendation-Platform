@@ -17,6 +17,7 @@ public class IngredientMapper {
                 .id(ingredient.getId())
                 .name(ingredient.getName())
                 .category(ingredient.getCategory() != null ? ingredient.getCategory().name() : null)
+                .physicalState(ingredient.getPhysicalState() != null ? ingredient.getPhysicalState().name() : null)
                 .density(ingredient.getDensity());
 
         if (ingredient.getNutrition() != null) {
