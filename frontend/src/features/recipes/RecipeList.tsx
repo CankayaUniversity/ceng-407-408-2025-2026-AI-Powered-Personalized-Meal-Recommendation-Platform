@@ -5,6 +5,82 @@ import { useRecipeService } from '../../services/recipeService';
 import type { RecipeListItem } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
 
+type RecipeArtworkProps = {
+  imageUrl?: string | null;
+  title: string;
+  variant?: 'card' | 'hero';
+  className?: string;
+  mediaClassName?: string;
+};
+
+const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
+  imageUrl,
+  title,
+  variant = 'card',
+  className = '',
+  mediaClassName = ''
+}) => {
+  const normalizedImageUrl = imageUrl?.trim() || null;
+  const [hasImageError, setHasImageError] = useState(normalizedImageUrl == null);
+  const isHero = variant === 'hero';
+
+  useEffect(() => {
+    setHasImageError(normalizedImageUrl == null);
+  }, [normalizedImageUrl]);
+
+  if (!hasImageError && normalizedImageUrl) {
+    return (
+      <div className={className}>
+        <img
+          src={normalizedImageUrl}
+          alt={title}
+          className={mediaClassName}
+          onError={() => setHasImageError(true)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <div
+        role="img"
+        aria-label={`${title} için varsayılan tarif görseli`}
+        className={`relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-alabaster via-white to-terracotta/10 dark:from-espresso-midnight dark:via-espresso-midnight dark:to-terracotta/20 ${mediaClassName}`}
+      >
+        <div className="absolute inset-0">
+          <div className="absolute -left-8 top-6 h-28 w-28 rounded-full bg-terracotta/20 blur-3xl dark:bg-terracotta/25" />
+          <div className="absolute -right-8 bottom-0 h-24 w-24 rounded-full bg-moss-sage/25 blur-3xl dark:bg-moss-sage/20" />
+          <div className="absolute left-8 right-8 top-8 h-px bg-terracotta/15 dark:bg-white/10" />
+          <div className="absolute left-10 right-10 bottom-8 h-px bg-espresso-midnight/8 dark:bg-white/8" />
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center">
+          <div
+            className={`flex items-center justify-center rounded-[1.8rem] border border-white/50 bg-white/70 text-terracotta shadow-lg shadow-terracotta/10 backdrop-blur-md dark:border-white/10 dark:bg-white/5 ${
+              isHero ? 'h-20 w-20' : 'h-16 w-16'
+            }`}
+          >
+            <ChefHat size={isHero ? 40 : 30} strokeWidth={1.8} />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-espresso-midnight/35 dark:text-alabaster/35">
+              MealAI
+            </p>
+            <p
+              className={`font-serif font-bold text-espresso-midnight/70 dark:text-alabaster/70 ${
+                isHero ? 'text-2xl' : 'text-lg'
+              }`}
+            >
+              Şef Dokunuşu
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /**
  * MealAI Recipe Explorer - Custom Toast & Portal Integrated
  */
@@ -158,8 +234,13 @@ const RecipeList: React.FC = () => {
                   className="group meal-card cursor-pointer rounded-[2.5rem] overflow-hidden border border-card-border hover:-translate-y-2 transition-all duration-500 bg-white dark:bg-white/[0.02]"
               >
                 <div className="h-64 relative overflow-hidden">
-                  <img src={recipe.imageUrl || 'https://placehold.co/400'} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
-                  <div className="absolute top-5 left-5 glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-white">
+                  <RecipeArtwork
+                    imageUrl={recipe.imageUrl}
+                    title={recipe.title}
+                    className="h-full w-full"
+                    mediaClassName="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute top-5 left-5 glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
                     {recipe.category || 'Gurme'}
                   </div>
                   <button className="absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl text-primary transition-colors">
@@ -228,7 +309,13 @@ const RecipeList: React.FC = () => {
 
                 <div className="overflow-y-auto custom-scrollbar">
                   <div className="h-64 md:h-96 relative shrink-0">
-                    <img src={selectedRecipe.imageUrl || 'https://placehold.co/800'} alt={selectedRecipe.title} className="w-full h-full object-cover" />
+                    <RecipeArtwork
+                      imageUrl={selectedRecipe.imageUrl}
+                      title={selectedRecipe.title}
+                      variant="hero"
+                      className="h-full w-full"
+                      mediaClassName="h-full w-full object-cover"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight via-transparent to-transparent" />
                     <div className="absolute bottom-10 left-10 right-10">
                       <h2 className="text-4xl md:text-5xl font-serif font-bold text-white drop-shadow-lg">{selectedRecipe.title}</h2>
