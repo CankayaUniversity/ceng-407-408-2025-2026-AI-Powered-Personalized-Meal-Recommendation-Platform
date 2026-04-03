@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,4 +23,6 @@ public class RecipeResponse {
     private Integer servings;
     private Double rating;
     private String imageUrl;
+    private String instructions;
+    private List<RecipeIngredientDTO> ingredients;
 }

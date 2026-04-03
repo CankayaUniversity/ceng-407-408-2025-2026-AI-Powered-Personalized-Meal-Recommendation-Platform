@@ -74,10 +74,7 @@ public class RecipeService {
     /**
      * ID'ye göre tarif detaylarını getirir.
      */
-    public Optional<Recipe> findById(Long id) {
-        return recipeRepository.findById(id);
-    }
-
+    public Optional<Recipe> findById(Long id) {return recipeRepository.findByIdWithIngredients(id);}
     /**
      * Tüm tarifleri malzemeleriyle birlikte getirir.
      */

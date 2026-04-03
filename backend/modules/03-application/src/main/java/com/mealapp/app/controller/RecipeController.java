@@ -6,6 +6,7 @@ import com.mealapp.domain.recipe.service.RecipeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,5 +34,12 @@ public class RecipeController {
         }
         
         return recipeMapper.toResponseList(recipeService.findAll(pageRequest).getContent());
+    }
+
+    @GetMapping("/{id}")
+    public RecipeResponse getRecipeById(@PathVariable Long id) {
+        return recipeService.findById(id)
+            .map(recipeMapper::toResponse) // Recipe -> RecipeResponse dönüşümü
+            .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
     }
 }

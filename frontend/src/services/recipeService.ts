@@ -230,20 +230,15 @@ export const getRecipeService = (api: AxiosInstance) => {
     return getRecipeService(api).getRecipes({ title: searchTerm, page: 0, size: 12 });
   },
 
-  /**
-   * ID'ye göre tarif detaylarını getirir
-   * ⚠️ BACKEND ENDPOINT HAZIR DEĞİL
-   * Backend ekibi GET /api/v1/recipes/{id} endpoint'ini implement ettiğinde aktif edilecek
-   * @param _id - Tarif ID'si
-   * @throws {ApiError} Backend endpoint hazır olmadığı için hata fırlatır
-   */
-  getRecipeById: async (_id: number): Promise<Recipe> => {
-    throw new ApiError(
-      'Bu özellik henüz kullanıma hazır değil.',
-      'BACKEND_NOT_READY',
-      501
-    );
-  }
+    /**
+     * ID'ye göre tarif detaylarını getirir.
+     * @param id - Tarifin benzersiz kimlik numarası
+     */
+    getRecipeById: async (id: number): Promise<Recipe> => {
+      const response = await api.get<Recipe>(`/v1/recipes/${id}`);
+      return response.data;
+    }
+
 });
 };
 
