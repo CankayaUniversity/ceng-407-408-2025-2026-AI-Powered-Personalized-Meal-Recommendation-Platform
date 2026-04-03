@@ -17,4 +17,14 @@ public class InventoryItemRequest {
 
     @NotBlank(message = "Birim zorunludur")
     private String unit;
+
+    /**
+     * Gram cinsinden hesaplanmış toplam miktar.
+     */
+    private Double grams;
+
+    /**
+     * Birim başına kabul edilen gram ağırlığı (kullanıcıya gösterilebilir).
+     */
+    private Double unitGramWeight;
 }

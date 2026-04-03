@@ -5,7 +5,10 @@ import com.mealapp.app.model.dto.inventory.InventoryGroupResponse;
 import com.mealapp.app.model.dto.inventory.InventoryItemRequest;
 import com.mealapp.app.model.dto.inventory.InventoryItemResponse;
 import com.mealapp.app.model.mapper.inventory.InventoryMapper;
+import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.common.exception.MealAppDomainException;
+import com.mealapp.domain.recipe.entity.Ingredient;
+import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.inventory.service.InventoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
     private final InventoryMapper inventoryMapper;
+    private final IngredientRepository ingredientRepository;
 
     @GetMapping
     public List<InventoryGroupResponse> getGroups(@AuthenticationPrincipal Jwt jwt) {
@@ -61,13 +65,19 @@ public class InventoryController {
             @PathVariable Long groupId,
             @Valid @RequestBody InventoryItemRequest request
     ) {
+        Double grams = request.getGrams();
+        if (grams == null) {
+            Ingredient ingredient = ingredientRepository.findById(request.getIngredientId()).orElse(null);
+            grams = UnitConverter.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
+        }
+
         return inventoryMapper.toItemResponse(
                 inventoryService.upsertInventoryItem(
                         requireAuthenticatedUserId(jwt),
                         groupId,
                         request.getIngredientId(),
-                        request.getQuantity(),
-                        request.getUnit()
+                        grams,
+                        request.getUnit() // Store the original unit instead of "g"
                 )
         );
     }
@@ -79,14 +89,20 @@ public class InventoryController {
             @PathVariable Long itemId,
             @Valid @RequestBody InventoryItemRequest request
     ) {
+        Double grams = request.getGrams();
+        if (grams == null) {
+            Ingredient ingredient = ingredientRepository.findById(request.getIngredientId()).orElse(null);
+            grams = UnitConverter.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
+        }
+
         return inventoryMapper.toItemResponse(
                 inventoryService.updateInventoryItem(
                         requireAuthenticatedUserId(jwt),
                         groupId,
                         itemId,
                         request.getIngredientId(),
-                        request.getQuantity(),
-                        request.getUnit()
+                        grams,
+                        request.getUnit() // Store the original unit instead of "g"
                 )
         );
     }

@@ -3,6 +3,7 @@ package com.mealapp.app.controller;
 import com.mealapp.app.model.dto.consumption.ConsumptionRequest;
 import com.mealapp.app.model.dto.consumption.ConsumptionResponse;
 import com.mealapp.app.model.dto.consumption.ConsumptionSummaryResponse;
+import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.common.exception.MealAppDomainException;
@@ -62,6 +63,35 @@ public class ConsumptionController {
     }
 
     /**
+     * Sistemdeki tüm porsiyon birimlerini ve gram karşılıklarını döner (UI için).
+     * Eğer ingredientId verilirse, o malzemeye özel birimleri de ekler.
+     */
+    @GetMapping("/units")
+    public java.util.Map<String, Double> getStandardUnits(@RequestParam(required = false) Long ingredientId) {
+        Ingredient ingredient = null;
+        if (ingredientId != null) {
+            ingredient = ingredientService.findById(ingredientId).orElse(null);
+        }
+        return UnitConverter.getAllUnitWeights(ingredient);
+    }
+
+    /**
+     * Bir miktar ve birimi gram cinsine dönüştürür.
+     */
+    @GetMapping("/convert")
+    public Double convertToGrams(
+            @RequestParam Double amount, 
+            @RequestParam String unit,
+            @RequestParam(required = false) Long ingredientId
+    ) {
+        Ingredient ingredient = null;
+        if (ingredientId != null) {
+            ingredient = ingredientService.findById(ingredientId).orElse(null);
+        }
+        return UnitConverter.convertToGrams(amount, unit, ingredient);
+    }
+
+    /**
      * Günlük tüketim kaydı oluşturur.
      */
     @PostMapping
@@ -91,16 +121,30 @@ public class ConsumptionController {
             inventoryGroup = inventoryService.getUserInventoryGroup(userId, request.getInventoryGroupId());
         }
 
+        Double grams = request.getPortionGrams();
+        if (grams == null && request.getPortionLabel() != null) {
+            // Eğer doğrudan gram girilmemişse ama bir etiket (örn: 1 cup) varsa dönüştür
+            String label = request.getPortionLabel().toLowerCase();
+            if (label.contains(" ")) {
+                try {
+                    String[] parts = label.split(" ");
+                    Double val = Double.parseDouble(parts[0]);
+                    String unit = parts[1];
+                    grams = UnitConverter.convertToGrams(val, unit, ingredient);
+                } catch (Exception ignored) {}
+            }
+        }
+
         DailyConsumption entity = DailyConsumption.builder()
                 .user(user)
                 .foodName(resolveFoodName(request, recipe, ingredient))
                 .recipe(recipe)
                 .ingredient(ingredient)
                 .mealType(request.getMealType())
-                .portionSize(resolvePortionSize(request))
+                .portionSize(resolvePortionSize(request, grams))
                 .portionLabel(request.getPortionLabel())
                 .portionMultiplier(request.getPortionMultiplier())
-                .portionGrams(request.getPortionGrams())
+                .portionGrams(grams)
                 .isCustomEntry(Boolean.TRUE.equals(request.getIsCustomEntry()) || (recipe == null && ingredient == null))
                 .isFromInventory(inventoryGroup != null || Boolean.TRUE.equals(request.getIsFromInventory()))
                 .inventoryGroup(inventoryGroup)
@@ -115,6 +159,14 @@ public class ConsumptionController {
         response.setIngredientId(saved.getIngredient() != null ? saved.getIngredient().getId() : null);
         response.setInventoryGroupId(saved.getInventoryGroup() != null ? saved.getInventoryGroup().getId() : null);
         response.setPortionLabel(saved.getPortionLabel());
+        response.setPortionGrams(saved.getPortionGrams());
+        
+        // Etiket üzerinden birim katsayısını belirle (örn: "1 cup" -> 240.0)
+        if (saved.getPortionLabel() != null && saved.getPortionLabel().contains(" ")) {
+            String unit = saved.getPortionLabel().split(" ")[1];
+            response.setUnitGramWeight(UnitConverter.getUnitGramWeight(unit));
+        }
+
         response.setEstimatedCalories(saved.getEstimatedCalories());
         response.setEstimatedProtein(saved.getEstimatedProtein());
         response.setEstimatedCarbs(saved.getEstimatedCarbs());
@@ -150,7 +202,7 @@ public class ConsumptionController {
         throw new MealAppDomainException("Tüketim kaydı için bir tarif, malzeme veya yemek adı girilmelidir.");
     }
 
-    private DailyConsumption.PortionSize resolvePortionSize(ConsumptionRequest request) {
+    private DailyConsumption.PortionSize resolvePortionSize(ConsumptionRequest request, Double grams) {
         if (request.getPortionSize() != null) {
             return request.getPortionSize();
         }
@@ -165,11 +217,11 @@ public class ConsumptionController {
             return DailyConsumption.PortionSize.LARGE;
         }
 
-        if (request.getPortionGrams() != null) {
-            if (request.getPortionGrams() <= 60) {
+        if (grams != null) {
+            if (grams <= 60) {
                 return DailyConsumption.PortionSize.SMALL;
             }
-            if (request.getPortionGrams() <= 160) {
+            if (grams <= 160) {
                 return DailyConsumption.PortionSize.MEDIUM;
             }
             return DailyConsumption.PortionSize.LARGE;

@@ -73,30 +73,56 @@ public class RecipeService {
 
     /**
      * ID'ye göre tarif detaylarını getirir.
+     * Eğer besin değerleri hesaplanmamışsa, hesaplayıp döner.
      */
-    public Optional<Recipe> findById(Long id) {return recipeRepository.findByIdWithIngredients(id);}
+    public Optional<Recipe> findById(Long id) {
+        return recipeRepository.findByIdWithIngredients(id).map(recipe -> {
+            if (recipe.getTotalCalories() == null || recipe.getTotalCalories() == 0) {
+                calculateAndSetNutrition(recipe);
+            }
+            return recipe;
+        });
+    }
     /**
      * Tüm tarifleri malzemeleriyle birlikte getirir.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Recipe> findAll() {
-        return recipeRepository.findAllWithIngredients();
+        List<Recipe> recipes = recipeRepository.findAllWithIngredients();
+        recipes.forEach(recipe -> {
+            if (recipe.getTotalCalories() == null || recipe.getTotalCalories() == 0) {
+                calculateAndSetNutrition(recipe);
+            }
+        });
+        return recipes;
     }
 
     /**
      * Sayfalanmış tarif listesini getirir.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<Recipe> findAll(Pageable pageable) {
-        return recipeRepository.findAllWithIngredients(pageable);
+        Page<Recipe> recipes = recipeRepository.findAllWithIngredients(pageable);
+        recipes.forEach(recipe -> {
+            if (recipe.getTotalCalories() == null || recipe.getTotalCalories() == 0) {
+                calculateAndSetNutrition(recipe);
+            }
+        });
+        return recipes;
     }
 
     /**
      * Başlığa göre sayfalanmış arama yapar.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<Recipe> searchByTitle(String title, Pageable pageable) {
-        return recipeRepository.findByTitleContainingIgnoreCase(title, pageable);
+        Page<Recipe> recipes = recipeRepository.findByTitleContainingIgnoreCase(title, pageable);
+        recipes.forEach(recipe -> {
+            if (recipe.getTotalCalories() == null || recipe.getTotalCalories() == 0) {
+                calculateAndSetNutrition(recipe);
+            }
+        });
+        return recipes;
     }
 
     /**

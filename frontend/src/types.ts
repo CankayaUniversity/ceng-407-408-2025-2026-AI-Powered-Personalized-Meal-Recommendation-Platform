@@ -112,6 +112,11 @@ export interface Ingredient {
   name: string;
   category: IngredientCategory;
   nutrition?: IngredientNutrition;
+  density?: number;
+  caloriesPer100g?: number;
+  proteinPer100g?: number;
+  carbsPer100g?: number;
+  fatPer100g?: number;
 }
 
 export interface IngredientNutrition {
@@ -165,6 +170,7 @@ export interface Inventory {
   inventoryGroupId: number;
   ingredientId: number;
   quantity: number;
+  grams?: number;
   unit: string;
   ingredient?: Ingredient;
 }
@@ -227,6 +233,8 @@ export interface ConsumptionResponse {
   ingredientId?: number | null;
   inventoryGroupId?: number | null;
   portionLabel?: string | null;
+  portionGrams?: number | null;
+  unitGramWeight?: number | null;
   estimatedCalories?: number | null;
   estimatedProtein?: number | null;
   estimatedCarbs?: number | null;
@@ -252,6 +260,8 @@ export interface InventoryItemRequest {
   ingredientId: number;
   quantity: number;
   unit: string;
+  grams?: number;
+  unitGramWeight?: number;
 }
 
 export interface RecipeRatingRequest {

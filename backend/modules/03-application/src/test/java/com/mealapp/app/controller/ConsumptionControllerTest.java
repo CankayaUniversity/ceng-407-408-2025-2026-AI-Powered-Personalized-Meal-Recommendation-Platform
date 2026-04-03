@@ -94,8 +94,27 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
                 .andExpect(jsonPath("$.id").value(42))
                 .andExpect(jsonPath("$.foodName").value("Mercimek Corbasi"))
                 .andExpect(jsonPath("$.inventoryGroupId").value(4))
+                .andExpect(jsonPath("$.portionLabel").value("1 bowl"))
                 .andExpect(jsonPath("$.isFromInventory").value(true))
                 .andExpect(jsonPath("$.estimatedCalories").value(280));
+    }
+
+    @Test
+    void shouldReturnStandardUnits() throws Exception {
+        mockMvc.perform(get("/api/v1/consumptions/units"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.gram").value(1.0))
+                .andExpect(jsonPath("$.kg").value(1000.0))
+                .andExpect(jsonPath("$.ml").value(1.0));
+    }
+
+    @Test
+    void shouldConvertUnitsToGrams() throws Exception {
+        mockMvc.perform(get("/api/v1/consumptions/convert")
+                        .param("amount", "2.0")
+                        .param("unit", "cup"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").value(480.0));
     }
 
     @Test

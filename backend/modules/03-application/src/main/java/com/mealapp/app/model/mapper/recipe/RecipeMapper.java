@@ -2,6 +2,7 @@ package com.mealapp.app.model.mapper.recipe;
 
 import com.mealapp.app.model.dto.recipe.RecipeIngredientDTO;
 import com.mealapp.app.model.dto.recipe.RecipeResponse;
+import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.recipe.entity.Recipe;
 import org.springframework.stereotype.Component;
 
@@ -48,11 +49,26 @@ public class RecipeMapper {
         try {
             return recipe.getRecipeIngredients().stream()
                 .filter(ri -> ri != null && ri.getIngredient() != null)
-                .map(ri -> RecipeIngredientDTO.builder()
-                    .name(ri.getIngredient().getName()) // Burası patlıyordu
-                    .amount(ri.getGrams() != null ? ri.getGrams() : 0.0)
-                    .unit("g")
-                    .build())
+                .map(ri -> {
+                    Double amount = ri.getGrams() != null ? ri.getGrams() : 0.0;
+                    var builder = RecipeIngredientDTO.builder()
+                        .name(ri.getIngredient().getName())
+                        .amount(amount)
+                        .unit("g")
+                        .grams(amount)
+                        .unitGramWeight(UnitConverter.getUnitGramWeight("g", ri.getIngredient()));
+
+                    if (ri.getIngredient().getNutrition() != null) {
+                        var n = ri.getIngredient().getNutrition();
+                        double factor = amount / 100.0;
+                        builder.calories(n.getCaloriesPer100g() * factor)
+                               .protein(n.getProteinPer100g() * factor)
+                               .carbs(n.getCarbsPer100g() * factor)
+                               .fat(n.getFatPer100g() * factor);
+                    }
+
+                    return builder.build();
+                })
                 .collect(Collectors.toList());
         } catch (Exception e) {
             // Eğer hala Lazy Load hatası alırsak, listeyi bozmak yerine boş dönüyoruz

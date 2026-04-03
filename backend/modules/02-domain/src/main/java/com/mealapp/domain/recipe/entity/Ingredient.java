@@ -31,8 +31,19 @@ public class Ingredient {
     @OneToOne(mappedBy = "ingredient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private IngredientNutrition nutrition;
 
+    @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private java.util.List<IngredientUnit> ingredientUnits;
+
     @OneToMany(mappedBy = "ingredient")
     private java.util.List<RecipeIngredient> recipeIngredients;
+
+    /**
+     * Malzemenin yoğunluğu (g/ml). Varsayılan 1.0 (su yoğunluğu).
+     * Sıvı birimlerden (ml, litre) grama dönüşüm yaparken kullanılır.
+     */
+    @Builder.Default
+    @Column(name = "density", nullable = false)
+    private Double density = 1.0;
 
     public enum Category {
         MEAT,

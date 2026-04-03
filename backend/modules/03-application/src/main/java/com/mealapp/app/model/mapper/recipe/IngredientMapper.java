@@ -13,11 +13,21 @@ public class IngredientMapper {
     public IngredientDTO toDTO(Ingredient ingredient) {
         if (ingredient == null) return null;
         
-        return IngredientDTO.builder()
+        var builder = IngredientDTO.builder()
                 .id(ingredient.getId())
                 .name(ingredient.getName())
                 .category(ingredient.getCategory() != null ? ingredient.getCategory().name() : null)
-                .build();
+                .density(ingredient.getDensity());
+
+        if (ingredient.getNutrition() != null) {
+            var n = ingredient.getNutrition();
+            builder.caloriesPer100g(n.getCaloriesPer100g())
+                   .proteinPer100g(n.getProteinPer100g())
+                   .carbsPer100g(n.getCarbsPer100g())
+                   .fatPer100g(n.getFatPer100g());
+        }
+        
+        return builder.build();
     }
 
     public Ingredient toEntity(IngredientDTO dto) {

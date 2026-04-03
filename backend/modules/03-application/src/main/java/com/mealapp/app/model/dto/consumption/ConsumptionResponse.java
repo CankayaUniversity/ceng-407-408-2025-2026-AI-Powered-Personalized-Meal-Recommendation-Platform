@@ -19,6 +19,8 @@ public class ConsumptionResponse {
     private Double estimatedProtein;
     private Double estimatedCarbs;
     private Double estimatedFat;
+    private Double portionGrams; // Hesaplanan gramaj bilgisi (UI için)
+    private Double unitGramWeight; // Seçilen birimin gramaj katsayısı (UI için)
     private Boolean isFromInventory;
     private LocalDateTime consumedAt;
 }

@@ -145,7 +145,13 @@ const getSelectedItemNutrition = (item: SelectedConsumptionItem): NutritionPrevi
     };
   }
 
-  if (!item.ingredient.nutrition) {
+  // Ingredient nutrition sources (nested or flat)
+  const caloriesPer100g = item.ingredient.caloriesPer100g ?? item.ingredient.nutrition?.caloriesPer100g;
+  const proteinPer100g = item.ingredient.proteinPer100g ?? item.ingredient.nutrition?.proteinPer100g;
+  const carbsPer100g = item.ingredient.carbsPer100g ?? item.ingredient.nutrition?.carbsPer100g;
+  const fatPer100g = item.ingredient.fatPer100g ?? item.ingredient.nutrition?.fatPer100g;
+
+  if (caloriesPer100g == null && proteinPer100g == null && carbsPer100g == null && fatPer100g == null) {
     return {
       calories: null,
       protein: null,
@@ -156,10 +162,10 @@ const getSelectedItemNutrition = (item: SelectedConsumptionItem): NutritionPrevi
 
   const factor = item.portion.grams / 100;
   return {
-    calories: scaleValue(item.ingredient.nutrition.caloriesPer100g, factor),
-    protein: scaleValue(item.ingredient.nutrition.proteinPer100g, factor),
-    carbs: scaleValue(item.ingredient.nutrition.carbsPer100g, factor),
-    fat: scaleValue(item.ingredient.nutrition.fatPer100g, factor)
+    calories: scaleValue(caloriesPer100g, factor),
+    protein: scaleValue(proteinPer100g, factor),
+    carbs: scaleValue(carbsPer100g, factor),
+    fat: scaleValue(fatPer100g, factor)
   };
 };
 
@@ -231,6 +237,54 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const recipeService = useRecipeService();
   const consumptionService = useConsumptionService();
 
+  const [unitWeights, setUnitWeights] = useState<Record<string, number>>({});
+  const [ingredientSpecificWeights, setIngredientSpecificWeights] = useState<Record<number, Record<string, number>>>({});
+
+  const loadUnitWeights = async (ingredientId?: number) => {
+    try {
+      const weights = await consumptionService.getUnitWeights(ingredientId);
+      if (ingredientId) {
+        setIngredientSpecificWeights(prev => ({ ...prev, [ingredientId]: weights }));
+      } else {
+        setUnitWeights(weights);
+      }
+    } catch (error) {
+      console.error('Birim ağırlıkları yüklenemedi:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (authenticated) {
+      void loadUnitWeights();
+    }
+  }, [authenticated]);
+
+  const getIngredientOptions = (ingredientId?: number) => {
+    const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
+    const options: IngredientPortionOption[] = [
+      { id: 'ing-100g', label: '100g', grams: 100, portionSize: PortionSize.MEDIUM, note: 'Standart' },
+    ];
+
+    // Standart kütle/hacim birimleri dışındaki birimleri filtrele
+    // Eğer malzemeye özel bir veri yoksa (yani backend sadece g, kg, ml, l döndüyse)
+    // sadece 100g seçeneği kalacak.
+    const standardMassUnits = ['g', 'gram', 'kg', 'kilogram', 'ml', 'litre', 'liter'];
+    
+    Object.entries(weights).forEach(([unit, weight]) => {
+      const lowerUnit = unit.toLowerCase();
+      if (standardMassUnits.includes(lowerUnit)) return;
+      
+      options.push({
+        id: `ing-${unit}`,
+        label: `1 ${unit} (~${weight}g)`,
+        grams: weight,
+        portionSize: weight > 200 ? PortionSize.LARGE : weight < 50 ? PortionSize.SMALL : PortionSize.MEDIUM,
+        note: ingredientId ? 'Malzemeye özel' : 'Dinamik'
+      });
+    });
+
+    return options;
+  };
   const [inventoryGroups, setInventoryGroups] = useState<InventoryGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [selectedLocationId, setSelectedLocationId] = useState<string>(OUTSIDE_LOCATION);
@@ -432,6 +486,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const handleIngredientSelect = (ingredient: Ingredient) => {
     const key = getItemKey('INGREDIENT', ingredient.id);
 
+    // Fetch specific weights for this ingredient
+    if (!ingredientSpecificWeights[ingredient.id]) {
+      void loadUnitWeights(ingredient.id);
+    }
+
     setSelectedItems((current) => {
       if (current.some((item) => item.key === key)) return current;
       return [
@@ -440,7 +499,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           key,
           kind: 'INGREDIENT',
           ingredient,
-          portion: INGREDIENT_PORTION_OPTIONS[1]
+          portion: getIngredientOptions(ingredient.id)[0] || INGREDIENT_PORTION_OPTIONS[1]
         }
       ];
     });
@@ -697,7 +756,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                           </p>
                         </div>
                         <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-forest dark:text-moss-sage">
-                          {ingredient.nutrition ? `${Math.round(ingredient.nutrition.caloriesPer100g)} kcal / 100g` : 'Besin verisi bekleniyor'}
+                          {ingredient.caloriesPer100g != null || ingredient.nutrition?.caloriesPer100g != null
+                              ? `${Math.round(ingredient.caloriesPer100g ?? ingredient.nutrition!.caloriesPer100g)} kcal / 100g`
+                              : 'Besin verisi bekleniyor'}
                         </div>
                       </div>
                     </button>
@@ -769,7 +830,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                                       </button>
                                   ))}
 
-                                  {item.kind === 'INGREDIENT' && INGREDIENT_PORTION_OPTIONS.map((option) => (
+                                  {item.kind === 'INGREDIENT' && getIngredientOptions(item.ingredient.id).map((option) => (
                                       <button
                                           key={option.id}
                                           type="button"
@@ -784,6 +845,35 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                                         {option.label}
                                       </button>
                                   ))}
+
+                                  {item.kind === 'INGREDIENT' && (
+                                      <div className="flex flex-col gap-2 w-full mt-2">
+                                        <div className="flex items-center gap-2 rounded-full border border-card-border bg-white px-3 py-1 dark:bg-white/[0.03]">
+                                          <input
+                                              type="number"
+                                              placeholder="Grams"
+                                              className="w-full bg-transparent text-xs font-semibold outline-none text-espresso-midnight dark:text-alabaster"
+                                              onChange={(e) => {
+                                                const val = parseFloat(e.target.value);
+                                                if (!isNaN(val) && val > 0) {
+                                                  handleIngredientPortionChange(item.key, {
+                                                    id: 'custom-grams',
+                                                    label: `${val}g`,
+                                                    grams: val,
+                                                    portionSize: PortionSize.MEDIUM,
+                                                    note: 'Ozel miktar'
+                                                  });
+                                                }
+                                              }}
+                                          />
+                                          <span className="text-[10px] font-bold text-terracotta">g</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-[10px] text-terracotta/70 italic px-2">
+                                          <AlertCircle size={10} />
+                                          En yüksek hassasiyet için doğrudan gram/ml girilmesi önerilir.
+                                        </div>
+                                      </div>
+                                  )}
                                 </div>
                               </div>
 

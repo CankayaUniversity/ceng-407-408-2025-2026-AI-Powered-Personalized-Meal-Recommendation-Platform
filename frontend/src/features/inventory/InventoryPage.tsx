@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  AlertCircle,
   Boxes,
   Briefcase,
   Home,
@@ -14,9 +15,16 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
+import { useConsumptionService } from '../../services/consumptionService';
 import { useInventoryService } from '../../services/inventoryService';
 import { useToast } from '../../shared/hooks/useToast';
-import { type Ingredient, type Inventory, type InventoryGroup, type InventoryGroupRequest } from '../../types';
+import {
+  type Ingredient,
+  type Inventory,
+  type InventoryGroup,
+  type InventoryGroupRequest,
+  type InventoryItemRequest
+} from '../../types';
 
 /**
  * MealAI - Inventory Management Page
@@ -34,8 +42,6 @@ const LOCATION_ICONS = [
   { value: 'leaf', label: 'Yazlık', icon: Leaf }
 ] as const;
 
-const UNIT_OPTIONS = ['GRAM', 'ADET', 'ML', 'PAKET', 'LITRE'] as const;
-
 const createGroupDraft = (): GroupDraft => ({ name: '', icon: 'home' });
 const createItemDraft = (): ItemDraft => ({ ingredientQuery: '', selectedIngredient: null, quantity: '', unit: 'GRAM' });
 
@@ -51,7 +57,10 @@ const InventoryPage: React.FC = () => {
   const { authenticated } = useAuth();
   const { showToast } = useToast();
   const inventoryService = useInventoryService();
+  const consumptionService = useConsumptionService();
 
+  const [unitWeights, setUnitWeights] = useState<Record<string, number>>({});
+  const [ingredientSpecificWeights, setIngredientSpecificWeights] = useState<Record<number, Record<string, number>>>({});
   const [groups, setGroups] = useState<InventoryGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,13 +95,23 @@ const InventoryPage: React.FC = () => {
   };
 
   // Malzeme seçim fonksiyonu (Hatanın ana çözümü)
-  const handleIngredientSelect = (ing: Ingredient) => {
+  const handleIngredientSelect = async (ing: Ingredient) => {
     setItemDraft(prev => ({
       ...prev,
       ingredientQuery: ing.name,
       selectedIngredient: ing
     }));
     setIngredientResults([]);
+
+    // Fetch specific weights for this ingredient if not already loaded
+    if (!ingredientSpecificWeights[ing.id]) {
+      try {
+        const weights = await consumptionService.getUnitWeights(ing.id);
+        setIngredientSpecificWeights(prev => ({ ...prev, [ing.id]: weights }));
+      } catch (error) {
+        console.error('Birimler yüklenemedi:', error);
+      }
+    }
   };
 
   const loadGroups = useCallback(async (options?: { preferredGroupId?: number | null; showLoader?: boolean }) => {
@@ -115,8 +134,46 @@ const InventoryPage: React.FC = () => {
 
   useEffect(() => {
     if (!authenticated) return;
-    void loadGroups({ showLoader: true });
-  }, [authenticated, loadGroups]);
+    
+    const initData = async () => {
+      setLoading(true);
+      try {
+        const [weights] = await Promise.all([
+          consumptionService.getUnitWeights(),
+          loadGroups()
+        ]);
+        setUnitWeights(weights);
+      } catch (error) {
+        console.error('Birimler yüklenemedi:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    void initData();
+  }, [authenticated, inventoryService, consumptionService]);
+
+  const dynamicUnits = useMemo(() => {
+    const base = ['GRAM', 'ML', 'KG', 'LITRE'];
+    const selectedIngId = itemDraft.selectedIngredient?.id;
+    const weights = (selectedIngId && ingredientSpecificWeights[selectedIngId]) || unitWeights;
+    
+    // Sadece backend'den gelen (kısıtlanmış veya malzemeye özel) birimleri listele
+    const extra = Object.keys(weights).map(u => u.toUpperCase());
+    
+    // Eğer seçili malzeme için özel birim yoksa base birimler baskın olur
+    // Eğer varsa hepsi birleşir
+    const finalUnits = Array.from(new Set([...base, ...extra]));
+    
+    // Sıralama: Gram ve ML her zaman en başta olsun
+    return finalUnits.sort((a, b) => {
+        if (a === 'GRAM') return -1;
+        if (b === 'GRAM') return 1;
+        if (a === 'ML') return -1;
+        if (b === 'ML') return 1;
+        return a.localeCompare(b);
+    });
+  }, [unitWeights, ingredientSpecificWeights, itemDraft.selectedIngredient]);
 
   useEffect(() => {
     const query = itemDraft.ingredientQuery.trim();
@@ -185,18 +242,33 @@ const InventoryPage: React.FC = () => {
 
     setSavingItem(true);
     try {
+      const selectedIngId = itemDraft.selectedIngredient.id;
+      const weights = (selectedIngId && ingredientSpecificWeights[selectedIngId]) || unitWeights;
+      let weight = weights[itemDraft.unit.toLowerCase()] || 0;
+      
+      // Fallback for common units if backend hasn't returned them yet
+      if (!weight) {
+        const density = itemDraft.selectedIngredient?.density || 1.0;
+        if (['ADET', 'PIECE', 'TANE', 'UNIT'].includes(itemDraft.unit)) weight = 50;
+        if (['PAKET', 'PACKET', 'PACKAGE'].includes(itemDraft.unit)) weight = 500;
+        if (['KG', 'KILOGRAM'].includes(itemDraft.unit)) weight = 1000;
+        if (['GRAM', 'G'].includes(itemDraft.unit)) weight = 1;
+        if (['ML'].includes(itemDraft.unit)) weight = density;
+        if (['LITRE', 'LITER', 'L'].includes(itemDraft.unit)) weight = 1000 * density;
+      }
+
+      const payload: InventoryItemRequest = {
+        ingredientId: itemDraft.selectedIngredient.id,
+        quantity,
+        unit: itemDraft.unit,
+        grams: weight ? quantity * weight : quantity,
+        unitGramWeight: weight
+      };
+
       if (editingItemId) {
-        await inventoryService.updateInventoryItem(activeGroup.id, editingItemId, {
-          ingredientId: itemDraft.selectedIngredient.id,
-          quantity,
-          unit: itemDraft.unit
-        });
+        await inventoryService.updateInventoryItem(activeGroup.id, editingItemId, payload);
       } else {
-        await inventoryService.createInventoryItem(activeGroup.id, {
-          ingredientId: itemDraft.selectedIngredient.id,
-          quantity,
-          unit: itemDraft.unit
-        });
+        await inventoryService.createInventoryItem(activeGroup.id, payload);
       }
       await loadGroups({ preferredGroupId: activeGroup.id });
       resetItemForm();
@@ -395,20 +467,36 @@ const InventoryPage: React.FC = () => {
                   <div className="space-y-2">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Birim</span>
                     <div className="grid grid-cols-2 gap-1.5 h-full content-start">
-                      {UNIT_OPTIONS.slice(0, 4).map((unit) => (
+                      {dynamicUnits.slice(0, 8).map((unit) => {
+                        const selectedIngId = itemDraft.selectedIngredient?.id;
+                        const weights = (selectedIngId && ingredientSpecificWeights[selectedIngId]) || unitWeights;
+                        let weight = weights[unit.toLowerCase()];
+                        
+                        // ML/Litre için yoğunluk bazlı gösterim
+                        if (!weight && itemDraft.selectedIngredient?.density && itemDraft.selectedIngredient.density !== 1.0) {
+                          if (unit === 'ML') weight = itemDraft.selectedIngredient.density;
+                          if (unit === 'LITRE') weight = 1000 * itemDraft.selectedIngredient.density;
+                        }
+
+                        return (
                           <button
                               key={unit}
                               type="button"
                               onClick={() => setItemDraft(prev => ({ ...prev, unit }))}
                               className={`py-2.5 rounded-xl text-[10px] font-bold transition-all border ${
                                   itemDraft.unit === unit
-                                      ? 'bg-espresso-midnight text-white border-transparent'
-                                      : 'bg-background border-card-border text-foreground-muted hover:border-terracotta/40'
+                                      ? 'bg-espresso-midnight text-white border-transparent dark:bg-terracotta'
+                                      : 'bg-background border-card-border text-espresso-midnight/60 hover:border-terracotta/40 dark:bg-white/5 dark:text-alabaster/60'
                               }`}
                           >
-                            {unit}
+                            {unit}{weight && Math.abs(weight - 1) > 0.001 ? ` (~${weight.toFixed(0)}g)` : ''}
                           </button>
-                      ))}
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-terracotta/70 italic mt-1">
+                      <AlertCircle size={10} />
+                      Yüksek hassasiyet için GRAM/ML kullanın.
                     </div>
                   </div>
                 </div>
@@ -490,6 +578,11 @@ const InventoryPage: React.FC = () => {
                               <span className="font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{formatQuantity(item.quantity)}</span>
                               <span className="text-[10px] font-bold uppercase tracking-widest text-terracotta">{item.unit}</span>
                             </div>
+                            {item.grams && Math.abs((item.grams || 0) - (item.quantity || 0)) > 0.01 && (
+                                <p className="mt-1 text-[9px] font-medium text-foreground/40 italic">
+                                  ≈ {formatQuantity(item.grams)}g
+                                </p>
+                            )}
                           </div>
                         </article>
                     ))}

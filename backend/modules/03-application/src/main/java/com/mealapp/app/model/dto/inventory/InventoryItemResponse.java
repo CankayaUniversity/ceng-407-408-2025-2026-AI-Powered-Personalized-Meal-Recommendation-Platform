@@ -14,7 +14,8 @@ public class InventoryItemResponse {
     private Long id;
     private Long inventoryGroupId;
     private Long ingredientId;
-    private Double quantity;
+    private Double quantity; // This should be the display quantity (e.g. 1500 for ml)
+    private Double grams;    // This is the absolute weight in grams (e.g. 1545 for 1500ml milk)
     private String unit;
     private IngredientDTO ingredient;
 }

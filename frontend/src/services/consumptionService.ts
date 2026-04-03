@@ -54,6 +54,28 @@ export const getConsumptionService = (api: AxiosInstance) => ({
     } catch (error) {
       return mapAxiosError(error, 'Tüketim kaydı oluşturulamadı');
     }
+  },
+
+  getUnitWeights: async (ingredientId?: number): Promise<Record<string, number>> => {
+    try {
+      const response = await api.get<Record<string, number>>('/v1/consumptions/units', {
+        params: ingredientId ? { ingredientId } : undefined
+      });
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Birim ağırlıkları alınamadı');
+    }
+  },
+
+  convertUnit: async (amount: number, unit: string, ingredientId?: number): Promise<number> => {
+    try {
+      const response = await api.get<number>('/v1/consumptions/convert', {
+        params: { amount, unit, ingredientId }
+      });
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Birim dönüştürülemedi');
+    }
   }
 });
 
