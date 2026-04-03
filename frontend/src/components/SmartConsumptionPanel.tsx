@@ -10,7 +10,8 @@ import {
   Search,
   Soup,
   Sparkles,
-  UtensilsCrossed
+  UtensilsCrossed,
+  X
 } from 'lucide-react';
 import { useAuth } from '../infrastructure/auth/AuthContext';
 import { useConsumptionService } from '../services/consumptionService';
@@ -42,6 +43,34 @@ type IngredientPortionOption = {
   grams: number;
   portionSize: PortionSize;
   note: string;
+};
+
+type NutritionPreview = {
+  calories: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fat: number | null;
+};
+
+type SelectedRecipeItem = {
+  key: string;
+  kind: 'RECIPE';
+  recipe: RecipeListItem;
+  portion: RecipePortionOption;
+};
+
+type SelectedIngredientItem = {
+  key: string;
+  kind: 'INGREDIENT';
+  ingredient: Ingredient;
+  portion: IngredientPortionOption;
+};
+
+type SelectedConsumptionItem = SelectedRecipeItem | SelectedIngredientItem;
+
+type SubmitSummary = {
+  responses: ConsumptionResponse[];
+  failedNames: string[];
 };
 
 const OUTSIDE_LOCATION = 'outside';
@@ -91,6 +120,107 @@ const formatCalories = (value?: number | null) =>
 const scaleValue = (value: number | null | undefined, factor: number) =>
     value == null ? null : Math.round(value * factor * 10) / 10;
 
+const roundValue = (value: number) => Math.round(value * 10) / 10;
+
+const formatCategoryLabel = (value?: string | null) => value?.replace(/_/g, ' ') ?? 'Genel';
+
+const getItemKey = (kind: EntryMode, id: number) => `${kind}-${id}`;
+
+const getSelectedItemName = (item: SelectedConsumptionItem) =>
+    item.kind === 'RECIPE' ? item.recipe.title : item.ingredient.name;
+
+const getSelectedItemCategory = (item: SelectedConsumptionItem) =>
+    item.kind === 'RECIPE'
+        ? formatCategoryLabel(item.recipe.category)
+        : formatCategoryLabel(item.ingredient.category);
+
+const getSelectedItemNutrition = (item: SelectedConsumptionItem): NutritionPreview => {
+  if (item.kind === 'RECIPE') {
+    const factor = item.portion.multiplier;
+    return {
+      calories: scaleValue(item.recipe.totalCalories, factor),
+      protein: scaleValue(item.recipe.totalProtein, factor),
+      carbs: scaleValue(item.recipe.totalCarbs, factor),
+      fat: scaleValue(item.recipe.totalFat, factor)
+    };
+  }
+
+  if (!item.ingredient.nutrition) {
+    return {
+      calories: null,
+      protein: null,
+      carbs: null,
+      fat: null
+    };
+  }
+
+  const factor = item.portion.grams / 100;
+  return {
+    calories: scaleValue(item.ingredient.nutrition.caloriesPer100g, factor),
+    protein: scaleValue(item.ingredient.nutrition.proteinPer100g, factor),
+    carbs: scaleValue(item.ingredient.nutrition.carbsPer100g, factor),
+    fat: scaleValue(item.ingredient.nutrition.fatPer100g, factor)
+  };
+};
+
+const sumNutrition = (previews: NutritionPreview[]): NutritionPreview => {
+  const totals = {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0
+  };
+  const hasValues = {
+    calories: false,
+    protein: false,
+    carbs: false,
+    fat: false
+  };
+
+  previews.forEach((preview) => {
+    if (preview.calories != null) {
+      totals.calories += preview.calories;
+      hasValues.calories = true;
+    }
+    if (preview.protein != null) {
+      totals.protein += preview.protein;
+      hasValues.protein = true;
+    }
+    if (preview.carbs != null) {
+      totals.carbs += preview.carbs;
+      hasValues.carbs = true;
+    }
+    if (preview.fat != null) {
+      totals.fat += preview.fat;
+      hasValues.fat = true;
+    }
+  });
+
+  return {
+    calories: hasValues.calories ? Math.round(totals.calories) : null,
+    protein: hasValues.protein ? roundValue(totals.protein) : null,
+    carbs: hasValues.carbs ? roundValue(totals.carbs) : null,
+    fat: hasValues.fat ? roundValue(totals.fat) : null
+  };
+};
+
+const summarizeResponses = (responses: ConsumptionResponse[]): NutritionPreview =>
+    sumNutrition(
+        responses.map((response) => ({
+          calories: response.estimatedCalories ?? null,
+          protein: response.estimatedProtein ?? null,
+          carbs: response.estimatedCarbs ?? null,
+          fat: response.estimatedFat ?? null
+        }))
+    );
+
+const formatNameList = (names: string[], max = 3) => {
+  const visibleNames = names.slice(0, max);
+  if (visibleNames.length === 0) return '';
+  if (names.length <= max) return visibleNames.join(', ');
+  return `${visibleNames.join(', ')} ve ${names.length - max} oge daha`;
+};
+
 type SmartConsumptionPanelProps = {
   onConsumptionLogged?: (response: ConsumptionResponse) => void | Promise<void>;
 };
@@ -110,13 +240,10 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const deferredQuery = useDeferredValue(searchQuery.trim());
   const [recipeResults, setRecipeResults] = useState<RecipeListItem[]>([]);
   const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
-  const [selectedRecipe, setSelectedRecipe] = useState<RecipeListItem | null>(null);
-  const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
-  const [selectedRecipePortion, setSelectedRecipePortion] = useState<RecipePortionOption>(RECIPE_PORTION_OPTIONS[1]);
-  const [selectedIngredientPortion, setSelectedIngredientPortion] = useState<IngredientPortionOption>(INGREDIENT_PORTION_OPTIONS[1]);
+  const [selectedItems, setSelectedItems] = useState<SelectedConsumptionItem[]>([]);
   const [searching, setSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [success, setSuccess] = useState<ConsumptionResponse | null>(null);
+  const [submitSummary, setSubmitSummary] = useState<SubmitSummary | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const selectedGroup = useMemo(
@@ -130,33 +257,38 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               .sort((left, right) => left.name.localeCompare(right.name, 'tr-TR')),
       [selectedGroup]
   );
+  const selectedRecipeIds = useMemo(
+      () => new Set(selectedItems.filter((item): item is SelectedRecipeItem => item.kind === 'RECIPE').map((item) => item.recipe.id)),
+      [selectedItems]
+  );
+  const selectedIngredientIds = useMemo(
+      () => new Set(selectedItems.filter((item): item is SelectedIngredientItem => item.kind === 'INGREDIENT').map((item) => item.ingredient.id)),
+      [selectedItems]
+  );
   const isOutside = selectedLocationId === OUTSIDE_LOCATION;
   const isSearchStale = searchQuery.trim() !== deferredQuery;
-  const activeItemName = entryMode === 'RECIPE' ? selectedRecipe?.title : selectedIngredient?.name;
-
-  const nutritionPreview = useMemo(() => {
-    if (selectedRecipe) {
-      const factor = selectedRecipePortion.multiplier;
-      return {
-        calories: scaleValue(selectedRecipe.totalCalories, factor),
-        protein: scaleValue(selectedRecipe.totalProtein, factor),
-        carbs: scaleValue(selectedRecipe.totalCarbs, factor),
-        fat: scaleValue(selectedRecipe.totalFat, factor)
-      };
-    }
-
-    if (selectedIngredient?.nutrition) {
-      const factor = selectedIngredientPortion.grams / 100;
-      return {
-        calories: scaleValue(selectedIngredient.nutrition.caloriesPer100g, factor),
-        protein: scaleValue(selectedIngredient.nutrition.proteinPer100g, factor),
-        carbs: scaleValue(selectedIngredient.nutrition.carbsPer100g, factor),
-        fat: scaleValue(selectedIngredient.nutrition.fatPer100g, factor)
-      };
-    }
-
-    return null;
-  }, [selectedIngredient, selectedIngredientPortion.grams, selectedRecipe, selectedRecipePortion.multiplier]);
+  const selectionLabel = useMemo(() => {
+    if (selectedItems.length === 0) return 'Secim bekleniyor';
+    if (selectedItems.length === 1) return getSelectedItemName(selectedItems[0]);
+    return `${selectedItems.length} oge hazir`;
+  }, [selectedItems]);
+  const summaryTitle = useMemo(() => {
+    if (selectedItems.length === 0) return 'Secimini bekliyorum';
+    if (selectedItems.length === 1) return getSelectedItemName(selectedItems[0]);
+    return `${selectedItems.length} oge secildi`;
+  }, [selectedItems]);
+  const summarySubtitle = useMemo(
+      () => formatNameList(selectedItems.map((item) => getSelectedItemName(item))),
+      [selectedItems]
+  );
+  const nutritionPreview = useMemo(
+      () => sumNutrition(selectedItems.map((item) => getSelectedItemNutrition(item))),
+      [selectedItems]
+  );
+  const submittedNutrition = useMemo(
+      () => summarizeResponses(submitSummary?.responses ?? []),
+      [submitSummary]
+  );
 
   const loadInventoryGroups = async () => {
     try {
@@ -178,9 +310,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     setSearchQuery('');
     setRecipeResults([]);
     setIngredientResults([]);
-    setSelectedRecipe(null);
-    setSelectedIngredient(null);
+    setSelectedItems([]);
     setErrorMessage(null);
+    setSubmitSummary(null);
   }, [entryMode]);
 
   useEffect(() => {
@@ -207,7 +339,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           });
           if (!active) return;
           startTransition(() => {
-            setRecipeResults(recipes);
+            setRecipeResults(recipes.filter((recipe) => !selectedRecipeIds.has(recipe.id)));
             setIngredientResults([]);
           });
           return;
@@ -217,6 +349,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           const normalizedQuery = normalizeSearchText(deferredQuery);
           const ingredients = stockedIngredients
               .filter((ingredient) => normalizeSearchText(ingredient.name).includes(normalizedQuery))
+              .filter((ingredient) => !selectedIngredientIds.has(ingredient.id))
               .slice(0, 6);
           if (!active) return;
           startTransition(() => {
@@ -229,7 +362,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
         const ingredients = await inventoryService.searchIngredients(deferredQuery, 6);
         if (!active) return;
         startTransition(() => {
-          setIngredientResults(ingredients);
+          setIngredientResults(ingredients.filter((ingredient) => !selectedIngredientIds.has(ingredient.id)));
           setRecipeResults([]);
         });
       } catch (error) {
@@ -246,82 +379,184 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
       active = false;
       abortController.abort();
     };
-  }, [authenticated, deferredQuery, entryMode, inventoryService, isOutside, recipeService, stockedIngredients]);
+  }, [
+    authenticated,
+    deferredQuery,
+    entryMode,
+    inventoryService,
+    isOutside,
+    recipeService,
+    selectedIngredientIds,
+    selectedRecipeIds,
+    stockedIngredients
+  ]);
 
   useEffect(() => {
-    if (entryMode !== 'INGREDIENT' || isOutside || !selectedIngredient) return;
+    if (entryMode !== 'INGREDIENT' || isOutside) return;
 
-    const isStillInSelectedLocation = stockedIngredients.some((ingredient) => ingredient.id === selectedIngredient.id);
-    if (isStillInSelectedLocation) return;
+    const stockedIngredientIds = new Set(stockedIngredients.map((ingredient) => ingredient.id));
+    const nextItems = selectedItems.filter(
+        (item) => item.kind !== 'INGREDIENT' || stockedIngredientIds.has(item.ingredient.id)
+    );
 
-    setSelectedIngredient(null);
-    setSuccess(null);
-  }, [entryMode, isOutside, selectedIngredient, stockedIngredients]);
+    if (nextItems.length !== selectedItems.length) {
+      setSelectedItems(nextItems);
+      setSubmitSummary(null);
+    }
+  }, [entryMode, isOutside, selectedItems, stockedIngredients]);
 
   if (!authenticated || !user) return null;
 
   const handleRecipeSelect = (recipe: RecipeListItem) => {
-    setSelectedRecipe(recipe);
-    setSelectedIngredient(null);
-    setSearchQuery(recipe.title);
+    const key = getItemKey('RECIPE', recipe.id);
+
+    setSelectedItems((current) => {
+      if (current.some((item) => item.key === key)) return current;
+      return [
+        ...current,
+        {
+          key,
+          kind: 'RECIPE',
+          recipe,
+          portion: RECIPE_PORTION_OPTIONS[1]
+        }
+      ];
+    });
+    setSearchQuery('');
     setRecipeResults([]);
     setIngredientResults([]);
     setErrorMessage(null);
+    setSubmitSummary(null);
   };
 
   const handleIngredientSelect = (ingredient: Ingredient) => {
-    setSelectedIngredient(ingredient);
-    setSelectedRecipe(null);
-    setSearchQuery(ingredient.name);
+    const key = getItemKey('INGREDIENT', ingredient.id);
+
+    setSelectedItems((current) => {
+      if (current.some((item) => item.key === key)) return current;
+      return [
+        ...current,
+        {
+          key,
+          kind: 'INGREDIENT',
+          ingredient,
+          portion: INGREDIENT_PORTION_OPTIONS[1]
+        }
+      ];
+    });
+    setSearchQuery('');
     setRecipeResults([]);
     setIngredientResults([]);
     setErrorMessage(null);
+    setSubmitSummary(null);
+  };
+
+  const handleRemoveItem = (itemKey: string) => {
+    setSelectedItems((current) => current.filter((item) => item.key !== itemKey));
+    setSubmitSummary(null);
+    setErrorMessage(null);
+  };
+
+  const handleRecipePortionChange = (itemKey: string, nextPortion: RecipePortionOption) => {
+    setSelectedItems((current) =>
+        current.map((item) =>
+            item.key === itemKey && item.kind === 'RECIPE'
+                ? { ...item, portion: nextPortion }
+                : item
+        )
+    );
+    setSubmitSummary(null);
+  };
+
+  const handleIngredientPortionChange = (itemKey: string, nextPortion: IngredientPortionOption) => {
+    setSelectedItems((current) =>
+        current.map((item) =>
+            item.key === itemKey && item.kind === 'INGREDIENT'
+                ? { ...item, portion: nextPortion }
+                : item
+        )
+    );
+    setSubmitSummary(null);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!selectedRecipe && !selectedIngredient) {
-      setErrorMessage('Önce bir tarif veya malzeme seç.');
+    if (selectedItems.length === 0) {
+      setErrorMessage('Önce en az bir tarif veya malzeme seç.');
       return;
     }
 
     setSubmitting(true);
     setErrorMessage(null);
-    setSuccess(null);
+    setSubmitSummary(null);
 
     try {
-      const response = await consumptionService.logConsumption({
-        userId: user.id,
-        recipeId: selectedRecipe?.id,
-        ingredientId: selectedIngredient?.id,
-        inventoryGroupId: !isOutside && selectedGroup ? selectedGroup.id : undefined,
-        foodName: selectedRecipe?.title ?? selectedIngredient?.name ?? searchQuery.trim(),
-        mealType,
-        portionSize: selectedRecipe ? selectedRecipePortion.portionSize : selectedIngredientPortion.portionSize,
-        portionLabel: selectedRecipe ? selectedRecipePortion.label : selectedIngredientPortion.label,
-        portionMultiplier: selectedRecipe ? selectedRecipePortion.multiplier : undefined,
-        portionGrams: selectedIngredient ? selectedIngredientPortion.grams : undefined,
-        isCustomEntry: false,
-        isFromInventory: !isOutside && Boolean(selectedGroup)
+      const itemsToSubmit = [...selectedItems];
+      const results = await Promise.allSettled(
+          itemsToSubmit.map((item) =>
+              consumptionService.logConsumption({
+                userId: user.id,
+                recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
+                ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
+                inventoryGroupId: !isOutside && selectedGroup ? selectedGroup.id : undefined,
+                foodName: getSelectedItemName(item),
+                mealType,
+                portionSize: item.portion.portionSize,
+                portionLabel: item.portion.label,
+                portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
+                portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
+                isCustomEntry: false,
+                isFromInventory: !isOutside && Boolean(selectedGroup)
+              })
+          )
+      );
+
+      const successfulResponses: ConsumptionResponse[] = [];
+      const failedItems: SelectedConsumptionItem[] = [];
+      let firstFailureMessage: string | null = null;
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          successfulResponses.push(result.value);
+          return;
+        }
+
+        failedItems.push(itemsToSubmit[index]);
+        if (!firstFailureMessage) {
+          firstFailureMessage = getErrorMessage(result.reason, 'Tuketim kaydi olusturulamadi.');
+        }
       });
 
-      setSuccess(response);
       setSearchQuery('');
-      setSelectedRecipe(null);
-      setSelectedIngredient(null);
+      setSelectedItems(failedItems);
       setRecipeResults([]);
       setIngredientResults([]);
 
-      if (!isOutside && selectedGroup) {
+      if (successfulResponses.length > 0) {
+        setSubmitSummary({
+          responses: successfulResponses,
+          failedNames: failedItems.map((item) => getSelectedItemName(item))
+        });
+      }
+
+      if (failedItems.length > 0) {
+        const failedLabel = formatNameList(failedItems.map((item) => getSelectedItemName(item)), 4);
+        const prefix = successfulResponses.length > 0
+            ? `${successfulResponses.length} oge kaydedildi ancak bazi ogeler tekrar denemeli.`
+            : 'Secilen ogeler kaydedilemedi.';
+        setErrorMessage(`${prefix} ${failedLabel}${firstFailureMessage ? ` · ${firstFailureMessage}` : ''}`);
+      }
+
+      if (successfulResponses.length > 0 && !isOutside && selectedGroup) {
         await loadInventoryGroups();
       }
 
-      if (onConsumptionLogged) {
-        void Promise.resolve(onConsumptionLogged(response)).catch(() => undefined);
+      if (onConsumptionLogged && successfulResponses.length > 0) {
+        await Promise.allSettled(
+            successfulResponses.map((response) => Promise.resolve(onConsumptionLogged(response)))
+        );
       }
-    } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'Tüketim kaydı oluşturulamadı.'));
     } finally {
       setSubmitting(false);
     }
@@ -329,6 +564,13 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
   const resultCards = entryMode === 'RECIPE' ? recipeResults : ingredientResults;
   const activeEntryModeLabel = ENTRY_MODE_OPTIONS.find((option) => option.value === entryMode)?.label ?? entryMode;
+  const successTitle = submitSummary
+      ? submitSummary.failedNames.length > 0
+          ? `${submitSummary.responses.length} oge kaydedildi, ${submitSummary.failedNames.length} oge tekrar bekliyor`
+          : `${submitSummary.responses.length} oge basariyla kaydedildi`
+      : null;
+  const successNames = submitSummary ? formatNameList(submitSummary.responses.map((response) => response.foodName)) : '';
+  const successUsesInventory = submitSummary?.responses.some((response) => Boolean(response.isFromInventory)) ?? false;
 
   return (
       <section className="meal-card rounded-[2.75rem] shadow-brand-hero">
@@ -355,7 +597,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
             </div>
             <div className="meal-metric-card col-span-2 px-4 dark:bg-white/5 sm:col-span-1 border-terracotta/20">
               <p className="meal-overline tracking-[0.18em]">Selected</p>
-              <p className="mt-3 text-sm font-semibold text-terracotta">{activeItemName ?? 'Awaiting selection'}</p>
+              <p className="mt-3 text-sm font-semibold text-terracotta">{selectionLabel}</p>
             </div>
           </div>
         </div>
@@ -398,9 +640,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       value={searchQuery}
                       onChange={(event) => {
                         setSearchQuery(event.target.value);
-                        if (entryMode === 'RECIPE') setSelectedRecipe(null);
-                        if (entryMode === 'INGREDIENT') setSelectedIngredient(null);
-                        setSuccess(null);
+                        setErrorMessage(null);
+                        setSubmitSummary(null);
                       }}
                       placeholder={entryMode === 'RECIPE' ? 'Mercimek çorbası, menemen...' : 'Yoğurt, muz, badem...'}
                       className="base-input py-4 pl-12 pr-4"
@@ -410,7 +651,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
               <div className="mt-4 flex items-center gap-2 text-xs text-espresso-midnight/45 dark:text-alabaster/45">
                 {searching || isSearchStale ? <Loader2 size={14} className="animate-spin text-terracotta" /> : <Clock3 size={14} className="text-moss-sage" />}
-                <span>{searching || isSearchStale ? 'Arama guncelleniyor...' : 'Asagidaki sonuclardan secim yap.'}</span>
+                <span>{searching || isSearchStale ? 'Arama guncelleniyor...' : 'Asagidaki sonuclardan bir veya daha fazla sec.'}</span>
               </div>
 
               <div className="mt-4 grid gap-3">
@@ -425,20 +666,16 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                         key={recipe.id}
                         type="button"
                         onClick={() => handleRecipeSelect(recipe)}
-                        className={`rounded-[1.7rem] border px-4 py-4 text-left transition-all ${
-                            selectedRecipe?.id === recipe.id
-                                ? 'border-transparent bg-terracotta text-white shadow-xl shadow-terracotta/20'
-                                : 'border-card-border bg-white/80 dark:bg-white/5 hover:border-terracotta/30 dark:text-alabaster'
-                        }`}
+                        className="rounded-[1.7rem] border border-card-border bg-white/80 px-4 py-4 text-left transition-all hover:border-terracotta/30 dark:bg-white/5 dark:text-alabaster"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="font-serif text-xl font-bold">{recipe.title}</p>
-                          <p className={`mt-2 text-xs uppercase tracking-[0.18em] ${selectedRecipe?.id === recipe.id ? 'text-white/70' : 'text-moss-forest/45 dark:text-moss-sage/55'}`}>
-                            {recipe.category || 'Genel'}
+                          <p className="mt-2 text-xs uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">
+                            {formatCategoryLabel(recipe.category)}
                           </p>
                         </div>
-                        <div className={`rounded-full px-3 py-1 text-xs font-bold ${selectedRecipe?.id === recipe.id ? 'bg-white/15 text-white' : 'bg-moss-sage/10 text-moss-forest dark:text-moss-sage'}`}>
+                        <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-forest dark:text-moss-sage">
                           {formatCalories(recipe.totalCalories)}
                         </div>
                       </div>
@@ -450,25 +687,129 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                         key={ingredient.id}
                         type="button"
                         onClick={() => handleIngredientSelect(ingredient)}
-                        className={`rounded-[1.7rem] border px-4 py-4 text-left transition-all ${
-                            selectedIngredient?.id === ingredient.id
-                                ? 'border-transparent bg-terracotta text-white shadow-xl shadow-terracotta/20'
-                                : 'border-card-border bg-white/80 dark:bg-white/5 hover:border-terracotta/30 dark:text-alabaster'
-                        }`}
+                        className="rounded-[1.7rem] border border-card-border bg-white/80 px-4 py-4 text-left transition-all hover:border-terracotta/30 dark:bg-white/5 dark:text-alabaster"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="font-serif text-xl font-bold">{ingredient.name}</p>
-                          <p className={`mt-2 text-xs uppercase tracking-[0.18em] ${selectedIngredient?.id === ingredient.id ? 'text-white/70' : 'text-moss-forest/45 dark:text-moss-sage/55'}`}>
-                            {ingredient.category}
+                          <p className="mt-2 text-xs uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">
+                            {formatCategoryLabel(ingredient.category)}
                           </p>
                         </div>
-                        <div className={`rounded-full px-3 py-1 text-xs font-bold ${selectedIngredient?.id === ingredient.id ? 'bg-white/15 text-white' : 'bg-moss-sage/10 text-moss-forest dark:text-moss-sage'}`}>
+                        <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-forest dark:text-moss-sage">
                           {ingredient.nutrition ? `${Math.round(ingredient.nutrition.caloriesPer100g)} kcal / 100g` : 'Besin verisi bekleniyor'}
                         </div>
                       </div>
                     </button>
                 ))}
+              </div>
+
+              <div className="mt-6 rounded-[1.8rem] border-2 border-dashed border-card-border bg-white/50 p-4 dark:bg-white/[0.03]">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="meal-overline tracking-[0.18em]">Selected Items</p>
+                    <h4 className="mt-2 text-lg font-serif font-bold text-espresso-midnight dark:text-alabaster">Secilenleri burada yonet</h4>
+                  </div>
+                  <div className="rounded-full border border-terracotta/20 bg-terracotta/10 px-4 py-2 text-sm font-bold text-terracotta">
+                    {selectedItems.length} Oge
+                  </div>
+                </div>
+
+                {selectedItems.length === 0 ? (
+                    <div className="mt-4 flex min-h-[96px] items-center justify-center rounded-[1.4rem] bg-white/60 px-4 text-sm text-espresso-midnight/45 dark:bg-white/[0.02] dark:text-alabaster/45">
+                      Henuz secim yapmadin. Arama sonuclarindan ogeleri ekledikce burada gorunecekler.
+                    </div>
+                ) : (
+                    <div className="mt-4 grid gap-4">
+                      {selectedItems.map((item) => {
+                        const itemNutrition = getSelectedItemNutrition(item);
+
+                        return (
+                            <article
+                                key={item.key}
+                                className="rounded-[1.7rem] border border-card-border bg-white/85 p-4 shadow-sm dark:bg-white/[0.04]"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div>
+                                  <p className="font-serif text-xl font-bold text-espresso-midnight dark:text-alabaster">
+                                    {getSelectedItemName(item)}
+                                  </p>
+                                  <p className="mt-2 text-xs uppercase tracking-[0.18em] text-moss-forest/50 dark:text-moss-sage/60">
+                                    {getSelectedItemCategory(item)}
+                                  </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveItem(item.key)}
+                                    disabled={submitting}
+                                    className="rounded-xl bg-terracotta/10 p-2 text-terracotta transition-all hover:bg-terracotta hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+
+                              <div className="mt-4">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-alabaster/40">
+                                  Porsiyon
+                                </p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  {item.kind === 'RECIPE' && RECIPE_PORTION_OPTIONS.map((option) => (
+                                      <button
+                                          key={option.id}
+                                          type="button"
+                                          onClick={() => handleRecipePortionChange(item.key, option)}
+                                          disabled={submitting}
+                                          className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
+                                              item.portion.id === option.id
+                                                  ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
+                                                  : 'border border-card-border bg-white text-espresso-midnight/70 hover:text-terracotta dark:bg-white/[0.03] dark:text-alabaster/70'
+                                          }`}
+                                      >
+                                        {option.label}
+                                      </button>
+                                  ))}
+
+                                  {item.kind === 'INGREDIENT' && INGREDIENT_PORTION_OPTIONS.map((option) => (
+                                      <button
+                                          key={option.id}
+                                          type="button"
+                                          onClick={() => handleIngredientPortionChange(item.key, option)}
+                                          disabled={submitting}
+                                          className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
+                                              item.portion.id === option.id
+                                                  ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
+                                                  : 'border border-card-border bg-white text-espresso-midnight/70 hover:text-terracotta dark:bg-white/[0.03] dark:text-alabaster/70'
+                                          }`}
+                                      >
+                                        {option.label}
+                                      </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
+                                  <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Calories</p>
+                                  <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatCalories(itemNutrition.calories)}</p>
+                                </div>
+                                <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
+                                  <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Protein</p>
+                                  <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.protein)}</p>
+                                </div>
+                                <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
+                                  <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Carbs</p>
+                                  <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.carbs)}</p>
+                                </div>
+                                <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
+                                  <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Fat</p>
+                                  <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.fat)}</p>
+                                </div>
+                              </div>
+                            </article>
+                        );
+                      })}
+                    </div>
+                )}
               </div>
             </div>
 
@@ -479,7 +820,10 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
                     type="button"
-                    onClick={() => setSelectedLocationId(OUTSIDE_LOCATION)}
+                    onClick={() => {
+                      setSelectedLocationId(OUTSIDE_LOCATION);
+                      setSubmitSummary(null);
+                    }}
                     className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition-all ${
                         isOutside ? 'bg-espresso-midnight text-white shadow-lg shadow-black/10' : 'border border-card-border bg-white/75 text-espresso-midnight/65 hover:text-terracotta dark:bg-white/5 dark:text-alabaster/65'
                     }`}
@@ -497,7 +841,10 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                         <button
                             key={group.id}
                             type="button"
-                            onClick={() => setSelectedLocationId(String(group.id))}
+                            onClick={() => {
+                              setSelectedLocationId(String(group.id));
+                              setSubmitSummary(null);
+                            }}
                             className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition-all ${
                                 selectedLocationId === String(group.id)
                                     ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
@@ -516,7 +863,10 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     <button
                         key={option.value}
                         type="button"
-                        onClick={() => setMealType(option.value)}
+                        onClick={() => {
+                          setMealType(option.value);
+                          setSubmitSummary(null);
+                        }}
                         className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
                             mealType === option.value
                                 ? 'bg-moss-sage text-espresso-midnight shadow-lg shadow-moss-sage/20'
@@ -532,55 +882,19 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
           <div className="space-y-6">
             <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-sm dark:bg-white/5">
-              <p className="meal-overline tracking-[0.18em]">Household Portion</p>
-              <h3 className="meal-section-title mt-2 text-2xl">Kolay bir household unit sec</h3>
+              <p className="meal-overline tracking-[0.18em]">Selection Flow</p>
+              <h3 className="meal-section-title mt-2 text-2xl">Her kart kendi porsiyonuyla hesaplanir</h3>
 
               <div className="mt-5 grid gap-3">
-                {entryMode === 'RECIPE' && RECIPE_PORTION_OPTIONS.map((option) => (
-                    <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setSelectedRecipePortion(option)}
-                        className={`rounded-[1.7rem] border px-4 py-4 text-left transition-all ${
-                            selectedRecipePortion.id === option.id
-                                ? 'border-transparent bg-terracotta text-white shadow-xl shadow-terracotta/20'
-                                : 'border-card-border bg-white/80 hover:border-terracotta/30 dark:bg-white/5 dark:text-alabaster'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="font-semibold">{option.label}</p>
-                          <p className={`mt-1 text-xs ${selectedRecipePortion.id === option.id ? 'text-white/70' : 'text-espresso-midnight/45 dark:text-alabaster/45'}`}>{option.note}</p>
-                        </div>
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${selectedRecipePortion.id === option.id ? 'bg-white/15 text-white' : 'bg-moss-sage/10 text-moss-forest dark:text-moss-sage'}`}>
-                      x{option.multiplier}
-                    </span>
-                      </div>
-                    </button>
-                ))}
-
-                {entryMode === 'INGREDIENT' && INGREDIENT_PORTION_OPTIONS.map((option) => (
-                    <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setSelectedIngredientPortion(option)}
-                        className={`rounded-[1.7rem] border px-4 py-4 text-left transition-all ${
-                            selectedIngredientPortion.id === option.id
-                                ? 'border-transparent bg-terracotta text-white shadow-xl shadow-terracotta/20'
-                                : 'border-card-border bg-white/80 hover:border-terracotta/30 dark:bg-white/5 dark:text-alabaster'
-                        }`}
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="font-semibold">{option.label}</p>
-                          <p className={`mt-1 text-xs ${selectedIngredientPortion.id === option.id ? 'text-white/70' : 'text-espresso-midnight/45 dark:text-alabaster/45'}`}>{option.note}</p>
-                        </div>
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${selectedIngredientPortion.id === option.id ? 'bg-white/15 text-white' : 'bg-moss-sage/10 text-moss-forest dark:text-moss-sage'}`}>
-                      {option.grams}g
-                    </span>
-                      </div>
-                    </button>
-                ))}
+                <div className="rounded-[1.5rem] border border-card-border bg-white/80 px-4 py-4 text-sm text-espresso-midnight/60 dark:bg-white/[0.03] dark:text-alabaster/60">
+                  Arama sonuclarindan birden fazla oge ekleyebilirsin.
+                </div>
+                <div className="rounded-[1.5rem] border border-card-border bg-white/80 px-4 py-4 text-sm text-espresso-midnight/60 dark:bg-white/[0.03] dark:text-alabaster/60">
+                  Her secilen kartta porsiyonu ayarladiginda toplam makrolar aninda guncellenir.
+                </div>
+                <div className="rounded-[1.5rem] border border-card-border bg-white/80 px-4 py-4 text-sm text-espresso-midnight/60 dark:bg-white/[0.03] dark:text-alabaster/60">
+                  Kaydet dediginde secilen her oge mevcut API uzerinden ayri bir tuketim kaydi olarak gonderilir.
+                </div>
               </div>
             </div>
 
@@ -589,8 +903,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                 <div>
                   <p className="meal-overline tracking-[0.18em] text-espresso-midnight/45 dark:text-white/45">Quick Summary</p>
                   <h3 className="meal-section-title mt-2 text-2xl text-espresso-midnight dark:text-white">
-                    {activeItemName ?? 'Secimini bekliyorum'}
+                    {summaryTitle}
                   </h3>
+                  {summarySubtitle ? (
+                      <p className="mt-2 text-sm text-espresso-midnight/60 dark:text-white/60">{summarySubtitle}</p>
+                  ) : null}
                 </div>
                 <div className="rounded-full bg-terracotta/10 p-3 text-terracotta">
                   {entryMode === 'RECIPE' ? <Soup size={18} /> : <UtensilsCrossed size={18} />}
@@ -600,19 +917,19 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-4 py-4 dark:bg-white/5">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Calories</p>
-                  <p className="mt-2 font-serif text-3xl font-bold">{formatCalories(nutritionPreview?.calories)}</p>
+                  <p className="mt-2 font-serif text-3xl font-bold">{formatCalories(nutritionPreview.calories)}</p>
                 </div>
                 <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-4 py-4 dark:bg-white/5">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Protein</p>
-                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.protein)}</p>
+                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.protein)}</p>
                 </div>
                 <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-4 py-4 dark:bg-white/5">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Carbs</p>
-                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.carbs)}</p>
+                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.carbs)}</p>
                 </div>
                 <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-4 py-4 dark:bg-white/5">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Fat</p>
-                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.fat)}</p>
+                  <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.fat)}</p>
                 </div>
               </div>
 
@@ -624,11 +941,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
               <button
                   type="submit"
-                  disabled={submitting || (!selectedRecipe && !selectedIngredient)}
+                  disabled={submitting || selectedItems.length === 0}
                   className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-[1.6rem] bg-terracotta px-5 py-4 font-semibold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.01] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-                {submitting ? 'Kaydediliyor...' : 'Tuketimi Kaydet'}
+                {submitting ? 'Kaydediliyor...' : selectedItems.length > 1 ? 'Tuketimleri Kaydet' : 'Tuketimi Kaydet'}
               </button>
             </div>
 
@@ -637,21 +954,26 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                   <div className="flex items-start gap-3">
                     <AlertCircle size={18} className="mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-semibold">Kayit olusturulamadi</p>
+                      <p className="font-semibold">
+                        {submitSummary?.responses.length ? 'Bazi ogeler kaydedilemedi' : 'Kayit olusturulamadi'}
+                      </p>
                       <p className="mt-1 text-sm text-red-600">{errorMessage}</p>
                     </div>
                   </div>
                 </div>
             )}
 
-            {success && (
+            {submitSummary && successTitle && (
                 <div className="rounded-[1.8rem] border border-moss-sage/30 bg-moss-sage/10 px-4 py-4 text-moss-forest">
                   <div className="flex items-start gap-3">
                     <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-moss-sage" />
                     <div>
-                      <p className="font-semibold">{success.foodName} basariyla kaydedildi</p>
+                      <p className="font-semibold">{successTitle}</p>
                       <p className="mt-1 text-sm text-moss-forest/80">
-                        {formatCalories(success.estimatedCalories)} · {formatMacro(success.estimatedProtein)} protein · {success.isFromInventory ? `${locationLabel(selectedGroup)} envanteri guncellendi.` : 'Envanter etkilenmedi.'}
+                        {successNames}
+                      </p>
+                      <p className="mt-1 text-sm text-moss-forest/80">
+                        {formatCalories(submittedNutrition.calories)} · {formatMacro(submittedNutrition.protein)} protein · {successUsesInventory ? `${locationLabel(selectedGroup)} envanteri guncellendi.` : 'Envanter etkilenmedi.'}
                       </p>
                     </div>
                   </div>
