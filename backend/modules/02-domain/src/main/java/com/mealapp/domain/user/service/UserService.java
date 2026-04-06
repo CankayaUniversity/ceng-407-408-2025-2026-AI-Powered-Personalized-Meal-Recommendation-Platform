@@ -41,6 +41,16 @@ public class UserService {
     }
 
     /**
+     * İsim veya e-postaya göre kullanıcı arar.
+     */
+    public java.util.List<User> searchUsers(String query) {
+        if (query == null || query.length() < 2) {
+            return java.util.Collections.emptyList();
+        }
+        return userRepository.searchByQuery(query);
+    }
+
+    /**
      * Keycloak subject değiştiğinde mevcut kullanıcı kaydını yeni subject ile ilişkilendirir.
      */
     public void relinkUserId(String oldId, String newId) {

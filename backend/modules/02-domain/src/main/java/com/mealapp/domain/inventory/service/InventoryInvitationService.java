@@ -4,6 +4,8 @@ import com.mealapp.domain.inventory.entity.InventoryGroup;
 import com.mealapp.domain.inventory.entity.InventoryInvitation;
 import com.mealapp.domain.inventory.repository.InventoryGroupRepository;
 import com.mealapp.domain.inventory.repository.InventoryInvitationRepository;
+import com.mealapp.domain.notification.entity.Notification;
+import com.mealapp.domain.notification.service.NotificationService;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class InventoryInvitationService {
     private final InventoryInvitationRepository invitationRepository;
     private final InventoryGroupRepository groupRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public InventoryInvitation inviteUser(String inviterId, Long groupId, String inviteeEmail) {
@@ -49,14 +52,26 @@ public class InventoryInvitationService {
                     throw new RuntimeException("An invitation is already pending for this user and group");
                 });
 
-        InventoryInvitation invitation = InventoryInvitation.builder()
+        InventoryInvitation invitation = invitationRepository.save(InventoryInvitation.builder()
                 .inventoryGroup(group)
                 .inviter(inviter)
                 .inviteeEmail(inviteeEmail)
                 .status(InventoryInvitation.InvitationStatus.PENDING)
-                .build();
+                .build());
 
-        return invitationRepository.save(invitation);
+        // Create notification for invitee if they exist in the system
+        userRepository.findByEmail(inviteeEmail).ifPresent(invitee -> {
+            notificationService.createNotification(
+                    invitee,
+                    "Yeni Envanter Daveti",
+                    String.format("%s sizi '%s' envanter grubuna katılmaya davet etti.", 
+                            inviter.getName() != null ? inviter.getName() : inviter.getEmail(), group.getName()),
+                    Notification.NotificationType.INVITATION,
+                    invitation.getId().toString()
+            );
+        });
+
+        return invitation;
     }
 
     public List<InventoryInvitation> getPendingInvitations(String userEmail) {

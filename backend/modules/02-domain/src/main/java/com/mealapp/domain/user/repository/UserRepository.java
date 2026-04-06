@@ -22,6 +22,12 @@ public interface UserRepository extends JpaRepository<User, String> {
      */
     Optional<User> findByEmail(String email);
 
+    /**
+     * İsim veya e-postaya göre kullanıcıları arar (Davet sistemi için).
+     */
+    @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%'))")
+    java.util.List<User> searchByQuery(@Param("query") String query);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE users SET id = :newId, updated_at = NOW() WHERE id = :oldId", nativeQuery = true)
     int relinkUserId(@Param("oldId") String oldId, @Param("newId") String newId);

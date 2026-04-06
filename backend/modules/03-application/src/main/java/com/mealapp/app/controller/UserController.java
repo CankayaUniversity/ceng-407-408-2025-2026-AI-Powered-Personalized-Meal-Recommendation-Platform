@@ -119,6 +119,16 @@ public class UserController {
         return userMapper.toDto(user);
     }
 
+    /**
+     * Kullanıcı arama (İsim veya E-posta).
+     */
+    @GetMapping("/search")
+    public java.util.List<UserDto> search(@RequestParam String query) {
+        return userService.searchUsers(query).stream()
+                .map(userMapper::toDto)
+                .toList();
+    }
+
     private String requireAuthenticatedUserId(Jwt jwt) {
         if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
             throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");

@@ -2,14 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     ChefHat, LayoutDashboard, Utensils, User as UserIcon,
-    LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus
-} from 'lucide-react'; // Plus ikonunu ekledik
+    LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
+    Bell, Settings
+} from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
+import { useNotificationService } from '../../services/notificationService';
+import { Notification } from '../../types';
 
 import { UIProvider, useUI } from '../../infrastructure/ui/UIContext';
 import ConsumptionModal from '../../components/ConsumptionModal';
+const formatTimeAgo = (date: Date, locale: string) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return locale === 'tr' ? 'şimdi' : 'just now';
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return locale === 'tr' ? `${diffInMinutes} dk önce` : `${diffInMinutes}m ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return locale === 'tr' ? `${diffInHours} sa önce` : `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return locale === 'tr' ? `${diffInDays} gün önce` : `${diffInDays}d ago`;
+    
+    return date.toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US');
+};
 
 // İçerik kısmını ayrı bir bileşene alıyoruz ki useUI hook'unu Layout içinde kullanabilelim
 const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -18,11 +38,56 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const { openConsumption } = useUI(); // UIContext'ten açma fonksiyonunu aldık
     const location = useLocation();
     const { t, i18n } = useTranslation();
+    const notificationService = useNotificationService();
 
     const [expanded, setExpanded] = useState(() => {
         const saved = localStorage.getItem('sidebar-expanded');
         return saved !== null ? JSON.parse(saved) : true;
     });
+
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+    useEffect(() => {
+        if (authenticated) {
+            fetchNotifications();
+            const interval = setInterval(fetchNotifications, 30000); // 30 saniyede bir kontrol
+            return () => clearInterval(interval);
+        }
+    }, [authenticated]);
+
+    const fetchNotifications = async () => {
+        try {
+            const data = await notificationService.getNotifications();
+            setNotifications(data);
+            const unread = data.filter(n => n.status === 'UNREAD').length;
+            setUnreadCount(unread);
+        } catch (error) {
+            console.error("Notifications could not be fetched", error);
+        }
+    };
+
+    const handleMarkAsRead = async (id: number) => {
+        try {
+            await notificationService.markAsRead(id);
+            setNotifications(notifications.map(n => n.id === id ? { ...n, status: 'READ' } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        } catch (error) {
+            console.error("Could not mark as read", error);
+        }
+    };
+
+    const handleMarkAllAsRead = async () => {
+        try {
+            await notificationService.markAllAsRead();
+            setNotifications(notifications.map(n => ({ ...n, status: 'READ' })));
+            setUnreadCount(0);
+        } catch (error) {
+            console.error("Could not mark all as read", error);
+        }
+    };
 
     useEffect(() => {
         localStorage.setItem('sidebar-expanded', JSON.stringify(expanded));
@@ -138,15 +203,146 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     </button>
 
                     {authenticated && (
-                        <Link to="/profile" className="flex items-center gap-3 pl-6 border-l border-black/10 dark:border-white/10 group cursor-pointer">
-                            <div className="text-right hidden sm:block">
-                                <p className="text-xs font-bold group-hover:text-terracotta transition-colors">{user?.firstName}</p>
-                                <p className="text-[10px] uppercase text-black/40 dark:text-alabaster/25 tracking-wider font-medium">{user?.email}</p>
-                            </div>
-                            <div className="w-10 h-10 rounded-full bg-terracotta/10 border border-terracotta/20 flex items-center justify-center text-terracotta font-bold text-sm shadow-inner group-hover:scale-105 group-hover:shadow-lg transition-all duration-300">
-                                {user?.firstName?.charAt(0)}
-                            </div>
-                        </Link>
+                        <div className="relative">
+                            <button
+                                onClick={() => {
+                                    setShowNotifications(!showNotifications);
+                                    setShowProfileMenu(false);
+                                }}
+                                className={`p-2.5 rounded-xl transition-all border border-black/5 dark:border-white/5 relative ${showNotifications ? 'bg-terracotta text-white' : 'bg-black/5 dark:bg-white/5 text-black/40 dark:text-alabaster/40 hover:text-terracotta'}`}
+                            >
+                                <Bell size={18} />
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-espresso-midnight">
+                                        {unreadCount > 9 ? '9+' : unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {showNotifications && (
+                                <div className="absolute right-0 mt-4 w-80 bg-white dark:bg-black/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-2 z-[100]">
+                                    <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+                                        <h3 className="text-sm font-bold tracking-tight">Bildirimler</h3>
+                                        <button
+                                            onClick={handleMarkAllAsRead}
+                                            className="text-[10px] font-black text-terracotta hover:underline uppercase tracking-widest"
+                                        >
+                                            Hepsini Oku
+                                        </button>
+                                    </div>
+                                    <div className="max-h-[400px] overflow-y-auto">
+                                        {notifications.length === 0 ? (
+                                            <div className="p-8 text-center">
+                                                <Bell className="mx-auto mb-3 text-black/10 dark:text-white/10" size={32} />
+                                                <p className="text-xs text-black/40 dark:text-alabaster/40">Henüz bildiriminiz yok.</p>
+                                            </div>
+                                        ) : (
+                                            notifications.map((n) => (
+                                                <div
+                                                    key={n.id}
+                                                    onClick={() => handleMarkAsRead(n.id)}
+                                                    className={`p-4 border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer group ${n.status === 'UNREAD' ? 'bg-terracotta/[0.02]' : ''}`}
+                                                >
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <p className={`text-xs font-bold ${n.status === 'UNREAD' ? 'text-espresso-midnight dark:text-white' : 'text-black/40 dark:text-alabaster/40'}`}>
+                                                            {n.title}
+                                                        </p>
+                                                        <span className="text-[9px] text-black/20 dark:text-white/20 whitespace-nowrap ml-2">
+                                                            {formatTimeAgo(new Date(n.createdAt), i18n.language)}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] leading-relaxed text-black/60 dark:text-alabaster/60">
+                                                        {n.message}
+                                                    </p>
+                                                    {n.type === 'INVITATION' && (
+                                                        <div className="mt-3 flex gap-2">
+                                                            <Link
+                                                                to="/inventory"
+                                                                onClick={() => {
+                                                                    setShowNotifications(false);
+                                                                    handleMarkAsRead(n.id);
+                                                                }}
+                                                                className="flex-1 py-1.5 bg-terracotta text-white text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 hover:bg-terracotta/90 transition-all"
+                                                            >
+                                                                İsteğe Git
+                                                            </Link>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                    <div className="p-3 bg-black/[0.02] dark:bg-white/[0.02] text-center">
+                                        <Link
+                                            to="/notifications"
+                                            className="text-[10px] font-bold text-black/40 dark:text-alabaster/40 hover:text-terracotta uppercase tracking-wider"
+                                            onClick={() => setShowNotifications(false)}
+                                        >
+                                            Tümünü Gör
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {authenticated && (
+                        <div className="relative">
+                            <button
+                                onClick={() => {
+                                    setShowProfileMenu(!showProfileMenu);
+                                    setShowNotifications(false);
+                                }}
+                                className="flex items-center gap-3 pl-6 border-l border-black/10 dark:border-white/10 group cursor-pointer"
+                            >
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-xs font-bold group-hover:text-terracotta transition-colors">{user?.name || user?.firstName}</p>
+                                    <p className="text-[10px] uppercase text-black/40 dark:text-alabaster/25 tracking-wider font-medium">{user?.email}</p>
+                                </div>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-inner transition-all duration-300 ${showProfileMenu ? 'bg-terracotta text-white scale-105 shadow-lg' : 'bg-terracotta/10 border border-terracotta/20 text-terracotta group-hover:scale-105 group-hover:shadow-lg'}`}>
+                                    {user?.name?.charAt(0) || user?.firstName?.charAt(0)}
+                                </div>
+                            </button>
+
+                            {showProfileMenu && (
+                                <div className="absolute right-0 mt-4 w-56 bg-white dark:bg-black/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-2 z-[100]">
+                                    <div className="p-4 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                                        <p className="text-xs font-bold">{user?.name || user?.firstName}</p>
+                                        <p className="text-[10px] text-black/40 dark:text-alabaster/40 truncate">{user?.email}</p>
+                                    </div>
+                                    <div className="p-2">
+                                        <Link
+                                            to="/profile"
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-black/60 dark:text-alabaster/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-terracotta transition-all"
+                                            onClick={() => setShowProfileMenu(false)}
+                                        >
+                                            <UserIcon size={16} />
+                                            Profilim
+                                        </Link>
+                                        <Link
+                                            to="/settings"
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-black/60 dark:text-alabaster/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-terracotta transition-all"
+                                            onClick={() => setShowProfileMenu(false)}
+                                        >
+                                            <Settings size={16} />
+                                            Ayarlar
+                                        </Link>
+                                    </div>
+                                    <div className="p-2 border-t border-black/5 dark:border-white/5">
+                                        <button
+                                            onClick={() => {
+                                                setShowProfileMenu(false);
+                                                logout();
+                                            }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-red-500 hover:bg-red-500/5 transition-all"
+                                        >
+                                            <LogOut size={16} />
+                                            Çıkış Yap
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </header>
 

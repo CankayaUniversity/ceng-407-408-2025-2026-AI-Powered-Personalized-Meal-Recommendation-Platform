@@ -22,13 +22,15 @@ import {
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useConsumptionService } from '../../services/consumptionService';
 import { useInventoryService } from '../../services/inventoryService';
+import { useUserService } from '../../services/userService';
 import { useToast } from '../../shared/hooks/useToast';
 import {
   type Ingredient,
   type Inventory,
   type InventoryGroup,
   type InventoryGroupRequest,
-  type InventoryItemRequest
+  type InventoryItemRequest,
+  type User
 } from '../../types';
 
 /**
@@ -87,10 +89,32 @@ const InventoryPage: React.FC = () => {
   const [isConsuming, setIsConsuming] = useState(false);
   const [memberModalOpen, setMemberModalOpen] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState<User[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [invitationsModalOpen, setInvitationsModalOpen] = useState(false);
   const [loadingInvitations, setLoadingInvitations] = useState(false);
+
+  const userService = useUserService();
+
+  const handleUserSearch = async (query: string) => {
+    setNewMemberEmail(query);
+    if (query.length < 2) {
+      setUserSearchResults([]);
+      return;
+    }
+
+    setIsSearchingUsers(true);
+    try {
+      const results = await userService.searchUsers(query);
+      setUserSearchResults(results);
+    } catch (error) {
+      console.error("User search failed", error);
+    } finally {
+      setIsSearchingUsers(false);
+    }
+  };
 
   const activeGroup = useMemo(
       () => groups.find((group) => group.id === selectedGroupId) ?? groups[0] ?? null,
@@ -1073,22 +1097,48 @@ const InventoryPage: React.FC = () => {
                   </div>
 
                   <form onSubmit={handleAddMember} className="space-y-4 border-t border-card-border pt-6">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Yeni Üye Ekle</span>
-                    <div className="flex gap-2">
-                      <input
-                        type="email"
-                        value={newMemberEmail}
-                        onChange={(e) => setNewMemberEmail(e.target.value)}
-                        placeholder="E-posta adresi..."
-                        className="base-input flex-1 py-3 bg-background dark:bg-white/5 text-sm"
-                        required
-                      />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Yeni Üye Davet Et</span>
+                    <div className="flex gap-2 relative">
+                      <div className="flex-1 relative">
+                        <input
+                          type="text"
+                          value={newMemberEmail}
+                          onChange={(e) => handleUserSearch(e.target.value)}
+                          placeholder="E-posta veya isim ile ara..."
+                          className="base-input w-full py-3 bg-background dark:bg-white/5 text-sm"
+                          required
+                        />
+                          {isSearchingUsers ? (
+                            <div className="absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-espresso-midnight rounded-xl shadow-2xl border border-black/5 dark:border-white/10 z-[100] flex items-center justify-center p-4">
+                              <Loader2 size={20} className="animate-spin text-terracotta" />
+                            </div>
+                          ) : userSearchResults.length > 0 && (
+                            <div className="absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-espresso-midnight rounded-xl shadow-2xl border border-black/5 dark:border-white/10 z-[100] overflow-hidden max-h-48 overflow-y-auto">
+                              {userSearchResults.map((user) => (
+                                <div
+                                  key={user.id}
+                                  onClick={() => {
+                                    setNewMemberEmail(user.email || '');
+                                    setUserSearchResults([]);
+                                  }}
+                                  className="p-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer flex items-center justify-between"
+                                >
+                                  <div>
+                                    <p className="text-xs font-bold">{user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName)}</p>
+                                    <p className="text-[10px] text-black/40 dark:text-alabaster/40">{user.email}</p>
+                                  </div>
+                                  <Plus size={14} className="text-terracotta" />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                      </div>
                       <button 
                         type="submit" 
                         disabled={isAddingMember || !newMemberEmail.trim()}
-                        className="px-6 rounded-xl bg-espresso-midnight text-white font-bold text-xs hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                        className="px-6 rounded-xl bg-espresso-midnight text-white font-bold text-xs hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 whitespace-nowrap"
                       >
-                        {isAddingMember ? <Loader2 size={16} className="animate-spin" /> : 'EKLE'}
+                        {isAddingMember ? <Loader2 size={16} className="animate-spin" /> : 'DAVET ET'}
                       </button>
                     </div>
                   </form>
@@ -1115,7 +1165,12 @@ const InventoryPage: React.FC = () => {
                 </div>
 
                 <div className="mt-8 space-y-4">
-                  {invitations.length === 0 ? (
+                  {loadingInvitations ? (
+                    <div className="py-12 text-center">
+                      <Loader2 size={32} className="mx-auto animate-spin text-terracotta mb-4" />
+                      <p className="text-sm text-foreground-muted">Davetler yükleniyor...</p>
+                    </div>
+                  ) : invitations.length === 0 ? (
                     <div className="py-12 text-center">
                       <p className="text-sm text-foreground-muted italic">Bekleyen davetiniz bulunmuyor.</p>
                     </div>

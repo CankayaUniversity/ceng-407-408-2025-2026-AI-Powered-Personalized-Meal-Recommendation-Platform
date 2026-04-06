@@ -76,6 +76,8 @@ export enum PortionSize {
 export interface User {
   id: string;
   name?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   email?: string | null;
   allergies?: string[] | null;
   dislikedIngredients?: string[] | null;
@@ -89,6 +91,16 @@ export interface User {
   dailyCalorieTarget?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+}
+
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: 'INVITATION' | 'SYSTEM' | 'REMINDER';
+  targetId?: string;
+  status: 'UNREAD' | 'READ';
+  createdAt: string;
 }
 
 export interface RecipeListItem {

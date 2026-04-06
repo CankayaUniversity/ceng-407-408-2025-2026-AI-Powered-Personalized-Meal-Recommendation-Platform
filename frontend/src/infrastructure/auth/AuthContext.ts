@@ -3,6 +3,7 @@ import React, {useContext} from 'react';
 export interface AuthUser {
     id: string;
     username: string;
+    name?: string;
     email?: string;
     firstName?: string;
     lastName?: string;

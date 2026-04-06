@@ -140,6 +140,18 @@ export const getUserService = (api: AxiosInstance) => ({
 
       throw new ApiError('Beklenmeyen bir hata oluştu');
     }
+  },
+
+  /**
+   * İsim veya e-posta ile kullanıcı arar
+   * @param query - Arama kelimesi
+   * @returns Bulunan kullanıcı listesi
+   */
+  searchUsers: async (query: string): Promise<User[]> => {
+    const response = await api.get<User[]>('/v1/users/search', {
+      params: { query }
+    });
+    return response.data;
   }
 });
 
