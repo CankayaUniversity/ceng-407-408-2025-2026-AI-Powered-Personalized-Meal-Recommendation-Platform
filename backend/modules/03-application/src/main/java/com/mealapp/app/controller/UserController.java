@@ -1,5 +1,6 @@
 package com.mealapp.app.controller;
 
+import com.mealapp.domain.inventory.service.InventoryInvitationService;
 import com.mealapp.app.model.dto.user.UserDto;
 import com.mealapp.app.model.mapper.user.UserMapper;
 import com.mealapp.domain.common.exception.MealAppDomainException;
@@ -29,6 +30,7 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final InventoryInvitationService invitationService;
 
     /**
      * Kullanıcı oluşturur veya günceller.
@@ -84,6 +86,10 @@ public class UserController {
         newUser.setId(authenticatedUserId);
         newUser.setEmail(authenticatedEmail);
         User saved = userService.save(newUser);
+        
+        // Yeni kullanıcı için bekleyen davetleri bildirime dönüştür
+        invitationService.createNotificationsForPendingInvitations(saved);
+        
         return userMapper.toDto(saved);
     }
 

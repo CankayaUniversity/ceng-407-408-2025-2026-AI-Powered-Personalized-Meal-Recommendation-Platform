@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface InventoryInvitationRepository extends JpaRepository<InventoryInvitation, Long> {
     List<InventoryInvitation> findByInviteeEmailAndStatus(String inviteeEmail, InventoryInvitation.InvitationStatus status);
     Optional<InventoryInvitation> findByInviteeEmailAndInventoryGroupIdAndStatus(String inviteeEmail, Long inventoryGroupId, InventoryInvitation.InvitationStatus status);
+    List<InventoryInvitation> findByInviteeEmailAndInventoryGroupId(String inviteeEmail, Long inventoryGroupId);
 }

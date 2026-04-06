@@ -32,6 +32,7 @@ public class InventoryGroup {
     private String icon;
 
     @ManyToMany(mappedBy = "inventoryGroups")
+    @Builder.Default
     private List<User> users = new ArrayList<>();
 
     @OneToMany(mappedBy = "inventoryGroup", cascade = CascadeType.ALL, orphanRemoval = true)

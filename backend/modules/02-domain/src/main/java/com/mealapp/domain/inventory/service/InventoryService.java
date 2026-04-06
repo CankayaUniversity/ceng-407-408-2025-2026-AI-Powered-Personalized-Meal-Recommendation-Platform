@@ -33,7 +33,7 @@ public class InventoryService {
     /**
      * Kullanıcının tüm lokasyonlardaki envanterini getirir.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Inventory> getUserInventory(String userId) {
         ensureUserHasDefaultGroup(userId);
         return inventoryRepository.findByInventoryGroupUsersIdOrderByInventoryGroupIdAscIngredientNameAsc(userId);
@@ -51,7 +51,7 @@ public class InventoryService {
     /**
      * Kullanıcıya ait envanter lokasyonlarını ve içeriklerini getirir.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<InventoryGroup> getUserInventoryGroups(String userId) {
         ensureUserHasDefaultGroup(userId);
         List<InventoryGroup> groups = inventoryGroupRepository.findByUsersIdOrderByIdAsc(userId);
@@ -66,14 +66,20 @@ public class InventoryService {
         String normalizedName = normalizeGroupName(name);
         ensureGroupNameAvailable(userId, normalizedName, null);
 
+        User user = getRequiredUser(userId);
         InventoryGroup group = InventoryGroup.builder()
                 .name(normalizedName)
                 .icon(normalizeIcon(icon))
                 .build();
         
-        group.getUsers().add(getRequiredUser(userId));
+        // ManyToMany ilişkiyi her iki tarafta da kur (owning side: User)
+        group.getUsers().add(user);
+        user.getInventoryGroups().add(group);
 
-        return hydrateGroup(inventoryGroupRepository.save(group));
+        inventoryGroupRepository.save(group);
+        userRepository.save(user);
+
+        return hydrateGroup(group);
     }
 
     /**
@@ -237,15 +243,24 @@ public class InventoryService {
                 });
     }
 
-    private InventoryGroup ensureUserHasDefaultGroup(String userId) {
+    @Transactional
+    public InventoryGroup ensureUserHasDefaultGroup(String userId) {
         return inventoryGroupRepository.findFirstByUsersIdOrderByIdAsc(userId)
                 .orElseGet(() -> {
+                    User user = getRequiredUser(userId);
                     InventoryGroup group = InventoryGroup.builder()
                             .name("Home")
                             .icon("home")
                             .build();
-                    group.getUsers().add(getRequiredUser(userId));
-                    return inventoryGroupRepository.save(group);
+                    
+                    // ManyToMany ilişkiyi her iki tarafta da kur (owning side: User)
+                    group.getUsers().add(user);
+                    user.getInventoryGroups().add(group);
+
+                    inventoryGroupRepository.save(group);
+                    userRepository.save(user);
+                    
+                    return group;
                 });
     }
 

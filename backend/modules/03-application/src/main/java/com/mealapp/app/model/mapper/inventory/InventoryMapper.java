@@ -1,12 +1,16 @@
 package com.mealapp.app.model.mapper.inventory;
 
 import com.mealapp.app.model.dto.inventory.InventoryGroupResponse;
+import com.mealapp.app.model.dto.inventory.InventoryInvitationResponse;
 import com.mealapp.app.model.dto.inventory.InventoryItemResponse;
+import com.mealapp.app.model.dto.notification.NotificationResponse;
 import com.mealapp.app.model.mapper.recipe.IngredientMapper;
 import com.mealapp.app.model.mapper.user.UserMapper;
 import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
+import com.mealapp.domain.inventory.entity.InventoryInvitation;
+import com.mealapp.domain.notification.entity.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -69,5 +73,41 @@ public class InventoryMapper {
                 .unit(unit)
                 .ingredient(ingredientMapper.toDTO(item.getIngredient()))
                 .build();
+    }
+
+    public NotificationResponse toNotificationResponse(Notification notification) {
+        if (notification == null) return null;
+        return NotificationResponse.builder()
+                .id(notification.getId())
+                .title(notification.getTitle())
+                .message(notification.getMessage())
+                .type(notification.getType())
+                .targetId(notification.getTargetId())
+                .status(notification.getStatus())
+                .createdAt(notification.getCreatedAt())
+                .build();
+    }
+
+    public List<NotificationResponse> toNotificationResponses(List<Notification> notifications) {
+        return notifications.stream().map(this::toNotificationResponse).toList();
+    }
+
+    public InventoryInvitationResponse toInvitationResponse(InventoryInvitation invitation) {
+        if (invitation == null) return null;
+        return InventoryInvitationResponse.builder()
+                .id(invitation.getId())
+                .groupId(invitation.getInventoryGroup() != null ? invitation.getInventoryGroup().getId() : null)
+                .groupName(invitation.getInventoryGroup() != null ? invitation.getInventoryGroup().getName() : null)
+                .inviterName(invitation.getInviter() != null ? 
+                        (invitation.getInviter().getName() != null ? invitation.getInviter().getName() : invitation.getInviter().getEmail()) 
+                        : null)
+                .inviteeEmail(invitation.getInviteeEmail())
+                .status(invitation.getStatus())
+                .createdAt(invitation.getCreatedAt())
+                .build();
+    }
+
+    public List<InventoryInvitationResponse> toInvitationResponses(List<InventoryInvitation> invitations) {
+        return invitations.stream().map(this::toInvitationResponse).toList();
     }
 }

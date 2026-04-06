@@ -3,13 +3,15 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     ChefHat, LayoutDashboard, Utensils, User as UserIcon,
     LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
-    Bell, Settings
+    Bell, Settings, Check, X
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useNotificationService } from '../../services/notificationService';
+import { useInventoryService } from '../../services/inventoryService';
 import { Notification } from '../../types';
+import { useToast } from '../hooks/useToast';
 
 import { UIProvider, useUI } from '../../infrastructure/ui/UIContext';
 import ConsumptionModal from '../../components/ConsumptionModal';
@@ -39,6 +41,8 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const location = useLocation();
     const { t, i18n } = useTranslation();
     const notificationService = useNotificationService();
+    const inventoryService = useInventoryService();
+    const { showToast } = useToast();
 
     const [expanded, setExpanded] = useState(() => {
         const saved = localStorage.getItem('sidebar-expanded');
@@ -49,6 +53,16 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+    const isUnread = (status: string | any) => {
+        if (!status) return false;
+        return status.toString().toUpperCase() === 'UNREAD';
+    };
+
+    const isRead = (status: string | any) => {
+        if (!status) return false;
+        return status.toString().toUpperCase() === 'READ';
+    };
 
     useEffect(() => {
         if (authenticated) {
@@ -84,8 +98,32 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             await notificationService.markAllAsRead();
             setNotifications(notifications.map(n => ({ ...n, status: 'READ' })));
             setUnreadCount(0);
+            showToast('Tüm bildirimler okundu olarak işaretlendi', 'success');
         } catch (error) {
             console.error("Could not mark all as read", error);
+            showToast('Hata oluştu', 'error');
+        }
+    };
+
+    const handleAcceptInvitation = async (invitationId: number, notificationId: number) => {
+        try {
+            await inventoryService.acceptInvitation(invitationId);
+            await notificationService.markAsRead(notificationId);
+            showToast('Davet kabul edildi', 'success');
+            fetchNotifications();
+        } catch (error) {
+            showToast('Davet kabul edilirken hata oluştu', 'error');
+        }
+    };
+
+    const handleRejectInvitation = async (invitationId: number, notificationId: number) => {
+        try {
+            await inventoryService.rejectInvitation(invitationId);
+            await notificationService.markAsRead(notificationId);
+            showToast('Davet reddedildi', 'info');
+            fetchNotifications();
+        } catch (error) {
+            showToast('Davet reddedilirken hata oluştu', 'error');
         }
     };
 
@@ -244,7 +282,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                                     className={`p-4 border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer group ${n.status === 'UNREAD' ? 'bg-terracotta/[0.02]' : ''}`}
                                                 >
                                                     <div className="flex justify-between items-start mb-1">
-                                                        <p className={`text-xs font-bold ${n.status === 'UNREAD' ? 'text-espresso-midnight dark:text-white' : 'text-black/40 dark:text-alabaster/40'}`}>
+                                                        <p className={`text-xs font-bold ${isUnread(n.status) ? 'text-espresso-midnight dark:text-white' : 'text-black/40 dark:text-alabaster/40'}`}>
                                                             {n.title}
                                                         </p>
                                                         <span className="text-[9px] text-black/20 dark:text-white/20 whitespace-nowrap ml-2">
@@ -254,18 +292,34 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                                     <p className="text-[11px] leading-relaxed text-black/60 dark:text-alabaster/60">
                                                         {n.message}
                                                     </p>
-                                                    {n.type === 'INVITATION' && (
+                                                    {n.type === 'INVITATION' && isUnread(n.status) && (
                                                         <div className="mt-3 flex gap-2">
-                                                            <Link
-                                                                to="/inventory"
-                                                                onClick={() => {
-                                                                    setShowNotifications(false);
-                                                                    handleMarkAsRead(n.id);
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleAcceptInvitation(Number(n.targetId), n.id);
                                                                 }}
                                                                 className="flex-1 py-1.5 bg-terracotta text-white text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 hover:bg-terracotta/90 transition-all"
                                                             >
-                                                                İsteğe Git
-                                                            </Link>
+                                                                <Check size={12} />
+                                                                Kabul Et
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleRejectInvitation(Number(n.targetId), n.id);
+                                                                }}
+                                                                className="flex-1 py-1.5 bg-black/5 dark:bg-white/5 text-black/60 dark:text-alabaster/60 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 hover:bg-black/10 dark:hover:bg-white/10 transition-all"
+                                                            >
+                                                                <X size={12} />
+                                                                Reddet
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {n.type === 'INVITATION' && isRead(n.status) && (
+                                                        <div className="mt-2 flex items-center gap-1 text-[9px] font-medium text-black/30 dark:text-white/30">
+                                                            <Check size={10} />
+                                                            Yanıtlandı
                                                         </div>
                                                     )}
                                                 </div>

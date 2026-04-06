@@ -35,7 +35,8 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "inventory_group_id")
     )
-    private List<InventoryGroup> inventoryGroups;
+    @Builder.Default
+    private List<InventoryGroup> inventoryGroups = new java.util.ArrayList<>();
 
     /**
      * Kullanıcının sahip olduğu alerjiler. 

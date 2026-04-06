@@ -18,6 +18,7 @@ import Dashboard from './features/dashboard/Dashboard';
 import RecipeList from './features/recipes/RecipeList';
 import Profile from './features/profile/Profile';
 import InventoryPage from './features/inventory/InventoryPage';
+import NotificationsPage from './features/notifications/NotificationsPage';
 import RecommendationPage from './features/recommendations/RecommendationPage';
 import keycloakConfig from './keycloak-config.json';
 import type { AuthService } from './infrastructure/services/auth/AuthService';
@@ -103,6 +104,16 @@ const App: React.FC = () => {
                           <PrivateRoute>
                             <MainLayout>
                               <InventoryPage />
+                            </MainLayout>
+                          </PrivateRoute>
+                        }
+                    />
+                    <Route
+                        path="/notifications"
+                        element={
+                          <PrivateRoute>
+                            <MainLayout>
+                              <NotificationsPage />
                             </MainLayout>
                           </PrivateRoute>
                         }

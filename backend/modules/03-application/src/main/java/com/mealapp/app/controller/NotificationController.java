@@ -1,6 +1,7 @@
 package com.mealapp.app.controller;
 
-import com.mealapp.domain.notification.entity.Notification;
+import com.mealapp.app.model.dto.notification.NotificationResponse;
+import com.mealapp.app.model.mapper.inventory.InventoryMapper;
 import com.mealapp.domain.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,10 +16,11 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final InventoryMapper inventoryMapper;
 
     @GetMapping
-    public List<Notification> getNotifications(@AuthenticationPrincipal Jwt jwt) {
-        return notificationService.getNotificationsForUser(jwt.getSubject());
+    public List<NotificationResponse> getNotifications(@AuthenticationPrincipal Jwt jwt) {
+        return inventoryMapper.toNotificationResponses(notificationService.getNotificationsForUser(jwt.getSubject()));
     }
 
     @GetMapping("/unread-count")
@@ -34,5 +36,20 @@ public class NotificationController {
     @PostMapping("/read-all")
     public void markAllAsRead(@AuthenticationPrincipal Jwt jwt) {
         notificationService.markAllAsRead(jwt.getSubject());
+    }
+
+    @DeleteMapping("/{notificationId}")
+    public void deleteNotification(@AuthenticationPrincipal Jwt jwt, @PathVariable Long notificationId) {
+        notificationService.deleteNotification(notificationId, jwt.getSubject());
+    }
+
+    @DeleteMapping("/selected")
+    public void deleteSelected(@AuthenticationPrincipal Jwt jwt, @RequestBody List<Long> notificationIds) {
+        notificationService.deleteSelectedNotifications(notificationIds, jwt.getSubject());
+    }
+
+    @DeleteMapping("/all")
+    public void deleteAll(@AuthenticationPrincipal Jwt jwt) {
+        notificationService.deleteAllNotifications(jwt.getSubject());
     }
 }

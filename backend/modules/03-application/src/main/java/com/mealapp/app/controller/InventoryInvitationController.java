@@ -1,10 +1,10 @@
 package com.mealapp.app.controller;
 
+import com.mealapp.app.model.dto.inventory.InventoryInvitationResponse;
+import com.mealapp.app.model.mapper.inventory.InventoryMapper;
 import com.mealapp.domain.common.exception.MealAppDomainException;
-import com.mealapp.domain.inventory.entity.InventoryInvitation;
 import com.mealapp.domain.inventory.service.InventoryInvitationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -17,24 +17,17 @@ import java.util.List;
 public class InventoryInvitationController {
 
     private final InventoryInvitationService invitationService;
-
-    @PostMapping("/invite")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void inviteUser(
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestParam Long groupId,
-            @RequestParam String email
-    ) {
-        invitationService.inviteUser(requireAuthenticatedUserId(jwt), groupId, email);
-    }
+    private final InventoryMapper inventoryMapper;
 
     @GetMapping("/pending")
-    public List<InventoryInvitation> getPendingInvitations(@AuthenticationPrincipal Jwt jwt) {
-        String email = jwt.getClaimAsString("email");
-        if (email == null) {
-            throw new RuntimeException("User email not found in token");
+    public List<InventoryInvitationResponse> getPendingInvitations(@AuthenticationPrincipal Jwt jwt) {
+        try {
+            String email = extractEmail(jwt);
+            return inventoryMapper.toInvitationResponses(invitationService.getPendingInvitations(email));
+        } catch (Exception e) {
+            // If email is not found, return empty list instead of 500
+            return List.of();
         }
-        return invitationService.getPendingInvitations(email);
     }
 
     @PostMapping("/{invitationId}/accept")
@@ -42,10 +35,7 @@ public class InventoryInvitationController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long invitationId
     ) {
-        String email = jwt.getClaimAsString("email");
-        if (email == null) {
-            throw new RuntimeException("User email not found in token");
-        }
+        String email = extractEmail(jwt);
         invitationService.acceptInvitation(invitationId, email);
     }
 
@@ -54,11 +44,55 @@ public class InventoryInvitationController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long invitationId
     ) {
-        String email = jwt.getClaimAsString("email");
-        if (email == null) {
-            throw new RuntimeException("User email not found in token");
-        }
+        String email = extractEmail(jwt);
         invitationService.rejectInvitation(invitationId, email);
+    }
+
+    @PostMapping("/{invitationId}/cancel")
+    public void deleteInvitation(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long invitationId
+    ) {
+        String emailOrId = extractEmailOrSubject(jwt);
+        invitationService.deleteInvitation(invitationId, emailOrId);
+    }
+
+    private String extractEmailOrSubject(Jwt jwt) {
+        try {
+            return extractEmail(jwt);
+        } catch (Exception e) {
+            return jwt.getSubject();
+        }
+    }
+
+    private String extractEmail(Jwt jwt) {
+        if (jwt == null) {
+            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+        }
+        
+        // Try all possible email claims (Keycloak standard is 'email')
+        String email = jwt.getClaimAsString("email");
+        
+        if (email == null || email.isBlank()) {
+            email = jwt.getClaimAsString("preferred_username");
+        }
+        
+        // If still no email, check subject if it looks like an email
+        if (email == null || email.isBlank() || !email.contains("@")) {
+            String sub = jwt.getSubject();
+            if (sub != null && sub.contains("@")) {
+                email = sub;
+            }
+        }
+        
+        // Fallback: If we have an email claim but it's not verified, some providers might not send it
+        // but Keycloak usually sends it regardless unless configured otherwise.
+        
+        if (email == null || email.isBlank()) {
+            throw new MealAppDomainException("Kullanıcı e-posta bilgisi JWT token içerisinde bulunamadı. " +
+                    "Lütfen Keycloak profilinizde e-posta adresinizin tanımlı olduğundan emin olun.");
+        }
+        return email;
     }
 
     private String requireAuthenticatedUserId(Jwt jwt) {

@@ -129,7 +129,35 @@ public class InventoryController {
             @PathVariable Long groupId,
             @RequestParam String email
     ) {
-        invitationService.inviteUser(requireAuthenticatedUserId(jwt), groupId, email);
+        String inviterEmail = extractEmail(jwt);
+        invitationService.inviteUser(requireAuthenticatedUserId(jwt), inviterEmail, groupId, email);
+    }
+
+    private String extractEmail(Jwt jwt) {
+        if (jwt == null) {
+            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+        }
+
+        // Try all possible email claims (Keycloak standard is 'email')
+        String email = jwt.getClaimAsString("email");
+
+        if (email == null || email.isBlank()) {
+            email = jwt.getClaimAsString("preferred_username");
+        }
+
+        // If still no email, check subject if it looks like an email
+        if (email == null || email.isBlank() || !email.contains("@")) {
+            String sub = jwt.getSubject();
+            if (sub != null && sub.contains("@")) {
+                email = sub;
+            }
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new MealAppDomainException("Kullanıcı e-posta bilgisi JWT token içerisinde bulunamadı. " +
+                    "Lütfen Keycloak profilinizde e-posta adresinizin tanımlı olduğundan emin olun.");
+        }
+        return email;
     }
 
     @DeleteMapping("/{groupId}/users/{userIdToRemove}")
