@@ -15,7 +15,7 @@ export class KeycloakAuthService implements AuthService {
     private readonly config: ServiceConfig;
     private readonly logger: LoggerService;
 
-    private readonly keycloak: Keycloak;
+    public readonly keycloak: Keycloak;
     private initialized = false;
     private authenticated = false;
 

@@ -19,6 +19,7 @@ interface AuthContextType {
     logout: () => Promise<void>;
     error?: string | null;
     authService?: any;
+    keycloak?: any;
 }
 
 export const AuthContext = React.createContext<AuthContextType | null>(null);

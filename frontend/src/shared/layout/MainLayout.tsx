@@ -15,6 +15,7 @@ import { useToast } from '../hooks/useToast';
 
 import { UIProvider, useUI } from '../../infrastructure/ui/UIContext';
 import ConsumptionModal from '../../features/consumption/components/ConsumptionModal';
+import SettingsModal from '../../features/profile/SettingsModal';
 const formatTimeAgo = (date: Date, locale: string) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -37,7 +38,7 @@ const formatTimeAgo = (date: Date, locale: string) => {
 const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { authenticated, user, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
-    const { openConsumption } = useUI(); // UIContext'ten açma fonksiyonunu aldık
+    const { openConsumption, openSettings } = useUI(); // UIContext'ten açma fonksiyonunu aldık
     const location = useLocation();
     const { t, i18n } = useTranslation();
     const notificationService = useNotificationService();
@@ -373,14 +374,16 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                             <UserIcon size={16} />
                                             Profilim
                                         </Link>
-                                        <Link
-                                            to="/settings"
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-black/60 dark:text-alabaster/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-terracotta transition-all"
-                                            onClick={() => setShowProfileMenu(false)}
+                                        <button
+                                            onClick={() => {
+                                                setShowProfileMenu(false);
+                                                openSettings();
+                                            }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-black/60 dark:text-alabaster/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-terracotta transition-all"
                                         >
                                             <Settings size={16} />
                                             Ayarlar
-                                        </Link>
+                                        </button>
                                     </div>
                                     <div className="p-2 border-t border-black/5 dark:border-white/5">
                                         <button
@@ -411,6 +414,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
             {/* PANEL BURADA GİZLİ BEKLİYOR */}
             <ConsumptionModal />
+            <SettingsModal />
         </div>
     );
 };

@@ -23,4 +23,5 @@ export interface AuthService {
     removeForbiddenErrorListener(listener: () => void): void;
     handleUnauthorizedError(): void;
     handleForbiddenError(): void;
+    keycloak?: any;
 }

@@ -74,8 +74,9 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ch
         register,
         logout,
         error,
-        authService
-    }), [initialized, authenticated, user, login, register, logout, error]);
+        authService,
+        keycloak: authService.keycloak // Keycloak instance'ına erişim sağlıyoruz
+    }), [initialized, authenticated, user, login, register, logout, error, authService]);
 
     return (
         <AuthContext.Provider value={value}>
