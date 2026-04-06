@@ -17,7 +17,8 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
-  Utensils
+  Utensils,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useConsumptionService } from '../../services/consumptionService';
@@ -84,7 +85,7 @@ const InventoryPage: React.FC = () => {
   // Tüketim Modalı State'leri
   const [consumeModalOpen, setConsumeModalOpen] = useState(false);
   const [consumingItem, setConsumingItem] = useState<Inventory | null>(null);
-  const [consumeAmount, setConsumeAmount] = useState<string>('');
+  const [memberAmounts, setMemberAmounts] = useState<Record<string, string>>({});
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isConsuming, setIsConsuming] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
@@ -417,8 +418,12 @@ const InventoryPage: React.FC = () => {
 
   const openConsumeModal = (item: Inventory) => {
     setConsumingItem(item);
-    setConsumeAmount(String(item.quantity));
-    setSelectedUserIds(activeGroup?.users.map(u => u.id) || []);
+    const initialAmounts: Record<string, string> = {};
+    activeGroup?.users.forEach(u => {
+      initialAmounts[u.id] = '';
+    });
+    setMemberAmounts(initialAmounts);
+    setSelectedUserIds([]);
     setConsumeModalOpen(true);
   };
 
@@ -426,20 +431,30 @@ const InventoryPage: React.FC = () => {
     e.preventDefault();
     if (!activeGroup || !consumingItem) return;
     
-    const amount = parseFloat(consumeAmount);
-    if (isNaN(amount) || amount <= 0) {
-      showToast('Lütfen geçerli bir miktar girin.', 'info');
+    const userAmounts: Record<string, number> = {};
+    let totalAmount = 0;
+
+    selectedUserIds.forEach(userId => {
+      const amount = parseFloat(memberAmounts[userId]);
+      if (!isNaN(amount) && amount > 0) {
+        userAmounts[userId] = amount;
+        totalAmount += amount;
+      }
+    });
+
+    if (Object.keys(userAmounts).length === 0) {
+      showToast('Lütfen en az bir kullanıcı için geçerli miktar girin.', 'info');
       return;
     }
     
-    if (selectedUserIds.length === 0) {
-      showToast('Lütfen en az bir kullanıcı seçin.', 'info');
+    if (totalAmount > (consumingItem.quantity + 0.0001)) { // Küçük floating point toleransı
+      showToast(`Toplam miktar stoktaki miktardan (${consumingItem.quantity}) fazla olamaz.`, 'error');
       return;
     }
 
     setIsConsuming(true);
     try {
-      await inventoryService.consumeInventoryItem(activeGroup.id, consumingItem.id, amount, selectedUserIds);
+      await inventoryService.consumeInventoryItem(activeGroup.id, consumingItem.id, userAmounts);
       await loadGroups({ preferredGroupId: activeGroup.id });
       setConsumeModalOpen(false);
       showToast('Tüketim başarıyla kaydedildi.', 'success');
@@ -1055,72 +1070,112 @@ const InventoryPage: React.FC = () => {
                   <button onClick={() => setConsumeModalOpen(false)} className="p-2 rounded-full hover:bg-black/5 text-foreground/30"><X size={20} /></button>
                 </div>
 
-                <form onSubmit={handleConsumeSubmit} className="mt-8 space-y-8">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Tüketilecek Miktar</span>
-                      <span className="text-[10px] font-bold text-terracotta italic">Max: {consumingItem.quantity} {consumingItem.unit}</span>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.01"
-                        max={consumingItem.quantity}
-                        value={consumeAmount}
-                        onChange={(e) => setConsumeAmount(e.target.value)}
-                        className="base-input py-4 bg-background dark:bg-white/5 font-serif text-2xl text-center"
-                      />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-foreground/30">
-                        {consumingItem.unit}
-                      </div>
-                    </div>
-                  </div>
-
+                <form onSubmit={handleConsumeSubmit} className="mt-8 space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Kimler Tüketti?</span>
-                      <span className="text-[10px] font-bold text-moss-sage">{selectedUserIds.length} Kişi Seçildi</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Kullanıcı Bazlı Tüketim</span>
+                      <span className="text-[10px] font-bold text-terracotta italic">Stok: {consumingItem.quantity} {consumingItem.unit}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-3 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
                       {activeGroup?.users.map((user) => {
                         const isSelected = selectedUserIds.includes(user.id);
                         return (
-                          <button
+                          <div
                             key={user.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedUserIds(prev => 
-                                isSelected ? prev.filter(id => id !== user.id) : [...prev, user.id]
-                              );
-                            }}
-                            className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                            className={`flex flex-col gap-3 p-4 rounded-3xl border transition-all ${
                               isSelected 
-                                ? 'bg-moss-sage/10 border-moss-sage text-moss-sage shadow-sm' 
-                                : 'bg-background border-card-border text-foreground-muted hover:border-moss-sage/40'
+                                ? 'bg-moss-sage/5 border-moss-sage/30 shadow-sm' 
+                                : 'bg-background border-card-border hover:border-moss-sage/20'
                             }`}
                           >
-                            <div className={`p-2 rounded-xl ${isSelected ? 'bg-moss-sage text-white' : 'bg-black/5'}`}>
-                              <Users size={14} />
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`p-2.5 rounded-2xl ${isSelected ? 'bg-moss-sage text-white' : 'bg-black/5 text-foreground/40'}`}>
+                                  <Users size={16} />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold text-foreground truncate max-w-[150px]">{user.name || 'İsimsiz'}</span>
+                                  <span className="text-[10px] text-foreground/40 truncate max-w-[150px]">{user.email}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {isSelected && (
+                                  <div className="relative w-28 animate-in zoom-in-95 duration-200">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      placeholder="0.00"
+                                      value={memberAmounts[user.id] || ''}
+                                      onChange={(e) => {
+                                        setMemberAmounts(prev => ({ ...prev, [user.id]: e.target.value }));
+                                      }}
+                                      className="w-full bg-white dark:bg-white/5 border border-moss-sage/30 rounded-xl py-2 px-3 text-sm font-bold text-right pr-10 focus:ring-2 focus:ring-moss-sage/20 focus:border-moss-sage transition-all outline-none"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-moss-sage/60 uppercase">
+                                      {consumingItem.unit}
+                                    </span>
+                                  </div>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedUserIds(prev => {
+                                      const newSelection = isSelected ? prev.filter(id => id !== user.id) : [...prev, user.id];
+                                      // Eğer seçim kaldırılıyorsa miktarını da sıfırla
+                                      if (isSelected) {
+                                        setMemberAmounts(prevAmts => ({ ...prevAmts, [user.id]: '' }));
+                                      }
+                                      return newSelection;
+                                    });
+                                  }}
+                                  className={`p-2 rounded-xl transition-all ${
+                                    isSelected 
+                                      ? 'bg-moss-sage text-white shadow-lg shadow-moss-sage/20' 
+                                      : 'border border-card-border hover:bg-black/5 text-foreground/20'
+                                  }`}
+                                >
+                                  {isSelected ? <Check size={18} /> : <Plus size={18} />}
+                                </button>
+                              </div>
                             </div>
-                            <span className="text-xs font-bold truncate">{user.name || user.email || 'İsimsiz Kullanıcı'}</span>
-                          </button>
+                          </div>
                         );
                       })}
                     </div>
                   </div>
 
-                  <div className="bg-espresso-midnight/[0.03] dark:bg-white/5 p-4 rounded-2xl">
-                    <p className="text-[10px] font-bold text-foreground/40 leading-relaxed">
-                      * Besin değerleri seçilen kişilere eşit olarak paylaştırılacaktır. 
-                      Kişi başı: <span className="text-terracotta">{(parseFloat(consumeAmount) / Math.max(1, selectedUserIds.length)).toFixed(2)} {consumingItem.unit}</span>
-                    </p>
-                  </div>
+                  {selectedUserIds.length > 0 && (
+                    <div className="bg-espresso-midnight/[0.03] dark:bg-white/5 p-5 rounded-[2rem] space-y-3">
+                      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-foreground/40">
+                        <span>Toplam Tüketim</span>
+                        <span className={
+                          (selectedUserIds.reduce((sum, id) => sum + (parseFloat(memberAmounts[id]) || 0), 0) > consumingItem.quantity)
+                            ? 'text-terracotta'
+                            : 'text-moss-sage'
+                        }>
+                          {selectedUserIds.reduce((sum, id) => sum + (parseFloat(memberAmounts[id]) || 0), 0).toFixed(2)} / {consumingItem.quantity} {consumingItem.unit}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 rounded-full ${
+                            (selectedUserIds.reduce((sum, id) => sum + (parseFloat(memberAmounts[id]) || 0), 0) > consumingItem.quantity)
+                              ? 'bg-terracotta'
+                              : 'bg-moss-sage'
+                          }`}
+                          style={{ 
+                            width: `${Math.min(100, (selectedUserIds.reduce((sum, id) => sum + (parseFloat(memberAmounts[id]) || 0), 0) / consumingItem.quantity) * 100)}%` 
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex gap-3">
                     <button type="button" onClick={() => setConsumeModalOpen(false)} className="flex-1 py-4 rounded-2xl border border-card-border font-bold text-xs hover:bg-black/5 transition-all">İPTAL</button>
                     <button 
                       type="submit" 
-                      disabled={isConsuming || selectedUserIds.length === 0} 
+                      disabled={isConsuming || selectedUserIds.length === 0 || (selectedUserIds.reduce((sum, id) => sum + (parseFloat(memberAmounts[id]) || 0), 0) > consumingItem.quantity)} 
                       className="flex-[2] py-4 rounded-2xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-600/20 hover:scale-[1.02] transition-all disabled:opacity-50"
                     >
                       {isConsuming ? 'İŞLENİYOR...' : 'TÜKETİMİ KAYDET'}

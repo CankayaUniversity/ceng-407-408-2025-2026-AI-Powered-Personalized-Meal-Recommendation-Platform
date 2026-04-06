@@ -1,14 +1,13 @@
 package com.mealapp.app.model.dto.inventory;
 
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -16,10 +15,6 @@ import java.util.List;
 @AllArgsConstructor
 public class InventoryConsumeRequest {
 
-    @NotNull
-    @Positive
-    private Double amount;
-
     @NotEmpty
-    private List<String> userIds;
+    private Map<String, Double> userAmounts;
 }

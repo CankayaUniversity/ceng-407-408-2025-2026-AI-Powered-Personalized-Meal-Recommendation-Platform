@@ -27,13 +27,14 @@ public class ConsumptionService {
      * Belirli bir envanter öğesini tüketir ve besin değerlerini paylaştırır.
      *
      * @param itemId      Tüketilecek envanter öğesi ID'si
-     * @param totalAmount Toplam tüketilen miktar
-     * @param userIds     Tüketime dahil olan kullanıcıların ID listesi
+     * @param userAmounts Her kullanıcı için tüketilen miktar (UserId -> Miktar)
      */
     @Transactional
-    public void consume(Long itemId, Double totalAmount, List<String> userIds) {
+    public void consume(Long itemId, java.util.Map<String, Double> userAmounts) {
         Inventory inventory = inventoryRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Envanter öğesi bulunamadı: " + itemId));
+
+        double totalAmount = userAmounts.values().stream().mapToDouble(Double::doubleValue).sum();
 
         if (inventory.getQuantity() < totalAmount) {
             throw new RuntimeException("Yetersiz stok!");
@@ -43,11 +44,15 @@ public class ConsumptionService {
         inventory.setQuantity(inventory.getQuantity() - totalAmount);
         inventoryRepository.save(inventory);
 
-        // 2. Besin değerlerini her kullanıcıya paylaştırarak ekle
-        double amountPerUser = totalAmount / userIds.size();
+        // 2. Besin değerlerini her kullanıcıya kendi miktarına göre ekle
         Ingredient ingredient = inventory.getIngredient();
 
-        for (String userId : userIds) {
+        for (java.util.Map.Entry<String, Double> entry : userAmounts.entrySet()) {
+            String userId = entry.getKey();
+            Double userAmount = entry.getValue();
+
+            if (userAmount == null || userAmount <= 0) continue;
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + userId));
 
@@ -55,13 +60,12 @@ public class ConsumptionService {
                     .user(user)
                     .foodName(ingredient.getName())
                     .ingredient(ingredient)
-                    .portionGrams(amountPerUser) // Varsayılan gram/birim dönüşümü burada basitleştirildi
+                    .portionGrams(userAmount)
                     .inventoryGroup(inventory.getInventoryGroup())
                     .isFromInventory(true)
                     .isCustomEntry(false)
                     .build();
 
-            // DailyConsumptionService içindeki enrichConsumption ve logConsumption mantığını kullanıyoruz
             dailyConsumptionService.logConsumption(consumption);
         }
     }

@@ -117,11 +117,10 @@ export const getInventoryService = (api: AxiosInstance) => ({
     }
   },
 
-  consumeInventoryItem: async (groupId: number, itemId: number, amount: number, userIds: string[]): Promise<void> => {
+  consumeInventoryItem: async (groupId: number, itemId: number, userAmounts: Record<string, number>): Promise<void> => {
     try {
       await api.post(`/v1/inventory-groups/${groupId}/items/${itemId}/consume`, {
-        amount,
-        userIds
+        userAmounts
       });
     } catch (error) {
       return mapAxiosError(error, 'Tüketim kaydı oluşturulamadı');

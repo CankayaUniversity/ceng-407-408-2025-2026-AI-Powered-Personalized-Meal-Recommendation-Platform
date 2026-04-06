@@ -182,7 +182,7 @@ public class InventoryController {
         // Güvenlik kontrolü: Kullanıcı bu gruba dahil mi?
         inventoryService.getRequiredGroup(requireAuthenticatedUserId(jwt), groupId);
         
-        consumptionService.consume(itemId, request.getAmount(), request.getUserIds());
+        consumptionService.consume(itemId, request.getUserAmounts());
     }
 
     private String requireAuthenticatedUserId(Jwt jwt) {
