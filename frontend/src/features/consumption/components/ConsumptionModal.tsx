@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
-import { useUI } from '../infrastructure/ui/UIContext';
+import { useUI } from '../../../infrastructure/ui/UIContext';
 import SmartConsumptionPanel from './SmartConsumptionPanel';
 
 const ConsumptionModal: React.FC = () => {

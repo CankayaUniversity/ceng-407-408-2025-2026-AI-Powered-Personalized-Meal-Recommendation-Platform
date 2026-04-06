@@ -1,21 +1,21 @@
 import React, { useState, useMemo } from 'react';
 import { Sparkles, CheckCircle2 } from 'lucide-react';
-import { useSmartConsumption } from './useSmartConsumption';
+import { useSmartConsumption } from '../hooks/useSmartConsumption';
 import { 
   ENTRY_MODE_OPTIONS,
   type EntryMode
-} from './SmartConsumption.types';
+} from '../types/SmartConsumption.types';
 import { 
   locationLabel, 
   getSelectedItemNutrition, 
   sumNutrition, 
-} from './SmartConsumption.utils';
+} from '../utils/SmartConsumption.utils';
 import { LocationAndMealSelector } from './LocationAndMealSelector';
 import { MemberSelection } from './MemberSelection';
 import { SearchSection } from './SearchSection';
 import { SelectedItemsList } from './SelectedItemsList';
 import { QuickSummary } from './QuickSummary';
-import { type RecipeIngredient } from '../types';
+import { type RecipeIngredient } from '../../../types';
 
 interface SmartConsumptionPanelProps {
   onConsumptionLogged?: () => void;

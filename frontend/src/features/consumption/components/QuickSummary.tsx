@@ -4,12 +4,12 @@ import {
   type EntryMode, 
   type NutritionPreview, 
   type InventoryGroup 
-} from './SmartConsumption.types';
+} from '../types/SmartConsumption.types';
 import { 
   formatCalories, 
   formatMacro, 
   locationLabel 
-} from './SmartConsumption.utils';
+} from '../utils/SmartConsumption.utils';
 
 interface QuickSummaryProps {
   summaryTitle: string;

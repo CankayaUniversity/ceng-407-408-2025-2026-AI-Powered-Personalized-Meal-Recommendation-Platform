@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Plus } from 'lucide-react';
-import { type InventoryGroup } from './SmartConsumption.types';
+import { type InventoryGroup } from '../types/SmartConsumption.types';
 
 interface MemberSelectionProps {
   selectedGroup: InventoryGroup | null;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Home, MapPin } from 'lucide-react';
-import { type InventoryGroup, OUTSIDE_LOCATION, MEAL_OPTIONS } from './SmartConsumption.types';
-import { MealType } from '../types';
+import { type InventoryGroup, OUTSIDE_LOCATION, MEAL_OPTIONS } from '../types/SmartConsumption.types';
+import { MealType } from '../../../types';
 
 interface LocationAndMealSelectorProps {
   inventoryGroups: InventoryGroup[];

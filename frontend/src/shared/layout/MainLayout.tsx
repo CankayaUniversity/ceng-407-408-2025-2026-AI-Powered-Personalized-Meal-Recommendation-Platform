@@ -14,7 +14,7 @@ import { Notification } from '../../types';
 import { useToast } from '../hooks/useToast';
 
 import { UIProvider, useUI } from '../../infrastructure/ui/UIContext';
-import ConsumptionModal from '../../components/ConsumptionModal';
+import ConsumptionModal from '../../features/consumption/components/ConsumptionModal';
 const formatTimeAgo = (date: Date, locale: string) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);

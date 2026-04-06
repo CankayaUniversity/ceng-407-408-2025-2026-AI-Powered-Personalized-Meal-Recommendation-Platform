@@ -1,10 +1,10 @@
-import { ApiError } from '../services/errors';
+import { ApiError } from '../../../services/errors';
 import {
   type InventoryGroup,
   type SelectedConsumptionItem,
   type NutritionPreview,
   type EntryMode
-} from './SmartConsumption.types';
+} from '../types/SmartConsumption.types';
 
 export const locationLabel = (group: InventoryGroup | null) => group?.name ?? 'Disari / Diger';
 

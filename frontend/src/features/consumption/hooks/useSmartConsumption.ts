@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useDeferredValue } from 'react';
-import { useAuth } from '../infrastructure/auth/AuthContext';
-import { useInventoryService } from '../services/inventoryService';
-import { useRecipeService } from '../services/recipeService';
-import { useConsumptionService } from '../services/consumptionService';
+import { useAuth } from '../../../infrastructure/auth/AuthContext';
+import { useInventoryService } from '../../../services/inventoryService';
+import { useRecipeService } from '../../../services/recipeService';
+import { useConsumptionService } from '../../../services/consumptionService';
 import {
   type EntryMode,
   type SelectedConsumptionItem,
@@ -14,19 +14,19 @@ import {
   INGREDIENT_PORTION_OPTIONS,
   type RecipePortionOption,
   type IngredientPortionOption
-} from './SmartConsumption.types';
+} from '../types/SmartConsumption.types';
 import {
   getItemKey,
   getErrorMessage,
   normalizeSearchText,
   getSelectedItemName
-} from './SmartConsumption.utils';
+} from '../utils/SmartConsumption.utils';
 import {
   type Recipe,
   type RecipeListItem,
   type Ingredient,
   MealType
-} from '../types';
+} from '../../../types';
 
 export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const { authenticated, user } = useAuth();

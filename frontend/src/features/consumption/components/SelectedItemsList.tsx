@@ -4,15 +4,15 @@ import {
   type SelectedConsumptionItem, 
   type RecipePortionOption, 
   RECIPE_PORTION_OPTIONS 
-} from './SmartConsumption.types';
+} from '../types/SmartConsumption.types';
 import { 
   getSelectedItemName, 
   getSelectedItemCategory, 
   getSelectedItemNutrition, 
   formatCalories, 
   formatMacro 
-} from './SmartConsumption.utils';
-import { type Ingredient } from '../types';
+} from '../utils/SmartConsumption.utils';
+import { type Ingredient } from '../../../types';
 
 interface SelectedItemsListProps {
   selectedItems: SelectedConsumptionItem[];

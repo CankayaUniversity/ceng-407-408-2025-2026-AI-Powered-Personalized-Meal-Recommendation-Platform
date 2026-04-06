@@ -3,15 +3,15 @@ import { Search, Loader2, Clock3 } from 'lucide-react';
 import { 
   type EntryMode, 
   ENTRY_MODE_OPTIONS 
-} from './SmartConsumption.types';
+} from '../types/SmartConsumption.types';
 import { 
   formatCategoryLabel, 
   formatCalories 
-} from './SmartConsumption.utils';
+} from '../utils/SmartConsumption.utils';
 import { 
   type RecipeListItem, 
   type Ingredient 
-} from '../types';
+} from '../../../types';
 
 interface SearchSectionProps {
   entryMode: EntryMode;

@@ -6,7 +6,7 @@ import {
   PortionSize,
   Recipe,
   type RecipeListItem
-} from '../types';
+} from '../../../types';
 
 export type { InventoryGroup, Recipe };
 import { ChefHat, UtensilsCrossed } from 'lucide-react';
