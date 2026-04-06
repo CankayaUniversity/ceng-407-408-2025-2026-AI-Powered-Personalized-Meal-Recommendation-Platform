@@ -28,6 +28,8 @@ import {
   type InventoryGroup,
   MealType,
   PortionSize,
+  type Recipe,
+  type RecipeIngredient,
   type RecipeListItem
 } from '../types';
 
@@ -316,10 +318,78 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   const [recipeResults, setRecipeResults] = useState<RecipeListItem[]>([]);
   const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
   const [selectedItems, setSelectedItems] = useState<SelectedConsumptionItem[]>([]);
+  const [memberSelections, setMemberSelections] = useState<Record<string, SelectedConsumptionItem[]>>({});
   const [searching, setSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitSummary, setSubmitSummary] = useState<SubmitSummary | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [recipeDetailsMap, setRecipeDetailsMap] = useState<Record<number, Recipe>>({});
+  const [selectedMembers, setSelectedMembersForLocation] = useState<Record<string, { [userId: string]: boolean }>>({});
+  // memberPortions is no longer used.
+
+  useEffect(() => {
+    const fetchMissingRecipes = async () => {
+      const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
+      const recipeIds = Array.from(new Set(
+        allItems
+          .filter((item): item is SelectedRecipeItem => item.kind === 'RECIPE')
+          .map(item => item.recipe.id)
+      ));
+      
+      const missingIds = recipeIds.filter(id => !recipeDetailsMap[id]);
+      if (missingIds.length === 0) return;
+
+      try {
+        const details = await Promise.all(
+          missingIds.map(id => recipeService.getRecipeById(id))
+        );
+        const nextMap = { ...recipeDetailsMap };
+        details.forEach(recipe => {
+          nextMap[recipe.id] = recipe;
+        });
+        setRecipeDetailsMap(nextMap);
+      } catch (err) {
+        console.error('Error fetching recipe details for inventory calculation:', err);
+      }
+    };
+    
+    void fetchMissingRecipes();
+  }, [selectedItems, memberSelections, recipeDetailsMap, recipeService]);
+
+  const isSearchStale = searchQuery.trim() !== deferredQuery;
+  const isOutside = selectedLocationId === OUTSIDE_LOCATION;
+
+  const inventoryDeductions = useMemo(() => {
+    if (isOutside) return [];
+    
+    const summary: Record<number, { name: string; grams: number }> = {};
+    const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
+    
+    allItems.forEach(item => {
+      if (item.kind === 'INGREDIENT') {
+        const id = item.ingredient.id;
+        const grams = item.portion.grams;
+        if (!summary[id]) summary[id] = { name: item.ingredient.name, grams: 0 };
+        summary[id].grams += grams;
+      } else {
+        const recipe = recipeDetailsMap[item.recipe.id];
+        if (recipe?.ingredients) {
+          recipe.ingredients.forEach((ri: RecipeIngredient) => {
+            const id = ri.ingredientId;
+            const name = ri.ingredient?.name || `Ingredient #${id}`;
+            const baseGrams = ri.grams;
+            const multiplier = item.portion.multiplier;
+            const totalGrams = baseGrams * multiplier;
+            
+            if (!summary[id]) summary[id] = { name, grams: 0 };
+            summary[id].grams += totalGrams;
+          });
+        }
+      }
+    });
+    
+    return Object.values(summary).sort((a, b) => a.name.localeCompare(b.name, 'tr-TR'));
+  }, [selectedItems, memberSelections, recipeDetailsMap, isOutside]);
 
   const selectedGroup = useMemo(
       () => inventoryGroups.find((group) => String(group.id) === selectedLocationId) ?? null,
@@ -340,26 +410,77 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
       () => new Set(selectedItems.filter((item): item is SelectedIngredientItem => item.kind === 'INGREDIENT').map((item) => item.ingredient.id)),
       [selectedItems]
   );
-  const isOutside = selectedLocationId === OUTSIDE_LOCATION;
-  const isSearchStale = searchQuery.trim() !== deferredQuery;
+
   const selectionLabel = useMemo(() => {
-    if (selectedItems.length === 0) return 'Secim bekleniyor';
-    if (selectedItems.length === 1) return getSelectedItemName(selectedItems[0]);
-    return `${selectedItems.length} oge hazir`;
-  }, [selectedItems]);
+    const globalCount = selectedItems.length;
+    const membersCount = Object.values(memberSelections).reduce((acc, items) => acc + items.length, 0);
+    const totalCount = globalCount + membersCount;
+
+    if (totalCount === 0) return 'Secim bekleniyor';
+    if (totalCount === 1) return '1 oge hazir';
+    return `${totalCount} oge hazir`;
+  }, [selectedItems, memberSelections]);
+
+  const memberSummaryRows = useMemo(() => {
+    const rows: Array<{ name: string; calories: number; protein: number }> = [];
+    
+    // Global selections (Giriş yapan kullanıcı için)
+    if (selectedItems.length > 0 && user) {
+      const nutrition = sumNutrition(selectedItems.map(getSelectedItemNutrition));
+      rows.push({
+        name: (user.firstName || user.name || 'Ben'),
+        calories: nutrition.calories || 0,
+        protein: nutrition.protein || 0
+      });
+    }
+
+    // Member selections
+    Object.entries(memberSelections).forEach(([userId, items]) => {
+      if (items.length === 0) return;
+      
+      const member = selectedGroup?.users.find(u => String(u.id) === userId);
+      const name = member?.firstName || member?.name || `Üye #${userId}`;
+      const nutrition = sumNutrition(items.map(getSelectedItemNutrition));
+      
+      rows.push({
+        name,
+        calories: nutrition.calories || 0,
+        protein: nutrition.protein || 0
+      });
+    });
+
+    return rows;
+  }, [selectedItems, memberSelections, user, selectedGroup]);
+
   const summaryTitle = useMemo(() => {
-    if (selectedItems.length === 0) return 'Secimini bekliyorum';
-    if (selectedItems.length === 1) return getSelectedItemName(selectedItems[0]);
-    return `${selectedItems.length} oge secildi`;
-  }, [selectedItems]);
-  const summarySubtitle = useMemo(
-      () => formatNameList(selectedItems.map((item) => getSelectedItemName(item))),
-      [selectedItems]
-  );
-  const nutritionPreview = useMemo(
-      () => sumNutrition(selectedItems.map((item) => getSelectedItemNutrition(item))),
-      [selectedItems]
-  );
+    const globalCount = selectedItems.length;
+    const membersCount = Object.values(memberSelections).reduce((acc, items) => acc + items.length, 0);
+    const totalCount = globalCount + membersCount;
+
+    if (totalCount === 0) return 'Secimini bekliyorum';
+    return `${totalCount} öğe seçildi`;
+  }, [selectedItems, memberSelections]);
+
+  const summarySubtitle = useMemo(() => {
+    if (memberSummaryRows.length > 1) {
+      return `${memberSummaryRows.length} farklı kişi için tüketim girişi yapılıyor.`;
+    }
+    const names: string[] = [];
+    selectedItems.forEach(item => names.push(getSelectedItemName(item)));
+    Object.values(memberSelections).forEach(items => {
+        items.forEach(item => names.push(getSelectedItemName(item)));
+    });
+    return formatNameList(names);
+  }, [selectedItems, memberSelections, memberSummaryRows]);
+
+  const nutritionPreview = useMemo(() => {
+    const previews: NutritionPreview[] = [];
+    selectedItems.forEach(item => previews.push(getSelectedItemNutrition(item)));
+    Object.values(memberSelections).forEach(items => {
+        items.forEach(item => previews.push(getSelectedItemNutrition(item)));
+    });
+    return sumNutrition(previews);
+  }, [selectedItems, memberSelections]);
   const submittedNutrition = useMemo(
       () => summarizeResponses(submitSummary?.responses ?? []),
       [submitSummary]
@@ -377,7 +498,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     setExpandedManualInputs(prev => ({ ...prev, [itemKey]: !prev[itemKey] }));
   };
 
-  const handleManualPortionUpdate = (itemKey: string, ingredient: Ingredient, value: string, unit: string) => {
+  const handleManualPortionUpdate = (itemKey: string, ingredient: Ingredient, value: string, unit: string, userId?: string) => {
     const quantity = parseFloat(value);
     if (isNaN(quantity) || quantity <= 0) return;
 
@@ -401,11 +522,12 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
         grams: grams,
         portionSize: PortionSize.MEDIUM,
         note: 'Manuel giris'
-    });
+    }, userId);
   };
 
-  const handleQuickUnitAdjust = (itemKey: string, ingredient: Ingredient, unit: string, delta: number) => {
-    const item = selectedItems.find(i => i.key === itemKey);
+  const handleQuickUnitAdjust = (itemKey: string, ingredient: Ingredient, unit: string, delta: number, userId?: string) => {
+    const list = userId ? memberSelections[userId] : selectedItems;
+    const item = list?.find(i => i.key === itemKey);
     if (!item || item.kind !== 'INGREDIENT') return;
 
     const currentParts = item.portion.label.split(' ');
@@ -423,26 +545,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
       nextUnit = unit;
     }
 
-    if (nextQty === 0) {
-      // If we reach 0, maybe we should keep it at 0 or a small default, 
-      // but usually for increment/decrement we want at least a small amount if it was selected.
-      // However, the user said "add/remove from cart" logic.
-      // If it becomes 0, we'll just set it to 0. handleManualPortionUpdate handles NaN/<=0 check though.
-      // Let's allow 0 for internal state if needed, but handleManualPortionUpdate currently ignores it.
-      // We'll use 0.001 or just allow it to be handled.
-      if (delta < 0 && currentQty <= Math.abs(delta)) {
-          nextQty = 0;
-      }
+    if (nextQty <= 0) {
+        nextQty = 0.1;
     }
 
-    if (nextQty > 0) {
-      handleManualPortionUpdate(itemKey, ingredient, nextQty.toString(), nextUnit);
-    } else {
-        // If 0, we might want to reset to a default or just leave it at a very small value
-        // or actually remove the item? No, user just wants to adjust amount.
-        // Let's set it to a minimum or just don't update if it's already small.
-        handleManualPortionUpdate(itemKey, ingredient, "0.1", nextUnit);
-    }
+    handleManualPortionUpdate(itemKey, ingredient, nextQty.toString(), nextUnit, userId);
   };
 
   const loadInventoryGroups = async () => {
@@ -464,6 +571,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     setRecipeResults([]);
     setIngredientResults([]);
     setSelectedItems([]);
+    setMemberSelections({});
     setErrorMessage(null);
     setSubmitSummary(null);
   }, [entryMode]);
@@ -548,33 +656,67 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     if (entryMode !== 'INGREDIENT' || isOutside) return;
 
     const stockedIngredientIds = new Set(stockedIngredients.map((ingredient) => ingredient.id));
+    
+    // Global items
     const nextItems = selectedItems.filter(
         (item) => item.kind !== 'INGREDIENT' || stockedIngredientIds.has(item.ingredient.id)
     );
 
-    if (nextItems.length !== selectedItems.length) {
+    // Member items
+    const nextMemberSelections = { ...memberSelections };
+    let changed = false;
+    Object.keys(nextMemberSelections).forEach(userId => {
+        const filtered = nextMemberSelections[userId].filter(
+            (item) => item.kind !== 'INGREDIENT' || stockedIngredientIds.has(item.ingredient.id)
+        );
+        if (filtered.length !== nextMemberSelections[userId].length) {
+            nextMemberSelections[userId] = filtered;
+            changed = true;
+        }
+    });
+
+    if (nextItems.length !== selectedItems.length || changed) {
       setSelectedItems(nextItems);
+      setMemberSelections(nextMemberSelections);
       setSubmitSummary(null);
     }
-  }, [entryMode, isOutside, selectedItems, stockedIngredients]);
+  }, [entryMode, isOutside, selectedItems, memberSelections, stockedIngredients]);
 
   if (!authenticated || !user) return null;
 
   const handleRecipeSelect = (recipe: RecipeListItem) => {
     const key = getItemKey('RECIPE', recipe.id);
+    const item: SelectedRecipeItem = {
+      key,
+      kind: 'RECIPE',
+      recipe,
+      portion: RECIPE_PORTION_OPTIONS[1]
+    };
 
-    setSelectedItems((current) => {
-      if (current.some((item) => item.key === key)) return current;
-      return [
-        ...current,
-        {
-          key,
-          kind: 'RECIPE',
-          recipe,
-          portion: RECIPE_PORTION_OPTIONS[1]
-        }
-      ];
-    });
+    const currentGroup = !isOutside && selectedGroup ? selectedGroup : null;
+    const activeLocationMembers = currentGroup ? selectedMembers[String(currentGroup.id)] || {} : {};
+    const selectedMemberIds = Object.entries(activeLocationMembers)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([userId]) => userId);
+
+    if (selectedMemberIds.length > 0) {
+      setMemberSelections((prev) => {
+        const next = { ...prev };
+        selectedMemberIds.forEach((userId) => {
+          const userItems = next[userId] || [];
+          if (!userItems.some((i) => i.key === key)) {
+            next[userId] = [...userItems, { ...item, key: `${userId}-${key}` }];
+          }
+        });
+        return next;
+      });
+    } else {
+      setSelectedItems((current) => {
+        if (current.some((item) => item.key === key)) return current;
+        return [...current, item];
+      });
+    }
+
     setSearchQuery('');
     setRecipeResults([]);
     setIngredientResults([]);
@@ -590,18 +732,37 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
       void loadUnitWeights(ingredient.id);
     }
 
-    setSelectedItems((current) => {
-      if (current.some((item) => item.key === key)) return current;
-      return [
-        ...current,
-        {
-          key,
-          kind: 'INGREDIENT',
-          ingredient,
-          portion: INGREDIENT_PORTION_OPTIONS[1] || { label: '100g', grams: 100, portionSize: 100 }
-        }
-      ];
-    });
+    const item: SelectedIngredientItem = {
+      key,
+      kind: 'INGREDIENT',
+      ingredient,
+      portion: INGREDIENT_PORTION_OPTIONS[1] || { label: '100g', grams: 100, portionSize: 100 }
+    };
+
+    const currentGroup = !isOutside && selectedGroup ? selectedGroup : null;
+    const activeLocationMembers = currentGroup ? selectedMembers[String(currentGroup.id)] || {} : {};
+    const selectedMemberIds = Object.entries(activeLocationMembers)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([userId]) => userId);
+
+    if (selectedMemberIds.length > 0) {
+      setMemberSelections((prev) => {
+        const next = { ...prev };
+        selectedMemberIds.forEach((userId) => {
+          const userItems = next[userId] || [];
+          if (!userItems.some((i) => i.key === key)) {
+            next[userId] = [...userItems, { ...item, key: `${userId}-${key}` }];
+          }
+        });
+        return next;
+      });
+    } else {
+      setSelectedItems((current) => {
+        if (current.some((item) => item.key === key)) return current;
+        return [...current, item];
+      });
+    }
+
     setSearchQuery('');
     setRecipeResults([]);
     setIngredientResults([]);
@@ -615,33 +776,289 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     setErrorMessage(null);
   };
 
-  const handleRecipePortionChange = (itemKey: string, nextPortion: RecipePortionOption) => {
-    setSelectedItems((current) =>
-        current.map((item) =>
-            item.key === itemKey && item.kind === 'RECIPE'
-                ? { ...item, portion: nextPortion }
-                : item
-        )
-    );
+  const handleRemoveMemberItem = (userId: string, itemKey: string) => {
+    setMemberSelections((prev) => ({
+      ...prev,
+      [userId]: (prev[userId] || []).filter((item) => item.key !== itemKey)
+    }));
     setSubmitSummary(null);
   };
 
-  const handleIngredientPortionChange = (itemKey: string, nextPortion: IngredientPortionOption) => {
-    setSelectedItems((current) =>
-        current.map((item) =>
-            item.key === itemKey && item.kind === 'INGREDIENT'
-                ? { ...item, portion: nextPortion }
-                : item
-        )
+  const renderItemCard = (item: SelectedConsumptionItem, userId?: string) => {
+    const itemNutrition = getSelectedItemNutrition(item);
+
+    return (
+        <article
+            key={item.key}
+            className="rounded-[2rem] border border-card-border bg-white/90 p-6 shadow-md transition-all hover:shadow-lg dark:bg-white/[0.04]"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-serif text-xl font-bold text-espresso-midnight dark:text-alabaster">
+                {getSelectedItemName(item)}
+              </p>
+              <p className="mt-2 text-xs uppercase tracking-[0.18em] text-moss-forest/50 dark:text-moss-sage/60">
+                {getSelectedItemCategory(item)}
+              </p>
+            </div>
+            <button
+                type="button"
+                onClick={() => userId ? handleRemoveMemberItem(userId, item.key) : handleRemoveItem(item.key)}
+                disabled={submitting}
+                className="rounded-xl bg-terracotta/10 p-2 text-terracotta transition-all hover:bg-terracotta hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="mt-4">
+            <div className="space-y-4">
+              {item.kind === 'RECIPE' && (
+                <div className="mt-4 space-y-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Porsiyon</p>
+                  <div className="flex flex-wrap gap-2">
+                    {RECIPE_PORTION_OPTIONS.map((option) => (
+                        <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => handleRecipePortionChange(item.key, option, userId)}
+                            disabled={submitting}
+                            className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
+                                item.portion.id === option.id
+                                    ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
+                                    : 'border border-card-border bg-white text-espresso-midnight/70 hover:text-terracotta dark:bg-white/[0.03] dark:text-alabaster/70'
+                            }`}
+                        >
+                          {option.label}
+                        </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {item.kind === 'INGREDIENT' && (
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Step 1: Quick Selection */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Hızlı Seçim</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {getIngredientUnits(item.ingredient.id).quickUnits.map((unit: string) => {
+                            const weights = (item.ingredient.id && ingredientSpecificWeights[item.ingredient.id]) || unitWeights;
+                            const weight = weights[unit.toLowerCase()];
+                            const currentParts = item.portion.label.split(' ');
+                            const currentQty = parseFloat(currentParts[0]) || 0;
+                            const currentUnit = currentParts.length > 1 ? currentParts[1] : '';
+                            const isSelected = currentUnit.toLowerCase() === unit.toLowerCase() && currentQty > 0;
+
+                            return (
+                              <div
+                                key={unit}
+                                className={`group relative flex items-center overflow-hidden rounded-xl border transition-all ${
+                                  isSelected
+                                    ? 'bg-espresso-midnight text-white border-transparent'
+                                    : 'border-card-border bg-espresso-midnight/5 text-espresso-midnight/80 hover:border-terracotta/40 dark:bg-white/10 dark:text-alabaster/80'
+                                }`}
+                              >
+                                {/* Decrease Button */}
+                                <button
+                                  type="button"
+                                  disabled={submitting}
+                                  onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, -1, userId)}
+                                  className={`flex h-full items-center justify-center border-r px-2 py-2 transition-colors ${
+                                    isSelected
+                                      ? 'border-white/10 hover:bg-white/10'
+                                      : 'border-espresso-midnight/5 hover:bg-terracotta/10 hover:text-terracotta'
+                                  }`}
+                                >
+                                  <Minus size={12} />
+                                </button>
+
+                                {/* Unit Display / Increment */}
+                                <button
+                                  type="button"
+                                  disabled={submitting}
+                                  onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, 1, userId)}
+                                  className="px-3 py-2 text-left"
+                                >
+                                  <span className="text-xs font-bold leading-none">
+                                    {isSelected ? `${currentQty} ` : ''}{unit}
+                                  </span>
+                                  {weight && (
+                                    <span className={`block text-[8px] mt-0.5 leading-none ${isSelected ? 'text-white/60' : 'text-foreground/30'}`}>
+                                      ~{(weight * (isSelected ? currentQty : 1)).toFixed(0)}g
+                                    </span>
+                                  )}
+                                </button>
+
+                                {/* Increase Button (Plus) */}
+                                <button
+                                  type="button"
+                                  disabled={submitting}
+                                  onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, 1, userId)}
+                                  className={`flex h-full items-center justify-center border-l px-2 py-2 transition-colors ${
+                                    isSelected
+                                      ? 'border-white/10 hover:bg-white/10'
+                                      : 'border-espresso-midnight/5 hover:bg-emerald-500/10 hover:text-emerald-500'
+                                  }`}
+                                >
+                                  <Plus size={12} />
+                                </button>
+                              </div>
+                            );
+                          })}
+                          {getIngredientUnits(item.ingredient.id).quickUnits.length === 0 && (
+                            <p className="text-[10px] italic text-foreground/30">Ozel birim bulunamadi.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Step 2: Amount and Standard Unit - Optional */}
+                      <div className="space-y-3">
+                        <button
+                            type="button"
+                            onClick={() => toggleManualInput(item.key)}
+                            className="flex w-full items-center justify-between rounded-xl bg-espresso-midnight/5 px-3 py-2 text-left transition-all hover:bg-espresso-midnight/10 dark:bg-white/5 dark:hover:bg-white/10"
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Spesifik Miktar / Birim</span>
+                          {expandedManualInputs[item.key] ? <ChevronUp size={14} className="text-espresso-midnight/30" /> : <ChevronDown size={14} className="text-espresso-midnight/30" />}
+                        </button>
+
+                        {expandedManualInputs[item.key] && (
+                          <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="flex gap-2">
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                disabled={submitting}
+                                value={item.portion.label.split(' ')[0] || ''}
+                                className="w-1/2 rounded-xl border border-card-border bg-white px-3 py-2 text-sm font-bold outline-none focus:border-terracotta dark:bg-white/5"
+                                onChange={(e) => {
+                                  const parts = item.portion.label.split(' ');
+                                  const unit = parts.length > 1 ? parts[1] : (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
+                                  handleManualPortionUpdate(item.key, item.ingredient, e.target.value, unit, userId);
+                                }}
+                              />
+                              <select
+                                disabled={submitting}
+                                className="w-1/2 rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold outline-none cursor-pointer dark:bg-white/5"
+                                value={(() => {
+                                    const parts = item.portion.label.split(' ');
+                                    return (parts.length > 1 ? parts[1] : (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM')).toUpperCase();
+                                })()}
+                                onChange={(e) => {
+                                  const val = item.portion.label.split(' ')[0] || '100';
+                                  handleManualPortionUpdate(item.key, item.ingredient, val, e.target.value, userId);
+                                }}
+                              >
+                                {getIngredientUnits(item.ingredient.id).standardUnits.map((unit: string) => (
+                                  <option key={unit} value={unit}>{unit}</option>
+                                ))}
+                                {getIngredientUnits(item.ingredient.id).quickUnits.map((unit: string) => (
+                                  <option key={unit} value={unit}>{unit}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-1.5 text-[9px] text-terracotta/70 italic px-1">
+                          <AlertCircle size={10} />
+                          Seçili: {item.portion.grams.toFixed(1)}g eşdeğeri
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Calories</p>
+              <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatCalories(itemNutrition.calories)}</p>
+            </div>
+            <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Protein</p>
+              <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.protein)}</p>
+            </div>
+            <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Carbs</p>
+              <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.carbs)}</p>
+            </div>
+            <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Fat</p>
+              <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.fat)}</p>
+            </div>
+          </div>
+        </article>
     );
+  };
+
+  const handleRecipePortionChange = (itemKey: string, nextPortion: RecipePortionOption, userId?: string) => {
+    if (userId) {
+      setMemberSelections((prev) => ({
+        ...prev,
+        [userId]: (prev[userId] || []).map((item) =>
+          item.key === itemKey && item.kind === 'RECIPE'
+            ? { ...item, portion: nextPortion }
+            : item
+        )
+      }));
+    } else {
+      setSelectedItems((current) =>
+        current.map((item) =>
+          item.key === itemKey && item.kind === 'RECIPE'
+            ? { ...item, portion: nextPortion }
+            : item
+        )
+      );
+    }
+    setSubmitSummary(null);
+  };
+
+  const handleIngredientPortionChange = (itemKey: string, nextPortion: IngredientPortionOption, userId?: string) => {
+    if (userId) {
+      setMemberSelections((prev) => ({
+        ...prev,
+        [userId]: (prev[userId] || []).map((item) =>
+          item.key === itemKey && item.kind === 'INGREDIENT'
+            ? { ...item, portion: nextPortion }
+            : item
+        )
+      }));
+    } else {
+      setSelectedItems((current) =>
+        current.map((item) =>
+          item.key === itemKey && item.kind === 'INGREDIENT'
+            ? { ...item, portion: nextPortion }
+            : item
+        )
+      );
+    }
     setSubmitSummary(null);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (selectedItems.length === 0) {
+    const currentGroup = !isOutside && selectedGroup ? selectedGroup : null;
+    const activeLocationMembers = currentGroup ? selectedMembers[String(currentGroup.id)] || {} : {};
+    const selectedMemberIds = Object.entries(activeLocationMembers)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([userId]) => userId);
+
+    const hasGlobalSelection = selectedItems.length > 0;
+    const hasMemberSelection = selectedMemberIds.some(uid => (memberSelections[uid]?.length ?? 0) > 0);
+
+    // Eğer lokasyon seçiliyse ama üye seçilmemişse global listeyi baz al.
+    // Eğer üyeler seçiliyse ve üye bazlı liste boşsa uyarı ver (şu anki UI otomatik ekliyor ama temizlenmiş olabilir).
+    if (!hasGlobalSelection && !hasMemberSelection) {
       setErrorMessage('Önce en az bir tarif veya malzeme seç.');
+      setSubmitting(false);
       return;
     }
 
@@ -650,64 +1067,88 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     setSubmitSummary(null);
 
     try {
-      const itemsToSubmit = [...selectedItems];
-      const results = await Promise.allSettled(
-          itemsToSubmit.map((item) =>
-              consumptionService.logConsumption({
-                userId: user.id,
-                recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
-                ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
-                inventoryGroupId: !isOutside && selectedGroup ? selectedGroup.id : undefined,
-                foodName: getSelectedItemName(item),
-                mealType,
-                portionSize: item.portion.portionSize,
-                portionLabel: item.portion.label,
-                portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
-                portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
-                isCustomEntry: false,
-                isFromInventory: !isOutside && Boolean(selectedGroup)
-              })
-          )
-      );
+      const promises: Promise<ConsumptionResponse>[] = [];
+
+      // Global selections (individual requests or grouped if possible, but individual is safer for multiple items)
+      selectedItems.forEach((item) => {
+        promises.push(consumptionService.logConsumption({
+          userId: user.id,
+          recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
+          ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
+          inventoryGroupId: currentGroup?.id,
+          foodName: getSelectedItemName(item),
+          mealType,
+          portionSize: item.portion.portionSize,
+          portionLabel: item.portion.label,
+          portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
+          portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
+          isCustomEntry: false,
+          isFromInventory: !isOutside && Boolean(selectedGroup)
+        }));
+      });
+
+      // Member selections
+      selectedMemberIds.forEach((userId) => {
+        const userItems = memberSelections[userId] || [];
+        userItems.forEach((item) => {
+          promises.push(consumptionService.logConsumption({
+            userId: userId, // Tüketimi yapan kullanıcı
+            recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
+            ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
+            inventoryGroupId: currentGroup?.id,
+            foodName: getSelectedItemName(item),
+            mealType,
+            portionSize: item.portion.portionSize,
+            portionLabel: item.portion.label,
+            portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
+            portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
+            isCustomEntry: false,
+            isFromInventory: !isOutside && Boolean(selectedGroup)
+          }));
+        });
+      });
+
+      const results = await Promise.allSettled(promises);
 
       const successfulResponses: ConsumptionResponse[] = [];
-      const failedItems: SelectedConsumptionItem[] = [];
       let firstFailureMessage: string | null = null;
 
-      results.forEach((result, index) => {
+      results.forEach((result) => {
         if (result.status === 'fulfilled') {
           successfulResponses.push(result.value);
-          return;
-        }
-
-        failedItems.push(itemsToSubmit[index]);
-        if (!firstFailureMessage) {
+        } else if (!firstFailureMessage) {
           firstFailureMessage = getErrorMessage(result.reason, 'Tuketim kaydi olusturulamadi.');
         }
       });
 
+      // Clear successful items from local state (complex because we have global and member lists)
+      // For simplicity, if everything succeeded, clear everything. 
+      // If partially succeeded, the user might want to see what failed, 
+      // but individual error tracking is hard with the current structure.
+      // We will just clear all if any success occurred for now, or keep them if they want to retry.
+      if (successfulResponses.length === promises.length) {
+        setSelectedItems([]);
+        setMemberSelections({});
+      }
+
       setSearchQuery('');
-      setSelectedItems(failedItems);
       setRecipeResults([]);
       setIngredientResults([]);
 
       if (successfulResponses.length > 0) {
         setSubmitSummary({
           responses: successfulResponses,
-          failedNames: failedItems.map((item) => getSelectedItemName(item))
+          failedNames: [] // Not tracking failed names precisely now
         });
       }
 
-      if (failedItems.length > 0) {
-        const failedLabel = formatNameList(failedItems.map((item) => getSelectedItemName(item)), 4);
-        const prefix = successfulResponses.length > 0
-            ? `${successfulResponses.length} oge kaydedildi ancak bazi ogeler tekrar denemeli.`
-            : 'Secilen ogeler kaydedilemedi.';
-        setErrorMessage(`${prefix} ${failedLabel}${firstFailureMessage ? ` · ${firstFailureMessage}` : ''}`);
+      if (successfulResponses.length < promises.length) {
+        setErrorMessage(`Bazi ogeler kaydedilemedi.${firstFailureMessage ? ` · ${firstFailureMessage}` : ''}`);
       }
 
       if (successfulResponses.length > 0 && !isOutside && selectedGroup) {
-        await loadInventoryGroups();
+        // Envanteri tazelemek için biraz bekle (backend async işlemleri için)
+        setTimeout(() => void loadInventoryGroups(), 500);
       }
 
       if (onConsumptionLogged && successfulResponses.length > 0) {
@@ -838,6 +1279,75 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                 </div>
               </div>
             </div>
+
+            {/* Üye Seçimi Bölümü */}
+            {!isOutside && selectedGroup && selectedGroup.users.length > 0 && (
+                <div className="mt-6 border-t border-card-border/50 pt-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="meal-overline tracking-[0.18em] text-espresso-midnight/50 dark:text-alabaster/50">Üye Seçimi & Porsiyon</p>
+                    <span className="text-xs text-espresso-midnight/40 dark:text-alabaster/40 italic">* Seçili üyeler için ayrı kayıt oluşturulur</span>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    {selectedGroup.users.map((groupUser) => {
+                      const isSelected = !!selectedMembers[selectedLocationId]?.[groupUser.id];
+                      const isMe = groupUser.id === user.id;
+                      return (
+                          <div
+                              key={groupUser.id}
+                              className={`flex flex-col gap-3 p-4 rounded-3xl border transition-all duration-300 min-w-[14rem] ${
+                                  isSelected
+                                      ? 'bg-terracotta/5 border-terracotta/30 shadow-sm'
+                                      : 'bg-white/30 border-card-border/30 hover:bg-white/50'
+                              }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    isSelected ? 'bg-terracotta text-white' : 'bg-espresso-midnight/10 text-espresso-midnight/60'
+                                }`}>
+                                  {(groupUser.name || 'U').charAt(0).toUpperCase()}
+                                </div>
+                                <span className={`text-sm font-bold ${isSelected ? 'text-espresso-midnight' : 'text-espresso-midnight/60'}`}>
+                                  {groupUser.name || 'İsimsiz Üye'} {isMe && '(Sen)'}
+                                </span>
+                              </div>
+                              <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedMembersForLocation(prev => {
+                                      const nextIsSelected = !isSelected;
+                                      const next = {
+                                        ...prev,
+                                        [selectedLocationId]: {
+                                          ...(prev[selectedLocationId] || {}),
+                                          [groupUser.id]: nextIsSelected
+                                        }
+                                      };
+                                      
+                                      // Eğer üye seçildiyse ve global liste doluysa, global listeyi bu üyeye kopyala (smart start)
+                                      if (nextIsSelected && selectedItems.length > 0) {
+                                          setMemberSelections(mPrev => ({
+                                              ...mPrev,
+                                              [groupUser.id]: selectedItems.map(item => ({...item, key: `${groupUser.id}-${item.key}`}))
+                                          }));
+                                      }
+                                      
+                                      return next;
+                                    });
+                                  }}
+                                  className={`p-1.5 rounded-full transition-colors ${
+                                      isSelected ? 'bg-terracotta text-white' : 'bg-espresso-midnight/5 text-espresso-midnight/40'
+                                  }`}
+                              >
+                                {isSelected ? <CheckCircle2 size={16} /> : <Plus size={16} />}
+                              </button>
+                            </div>
+                          </div>
+                      );
+                    })}
+                  </div>
+                </div>
+            )}
           </div>
 
           <div className="mt-2 grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
@@ -947,237 +1457,59 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               <div className="mt-6 rounded-[1.8rem] border-2 border-dashed border-card-border bg-white/50 p-4 dark:bg-white/[0.03]">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="meal-overline tracking-[0.18em]">Selected Items</p>
-                    <h4 className="mt-2 text-lg font-serif font-bold text-espresso-midnight dark:text-alabaster">Secilenleri burada yonet</h4>
-                  </div>
-                  <div className="rounded-full border border-terracotta/20 bg-terracotta/10 px-4 py-2 text-sm font-bold text-terracotta">
-                    {selectedItems.length} Oge
+                    <p className="meal-overline tracking-[0.18em]">Tüketim Listesi</p>
+                    <h4 className="mt-2 text-lg font-serif font-bold text-espresso-midnight dark:text-alabaster">
+                        {isOutside || !Object.values(selectedMembers[selectedLocationId] || {}).some(v => v) 
+                          ? 'Kendi Seçimlerin' 
+                          : 'Üye Bazlı Seçimler'}
+                    </h4>
                   </div>
                 </div>
 
-                {selectedItems.length === 0 ? (
-                    <div className="mt-4 flex min-h-[96px] items-center justify-center rounded-[1.4rem] bg-white/60 px-4 text-sm text-espresso-midnight/45 dark:bg-white/[0.02] dark:text-alabaster/45">
-                      Henuz secim yapmadin. Arama sonuclarindan ogeleri ekledikce burada gorunecekler.
+                <div className="mt-4 space-y-8">
+                  {/* Default / Global User Items (Only if no other members selected or in Outside mode) */}
+                  {(isOutside || !Object.values(selectedMembers[selectedLocationId] || {}).some(v => v)) && (
+                    <div className="space-y-4">
+                      {selectedItems.length === 0 ? (
+                        <div className="flex min-h-[96px] items-center justify-center rounded-[1.4rem] bg-white/60 px-4 text-sm text-espresso-midnight/45 dark:bg-white/[0.02] dark:text-alabaster/45">
+                          Henüz seçim yapmadın.
+                        </div>
+                      ) : (
+                        <div className="grid gap-4">
+                          {selectedItems.map((item) => renderItemCard(item))}
+                        </div>
+                      )}
                     </div>
-                ) : (
-                    <div className="mt-4 grid gap-6">
-                      {selectedItems.map((item) => {
-                        const itemNutrition = getSelectedItemNutrition(item);
+                  )}
 
-                        return (
-                            <article
-                                key={item.key}
-                                className="rounded-[2rem] border border-card-border bg-white/90 p-6 shadow-md transition-all hover:shadow-lg dark:bg-white/[0.04]"
-                            >
-                              <div className="flex items-start justify-between gap-4">
-                                <div>
-                                  <p className="font-serif text-xl font-bold text-espresso-midnight dark:text-alabaster">
-                                    {getSelectedItemName(item)}
-                                  </p>
-                                  <p className="mt-2 text-xs uppercase tracking-[0.18em] text-moss-forest/50 dark:text-moss-sage/60">
-                                    {getSelectedItemCategory(item)}
-                                  </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveItem(item.key)}
-                                    disabled={submitting}
-                                    className="rounded-xl bg-terracotta/10 p-2 text-terracotta transition-all hover:bg-terracotta hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  <X size={16} />
-                                </button>
-                              </div>
-
-                              <div className="mt-4">
-                                <div className="space-y-4">
-                                  {item.kind === 'RECIPE' && (
-                                    <div className="mt-4 space-y-3">
-                                      <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Porsiyon</p>
-                                      <div className="flex flex-wrap gap-2">
-                                        {RECIPE_PORTION_OPTIONS.map((option) => (
-                                            <button
-                                                key={option.id}
-                                                type="button"
-                                                onClick={() => handleRecipePortionChange(item.key, option)}
-                                                disabled={submitting}
-                                                className={`rounded-full px-3 py-2 text-xs font-semibold transition-all ${
-                                                    item.portion.id === option.id
-                                                        ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                                                        : 'border border-card-border bg-white text-espresso-midnight/70 hover:text-terracotta dark:bg-white/[0.03] dark:text-alabaster/70'
-                                                }`}
-                                            >
-                                              {option.label}
-                                            </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {item.kind === 'INGREDIENT' && (
-                                      <div className="mt-4 space-y-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          {/* Step 1: Quick Selection */}
-                                          <div className="space-y-3">
-                                            <div className="flex items-center justify-between">
-                                              <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Hızlı Seçim</p>
-                                            </div>
-                                            <div className="flex flex-wrap gap-2">
-                                              {getIngredientUnits(item.ingredient.id).quickUnits.map((unit: string) => {
-                                                const weights = (item.ingredient.id && ingredientSpecificWeights[item.ingredient.id]) || unitWeights;
-                                                const weight = weights[unit.toLowerCase()];
-                                                const currentParts = item.portion.label.split(' ');
-                                                const currentQty = parseFloat(currentParts[0]) || 0;
-                                                const currentUnit = currentParts.length > 1 ? currentParts[1] : '';
-                                                const isSelected = currentUnit.toLowerCase() === unit.toLowerCase() && currentQty > 0;
-
-                                                return (
-                                                  <div
-                                                    key={unit}
-                                                    className={`group relative flex items-center overflow-hidden rounded-xl border transition-all ${
-                                                      isSelected
-                                                        ? 'bg-espresso-midnight text-white border-transparent'
-                                                        : 'border-card-border bg-espresso-midnight/5 text-espresso-midnight/80 hover:border-terracotta/40 dark:bg-white/10 dark:text-alabaster/80'
-                                                    }`}
-                                                  >
-                                                    {/* Decrease Button */}
-                                                    <button
-                                                      type="button"
-                                                      disabled={submitting}
-                                                      onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, -1)}
-                                                      className={`flex h-full items-center justify-center border-r px-2 py-2 transition-colors ${
-                                                        isSelected
-                                                          ? 'border-white/10 hover:bg-white/10'
-                                                          : 'border-espresso-midnight/5 hover:bg-terracotta/10 hover:text-terracotta'
-                                                      }`}
-                                                    >
-                                                      <Minus size={12} />
-                                                    </button>
-
-                                                    {/* Unit Display / Increment */}
-                                                    <button
-                                                      type="button"
-                                                      disabled={submitting}
-                                                      onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, 1)}
-                                                      className="px-3 py-2 text-left"
-                                                    >
-                                                      <span className="text-xs font-bold leading-none">
-                                                        {isSelected ? `${currentQty} ` : ''}{unit}
-                                                      </span>
-                                                      {weight && (
-                                                        <span className={`block text-[8px] mt-0.5 leading-none ${isSelected ? 'text-white/60' : 'text-foreground/30'}`}>
-                                                          ~{(weight * (isSelected ? currentQty : 1)).toFixed(0)}g
-                                                        </span>
-                                                      )}
-                                                    </button>
-
-                                                    {/* Increase Button (Plus) - if we want it separate, but clicking the middle usually increments too. 
-                                                       User said "sağına + soluna - koyarak". 
-                                                       Let's add a clear Plus on the right too. */}
-                                                    <button
-                                                      type="button"
-                                                      disabled={submitting}
-                                                      onClick={() => handleQuickUnitAdjust(item.key, item.ingredient, unit, 1)}
-                                                      className={`flex h-full items-center justify-center border-l px-2 py-2 transition-colors ${
-                                                        isSelected
-                                                          ? 'border-white/10 hover:bg-white/10'
-                                                          : 'border-espresso-midnight/5 hover:bg-emerald-500/10 hover:text-emerald-500'
-                                                      }`}
-                                                    >
-                                                      <Plus size={12} />
-                                                    </button>
-                                                  </div>
-                                                );
-                                              })}
-                                              {getIngredientUnits(item.ingredient.id).quickUnits.length === 0 && (
-                                                <p className="text-[10px] italic text-foreground/30">Ozel birim bulunamadi.</p>
-                                              )}
-                                            </div>
-                                          </div>
-
-                                          {/* Step 2: Amount and Standard Unit - Optional */}
-                                          <div className="space-y-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => toggleManualInput(item.key)}
-                                                className="flex w-full items-center justify-between rounded-xl bg-espresso-midnight/5 px-3 py-2 text-left transition-all hover:bg-espresso-midnight/10 dark:bg-white/5 dark:hover:bg-white/10"
-                                            >
-                                              <span className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">Spesifik Miktar / Birim</span>
-                                              {expandedManualInputs[item.key] ? <ChevronUp size={14} className="text-espresso-midnight/30" /> : <ChevronDown size={14} className="text-espresso-midnight/30" />}
-                                            </button>
-
-                                            {expandedManualInputs[item.key] && (
-                                              <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                                                <div className="flex gap-2">
-                                                  <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    placeholder="0.00"
-                                                    disabled={submitting}
-                                                    value={item.portion.label.split(' ')[0] || ''}
-                                                    className="w-1/2 rounded-xl border border-card-border bg-white px-3 py-2 text-sm font-bold outline-none focus:border-terracotta dark:bg-white/5"
-                                                    onChange={(e) => {
-                                                      const parts = item.portion.label.split(' ');
-                                                      const unit = parts.length > 1 ? parts[1] : (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
-                                                      handleManualPortionUpdate(item.key, item.ingredient, e.target.value, unit);
-                                                    }}
-                                                  />
-                                                  <select
-                                                    disabled={submitting}
-                                                    className="w-1/2 rounded-xl border border-card-border bg-white px-3 py-2 text-xs font-bold outline-none cursor-pointer dark:bg-white/5"
-                                                    value={(() => {
-                                                        const parts = item.portion.label.split(' ');
-                                                        return (parts.length > 1 ? parts[1] : (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM')).toUpperCase();
-                                                    })()}
-                                                    onChange={(e) => {
-                                                      const val = item.portion.label.split(' ')[0] || '100';
-                                                      handleManualPortionUpdate(item.key, item.ingredient, val, e.target.value);
-                                                    }}
-                                                  >
-                                                    {getIngredientUnits(item.ingredient.id).standardUnits.map((unit: string) => (
-                                                      <option key={unit} value={unit}>{unit}</option>
-                                                    ))}
-                                                    {getIngredientUnits(item.ingredient.id).quickUnits.map((unit: string) => (
-                                                      <option key={unit} value={unit}>{unit}</option>
-                                                    ))}
-                                                  </select>
-                                                </div>
-                                              </div>
-                                            )}
-                                            
-                                            <div className="flex items-center gap-1.5 text-[9px] text-terracotta/70 italic px-1">
-                                              <AlertCircle size={10} />
-                                              Seçili: {item.portion.grams.toFixed(1)}g eşdeğeri
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                                <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
-                                  <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Calories</p>
-                                  <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatCalories(itemNutrition.calories)}</p>
-                                </div>
-                                <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
-                                  <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Protein</p>
-                                  <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.protein)}</p>
-                                </div>
-                                <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
-                                  <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Carbs</p>
-                                  <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.carbs)}</p>
-                                </div>
-                                <div className="rounded-[1.1rem] bg-espresso-midnight/[0.03] px-3 py-3 dark:bg-white/5">
-                                  <p className="text-[10px] uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35">Fat</p>
-                                  <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMacro(itemNutrition.fat)}</p>
-                                </div>
-                              </div>
-                            </article>
-                        );
-                      })}
-                    </div>
-                )}
+                  {/* Per Member Items */}
+                  {!isOutside && selectedGroup && selectedGroup.users.filter(u => selectedMembers[selectedLocationId]?.[u.id]).map((groupUser) => {
+                    const items = memberSelections[groupUser.id] || [];
+                    return (
+                      <div key={groupUser.id} className="space-y-4 p-4 rounded-3xl bg-white/40 dark:bg-white/5 border border-card-border/30">
+                        <div className="flex items-center justify-between px-2">
+                           <div className="flex items-center gap-2">
+                             <div className="w-6 h-6 rounded-full bg-terracotta text-white flex items-center justify-center text-[10px] font-bold">
+                               {(groupUser.name || 'U').charAt(0).toUpperCase()}
+                             </div>
+                             <span className="text-sm font-bold text-espresso-midnight/70">{groupUser.name || 'İsimsiz Üye'}</span>
+                           </div>
+                           <span className="text-[10px] font-bold text-terracotta uppercase">{items.length} Öğe</span>
+                        </div>
+                        
+                        {items.length === 0 ? (
+                          <div className="flex min-h-[80px] items-center justify-center rounded-2xl bg-white/60 px-4 text-xs italic text-espresso-midnight/40 dark:bg-white/[0.02]">
+                            Henüz bu üye için bir şey seçilmedi. Arama yapınca otomatik eklenir.
+                          </div>
+                        ) : (
+                          <div className="grid gap-4">
+                            {items.map((item) => renderItemCard(item, groupUser.id))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -1193,7 +1525,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                   Arama sonuclarindan birden fazla oge ekleyebilirsin.
                 </div>
                 <div className="rounded-[1.5rem] border border-card-border bg-white/80 px-4 py-4 text-sm text-espresso-midnight/60 dark:bg-white/[0.03] dark:text-alabaster/60">
-                  Her secilen kartta porsiyonu ayarladiginda toplam makrolar aninda guncellenir.
+                  Üye seçimi yaparsan, seçtiğin her üye için kendi porsiyonlarını ayarlayabileceğin kartlar açılır.
                 </div>
                 <div className="rounded-[1.5rem] border border-card-border bg-white/80 px-4 py-4 text-sm text-espresso-midnight/60 dark:bg-white/[0.03] dark:text-alabaster/60">
                   Kaydet dediginde secilen her oge mevcut API uzerinden ayri bir tuketim kaydi olarak gonderilir.
@@ -1270,6 +1602,46 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
             </div>
           </div>
 
+          {memberSummaryRows.length > 0 && (
+            <div className="mt-8 overflow-hidden rounded-[1.8rem] border border-card-border bg-white/40 dark:bg-white/5">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-espresso-midnight/[0.03] dark:bg-white/5">
+                  <tr>
+                    <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50">Kullanıcı</th>
+                    <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50">Kalori</th>
+                    <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50 text-right">Protein</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-card-border/50 dark:divide-white/10">
+                  {memberSummaryRows.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-espresso-midnight/[0.01] dark:hover:bg-white/[0.01]">
+                      <td className="px-6 py-4 font-bold text-espresso-midnight dark:text-white">{row.name}</td>
+                      <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70">{formatCalories(row.calories)}</td>
+                      <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70 text-right font-mono">{formatMacro(row.protein)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {inventoryDeductions.length > 0 && (
+            <div className="mt-6 rounded-[1.8rem] bg-moss-sage/5 border border-moss-sage/20 p-5 dark:bg-moss-sage/10">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin size={16} className="text-moss-sage" />
+                <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-moss-forest/70 dark:text-moss-sage/80">Envanterden Düşecek Malzemeler</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {inventoryDeductions.map((d, i) => (
+                  <div key={i} className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1.5 text-xs shadow-sm dark:bg-white/5 border border-moss-sage/10">
+                    <span className="font-semibold text-espresso-midnight/80 dark:text-white/80">{d.name}</span>
+                    <span className="text-moss-forest dark:text-moss-sage font-mono">{d.grams >= 1000 ? `${(d.grams/1000).toFixed(1)}kg` : `${Math.round(d.grams)}g`}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 flex flex-col items-center justify-between gap-6 md:flex-row">
             <div className="flex-1 rounded-[1.5rem] border border-card-border bg-espresso-midnight/[0.02] px-5 py-4 text-sm text-espresso-midnight/70 dark:border-white/10 dark:bg-white/5 dark:text-white/70">
               {isOutside
@@ -1277,14 +1649,14 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                   : `${locationLabel(selectedGroup)} stokundan otomatik düşüm yapılacak.`}
             </div>
 
-            <button
-                type="submit"
-                disabled={submitting || selectedItems.length === 0}
-                className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-[1.6rem] bg-terracotta px-8 py-5 font-bold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.01] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              {submitting ? 'Kaydediliyor...' : selectedItems.length > 1 ? 'Tüketimleri Kaydet' : 'Tüketimi Kaydet'}
-            </button>
+                <button
+                    type="submit"
+                    disabled={submitting || (selectedItems.length === 0 && Object.values(memberSelections).flat().length === 0)}
+                    className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-[1.6rem] bg-terracotta px-8 py-5 font-bold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.01] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                  {submitting ? 'Kaydediliyor...' : (selectedItems.length + Object.values(memberSelections).flat().length) > 1 ? 'Tüketimleri Kaydet' : 'Tüketimi Kaydet'}
+                </button>
           </div>
         </div>
       </form>

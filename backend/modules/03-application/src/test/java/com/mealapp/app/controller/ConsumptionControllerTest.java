@@ -176,4 +176,42 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
                 .andExpect(jsonPath("$.totalCarbs").value(132.8))
                 .andExpect(jsonPath("$.totalFat").value(41.2));
     }
+
+    @Test
+    void shouldLogConsumptionForMultipleMembers() throws Exception {
+        User me = User.builder().id("system-user").name("Me").build();
+        User friend = User.builder().id("friend-user").name("Friend").build();
+        Recipe recipe = Recipe.builder().id(10L).title("Salad").build();
+        InventoryGroup group = InventoryGroup.builder().id(5L).name("Office").build();
+
+        when(userService.findById("system-user")).thenReturn(Optional.of(me));
+        when(userService.findById("friend-user")).thenReturn(Optional.of(friend));
+        when(recipeService.findById(10L)).thenReturn(Optional.of(recipe));
+        when(inventoryService.getUserInventoryGroup("system-user", 5L)).thenReturn(group);
+
+        DailyConsumption savedMe = DailyConsumption.builder().id(101L).user(me).foodName("Salad").build();
+        DailyConsumption savedFriend = DailyConsumption.builder().id(102L).user(friend).foodName("Salad").build();
+
+        when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "system-user".equals(c.getUser().getId())))).thenReturn(savedMe);
+        when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "friend-user".equals(c.getUser().getId())))).thenReturn(savedFriend);
+
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "recipeId": 10,
+                                  "inventoryGroupId": 5,
+                                  "mealType": "LUNCH",
+                                  "members": [
+                                    { "userId": "system-user", "portionMultiplier": 1.0 },
+                                    { "userId": "friend-user", "portionMultiplier": 0.5 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(101));
+
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "system-user".equals(c.getUser().getId())));
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "friend-user".equals(c.getUser().getId())));
+    }
 }

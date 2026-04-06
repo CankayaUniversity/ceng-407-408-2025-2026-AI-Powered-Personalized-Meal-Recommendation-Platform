@@ -249,6 +249,14 @@ export interface ConsumptionRequest {
   portionGrams?: number | null;
   isCustomEntry?: boolean | null;
   isFromInventory?: boolean | null;
+  members?: MemberConsumption[] | null;
+}
+
+export interface MemberConsumption {
+  userId: string;
+  portionMultiplier?: number | null;
+  portionGrams?: number | null;
+  portionLabel?: string | null;
 }
 
 export interface ConsumptionResponse {

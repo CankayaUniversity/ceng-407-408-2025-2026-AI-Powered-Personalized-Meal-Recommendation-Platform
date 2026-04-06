@@ -87,7 +87,6 @@ const InventoryPage: React.FC = () => {
   const [consumeAmount, setConsumeAmount] = useState<string>('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isConsuming, setIsConsuming] = useState(false);
-  const [memberModalOpen, setMemberModalOpen] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [userSearchResults, setUserSearchResults] = useState<User[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
@@ -609,6 +608,124 @@ const InventoryPage: React.FC = () => {
             </div>
           </section>
 
+          <section className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-3 meal-card meal-highlight-frame shadow-brand-card flex flex-col justify-between">
+                <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="meal-overline">Current Inventory</p>
+                    <h3 className="meal-section-title mt-1 text-3xl">{activeGroup?.name || 'Seçili Alan'}</h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => { setEditingGroupId(activeGroup?.id || null); setGroupDraft({ name: activeGroup?.name || '', icon: activeGroup?.icon || 'home' }); setLocationModalOpen(true); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-card-border bg-background text-xs font-bold hover:text-terracotta transition-colors">
+                      <Pencil size={14} /> Düzenle
+                    </button>
+                    <button onClick={handleDeleteGroup} disabled={groups.length <= 1} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors disabled:opacity-50">
+                      <Trash2 size={14} /> Lokasyonu Sil
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-2 md:grid-cols-2 gap-4">
+                  <div className="meal-metric-card border-card-border">
+                    <p className="meal-overline text-foreground/30">Ürün Sayısı</p>
+                    <p className="mt-1 font-serif text-3xl font-bold text-foreground">{activeItems.length}</p>
+                  </div>
+                  <div className="meal-metric-card border-card-border">
+                    <p className="meal-overline text-foreground/30">Kategoriler</p>
+                    <p className="mt-1 font-serif text-3xl font-bold text-foreground">{categoryCount}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Members Card */}
+              <div className="lg:col-span-2 meal-card meal-highlight-frame shadow-brand-card flex flex-col h-full min-h-[300px]">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <p className="meal-overline">Location Members</p>
+                    <h3 className="meal-section-title mt-1 text-xl">Lokasyon Üyeleri</h3>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-moss-sage/10 text-moss-sage">
+                    <Users size={20} />
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-3 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-2">
+                    {activeGroup?.users.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 rounded-2xl bg-background border border-card-border group hover:border-moss-sage/30 transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-8 w-8 rounded-xl bg-moss-sage/10 text-moss-sage flex items-center justify-center flex-shrink-0">
+                            <span className="text-[10px] font-bold">{(user.name || user.email || '?').charAt(0).toUpperCase()}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-foreground truncate">{user.name || 'İsimsiz'}</p>
+                            <p className="text-[9px] text-foreground-muted truncate">{user.email}</p>
+                          </div>
+                        </div>
+                        {activeGroup.users.length > 1 && (
+                          <button
+                            onClick={() => handleRemoveMember(user.id)}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-foreground/10 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Çıkar"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-card-border">
+                  <form onSubmit={handleAddMember} className="flex gap-2 relative">
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={newMemberEmail}
+                        onChange={(e) => handleUserSearch(e.target.value)}
+                        placeholder="E-posta ile davet et..."
+                        className="base-input w-full py-2.5 bg-background dark:bg-white/5 text-[11px]"
+                        required
+                      />
+                      {isSearchingUsers ? (
+                        <div className="absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-espresso-midnight rounded-xl shadow-2xl border border-black/5 dark:border-white/10 z-[100] flex items-center justify-center p-2">
+                          <Loader2 size={14} className="animate-spin text-terracotta" />
+                        </div>
+                      ) : userSearchResults.length > 0 && (
+                        <div className="absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-espresso-midnight rounded-xl shadow-2xl border border-black/5 dark:border-white/10 z-[100] overflow-hidden max-h-32 overflow-y-auto">
+                          {userSearchResults.map((user) => (
+                            <div
+                              key={user.id}
+                              onClick={() => {
+                                setNewMemberEmail(user.email || '');
+                                setUserSearchResults([]);
+                              }}
+                              className="p-2 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer flex items-center justify-between"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-bold truncate">{user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName)}</p>
+                                <p className="text-[9px] text-black/40 dark:text-alabaster/40 truncate">{user.email}</p>
+                              </div>
+                              <Plus size={12} className="text-terracotta flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isAddingMember || !newMemberEmail.trim()}
+                      className="px-4 rounded-xl bg-espresso-midnight text-white font-bold text-[10px] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {isAddingMember ? <Loader2 size={12} className="animate-spin" /> : 'DAVET ET'}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <div className="grid grid-cols-1 gap-6">
             <section className="meal-card meal-highlight-frame shadow-brand-card">
               <div className="flex items-start justify-between">
@@ -808,41 +925,6 @@ const InventoryPage: React.FC = () => {
             </section>
 
             <section className="space-y-6">
-              <div className="meal-card meal-highlight-frame shadow-brand-card">
-                <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="meal-overline">Current Inventory</p>
-                    <h3 className="meal-section-title mt-1 text-3xl">{activeGroup?.name || 'Seçili Alan'}</h3>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => setMemberModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-moss-sage/30 bg-moss-sage/5 text-moss-sage text-xs font-bold hover:bg-moss-sage/10 transition-colors">
-                      <Users size={14} /> Üyeleri Yönet
-                    </button>
-                    <button onClick={() => { setEditingGroupId(activeGroup?.id || null); setGroupDraft({ name: activeGroup?.name || '', icon: activeGroup?.icon || 'home' }); setLocationModalOpen(true); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-card-border bg-background text-xs font-bold hover:text-terracotta transition-colors">
-                      <Pencil size={14} /> Düzenle
-                    </button>
-                    <button onClick={handleDeleteGroup} disabled={groups.length <= 1} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors disabled:opacity-50">
-                      <Trash2 size={14} /> Lokasyonu Sil
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="meal-metric-card border-card-border">
-                    <p className="meal-overline text-foreground/30">Ürün Sayısı</p>
-                    <p className="mt-1 font-serif text-3xl font-bold text-foreground">{activeItems.length}</p>
-                  </div>
-                  <div className="meal-metric-card border-card-border">
-                    <p className="meal-overline text-foreground/30">Kategoriler</p>
-                    <p className="mt-1 font-serif text-3xl font-bold text-foreground">{categoryCount}</p>
-                  </div>
-                  <div className="meal-metric-card border-card-border col-span-2 md:col-span-1">
-                    <p className="meal-overline text-foreground/30">Stil</p>
-                    <p className="mt-2 text-xs font-bold text-terracotta uppercase tracking-widest">Sage & Terracotta</p>
-                  </div>
-                </div>
-              </div>
-
               {activeItems.length === 0 ? (
                   <div className="meal-card border-dashed border-card-border py-16 text-center bg-background/50">
                     <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/5 text-primary">
@@ -1050,103 +1132,6 @@ const InventoryPage: React.FC = () => {
           </div>
         )}
 
-        {memberModalOpen && activeGroup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="w-full max-w-xl bg-background rounded-[2.5rem] shadow-brand-hero border border-card-border overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
-              <div className="p-8">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="p-4 rounded-2xl bg-moss-sage/10 text-moss-sage">
-                      <Users size={24} />
-                    </div>
-                    <div>
-                      <p className="meal-overline">Member Management</p>
-                      <h3 className="meal-section-title mt-1 text-2xl">{activeGroup.name} Üyeleri</h3>
-                    </div>
-                  </div>
-                  <button onClick={() => setMemberModalOpen(false)} className="p-2 rounded-full hover:bg-black/5 text-foreground/30"><X size={20} /></button>
-                </div>
-
-                <div className="mt-8 space-y-6">
-                  <div className="space-y-4">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Mevcut Üyeler</span>
-                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-                      {activeGroup.users.map((user) => (
-                        <div key={user.id} className="flex items-center justify-between p-4 rounded-2xl bg-background border border-card-border group">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-moss-sage/10 text-moss-sage">
-                              <Users size={14} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-foreground">{user.name || 'İsimsiz'}</p>
-                              <p className="text-[10px] text-foreground-muted">{user.email}</p>
-                            </div>
-                          </div>
-                          {activeGroup.users.length > 1 && (
-                            <button 
-                              onClick={() => handleRemoveMember(user.id)}
-                              className="p-2 rounded-lg hover:bg-red-50 text-foreground/20 hover:text-red-500 transition-colors"
-                              title="Çıkar"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleAddMember} className="space-y-4 border-t border-card-border pt-6">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Yeni Üye Davet Et</span>
-                    <div className="flex gap-2 relative">
-                      <div className="flex-1 relative">
-                        <input
-                          type="text"
-                          value={newMemberEmail}
-                          onChange={(e) => handleUserSearch(e.target.value)}
-                          placeholder="E-posta veya isim ile ara..."
-                          className="base-input w-full py-3 bg-background dark:bg-white/5 text-sm"
-                          required
-                        />
-                          {isSearchingUsers ? (
-                            <div className="absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-espresso-midnight rounded-xl shadow-2xl border border-black/5 dark:border-white/10 z-[100] flex items-center justify-center p-4">
-                              <Loader2 size={20} className="animate-spin text-terracotta" />
-                            </div>
-                          ) : userSearchResults.length > 0 && (
-                            <div className="absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-espresso-midnight rounded-xl shadow-2xl border border-black/5 dark:border-white/10 z-[100] overflow-hidden max-h-48 overflow-y-auto">
-                              {userSearchResults.map((user) => (
-                                <div
-                                  key={user.id}
-                                  onClick={() => {
-                                    setNewMemberEmail(user.email || '');
-                                    setUserSearchResults([]);
-                                  }}
-                                  className="p-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer flex items-center justify-between"
-                                >
-                                  <div>
-                                    <p className="text-xs font-bold">{user.name || (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName)}</p>
-                                    <p className="text-[10px] text-black/40 dark:text-alabaster/40">{user.email}</p>
-                                  </div>
-                                  <Plus size={14} className="text-terracotta" />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                      </div>
-                      <button 
-                        type="submit" 
-                        disabled={isAddingMember || !newMemberEmail.trim()}
-                        className="px-6 rounded-xl bg-espresso-midnight text-white font-bold text-xs hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 whitespace-nowrap"
-                      >
-                        {isAddingMember ? <Loader2 size={16} className="animate-spin" /> : 'DAVET ET'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
         {invitationsModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="w-full max-w-xl bg-background rounded-[2.5rem] shadow-brand-hero border border-card-border overflow-hidden animate-in slide-in-from-bottom-8 duration-500">

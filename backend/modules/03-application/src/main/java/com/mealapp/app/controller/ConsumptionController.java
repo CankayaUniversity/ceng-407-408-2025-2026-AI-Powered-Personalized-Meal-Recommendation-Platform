@@ -99,10 +99,8 @@ public class ConsumptionController {
      */
     @PostMapping
     public ConsumptionResponse log(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ConsumptionRequest request) {
-        String userId = requireAuthenticatedUserId(jwt, request.getUserId());
-        User user = userService.findById(userId)
-                .orElseGet(() -> userService.save(User.builder().id(userId).build()));
-
+        String authenticatedUserId = requireAuthenticatedUserId(jwt, request.getUserId());
+        
         if (request.getRecipeId() != null && request.getIngredientId() != null) {
             throw new MealAppDomainException("Aynı kayıtta hem tarif hem de malzeme seçilemez.");
         }
@@ -121,21 +119,56 @@ public class ConsumptionController {
 
         InventoryGroup inventoryGroup = null;
         if (request.getInventoryGroupId() != null) {
-            inventoryGroup = inventoryService.getUserInventoryGroup(userId, request.getInventoryGroupId());
+            inventoryGroup = inventoryService.getUserInventoryGroup(authenticatedUserId, request.getInventoryGroupId());
         }
+
+        // Eğer birden fazla üye için giriş yapılıyorsa
+        if (request.getMembers() != null && !request.getMembers().isEmpty()) {
+            DailyConsumption mainUserSaved = null;
+            for (ConsumptionRequest.MemberConsumption member : request.getMembers()) {
+                User user = userService.findById(member.getUserId())
+                        .orElseGet(() -> userService.save(User.builder().id(member.getUserId()).build()));
+                
+                Double grams = member.getPortionGrams();
+                if (grams == null && member.getPortionLabel() != null) {
+                    grams = parseGramsFromLabel(member.getPortionLabel(), ingredient);
+                }
+
+                DailyConsumption entity = DailyConsumption.builder()
+                        .user(user)
+                        .foodName(resolveFoodName(request, recipe, ingredient))
+                        .recipe(recipe)
+                        .ingredient(ingredient)
+                        .mealType(request.getMealType())
+                        .portionSize(resolvePortionSize(request, grams))
+                        .portionLabel(member.getPortionLabel())
+                        .portionMultiplier(member.getPortionMultiplier() != null ? member.getPortionMultiplier() : request.getPortionMultiplier())
+                        .portionGrams(grams)
+                        .isCustomEntry(Boolean.TRUE.equals(request.getIsCustomEntry()) || (recipe == null && ingredient == null))
+                        .isFromInventory(inventoryGroup != null || Boolean.TRUE.equals(request.getIsFromInventory()))
+                        .inventoryGroup(inventoryGroup)
+                        .build();
+
+                // Tüm üyeler için kayıt oluşturuyoruz. Stok düşümü logConsumption içinde her seferinde yapılacaktır.
+                // Eğer ortak stoktan tek seferde düşüm yapılması istenirse burada mantık değişmeliydi 
+                // ancak şu anki DailyConsumptionService mantığı kullanıcı başına stok düşümüne izin veriyor.
+                DailyConsumption saved = dailyConsumptionService.logConsumption(entity);
+                if (user.getId().equals(authenticatedUserId)) {
+                    mainUserSaved = saved;
+                } else if (mainUserSaved == null) {
+                    mainUserSaved = saved;
+                }
+            }
+            return mapToResponse(mainUserSaved);
+        }
+
+        // Tekil kullanıcı girişi (Geriye dönük uyumluluk)
+        User user = userService.findById(authenticatedUserId)
+                .orElseGet(() -> userService.save(User.builder().id(authenticatedUserId).build()));
 
         Double grams = request.getPortionGrams();
         if (grams == null && request.getPortionLabel() != null) {
-            // Eğer doğrudan gram girilmemişse ama bir etiket (örn: 1 cup) varsa dönüştür
-            String label = request.getPortionLabel().toLowerCase();
-            if (label.contains(" ")) {
-                try {
-                    String[] parts = label.split(" ");
-                    Double val = Double.parseDouble(parts[0]);
-                    String unit = parts[1];
-                    grams = UnitConverter.convertToGrams(val, unit, ingredient);
-                } catch (Exception ignored) {}
-            }
+            grams = parseGramsFromLabel(request.getPortionLabel(), ingredient);
         }
 
         DailyConsumption entity = DailyConsumption.builder()
@@ -154,7 +187,23 @@ public class ConsumptionController {
                 .build();
 
         DailyConsumption saved = dailyConsumptionService.logConsumption(entity);
+        return mapToResponse(saved);
+    }
 
+    private Double parseGramsFromLabel(String label, Ingredient ingredient) {
+        String lowerLabel = label.toLowerCase();
+        if (lowerLabel.contains(" ")) {
+            try {
+                String[] parts = lowerLabel.split(" ");
+                Double val = Double.parseDouble(parts[0]);
+                String unit = parts[1];
+                return UnitConverter.convertToGrams(val, unit, ingredient);
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+
+    private ConsumptionResponse mapToResponse(DailyConsumption saved) {
         ConsumptionResponse response = new ConsumptionResponse();
         response.setId(saved.getId());
         response.setFoodName(saved.getFoodName());
@@ -164,10 +213,11 @@ public class ConsumptionController {
         response.setPortionLabel(saved.getPortionLabel());
         response.setPortionGrams(saved.getPortionGrams());
         
-        // Etiket üzerinden birim katsayısını belirle (örn: "1 cup" -> 240.0)
         if (saved.getPortionLabel() != null && saved.getPortionLabel().contains(" ")) {
-            String unit = saved.getPortionLabel().split(" ")[1];
-            response.setUnitGramWeight(UnitConverter.getUnitGramWeight(unit));
+            try {
+                String unit = saved.getPortionLabel().split(" ")[1];
+                response.setUnitGramWeight(UnitConverter.getUnitGramWeight(unit));
+            } catch (Exception ignored) {}
         }
 
         response.setEstimatedCalories(saved.getEstimatedCalories());

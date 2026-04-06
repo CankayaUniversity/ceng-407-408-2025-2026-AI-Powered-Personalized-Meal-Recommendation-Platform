@@ -63,4 +63,20 @@ public class ConsumptionRequest {
      */
     @Positive(message = "Gram karşılığı sıfırdan büyük olmalıdır")
     private Double portionGrams;
+
+    /**
+     * Seçilen stok lokasyonundaki (envanter grubu) üyelerin tüketim miktarları.
+     */
+    private java.util.List<MemberConsumption> members;
+
+    /**
+     * Üye özelinde tüketim bilgisi.
+     */
+    @lombok.Data
+    public static class MemberConsumption {
+        private String userId;
+        private Double portionMultiplier;
+        private Double portionGrams;
+        private String portionLabel;
+    }
 }

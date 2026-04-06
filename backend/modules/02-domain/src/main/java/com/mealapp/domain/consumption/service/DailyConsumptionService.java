@@ -33,12 +33,21 @@ public class DailyConsumptionService {
     private final IngredientRepository ingredientRepository;
 
     /**
-     * Yeni bir tüketim kaydı oluşturur. 
+     * Yeni bir tüketim kaydı oluşturur.
      * Eğer sistem dışı bir yemekse ve porsiyon bilgisi varsa, yaklaşık değerleri atar.
      * Eğer evden (inventory) tüketilmişse, stok düşümü yapar.
      */
     @Transactional
     public DailyConsumption logConsumption(DailyConsumption consumption) {
+        return logConsumption(consumption, true);
+    }
+
+    /**
+     * Yeni bir tüketim kaydı oluşturur.
+     * @param deductFromInventory Stok düşümü yapılıp yapılmayacağı.
+     */
+    @Transactional
+    public DailyConsumption logConsumption(DailyConsumption consumption, boolean deductFromInventory) {
         enrichConsumption(consumption);
 
         if (Boolean.TRUE.equals(consumption.getIsCustomEntry()) && consumption.getPortionSize() != null
@@ -48,7 +57,7 @@ public class DailyConsumptionService {
 
         DailyConsumption saved = dailyConsumptionRepository.save(consumption);
 
-        if (Boolean.TRUE.equals(saved.getIsFromInventory()) && saved.getInventoryGroup() != null) {
+        if (deductFromInventory && Boolean.TRUE.equals(saved.getIsFromInventory()) && saved.getInventoryGroup() != null) {
             deductFromInventory(saved);
         }
 
