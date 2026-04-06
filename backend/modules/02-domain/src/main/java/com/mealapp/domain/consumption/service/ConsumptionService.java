@@ -66,7 +66,7 @@ public class ConsumptionService {
                     .isCustomEntry(false)
                     .build();
 
-            dailyConsumptionService.logConsumption(consumption);
+            dailyConsumptionService.logConsumption(consumption, false);
         }
     }
 }
