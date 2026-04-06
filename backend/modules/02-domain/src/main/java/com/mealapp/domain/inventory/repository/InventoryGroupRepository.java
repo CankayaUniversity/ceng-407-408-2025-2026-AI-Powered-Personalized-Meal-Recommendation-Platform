@@ -13,17 +13,17 @@ import java.util.Optional;
 @Repository
 public interface InventoryGroupRepository extends JpaRepository<InventoryGroup, Long> {
 
-    List<InventoryGroup> findByUserIdOrderByIdAsc(String userId);
+    List<InventoryGroup> findByUsersIdOrderByIdAsc(String userId);
 
-    Optional<InventoryGroup> findByIdAndUserId(Long id, String userId);
+    Optional<InventoryGroup> findByIdAndUsersId(Long id, String userId);
 
-    Optional<InventoryGroup> findFirstByUserIdOrderByIdAsc(String userId);
+    Optional<InventoryGroup> findFirstByUsersIdOrderByIdAsc(String userId);
 
-    boolean existsByUserId(String userId);
+    boolean existsByUsersId(String userId);
 
-    boolean existsByUserIdAndNameIgnoreCase(String userId, String name);
+    boolean existsByUsersIdAndNameIgnoreCase(String userId, String name);
 
-    boolean existsByUserIdAndNameIgnoreCaseAndIdNot(String userId, String name, Long id);
+    boolean existsByUsersIdAndNameIgnoreCaseAndIdNot(String userId, String name, Long id);
 
-    long countByUserId(String userId);
+    long countByUsersId(String userId);
 }

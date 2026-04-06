@@ -115,6 +115,61 @@ export const getInventoryService = (api: AxiosInstance) => ({
     } catch (error) {
       return mapAxiosError(error, 'Malzeme araması yapılamadı');
     }
+  },
+
+  consumeInventoryItem: async (groupId: number, itemId: number, amount: number, userIds: string[]): Promise<void> => {
+    try {
+      await api.post(`/v1/inventory-groups/${groupId}/items/${itemId}/consume`, {
+        amount,
+        userIds
+      });
+    } catch (error) {
+      return mapAxiosError(error, 'Tüketim kaydı oluşturulamadı');
+    }
+  },
+
+  inviteUser: async (groupId: number, email: string): Promise<void> => {
+    try {
+      await api.post(`/v1/inventory-groups/${groupId}/invite`, null, {
+        params: { email }
+      });
+    } catch (error) {
+      return mapAxiosError(error, 'Davet gönderilemedi');
+    }
+  },
+
+  getPendingInvitations: async (): Promise<any[]> => {
+    try {
+      const response = await api.get<any[]>('/v1/inventory-invitations/pending');
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Bekleyen davetler alınamadı');
+    }
+  },
+
+  acceptInvitation: async (invitationId: number): Promise<void> => {
+    try {
+      await api.post(`/v1/inventory-invitations/${invitationId}/accept`);
+    } catch (error) {
+      return mapAxiosError(error, 'Davet kabul edilemedi');
+    }
+  },
+
+  rejectInvitation: async (invitationId: number): Promise<void> => {
+    try {
+      await api.post(`/v1/inventory-invitations/${invitationId}/reject`);
+    } catch (error) {
+      return mapAxiosError(error, 'Davet reddedilemedi');
+    }
+  },
+
+  removeUserFromGroup: async (groupId: number, userId: string): Promise<InventoryGroup> => {
+    try {
+      const response = await api.delete<InventoryGroup>(`/v1/inventory-groups/${groupId}/users/${userId}`);
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Kullanıcı çıkarılamadı');
+    }
   }
 });
 

@@ -12,8 +12,7 @@ import java.util.List;
  */
 @Entity
 @Table(
-        name = "inventory_groups",
-        uniqueConstraints = @UniqueConstraint(name = "unique_inventory_group_name", columnNames = {"user_id", "name"})
+        name = "inventory_groups"
 )
 @Getter
 @Setter
@@ -32,9 +31,8 @@ public class InventoryGroup {
     @Column(length = 50)
     private String icon;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @ManyToMany(mappedBy = "inventoryGroups")
+    private List<User> users = new ArrayList<>();
 
     @OneToMany(mappedBy = "inventoryGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

@@ -187,7 +187,13 @@ export interface InventoryGroup {
   name: string;
   icon?: string | null;
   itemCount: number;
+  users: User[];
   items: Inventory[];
+}
+
+export interface InventoryConsumeRequest {
+  amount: number;
+  userIds: string[];
 }
 
 // API DTOs

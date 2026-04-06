@@ -1,5 +1,6 @@
 package com.mealapp.app.model.dto.inventory;
 
+import com.mealapp.app.model.dto.user.UserDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +17,6 @@ public class InventoryGroupResponse {
     private String name;
     private String icon;
     private int itemCount;
+    private List<UserDto> users;
     private List<InventoryItemResponse> items;
 }

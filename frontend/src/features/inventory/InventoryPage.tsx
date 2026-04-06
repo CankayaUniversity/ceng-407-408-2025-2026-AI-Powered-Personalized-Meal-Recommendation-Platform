@@ -15,7 +15,9 @@ import {
   Trash2,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Users,
+  Utensils
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useConsumptionService } from '../../services/consumptionService';
@@ -76,6 +78,19 @@ const InventoryPage: React.FC = () => {
   const [savingItem, setSavingItem] = useState(false);
   const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
   const [searchingIngredients, setSearchingIngredients] = useState(false);
+
+  // Tüketim Modalı State'leri
+  const [consumeModalOpen, setConsumeModalOpen] = useState(false);
+  const [consumingItem, setConsumingItem] = useState<Inventory | null>(null);
+  const [consumeAmount, setConsumeAmount] = useState<string>('');
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [isConsuming, setIsConsuming] = useState(false);
+  const [memberModalOpen, setMemberModalOpen] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [invitations, setInvitations] = useState<any[]>([]);
+  const [invitationsModalOpen, setInvitationsModalOpen] = useState(false);
+  const [loadingInvitations, setLoadingInvitations] = useState(false);
 
   const activeGroup = useMemo(
       () => groups.find((group) => group.id === selectedGroupId) ?? groups[0] ?? null,
@@ -179,6 +194,24 @@ const InventoryPage: React.FC = () => {
     
     void initData();
   }, [authenticated, inventoryService, consumptionService]);
+
+  const loadInvitations = useCallback(async () => {
+    setLoadingInvitations(true);
+    try {
+      const data = await inventoryService.getPendingInvitations();
+      setInvitations(data);
+    } catch (error) {
+      console.error('Davetler yüklenemedi:', error);
+    } finally {
+      setLoadingInvitations(false);
+    }
+  }, [inventoryService]);
+
+  useEffect(() => {
+    if (authenticated) {
+      loadInvitations();
+    }
+  }, [authenticated, loadInvitations]);
 
   const standardUnitsSet = useMemo(() => ['GRAM', 'ML', 'KG', 'LITRE', 'L'], []);
 
@@ -359,6 +392,91 @@ const InventoryPage: React.FC = () => {
     }
   };
 
+  const openConsumeModal = (item: Inventory) => {
+    setConsumingItem(item);
+    setConsumeAmount(String(item.quantity));
+    setSelectedUserIds(activeGroup?.users.map(u => u.id) || []);
+    setConsumeModalOpen(true);
+  };
+
+  const handleConsumeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeGroup || !consumingItem) return;
+    
+    const amount = parseFloat(consumeAmount);
+    if (isNaN(amount) || amount <= 0) {
+      showToast('Lütfen geçerli bir miktar girin.', 'info');
+      return;
+    }
+    
+    if (selectedUserIds.length === 0) {
+      showToast('Lütfen en az bir kullanıcı seçin.', 'info');
+      return;
+    }
+
+    setIsConsuming(true);
+    try {
+      await inventoryService.consumeInventoryItem(activeGroup.id, consumingItem.id, amount, selectedUserIds);
+      await loadGroups({ preferredGroupId: activeGroup.id });
+      setConsumeModalOpen(false);
+      showToast('Tüketim başarıyla kaydedildi.', 'success');
+    } catch (error) {
+      showToast('Tüketim kaydedilirken bir hata oluştu.', 'error');
+    } finally {
+      setIsConsuming(false);
+    }
+  };
+
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeGroup || !newMemberEmail.trim()) return;
+
+    setIsAddingMember(true);
+    try {
+      await inventoryService.inviteUser(activeGroup.id, newMemberEmail.trim());
+      setNewMemberEmail('');
+      showToast('Davet başarıyla gönderildi.', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Kullanıcı eklenirken bir hata oluştu.', 'error');
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!activeGroup) return;
+    if (!window.confirm('Bu kullanıcıyı lokasyondan çıkarmak istediğine emin misin?')) return;
+
+    try {
+      await inventoryService.removeUserFromGroup(activeGroup.id, userId);
+      await loadGroups({ preferredGroupId: activeGroup.id });
+      showToast('Kullanıcı lokasyondan çıkarıldı.', 'success');
+    } catch (error: any) {
+      showToast(error.message || 'Kullanıcı çıkarılırken bir hata oluştu.', 'error');
+    }
+  };
+
+  const handleAcceptInvitation = async (id: number) => {
+    try {
+      await inventoryService.acceptInvitation(id);
+      showToast('Davet kabul edildi.', 'success');
+      await loadGroups();
+      await loadInvitations();
+    } catch (error) {
+      showToast('Davet kabul edilemedi.', 'error');
+    }
+  };
+
+  const handleRejectInvitation = async (id: number) => {
+    try {
+      await inventoryService.rejectInvitation(id);
+      showToast('Davet reddedildi.', 'success');
+      await loadInvitations();
+    } catch (error) {
+      showToast('Davet reddedilemedi.', 'error');
+    }
+  };
+
   if (!authenticated) return null;
 
   if (loading) {
@@ -409,6 +527,19 @@ const InventoryPage: React.FC = () => {
                   <Plus size={18} />
                   Yeni Lokasyon
                 </button>
+                {invitations.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setInvitationsModalOpen(true)}
+                    className="relative inline-flex items-center justify-center gap-2 rounded-2xl bg-moss-sage px-6 py-4 font-bold text-white shadow-xl shadow-moss-sage/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    <Users size={18} />
+                    Davetler
+                    <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-terracotta text-[10px] font-bold ring-4 ring-background">
+                      {invitations.length}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </header>
@@ -660,6 +791,9 @@ const InventoryPage: React.FC = () => {
                     <h3 className="meal-section-title mt-1 text-3xl">{activeGroup?.name || 'Seçili Alan'}</h3>
                   </div>
                   <div className="flex items-center gap-3">
+                    <button onClick={() => setMemberModalOpen(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-moss-sage/30 bg-moss-sage/5 text-moss-sage text-xs font-bold hover:bg-moss-sage/10 transition-colors">
+                      <Users size={14} /> Üyeleri Yönet
+                    </button>
                     <button onClick={() => { setEditingGroupId(activeGroup?.id || null); setGroupDraft({ name: activeGroup?.name || '', icon: activeGroup?.icon || 'home' }); setLocationModalOpen(true); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-card-border bg-background text-xs font-bold hover:text-terracotta transition-colors">
                       <Pencil size={14} /> Düzenle
                     </button>
@@ -703,6 +837,13 @@ const InventoryPage: React.FC = () => {
                               <h3 className="mt-1 font-serif text-xl font-bold text-foreground truncate">{item.ingredient?.name}</h3>
                             </div>
                             <div className="flex gap-1.5">
+                              <button 
+                                onClick={() => openConsumeModal(item)}
+                                className="p-2 rounded-lg hover:bg-emerald-50 text-foreground/30 hover:text-emerald-600 transition-colors"
+                                title="Tüket"
+                              >
+                                <Utensils size={14} />
+                              </button>
                               <button onClick={() => { setEditingItemId(item.id); setItemDraft({ ingredientQuery: item.ingredient?.name || '', selectedIngredient: item.ingredient || null, quantity: String(item.quantity), unit: item.unit }); }} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-foreground/30 hover:text-terracotta transition-colors">
                                 <Pencil size={14} />
                               </button>
@@ -789,6 +930,228 @@ const InventoryPage: React.FC = () => {
                 </div>
               </div>
             </div>
+        )}
+
+        {consumeModalOpen && consumingItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-xl bg-background rounded-[2.5rem] shadow-brand-hero border border-card-border overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
+              <div className="p-8">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-4 rounded-2xl bg-emerald-50 text-emerald-600">
+                      <Utensils size={24} />
+                    </div>
+                    <div>
+                      <p className="meal-overline">Ortak Tüketim</p>
+                      <h3 className="meal-section-title mt-1 text-2xl">{consumingItem.ingredient?.name} Tüket</h3>
+                    </div>
+                  </div>
+                  <button onClick={() => setConsumeModalOpen(false)} className="p-2 rounded-full hover:bg-black/5 text-foreground/30"><X size={20} /></button>
+                </div>
+
+                <form onSubmit={handleConsumeSubmit} className="mt-8 space-y-8">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Tüketilecek Miktar</span>
+                      <span className="text-[10px] font-bold text-terracotta italic">Max: {consumingItem.quantity} {consumingItem.unit}</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        max={consumingItem.quantity}
+                        value={consumeAmount}
+                        onChange={(e) => setConsumeAmount(e.target.value)}
+                        className="base-input py-4 bg-background dark:bg-white/5 font-serif text-2xl text-center"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-foreground/30">
+                        {consumingItem.unit}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Kimler Tüketti?</span>
+                      <span className="text-[10px] font-bold text-moss-sage">{selectedUserIds.length} Kişi Seçildi</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                      {activeGroup?.users.map((user) => {
+                        const isSelected = selectedUserIds.includes(user.id);
+                        return (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedUserIds(prev => 
+                                isSelected ? prev.filter(id => id !== user.id) : [...prev, user.id]
+                              );
+                            }}
+                            className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                              isSelected 
+                                ? 'bg-moss-sage/10 border-moss-sage text-moss-sage shadow-sm' 
+                                : 'bg-background border-card-border text-foreground-muted hover:border-moss-sage/40'
+                            }`}
+                          >
+                            <div className={`p-2 rounded-xl ${isSelected ? 'bg-moss-sage text-white' : 'bg-black/5'}`}>
+                              <Users size={14} />
+                            </div>
+                            <span className="text-xs font-bold truncate">{user.name || user.email || 'İsimsiz Kullanıcı'}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="bg-espresso-midnight/[0.03] dark:bg-white/5 p-4 rounded-2xl">
+                    <p className="text-[10px] font-bold text-foreground/40 leading-relaxed">
+                      * Besin değerleri seçilen kişilere eşit olarak paylaştırılacaktır. 
+                      Kişi başı: <span className="text-terracotta">{(parseFloat(consumeAmount) / Math.max(1, selectedUserIds.length)).toFixed(2)} {consumingItem.unit}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button type="button" onClick={() => setConsumeModalOpen(false)} className="flex-1 py-4 rounded-2xl border border-card-border font-bold text-xs hover:bg-black/5 transition-all">İPTAL</button>
+                    <button 
+                      type="submit" 
+                      disabled={isConsuming || selectedUserIds.length === 0} 
+                      className="flex-[2] py-4 rounded-2xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-600/20 hover:scale-[1.02] transition-all disabled:opacity-50"
+                    >
+                      {isConsuming ? 'İŞLENİYOR...' : 'TÜKETİMİ KAYDET'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {memberModalOpen && activeGroup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-xl bg-background rounded-[2.5rem] shadow-brand-hero border border-card-border overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
+              <div className="p-8">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-4 rounded-2xl bg-moss-sage/10 text-moss-sage">
+                      <Users size={24} />
+                    </div>
+                    <div>
+                      <p className="meal-overline">Member Management</p>
+                      <h3 className="meal-section-title mt-1 text-2xl">{activeGroup.name} Üyeleri</h3>
+                    </div>
+                  </div>
+                  <button onClick={() => setMemberModalOpen(false)} className="p-2 rounded-full hover:bg-black/5 text-foreground/30"><X size={20} /></button>
+                </div>
+
+                <div className="mt-8 space-y-6">
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Mevcut Üyeler</span>
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                      {activeGroup.users.map((user) => (
+                        <div key={user.id} className="flex items-center justify-between p-4 rounded-2xl bg-background border border-card-border group">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-moss-sage/10 text-moss-sage">
+                              <Users size={14} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-foreground">{user.name || 'İsimsiz'}</p>
+                              <p className="text-[10px] text-foreground-muted">{user.email}</p>
+                            </div>
+                          </div>
+                          {activeGroup.users.length > 1 && (
+                            <button 
+                              onClick={() => handleRemoveMember(user.id)}
+                              className="p-2 rounded-lg hover:bg-red-50 text-foreground/20 hover:text-red-500 transition-colors"
+                              title="Çıkar"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleAddMember} className="space-y-4 border-t border-card-border pt-6">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/50">Yeni Üye Ekle</span>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={newMemberEmail}
+                        onChange={(e) => setNewMemberEmail(e.target.value)}
+                        placeholder="E-posta adresi..."
+                        className="base-input flex-1 py-3 bg-background dark:bg-white/5 text-sm"
+                        required
+                      />
+                      <button 
+                        type="submit" 
+                        disabled={isAddingMember || !newMemberEmail.trim()}
+                        className="px-6 rounded-xl bg-espresso-midnight text-white font-bold text-xs hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                      >
+                        {isAddingMember ? <Loader2 size={16} className="animate-spin" /> : 'EKLE'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {invitationsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/40 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-xl bg-background rounded-[2.5rem] shadow-brand-hero border border-card-border overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
+              <div className="p-8">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-4 rounded-2xl bg-terracotta/10 text-terracotta">
+                      <Users size={24} />
+                    </div>
+                    <div>
+                      <p className="meal-overline">Invitations</p>
+                      <h3 className="meal-section-title mt-1 text-2xl">Envanter Davetleri</h3>
+                    </div>
+                  </div>
+                  <button onClick={() => setInvitationsModalOpen(false)} className="p-2 rounded-full hover:bg-black/5 text-foreground/30"><X size={20} /></button>
+                </div>
+
+                <div className="mt-8 space-y-4">
+                  {invitations.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <p className="text-sm text-foreground-muted italic">Bekleyen davetiniz bulunmuyor.</p>
+                    </div>
+                  ) : (
+                    invitations.map((inv) => (
+                      <div key={inv.id} className="p-5 rounded-[2rem] bg-background border border-card-border shadow-brand-card">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                            <Home size={24} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-foreground truncate">{inv.inventoryGroup?.name}</p>
+                            <p className="text-[10px] text-foreground-muted">Davet eden: <span className="text-terracotta font-medium">{inv.inviter?.name || inv.inviter?.email}</span></p>
+                          </div>
+                        </div>
+                        <div className="mt-6 flex gap-2">
+                          <button 
+                            onClick={() => handleAcceptInvitation(inv.id)}
+                            className="flex-1 py-3 rounded-xl bg-moss-sage text-white text-[10px] font-bold tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+                          >
+                            KABUL ET
+                          </button>
+                          <button 
+                            onClick={() => handleRejectInvitation(inv.id)}
+                            className="flex-1 py-3 rounded-xl border border-card-border text-foreground-muted text-[10px] font-bold tracking-widest hover:bg-black/5 transition-all"
+                          >
+                            REDDET
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </>
   );

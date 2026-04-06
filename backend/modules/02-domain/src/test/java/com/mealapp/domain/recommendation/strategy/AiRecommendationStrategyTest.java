@@ -3,6 +3,7 @@ package com.mealapp.domain.recommendation.strategy;
 import com.mealapp.domain.common.ai.PromptEngine;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.inventory.entity.Inventory;
+import com.mealapp.domain.inventory.entity.InventoryGroup;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
@@ -57,7 +58,11 @@ class AiRecommendationStrategyTest {
                 .build();
 
         Ingredient chicken = Ingredient.builder().name("Chicken").build();
-        inventory = List.of(Inventory.builder().ingredient(chicken).user(user).build());
+        InventoryGroup group = InventoryGroup.builder()
+                .name("Home")
+                .users(new java.util.ArrayList<>(List.of(user)))
+                .build();
+        inventory = List.of(Inventory.builder().ingredient(chicken).inventoryGroup(group).build());
     }
 
     @Test

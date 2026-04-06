@@ -14,23 +14,23 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     /**
      * Belirli bir kullanıcıya ait tüm malzemeleri listeler.
      */
-    List<Inventory> findByUserIdOrderByInventoryGroupIdAscIngredientNameAsc(String userId);
+    List<Inventory> findByInventoryGroupUsersIdOrderByInventoryGroupIdAscIngredientNameAsc(String userId);
 
-    List<Inventory> findByInventoryGroupIdAndUserIdOrderByIngredientNameAsc(Long inventoryGroupId, String userId);
-
-    /**
-     * Kullanıcının elindeki belirli bir malzemeyi bulur.
-     */
-    List<Inventory> findByUserIdAndIngredientNameContainingIgnoreCaseOrderByInventoryGroupIdAsc(String userId, String ingredientName);
+    List<Inventory> findByInventoryGroupIdAndInventoryGroupUsersIdOrderByIngredientNameAsc(Long inventoryGroupId, String userId);
 
     /**
-     * Kullanıcının elindeki belirli bir malzeme ID'sine göre envanter kaydını bulur.
+     * Kullanıcının üye olduğu lokasyonlardaki belirli bir malzemeyi bulur.
      */
-    java.util.Optional<Inventory> findByUserIdAndIngredientId(String userId, Long ingredientId);
+    List<Inventory> findByInventoryGroupUsersIdAndIngredientNameContainingIgnoreCaseOrderByInventoryGroupIdAsc(String userId, String ingredientName);
 
-    java.util.Optional<Inventory> findByUserIdAndInventoryGroupIdAndIngredientId(String userId, Long inventoryGroupId, Long ingredientId);
+    /**
+     * Kullanıcının üye olduğu lokasyonlardaki belirli bir malzeme ID'sine göre envanter kayıtlarını bulur.
+     */
+    List<Inventory> findByInventoryGroupUsersIdAndIngredientId(String userId, Long ingredientId);
 
-    java.util.Optional<Inventory> findByIdAndUserIdAndInventoryGroupId(Long id, String userId, Long inventoryGroupId);
+    java.util.Optional<Inventory> findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(String userId, Long inventoryGroupId, Long ingredientId);
 
-    List<Inventory> findByUserIdAndIngredientIdOrderByInventoryGroupIdAsc(String userId, Long ingredientId);
+    java.util.Optional<Inventory> findByIdAndInventoryGroupUsersIdAndInventoryGroupId(Long id, String userId, Long inventoryGroupId);
+
+    List<Inventory> findByInventoryGroupUsersIdAndIngredientIdOrderByInventoryGroupIdAsc(String userId, Long ingredientId);
 }

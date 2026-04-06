@@ -36,7 +36,7 @@ public class InventoryService {
     @Transactional(readOnly = true)
     public List<Inventory> getUserInventory(String userId) {
         ensureUserHasDefaultGroup(userId);
-        return inventoryRepository.findByUserIdOrderByInventoryGroupIdAscIngredientNameAsc(userId);
+        return inventoryRepository.findByInventoryGroupUsersIdOrderByInventoryGroupIdAscIngredientNameAsc(userId);
     }
 
     /**
@@ -45,7 +45,7 @@ public class InventoryService {
     @Transactional(readOnly = true)
     public List<Inventory> getUserInventory(String userId, Long inventoryGroupId) {
         getRequiredGroup(userId, inventoryGroupId);
-        return inventoryRepository.findByInventoryGroupIdAndUserIdOrderByIngredientNameAsc(inventoryGroupId, userId);
+        return inventoryRepository.findByInventoryGroupIdAndInventoryGroupUsersIdOrderByIngredientNameAsc(inventoryGroupId, userId);
     }
 
     /**
@@ -54,7 +54,7 @@ public class InventoryService {
     @Transactional(readOnly = true)
     public List<InventoryGroup> getUserInventoryGroups(String userId) {
         ensureUserHasDefaultGroup(userId);
-        List<InventoryGroup> groups = inventoryGroupRepository.findByUserIdOrderByIdAsc(userId);
+        List<InventoryGroup> groups = inventoryGroupRepository.findByUsersIdOrderByIdAsc(userId);
         groups.forEach(this::hydrateGroup);
         return groups;
     }
@@ -69,8 +69,9 @@ public class InventoryService {
         InventoryGroup group = InventoryGroup.builder()
                 .name(normalizedName)
                 .icon(normalizeIcon(icon))
-                .user(getRequiredUser(userId))
                 .build();
+        
+        group.getUsers().add(getRequiredUser(userId));
 
         return hydrateGroup(inventoryGroupRepository.save(group));
     }
@@ -94,7 +95,7 @@ public class InventoryService {
     public void deleteGroup(String userId, Long groupId) {
         InventoryGroup group = getRequiredGroup(userId, groupId);
 
-        if (inventoryGroupRepository.countByUserId(userId) <= 1) {
+        if (inventoryGroupRepository.countByUsersId(userId) <= 1) {
             throw new MealAppDomainException("En az bir envanter lokasyonu bulunmalıdır.");
         }
 
@@ -109,14 +110,13 @@ public class InventoryService {
         InventoryGroup group = getRequiredGroup(userId, inventoryGroupId);
         Ingredient ingredient = getRequiredIngredient(ingredientId);
 
-        return inventoryRepository.findByUserIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
+        return inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
                 .map(existing -> {
                     existing.setQuantity(quantity);
                     existing.setUnit(normalizeUnit(unit));
                     return inventoryRepository.save(existing);
                 })
                 .orElseGet(() -> inventoryRepository.save(Inventory.builder()
-                        .user(group.getUser())
                         .inventoryGroup(group)
                         .ingredient(ingredient)
                         .quantity(quantity)
@@ -129,11 +129,11 @@ public class InventoryService {
      */
     @Transactional
     public Inventory updateInventoryItem(String userId, Long inventoryGroupId, Long itemId, Long ingredientId, Double quantity, String unit) {
-        Inventory item = inventoryRepository.findByIdAndUserIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
+        Inventory item = inventoryRepository.findByIdAndInventoryGroupUsersIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Envanter kalemi bulunamadı ID: " + itemId));
 
         if (!item.getIngredient().getId().equals(ingredientId)) {
-            inventoryRepository.findByUserIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
+            inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
                     .filter(existing -> !existing.getId().equals(itemId))
                     .ifPresent(existing -> {
                         throw new MealAppDomainException("Bu malzeme seçili lokasyonda zaten mevcut.");
@@ -150,7 +150,7 @@ public class InventoryService {
      * Bir envanter kalemini siler.
      */
     public void deleteInventoryItem(String userId, Long inventoryGroupId, Long itemId) {
-        Inventory item = inventoryRepository.findByIdAndUserIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
+        Inventory item = inventoryRepository.findByIdAndInventoryGroupUsersIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Envanter kalemi bulunamadı ID: " + itemId));
         inventoryRepository.delete(item);
     }
@@ -194,7 +194,7 @@ public class InventoryService {
 
         double remaining = quantityToDeduct;
 
-        for (Inventory existing : inventoryRepository.findByUserIdAndIngredientIdOrderByInventoryGroupIdAsc(userId, ingredientId)) {
+        for (Inventory existing : inventoryRepository.findByInventoryGroupUsersIdAndIngredientIdOrderByInventoryGroupIdAsc(userId, ingredientId)) {
             double currentQuantity = existing.getQuantity() != null ? existing.getQuantity() : 0.0;
 
             if (currentQuantity <= 0) {
@@ -223,7 +223,7 @@ public class InventoryService {
 
         getRequiredGroup(userId, inventoryGroupId);
 
-        inventoryRepository.findByUserIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
+        inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
                 .ifPresent(existing -> {
                     double currentQuantity = existing.getQuantity() != null ? existing.getQuantity() : 0.0;
 
@@ -238,16 +238,19 @@ public class InventoryService {
     }
 
     private InventoryGroup ensureUserHasDefaultGroup(String userId) {
-        return inventoryGroupRepository.findFirstByUserIdOrderByIdAsc(userId)
-                .orElseGet(() -> inventoryGroupRepository.save(InventoryGroup.builder()
-                        .name("Home")
-                        .icon("home")
-                        .user(getRequiredUser(userId))
-                        .build()));
+        return inventoryGroupRepository.findFirstByUsersIdOrderByIdAsc(userId)
+                .orElseGet(() -> {
+                    InventoryGroup group = InventoryGroup.builder()
+                            .name("Home")
+                            .icon("home")
+                            .build();
+                    group.getUsers().add(getRequiredUser(userId));
+                    return inventoryGroupRepository.save(group);
+                });
     }
 
-    private InventoryGroup getRequiredGroup(String userId, Long groupId) {
-        return inventoryGroupRepository.findByIdAndUserId(groupId, userId)
+    public InventoryGroup getRequiredGroup(String userId, Long groupId) {
+        return inventoryGroupRepository.findByIdAndUsersId(groupId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Envanter lokasyonu bulunamadı ID: " + groupId));
     }
 
@@ -265,8 +268,8 @@ public class InventoryService {
 
     private void ensureGroupNameAvailable(String userId, String name, Long currentGroupId) {
         boolean exists = currentGroupId == null
-                ? inventoryGroupRepository.existsByUserIdAndNameIgnoreCase(userId, name)
-                : inventoryGroupRepository.existsByUserIdAndNameIgnoreCaseAndIdNot(userId, name, currentGroupId);
+                ? inventoryGroupRepository.existsByUsersIdAndNameIgnoreCase(userId, name)
+                : inventoryGroupRepository.existsByUsersIdAndNameIgnoreCaseAndIdNot(userId, name, currentGroupId);
 
         if (exists) {
             throw new MealAppDomainException("Bu isimde bir envanter lokasyonu zaten mevcut.");
@@ -295,6 +298,27 @@ public class InventoryService {
         }
 
         return unit.trim();
+    }
+
+
+    /**
+     * Envanter lokasyonundan kullanıcıyı çıkarır.
+     */
+    public InventoryGroup removeUserFromGroup(String userId, Long groupId, String userIdToRemove) {
+        InventoryGroup group = getRequiredGroup(userId, groupId);
+        
+        if (userId.equals(userIdToRemove)) {
+            throw new MealAppDomainException("Kendinizi lokasyondan çıkaramazsınız.");
+        }
+
+        User userToRemove = userRepository.findById(userIdToRemove)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + userIdToRemove));
+
+        group.getUsers().removeIf(u -> u.getId().equals(userIdToRemove));
+        userToRemove.getInventoryGroups().removeIf(g -> g.getId().equals(groupId));
+
+        userRepository.save(userToRemove);
+        return hydrateGroup(inventoryGroupRepository.save(group));
     }
 
     private InventoryGroup hydrateGroup(InventoryGroup group) {

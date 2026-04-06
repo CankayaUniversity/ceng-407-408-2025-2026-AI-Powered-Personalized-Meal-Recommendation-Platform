@@ -55,7 +55,6 @@ public class RecommendationAppService {
                                     .build());
                     return Inventory.builder()
                             .ingredient(ingredient)
-                            .user(user)
                             .build();
                     })
                     .toList();

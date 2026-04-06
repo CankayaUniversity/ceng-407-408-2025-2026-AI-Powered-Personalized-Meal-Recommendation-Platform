@@ -1,12 +1,11 @@
 package com.mealapp.app.controller;
 
-import com.mealapp.app.model.dto.inventory.InventoryGroupRequest;
-import com.mealapp.app.model.dto.inventory.InventoryGroupResponse;
-import com.mealapp.app.model.dto.inventory.InventoryItemRequest;
-import com.mealapp.app.model.dto.inventory.InventoryItemResponse;
+import com.mealapp.app.model.dto.inventory.*;
 import com.mealapp.app.model.mapper.inventory.InventoryMapper;
 import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.common.exception.MealAppDomainException;
+import com.mealapp.domain.consumption.service.ConsumptionService;
+import com.mealapp.domain.inventory.service.InventoryInvitationService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.inventory.service.InventoryService;
@@ -26,6 +25,8 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+    private final InventoryInvitationService invitationService;
+    private final ConsumptionService consumptionService;
     private final InventoryMapper inventoryMapper;
     private final IngredientRepository ingredientRepository;
 
@@ -119,6 +120,41 @@ public class InventoryController {
             @PathVariable Long itemId
     ) {
         inventoryService.deleteInventoryItem(requireAuthenticatedUserId(jwt), groupId, itemId);
+    }
+
+    @PostMapping("/{groupId}/invite")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void inviteUser(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long groupId,
+            @RequestParam String email
+    ) {
+        invitationService.inviteUser(requireAuthenticatedUserId(jwt), groupId, email);
+    }
+
+    @DeleteMapping("/{groupId}/users/{userIdToRemove}")
+    public InventoryGroupResponse removeUser(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long groupId,
+            @PathVariable String userIdToRemove
+    ) {
+        return inventoryMapper.toGroupResponse(
+                inventoryService.removeUserFromGroup(requireAuthenticatedUserId(jwt), groupId, userIdToRemove)
+        );
+    }
+
+    @PostMapping("/{groupId}/items/{itemId}/consume")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void consumeItem(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long groupId,
+            @PathVariable Long itemId,
+            @Valid @RequestBody InventoryConsumeRequest request
+    ) {
+        // Güvenlik kontrolü: Kullanıcı bu gruba dahil mi?
+        inventoryService.getRequiredGroup(requireAuthenticatedUserId(jwt), groupId);
+        
+        consumptionService.consume(itemId, request.getAmount(), request.getUserIds());
     }
 
     private String requireAuthenticatedUserId(Jwt jwt) {

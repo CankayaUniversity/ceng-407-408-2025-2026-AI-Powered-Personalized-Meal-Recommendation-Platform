@@ -1,6 +1,8 @@
 package com.mealapp.infrastructure.test;
 
 import com.mealapp.domain.inventory.entity.Inventory;
+import com.mealapp.domain.inventory.entity.InventoryGroup;
+import com.mealapp.domain.inventory.repository.InventoryGroupRepository;
 import com.mealapp.domain.inventory.repository.InventoryRepository;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.Ingredient;
@@ -34,6 +36,7 @@ public class RecipeSeedService implements CommandLineRunner {
     private final RecipeRepository recipeRepository;
     private final IngredientRepository ingredientRepository;
     private final InventoryRepository inventoryRepository;
+    private final InventoryGroupRepository inventoryGroupRepository;
 
     @Override
     @Transactional
@@ -172,16 +175,29 @@ public class RecipeSeedService implements CommandLineRunner {
 
         recipeRepository.saveAll(List.of(mercimek, tavukluPilav, kinoaSalatasi));
 
-        // 4. Örnek Envanter (Berk'in dolabı)
+        // 4. Örnek Lokasyon (Berk ve Ayşe'nin ortak evi)
+        InventoryGroup home = InventoryGroup.builder()
+                .name("Ev")
+                .icon("home")
+                .users(new ArrayList<>(List.of(berk, ayse)))
+                .build();
+        inventoryGroupRepository.save(home);
+
+        // Kullanıcıların da bu gruba bağlı olduğunu belirtelim (ManyToMany'nin iki tarafı için de)
+        berk.setInventoryGroups(new ArrayList<>(List.of(home)));
+        ayse.setInventoryGroups(new ArrayList<>(List.of(home)));
+        userRepository.saveAll(List.of(berk, ayse));
+
+        // 5. Örnek Envanter (Evin dolabı)
         Inventory pirinc = Inventory.builder()
-                .user(berk)
+                .inventoryGroup(home)
                 .ingredient(pirincIng)
                 .quantity(1000.0)
                 .unit("GRAM")
                 .build();
 
         Inventory mercimekInv = Inventory.builder()
-                .user(berk)
+                .inventoryGroup(home)
                 .ingredient(mercimekIng)
                 .quantity(500.0)
                 .unit("GRAM")

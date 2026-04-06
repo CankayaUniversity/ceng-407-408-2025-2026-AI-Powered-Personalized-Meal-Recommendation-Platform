@@ -29,7 +29,12 @@ public class User {
     @Column(unique = true, nullable = true)
     private String email;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany
+    @JoinTable(
+            name = "user_inventory_groups",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "inventory_group_id")
+    )
     private List<InventoryGroup> inventoryGroups;
 
     /**

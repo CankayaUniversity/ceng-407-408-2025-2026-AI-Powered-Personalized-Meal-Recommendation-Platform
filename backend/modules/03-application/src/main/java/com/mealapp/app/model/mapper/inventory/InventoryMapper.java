@@ -3,6 +3,7 @@ package com.mealapp.app.model.mapper.inventory;
 import com.mealapp.app.model.dto.inventory.InventoryGroupResponse;
 import com.mealapp.app.model.dto.inventory.InventoryItemResponse;
 import com.mealapp.app.model.mapper.recipe.IngredientMapper;
+import com.mealapp.app.model.mapper.user.UserMapper;
 import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
@@ -17,6 +18,7 @@ import java.util.List;
 public class InventoryMapper {
 
     private final IngredientMapper ingredientMapper;
+    private final UserMapper userMapper;
 
     public InventoryGroupResponse toGroupResponse(InventoryGroup group) {
         List<InventoryItemResponse> items = group.getItems() == null
@@ -34,6 +36,7 @@ public class InventoryMapper {
                 .name(group.getName())
                 .icon(group.getIcon())
                 .itemCount(items.size())
+                .users(group.getUsers() != null ? group.getUsers().stream().map(userMapper::toDto).toList() : List.of())
                 .items(items)
                 .build();
     }
