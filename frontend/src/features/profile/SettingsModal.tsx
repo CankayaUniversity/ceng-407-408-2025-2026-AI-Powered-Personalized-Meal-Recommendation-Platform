@@ -12,18 +12,19 @@ const SettingsModal: React.FC = () => {
 
     const handleKeycloakAction = (action: 'UPDATE_PASSWORD' | 'UPDATE_PROFILE' | 'UPDATE_EMAIL') => {
         if (keycloak) {
-            // Keycloak login URL'ini oluşturup yeni sekmede açıyoruz
-            const url = keycloak.createLoginUrl({
+            // Bir önceki çalışan versiyona geri dönüyoruz:
+            // Doğrudan keycloak.login kullanarak aynı sekmede yönlendirme yapıyoruz
+            // Yeni sekmede açmak (window.open + createLoginUrl) bazı session/state hatalarına yol açabiliyor
+            keycloak.login({
                 action: action,
                 redirectUri: window.location.origin
             });
-            window.open(url, '_blank');
         }
     };
 
     const handleKeycloakAccountConsole = () => {
         if (keycloak) {
-            // Account Console URL'ini alıp yeni sekmede açıyoruz
+            // Account Console URL'ini alıp yeni sekmede açıyoruz (Bu buton için yeni sekme istendi)
             const url = keycloak.createAccountUrl();
             window.open(url, '_blank');
         } else {
@@ -109,7 +110,7 @@ const SettingsModal: React.FC = () => {
                                             <ExternalLink size={16} />
                                         </button>
                                         <p className="text-[10px] text-black/40 dark:text-white/40 text-center px-4 leading-relaxed">
-                                            Profil ve e-posta değişikliği için açılan pencerede bilgilerinizi güncelleyebilirsiniz.
+                                            Profil ve e-posta değişikliği için Keycloak yönetim sayfasını kullanabilirsiniz.
                                         </p>
                                         <button 
                                             onClick={handleKeycloakAccountConsole}
