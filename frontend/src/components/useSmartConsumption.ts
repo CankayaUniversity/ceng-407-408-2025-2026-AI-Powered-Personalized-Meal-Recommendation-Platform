@@ -47,7 +47,8 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const deferredIngredientQuery = useDeferredValue(ingredientSearchQuery.trim());
   const [recipeResults, setRecipeResults] = useState<RecipeListItem[]>([]);
   const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
-  const [memberEntryStates, setMemberEntryStates] = useState<Record<string, { query: string; mode: EntryMode; recipeResults: RecipeListItem[]; ingredientResults: Ingredient[]; searching: boolean }>>({});
+  const [memberQueries, setMemberQueries] = useState<Record<string, { query: string; mode: EntryMode }>>({});
+  const [memberResults, setMemberResults] = useState<Record<string, { recipeResults: RecipeListItem[]; ingredientResults: Ingredient[]; searching: boolean }>>({});
   const [selectedItems, setSelectedItems] = useState<SelectedConsumptionItem[]>([]);
   const [memberSelections, setMemberSelections] = useState<Record<string, SelectedConsumptionItem[]>>({});
   const [searching, setSearching] = useState(false);
@@ -57,7 +58,6 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const [recipeDetailsMap, setRecipeDetailsMap] = useState<Record<number, Recipe>>({});
   const [selectedMembers, setSelectedMembersForLocation] = useState<Record<string, { [userId: string]: boolean }>>({});
 
-  // --- Helpers ---
   const isOutside = selectedLocationId === OUTSIDE_LOCATION;
   const isSearchStale = searchQuery.trim() !== deferredQuery;
 
@@ -65,6 +65,22 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     () => inventoryGroups.find((group) => String(group.id) === selectedLocationId) ?? null,
     [inventoryGroups, selectedLocationId]
   );
+
+  useEffect(() => {
+    if (authenticated && user && selectedLocationId && selectedGroup) {
+      const currentSelected = selectedMembers[selectedLocationId] || {};
+      const loggedInUserIdStr = String(user.id);
+      if (currentSelected[loggedInUserIdStr] === undefined) {
+        setSelectedMembersForLocation(prev => ({
+          ...prev,
+          [selectedLocationId]: {
+            ...prev[selectedLocationId],
+            [loggedInUserIdStr]: true
+          }
+        }));
+      }
+    }
+  }, [authenticated, user, selectedLocationId, selectedGroup, selectedMembers]);
 
   const stockedIngredients = useMemo(
     () =>
@@ -140,23 +156,28 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     const queriesToRun: Array<{ query: string; mode: EntryMode; userId?: string }> = [];
 
     // Global search
-    const gQuery = entryMode === 'RECIPE' ? deferredQuery : deferredIngredientQuery;
-    if (gQuery.length >= 2) {
-      queriesToRun.push({ query: gQuery, mode: entryMode });
+    const gQuery = entryMode === 'RECIPE' ? (deferredQuery || '') : (deferredIngredientQuery || '');
+    if (gQuery.trim().length >= 2) {
+      queriesToRun.push({ query: gQuery.trim(), mode: entryMode });
     } else {
       if (entryMode === 'RECIPE') setRecipeResults([]);
       else setIngredientResults([]);
     }
 
     // Member searches
-    Object.entries(memberEntryStates).forEach(([userId, state]) => {
-      if (state.query.trim().length >= 2) {
-        queriesToRun.push({ query: state.query.trim(), mode: state.mode, userId });
+    Object.entries(memberQueries).forEach(([userId, state]) => {
+      const q = state?.query || '';
+      if (q.trim().length >= 2) {
+        queriesToRun.push({ query: q.trim(), mode: state.mode || 'RECIPE', userId });
       } else {
-        setMemberEntryStates(prev => ({
-          ...prev,
-          [userId]: { ...prev[userId], recipeResults: [], ingredientResults: [], searching: false }
-        }));
+        // If query is too short, clear results for that member
+        setMemberResults(prev => {
+          if (!prev[userId] || (prev[userId].recipeResults.length === 0 && prev[userId].ingredientResults.length === 0 && !prev[userId].searching)) return prev;
+          return {
+            ...prev,
+            [userId]: { recipeResults: [], ingredientResults: [], searching: false }
+          };
+        });
       }
     });
 
@@ -169,12 +190,19 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     const abortController = new AbortController();
 
     const runSearch = async () => {
+      // If no global query, set global searching to false
       if (!queriesToRun.some(q => !q.userId)) setSearching(false);
       
       try {
         await Promise.all(queriesToRun.map(async (q) => {
           if (q.userId) {
-            setMemberEntryStates(prev => ({ ...prev, [q.userId!]: { ...prev[q.userId!], searching: true } }));
+            setMemberResults(prev => ({ 
+              ...prev, 
+              [q.userId!]: { 
+                ...(prev[q.userId!] || { recipeResults: [], ingredientResults: [], searching: false }), 
+                searching: true 
+              } 
+            }));
           } else {
             setSearching(true);
           }
@@ -195,9 +223,13 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
               });
 
               if (q.userId) {
-                setMemberEntryStates(prev => ({
+                setMemberResults(prev => ({
                   ...prev,
-                  [q.userId!]: { ...prev[q.userId!], recipeResults: filtered, searching: false }
+                  [q.userId!]: { 
+                    ...(prev[q.userId!] || { recipeResults: [], ingredientResults: [], searching: false }), 
+                    recipeResults: filtered, 
+                    searching: false 
+                  }
                 }));
               } else {
                 setRecipeResults(filtered);
@@ -224,9 +256,13 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
 
               if (!active) return;
               if (q.userId) {
-                setMemberEntryStates(prev => ({
+                setMemberResults(prev => ({
                   ...prev,
-                  [q.userId!]: { ...prev[q.userId!], ingredientResults: results, searching: false }
+                  [q.userId!]: { 
+                    ...(prev[q.userId!] || { recipeResults: [], ingredientResults: [], searching: false }), 
+                    ingredientResults: results, 
+                    searching: false 
+                  }
                 }));
               } else {
                 setIngredientResults(results);
@@ -235,7 +271,10 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
             }
           } catch (err) {
             if (q.userId) {
-              setMemberEntryStates(prev => ({ ...prev, [q.userId!]: { ...prev[q.userId!], searching: false } }));
+              setMemberResults(prev => {
+                if (!prev[q.userId!]) return prev;
+                return { ...prev, [q.userId!]: { ...prev[q.userId!], searching: false } };
+              });
             } else {
               setSearching(false);
             }
@@ -259,7 +298,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     deferredQuery,
     deferredIngredientQuery,
     entryMode,
-    memberEntryStates,
+    memberQueries,
     inventoryService,
     isOutside,
     recipeService,
@@ -281,22 +320,24 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     if (targetUserId) {
       setMemberSelections((prev) => {
         const userItems = prev[targetUserId] || [];
-        if (userItems.some((i) => i.key === item.key)) return prev;
+        if (userItems.some((i) => i.kind === 'RECIPE' && i.recipe.id === recipe.id)) return prev;
         return { ...prev, [targetUserId]: [...userItems, item] };
       });
       // Clear member specific search state
-      setMemberEntryStates(prev => ({
+      setMemberQueries(prev => ({
         ...prev,
         [targetUserId]: { 
-          ...(prev[targetUserId] || { query: '', mode: 'RECIPE' as EntryMode, recipeResults: [], ingredientResults: [], searching: false }), 
-          query: '', 
-          recipeResults: [], 
-          ingredientResults: [] 
+          ...(prev[targetUserId] || { query: '', mode: 'RECIPE' as EntryMode }), 
+          query: '' 
         }
+      }));
+      setMemberResults(prev => ({
+        ...prev,
+        [targetUserId]: { recipeResults: [], ingredientResults: [], searching: false }
       }));
     } else {
       setSelectedItems((current) => {
-        if (current.some((item) => item.key === key)) return current;
+        if (current.some((i) => i.kind === 'RECIPE' && i.recipe.id === recipe.id)) return current;
         return [...current, item];
       });
       setSearchQuery('');
@@ -324,21 +365,23 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     if (targetUserId) {
       setMemberSelections((prev) => {
         const userItems = prev[targetUserId] || [];
-        if (userItems.some((i) => i.key === item.key)) return prev;
+        if (userItems.some((i) => i.kind === 'INGREDIENT' && i.ingredient.id === ingredient.id)) return prev;
         return { ...prev, [targetUserId]: [...userItems, item] };
       });
-      setMemberEntryStates(prev => ({
+      setMemberQueries(prev => ({
         ...prev,
         [targetUserId]: { 
-          ...(prev[targetUserId] || { query: '', mode: 'RECIPE' as EntryMode, recipeResults: [], ingredientResults: [], searching: false }), 
-          query: '', 
-          recipeResults: [], 
-          ingredientResults: [] 
+          ...(prev[targetUserId] || { query: '', mode: 'RECIPE' as EntryMode }), 
+          query: '' 
         }
+      }));
+      setMemberResults(prev => ({
+        ...prev,
+        [targetUserId]: { recipeResults: [], ingredientResults: [], searching: false }
       }));
     } else {
       setSelectedItems((current) => {
-        if (current.some((item) => item.key === key)) return current;
+        if (current.some((i) => i.kind === 'INGREDIENT' && i.ingredient.id === ingredient.id)) return current;
         return [...current, item];
       });
       setSearchQuery('');
@@ -543,8 +586,10 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     setIngredientSearchQuery,
     recipeResults,
     ingredientResults,
-    memberEntryStates,
-    setMemberEntryStates,
+    memberQueries,
+    setMemberQueries,
+    memberResults,
+    setMemberResults,
     selectedItems,
     memberSelections,
     setMemberSelections,

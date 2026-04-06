@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Sparkles, CheckCircle2 } from 'lucide-react';
 import { useSmartConsumption } from './useSmartConsumption';
 import { 
-  ENTRY_MODE_OPTIONS 
+  ENTRY_MODE_OPTIONS,
+  type EntryMode
 } from './SmartConsumption.types';
 import { 
   locationLabel, 
@@ -67,8 +68,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     unitWeights,
     ingredientSpecificWeights,
     recipeDetailsMap,
-    memberEntryStates,
-    setMemberEntryStates
+    memberQueries,
+    setMemberQueries,
+    memberResults
   } = useSmartConsumption(onConsumptionLogged);
 
   const activeMembers = useMemo(() => {
@@ -79,6 +81,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   }, [selectedMembers, selectedLocationId]);
 
   const hasSelectedMembers = activeMembers.length > 0;
+  const loggedInUserIdStr = user ? String(user.id) : '';
 
   const [manualInputs, setManualInputs] = useState<Set<string>>(new Set());
 
@@ -302,9 +305,15 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
         {hasSelectedMembers && (
           <div className="mt-2 space-y-12">
             {activeMembers.map(userId => {
-              const member = selectedGroup?.users.find((u: any) => String(u.id) === userId);
-              const mState = memberEntryStates[userId] || { query: '', mode: 'RECIPE' as any, recipeResults: [], ingredientResults: [], searching: false };
-              const mSelections = memberSelections[userId] || [];
+              const isLoggedInUser = userId === loggedInUserIdStr;
+              const member = selectedGroup?.users.find((u: any) => String(u.id) === userId) || (isLoggedInUser ? user : null);
+              const mState = isLoggedInUser 
+                ? { query: entryMode === 'RECIPE' ? searchQuery : ingredientSearchQuery, mode: entryMode, recipeResults, ingredientResults, searching }
+                : { 
+                    ...(memberQueries[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
+                    ...(memberResults[userId] || { recipeResults: [], ingredientResults: [], searching: false }) 
+                  };
+              const mSelections = isLoggedInUser ? selectedItems : (memberSelections[userId] || []);
               
               return (
                 <div key={userId} className="space-y-6">
@@ -313,21 +322,50 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       {member?.firstName?.charAt(0) || member?.name?.charAt(0) || '?'}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-espresso-midnight dark:text-alabaster">{member?.firstName || member?.name} için Seçim</h3>
+                      <h3 className="text-xl font-bold text-espresso-midnight dark:text-alabaster">
+                        {isLoggedInUser ? 'Senin Seçimin' : `${member?.firstName || member?.name} için Seçim`}
+                      </h3>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
                     <SearchSection 
-                      userId={userId}
+                      userId={isLoggedInUser ? undefined : userId}
                       entryMode={mState.mode}
-                      onEntryModeChange={(mode) => setMemberEntryStates(prev => ({ ...prev, [userId]: { ...prev[userId], mode } }))}
-                      searchQuery={mState.mode === 'RECIPE' ? mState.query : ''}
-                      onSearchQueryChange={(q) => setMemberEntryStates(prev => ({ ...prev, [userId]: { ...prev[userId], query: q } }))}
-                      ingredientSearchQuery={mState.mode === 'INGREDIENT' ? mState.query : ''}
-                      onIngredientSearchQueryChange={(q) => setMemberEntryStates(prev => ({ ...prev, [userId]: { ...prev[userId], query: q } }))}
+                      onEntryModeChange={(mode) => {
+                        if (isLoggedInUser) setEntryMode(mode);
+                        else setMemberQueries(prev => ({ 
+                          ...prev, 
+                          [userId]: { 
+                            ...(prev[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
+                            mode 
+                          } 
+                        }));
+                      }}
+                      searchQuery={mState.mode === 'RECIPE' ? (mState.query || '') : ''}
+                      onSearchQueryChange={(q) => {
+                        if (isLoggedInUser) setSearchQuery(q);
+                        else setMemberQueries(prev => ({ 
+                          ...prev, 
+                          [userId]: { 
+                            ...(prev[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
+                            query: q || '' 
+                          } 
+                        }));
+                      }}
+                      ingredientSearchQuery={mState.mode === 'INGREDIENT' ? (mState.query || '') : ''}
+                      onIngredientSearchQueryChange={(q) => {
+                        if (isLoggedInUser) setIngredientSearchQuery(q);
+                        else setMemberQueries(prev => ({ 
+                          ...prev, 
+                          [userId]: { 
+                            ...(prev[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
+                            query: q || '' 
+                          } 
+                        }));
+                      }}
                       searching={mState.searching}
-                      isSearchStale={false}
+                      isSearchStale={isLoggedInUser ? isSearchStale : false}
                       recipeResults={mState.recipeResults || []}
                       ingredientResults={mState.ingredientResults || []}
                       onRecipeSelect={handleRecipeSelect}
@@ -335,11 +373,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     />
                     
                     <SelectedItemsList 
-                      userId={userId}
-                      title={`${member?.firstName || member?.name} için Seçilenler`}
+                      userId={isLoggedInUser ? undefined : userId}
+                      title={isLoggedInUser ? 'Senin Seçtiklerin' : `${member?.firstName || member?.name} için Seçilenler`}
                       selectedItems={mSelections}
                       submitting={submitting}
-                      onRemoveItem={(key) => handleRemoveMemberItem(userId, key)}
+                      onRemoveItem={(key) => isLoggedInUser ? handleRemoveItem(key) : handleRemoveMemberItem(userId, key)}
                       onRecipePortionChange={handleRecipePortionChange}
                       getIngredientUnits={getIngredientUnits}
                       unitWeights={unitWeights}

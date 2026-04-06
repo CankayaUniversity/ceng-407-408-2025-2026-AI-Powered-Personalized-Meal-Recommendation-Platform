@@ -44,6 +44,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
   onIngredientSelect,
   userId
 }) => {
+  const mQuery = entryMode === 'RECIPE' ? (searchQuery || '') : (ingredientSearchQuery || '');
   const resultCards = entryMode === 'RECIPE' ? recipeResults : ingredientResults;
 
   return (
@@ -82,12 +83,13 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-espresso-midnight/30 dark:text-alabaster/30" />
           <input
             type="text"
-            value={entryMode === 'RECIPE' ? searchQuery : ingredientSearchQuery}
+            value={mQuery}
             onChange={(event) => {
+              const val = event.target.value;
               if (entryMode === 'RECIPE') {
-                onSearchQueryChange(event.target.value);
+                onSearchQueryChange(val);
               } else {
-                onIngredientSearchQueryChange(event.target.value);
+                onIngredientSearchQueryChange(val);
               }
             }}
             placeholder={entryMode === 'RECIPE' ? 'Mercimek çorbası, menemen...' : 'Yoğurt, muz, badem...'}
@@ -102,7 +104,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
       </div>
 
       <div className="mt-4 grid gap-3">
-        {resultCards.length === 0 && (entryMode === 'RECIPE' ? searchQuery : ingredientSearchQuery).trim().length >= 2 && !searching ? (
+        {(resultCards || []).length === 0 && mQuery.trim().length >= 2 && !searching ? (
           <div className="meal-metric-card rounded-[1.5rem] border-dashed border-card-border px-4 py-6 text-sm text-espresso-midnight/55 dark:text-alabaster/55">
             Sonuç bulunamadı. Daha kısa veya farklı bir arama dene.
           </div>
