@@ -19,11 +19,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -178,7 +175,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
     }
 
     @Test
-    void shouldLogConsumptionForMultipleMembers() throws Exception {
+    void shouldLogConsumptionForMultipleMembersAndDeductFromInventoryOnlyOnce() throws Exception {
         User me = User.builder().id("system-user").name("Me").build();
         User friend = User.builder().id("friend-user").name("Friend").build();
         Recipe recipe = Recipe.builder().id(10L).title("Salad").build();
@@ -192,8 +189,9 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         DailyConsumption savedMe = DailyConsumption.builder().id(101L).user(me).foodName("Salad").build();
         DailyConsumption savedFriend = DailyConsumption.builder().id(102L).user(friend).foodName("Salad").build();
 
-        when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "system-user".equals(c.getUser().getId())))).thenReturn(savedMe);
-        when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "friend-user".equals(c.getUser().getId())))).thenReturn(savedFriend);
+        // Beklenti: İlk kullanıcı için true, ikinci kullanıcı için false (veya tam tersi ama sadece bir kere true)
+        when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "system-user".equals(c.getUser().getId())), eq(true))).thenReturn(savedMe);
+        when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "friend-user".equals(c.getUser().getId())), eq(false))).thenReturn(savedFriend);
 
         mockMvc.perform(post("/api/v1/consumptions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -211,7 +209,218 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(101));
 
-        verify(dailyConsumptionService).logConsumption(argThat(c -> "system-user".equals(c.getUser().getId())));
-        verify(dailyConsumptionService).logConsumption(argThat(c -> "friend-user".equals(c.getUser().getId())));
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "system-user".equals(c.getUser().getId()) 
+                && c.getPortionMultiplier() == 1.0), eq(true));
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "friend-user".equals(c.getUser().getId()) 
+                && c.getPortionMultiplier() == 0.5), eq(false));
+    }
+
+    @Test
+    void shouldLogConsumptionForMultipleMembersWithIngredients() throws Exception {
+        User me = User.builder().id("system-user").name("Me").build();
+        User friend = User.builder().id("friend-user").name("Friend").build();
+        Ingredient ingredient = Ingredient.builder().id(3L).name("Banana").build();
+
+        when(userService.findById("system-user")).thenReturn(Optional.of(me));
+        when(userService.findById("friend-user")).thenReturn(Optional.of(friend));
+        when(ingredientService.findById(3L)).thenReturn(Optional.of(ingredient));
+
+        DailyConsumption savedMe = DailyConsumption.builder().id(101L).user(me).foodName("Banana").build();
+        DailyConsumption savedFriend = DailyConsumption.builder().id(102L).user(friend).foodName("Banana").build();
+
+        when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenReturn(savedMe).thenReturn(savedFriend);
+
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "ingredientId": 3,
+                                  "mealType": "SNACK",
+                                  "members": [
+                                    { "userId": "system-user", "portionGrams": 100.0 },
+                                    { "userId": "friend-user", "portionGrams": 50.0 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "system-user".equals(c.getUser().getId()) 
+                && c.getPortionGrams() == 100.0), anyBoolean());
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "friend-user".equals(c.getUser().getId()) 
+                && c.getPortionGrams() == 50.0), anyBoolean());
+    }
+
+    @Test
+    void shouldLogConsumptionForMultipleMembersWithDefaultValues() throws Exception {
+        User me = User.builder().id("system-user").name("Me").build();
+        User friend = User.builder().id("friend-user").name("Friend").build();
+        Recipe recipe = Recipe.builder().id(10L).title("Salad").build();
+
+        when(userService.findById(anyString())).thenAnswer(invocation -> {
+            String id = invocation.getArgument(0);
+            if ("system-user".equals(id)) return Optional.of(me);
+            if ("friend-user".equals(id)) return Optional.of(friend);
+            return Optional.empty();
+        });
+        when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(recipeService.findById(10L)).thenReturn(Optional.of(recipe));
+        when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenReturn(DailyConsumption.builder().id(101L).user(me).foodName("Salad").build());
+
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "recipeId": 10,
+                                  "mealType": "LUNCH",
+                                  "portionMultiplier": 1.5,
+                                  "portionLabel": "1 large bowl",
+                                  "members": [
+                                    { "userId": "system-user" },
+                                    { "userId": "friend-user", "portionMultiplier": 0.8, "portionLabel": "small bowl" }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        // system-user, 1 üye değil 2 üye olduğu için ana istekteki multiplier yerine varsayılan 1.0 almalı (yeni mantığa göre)
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "system-user".equals(c.getUser().getId()) 
+                && c.getPortionMultiplier() == 1.0
+                && "1 large bowl".equals(c.getPortionLabel())), anyBoolean());
+        
+        // friend-user, kendi multiplier (0.8) ve etiketini (small bowl) almalı
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "friend-user".equals(c.getUser().getId()) 
+                && c.getPortionMultiplier() == 0.8
+                && "small bowl".equals(c.getPortionLabel())), anyBoolean());
+    }
+
+    @Test
+    void shouldLogConsumptionWithProperGramsCalculation() throws Exception {
+        User me = User.builder().id("system-user").name("Me").build();
+        User friend = User.builder().id("friend-user").name("Friend").build();
+        Ingredient ingredient = Ingredient.builder().id(3L).name("Banana").build();
+
+        when(userService.findById(anyString())).thenAnswer(invocation -> {
+            String id = invocation.getArgument(0);
+            if ("system-user".equals(id)) return Optional.of(me);
+            if ("friend-user".equals(id)) return Optional.of(friend);
+            return Optional.empty();
+        });
+        when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ingredientService.findById(3L)).thenReturn(Optional.of(ingredient));
+        when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenReturn(DailyConsumption.builder().id(101L).user(me).foodName("Banana").build());
+
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "ingredientId": 3,
+                                  "mealType": "SNACK",
+                                  "members": [
+                                    { "userId": "system-user", "portionGrams": 120.0 },
+                                    { "userId": "friend-user", "portionLabel": "100 gram" }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "system-user".equals(c.getUser().getId()) 
+                && c.getPortionGrams() == 120.0), anyBoolean());
+        
+        verify(dailyConsumptionService).logConsumption(argThat(c -> "friend-user".equals(c.getUser().getId()) 
+                && c.getPortionGrams() == 100.0), anyBoolean());
+    }
+    @Test
+    void shouldLogIndependentCaloriesForMultipleMembers() throws Exception {
+        User me = User.builder().id("system-user").name("Me").build();
+        User friend = User.builder().id("friend-user").name("Friend").build();
+        
+        // 100g = 100 kalori olsun (basitlik için)
+        Ingredient ingredient = Ingredient.builder()
+                .id(3L)
+                .name("Test Food")
+                .build();
+
+        when(userService.findById("system-user")).thenReturn(Optional.of(me));
+        when(userService.findById("friend-user")).thenReturn(Optional.of(friend));
+        when(ingredientService.findById(3L)).thenReturn(Optional.of(ingredient));
+
+        // Mock service: Her çağrıda farklı bir nesne dönsün ve içindeki değerler girişten (portionGrams) türesin
+        when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenAnswer(invocation -> {
+            DailyConsumption input = invocation.getArgument(0);
+            // enrichment simülasyonu: 1 gram = 1 kalori
+            input.setEstimatedCalories(input.getPortionGrams() != null ? input.getPortionGrams().intValue() : 0);
+            return input;
+        });
+
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "ingredientId": 3,
+                                  "mealType": "SNACK",
+                                  "members": [
+                                    { "userId": "system-user", "portionGrams": 100.0 },
+                                    { "userId": "friend-user", "portionGrams": 50.0 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        // Doğrulama: system-user 100 kalori, friend-user 50 kalori almış olmalı.
+        // Eğer "totali birine yansıyor" hatası varsa, biri 150 diğeri 0 veya ikisi de 150 vb. olabilir.
+        
+        verify(dailyConsumptionService).logConsumption(argThat(c -> 
+                "system-user".equals(c.getUser().getId()) && c.getPortionGrams() == 100.0), anyBoolean());
+        
+        verify(dailyConsumptionService).logConsumption(argThat(c -> 
+                "friend-user".equals(c.getUser().getId()) && c.getPortionGrams() == 50.0), anyBoolean());
+    }
+    @Test
+    void shouldLogIndependentCaloriesForMultipleMembersWithRecipe() throws Exception {
+        User me = User.builder().id("system-user").name("Me").build();
+        User friend = User.builder().id("friend-user").name("Friend").build();
+        
+        // 1 full recipe = 1000 kalori
+        Recipe recipe = Recipe.builder()
+                .id(10L)
+                .title("Big Cake")
+                .totalCalories(1000.0)
+                .totalProtein(10.0)
+                .totalCarbs(10.0)
+                .totalFat(10.0)
+                .build();
+
+        when(userService.findById("system-user")).thenReturn(Optional.of(me));
+        when(userService.findById("friend-user")).thenReturn(Optional.of(friend));
+        when(recipeService.findById(10L)).thenReturn(Optional.of(recipe));
+
+        // Mock service: Input'u değiştirip dönsün (enrichment simülasyonu)
+        when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenAnswer(invocation -> {
+            DailyConsumption input = invocation.getArgument(0);
+            double mult = input.getPortionMultiplier() != null ? input.getPortionMultiplier() : 1.0;
+            input.setEstimatedCalories((int)(1000 * mult));
+            return input;
+        });
+
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "recipeId": 10,
+                                  "mealType": "LUNCH",
+                                  "members": [
+                                    { "userId": "system-user", "portionMultiplier": 1.0 },
+                                    { "userId": "friend-user", "portionMultiplier": 0.5 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        // Doğrulama: system-user 1000 kalori (multiplier 1.0), friend-user 500 kalori (multiplier 0.5) almış olmalı.
+        verify(dailyConsumptionService).logConsumption(argThat(c -> 
+                "system-user".equals(c.getUser().getId()) && c.getEstimatedCalories() == 1000), anyBoolean());
+        
+        verify(dailyConsumptionService).logConsumption(argThat(c -> 
+                "friend-user".equals(c.getUser().getId()) && c.getEstimatedCalories() == 500), anyBoolean());
     }
 }

@@ -125,6 +125,7 @@ public class ConsumptionController {
         // Eğer birden fazla üye için giriş yapılıyorsa
         if (request.getMembers() != null && !request.getMembers().isEmpty()) {
             DailyConsumption mainUserSaved = null;
+            boolean inventoryDeducted = false;
             for (ConsumptionRequest.MemberConsumption member : request.getMembers()) {
                 User user = userService.findById(member.getUserId())
                         .orElseGet(() -> userService.save(User.builder().id(member.getUserId()).build()));
@@ -141,18 +142,21 @@ public class ConsumptionController {
                         .ingredient(ingredient)
                         .mealType(request.getMealType())
                         .portionSize(resolvePortionSize(request, grams))
-                        .portionLabel(member.getPortionLabel())
-                        .portionMultiplier(member.getPortionMultiplier() != null ? member.getPortionMultiplier() : request.getPortionMultiplier())
+                        .portionLabel(member.getPortionLabel() != null ? member.getPortionLabel() : request.getPortionLabel())
+                        .portionMultiplier(member.getPortionMultiplier() != null ? member.getPortionMultiplier() : (request.getMembers().size() == 1 && request.getPortionMultiplier() != null ? request.getPortionMultiplier() : 1.0))
                         .portionGrams(grams)
                         .isCustomEntry(Boolean.TRUE.equals(request.getIsCustomEntry()) || (recipe == null && ingredient == null))
                         .isFromInventory(inventoryGroup != null || Boolean.TRUE.equals(request.getIsFromInventory()))
                         .inventoryGroup(inventoryGroup)
                         .build();
 
-                // Tüm üyeler için kayıt oluşturuyoruz. Stok düşümü logConsumption içinde her seferinde yapılacaktır.
-                // Eğer ortak stoktan tek seferde düşüm yapılması istenirse burada mantık değişmeliydi 
-                // ancak şu anki DailyConsumptionService mantığı kullanıcı başına stok düşümüne izin veriyor.
-                DailyConsumption saved = dailyConsumptionService.logConsumption(entity);
+                // Stok düşümü sadece ilk üye için (veya en az bir kere) yapılır.
+                boolean shouldDeduct = !inventoryDeducted && entity.getIsFromInventory();
+                DailyConsumption saved = dailyConsumptionService.logConsumption(entity, shouldDeduct);
+                if (shouldDeduct) {
+                    inventoryDeducted = true;
+                }
+
                 if (user.getId().equals(authenticatedUserId)) {
                     mainUserSaved = saved;
                 } else if (mainUserSaved == null) {
