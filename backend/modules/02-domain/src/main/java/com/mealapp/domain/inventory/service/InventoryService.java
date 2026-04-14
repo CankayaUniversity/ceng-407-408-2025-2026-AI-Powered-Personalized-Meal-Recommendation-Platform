@@ -198,9 +198,18 @@ public class InventoryService {
             return;
         }
 
+        List<Inventory> items = inventoryRepository.findByInventoryGroupUsersIdAndIngredientIdOrderByInventoryGroupIdAsc(userId, ingredientId);
+        double totalAvailable = items.stream().mapToDouble(i -> i.getQuantity() != null ? i.getQuantity() : 0.0).sum();
+        
+        if (totalAvailable < quantityToDeduct) {
+            throw new com.mealapp.domain.common.exception.InsufficientStockException(
+                    String.format("Envanterinizde '%s' malzemesi için yeterli stok yok. Mevcut: %.2f, Gerekli: %.2f",
+                            getRequiredIngredient(ingredientId).getName(), totalAvailable, quantityToDeduct));
+        }
+
         double remaining = quantityToDeduct;
 
-        for (Inventory existing : inventoryRepository.findByInventoryGroupUsersIdAndIngredientIdOrderByInventoryGroupIdAsc(userId, ingredientId)) {
+        for (Inventory existing : items) {
             double currentQuantity = existing.getQuantity() != null ? existing.getQuantity() : 0.0;
 
             if (currentQuantity <= 0) {
@@ -221,26 +230,35 @@ public class InventoryService {
 
     /**
      * Verilen malzemeyi seçili lokasyondaki stoktan düşer.
+     * Eğer malzeme lokasyonda yoksa veya stok yetersizse istisna fırlatır.
      */
     public void consumeFromInventoryGroup(String userId, Long inventoryGroupId, Long ingredientId, Double quantityToDeduct) {
         if (quantityToDeduct == null || quantityToDeduct <= 0) {
             return;
         }
 
-        getRequiredGroup(userId, inventoryGroupId);
+        InventoryGroup group = getRequiredGroup(userId, inventoryGroupId);
+        Ingredient ingredient = getRequiredIngredient(ingredientId);
 
-        inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
-                .ifPresent(existing -> {
-                    double currentQuantity = existing.getQuantity() != null ? existing.getQuantity() : 0.0;
+        Inventory inventory = inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
+                .orElseThrow(() -> new com.mealapp.domain.common.exception.InsufficientStockException(
+                        String.format("HATA: '%s' lokasyonunda '%s' malzemesi bulunamadı! Lütfen önce envanterinize bu malzemeyi ekleyin.",
+                                group.getName(), ingredient.getName())));
 
-                    if (currentQuantity <= 0 || currentQuantity <= quantityToDeduct) {
-                        inventoryRepository.delete(existing);
-                        return;
-                    }
+        double currentQuantity = inventory.getQuantity() != null ? inventory.getQuantity() : 0.0;
 
-                    existing.setQuantity(currentQuantity - quantityToDeduct);
-                    inventoryRepository.save(existing);
-                });
+        if (currentQuantity < quantityToDeduct) {
+            throw new com.mealapp.domain.common.exception.InsufficientStockException(
+                    String.format("STOK YETERSİZ: '%s' lokasyonunda '%s' malzemesinden sadece %.2f %s var, ancak %.2f %s tüketilmeye çalışılıyor.",
+                            group.getName(), ingredient.getName(), currentQuantity, inventory.getUnit(), quantityToDeduct, inventory.getUnit()));
+        }
+
+        if (currentQuantity == quantityToDeduct) {
+            inventoryRepository.delete(inventory);
+        } else {
+            inventory.setQuantity(currentQuantity - quantityToDeduct);
+            inventoryRepository.save(inventory);
+        }
     }
 
     @Transactional

@@ -7,13 +7,15 @@ interface MemberSelectionProps {
   selectedLocationId: string;
   selectedMembers: Record<string, { [userId: string]: boolean }>;
   onToggleMember: (userId: string) => void;
+  loggedInUserId: string;
 }
 
 export const MemberSelection: React.FC<MemberSelectionProps> = ({
   selectedGroup,
   selectedLocationId,
   selectedMembers,
-  onToggleMember
+  onToggleMember,
+  loggedInUserId
 }) => {
   if (!selectedGroup || selectedGroup.users.length === 0) return null;
 
@@ -26,7 +28,9 @@ export const MemberSelection: React.FC<MemberSelectionProps> = ({
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {selectedGroup.users.map((groupUser: any) => {
+        {selectedGroup.users
+          .filter((u: any) => String(u.id) !== loggedInUserId)
+          .map((groupUser: any) => {
           const isSelected = selectedMembers[selectedLocationId]?.[groupUser.id] ?? false;
           return (
             <div

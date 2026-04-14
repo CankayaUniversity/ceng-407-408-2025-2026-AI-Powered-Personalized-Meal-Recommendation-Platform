@@ -125,43 +125,78 @@ public class ConsumptionController {
         // Eğer birden fazla üye için giriş yapılıyorsa
         if (request.getMembers() != null && !request.getMembers().isEmpty()) {
             DailyConsumption mainUserSaved = null;
-            boolean inventoryDeducted = false;
             for (ConsumptionRequest.MemberConsumption member : request.getMembers()) {
+                if (member.getUserId() == null || member.getUserId().isBlank()) {
+                    continue;
+                }
+
                 User user = userService.findById(member.getUserId())
                         .orElseGet(() -> userService.save(User.builder().id(member.getUserId()).build()));
                 
+                // Üye özelinde farklı bir yemek seçilmiş olabilir
+                Recipe memberRecipe = null;
+                if (member.getRecipeId() != null) {
+                    memberRecipe = recipeService.findById(member.getRecipeId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Üye tarifi bulunamadı ID: " + member.getRecipeId()));
+                } else if (recipe != null) {
+                    memberRecipe = recipe;
+                }
+
+                Ingredient memberIngredient = null;
+                if (member.getIngredientId() != null) {
+                    memberIngredient = ingredientService.findById(member.getIngredientId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Üye malzemesi bulunamadı ID: " + member.getIngredientId()));
+                } else if (ingredient != null) {
+                    memberIngredient = ingredient;
+                }
+
+                String memberFoodName = member.getFoodName();
+                if (memberFoodName == null || memberFoodName.isBlank()) {
+                    memberFoodName = resolveFoodName(request, memberRecipe, memberIngredient);
+                }
+
                 Double grams = member.getPortionGrams();
                 if (grams == null && member.getPortionLabel() != null) {
-                    grams = parseGramsFromLabel(member.getPortionLabel(), ingredient);
+                    grams = parseGramsFromLabel(member.getPortionLabel(), memberIngredient);
                 }
 
                 DailyConsumption entity = DailyConsumption.builder()
                         .user(user)
-                        .foodName(resolveFoodName(request, recipe, ingredient))
-                        .recipe(recipe)
-                        .ingredient(ingredient)
+                        .foodName(memberFoodName)
+                        .recipe(memberRecipe)
+                        .ingredient(memberIngredient)
                         .mealType(request.getMealType())
                         .portionSize(resolvePortionSize(request, grams))
                         .portionLabel(member.getPortionLabel() != null ? member.getPortionLabel() : request.getPortionLabel())
-                        .portionMultiplier(member.getPortionMultiplier() != null ? member.getPortionMultiplier() : (request.getMembers().size() == 1 && request.getPortionMultiplier() != null ? request.getPortionMultiplier() : 1.0))
+                        .portionMultiplier(member.getPortionMultiplier() != null ? member.getPortionMultiplier() : (request.getPortionMultiplier() != null ? request.getPortionMultiplier() : 1.0))
                         .portionGrams(grams)
-                        .isCustomEntry(Boolean.TRUE.equals(request.getIsCustomEntry()) || (recipe == null && ingredient == null))
-                        .isFromInventory(inventoryGroup != null || Boolean.TRUE.equals(request.getIsFromInventory()))
-                        .inventoryGroup(inventoryGroup)
+                        .isCustomEntry(Boolean.TRUE.equals(request.getIsCustomEntry()) || (memberRecipe == null && memberIngredient == null))
+                        .isFromInventory(inventoryGroup != null && isUserInGroup(user, inventoryGroup))
+                        .inventoryGroup(inventoryGroup != null && isUserInGroup(user, inventoryGroup) ? inventoryGroup : null)
                         .build();
 
-                // Stok düşümü sadece ilk üye için (veya en az bir kere) yapılır.
-                boolean shouldDeduct = !inventoryDeducted && entity.getIsFromInventory();
+                // Her üye kendi tükettiği miktarı stoktan düşer.
+                boolean shouldDeduct = entity.getIsFromInventory();
                 DailyConsumption saved = dailyConsumptionService.logConsumption(entity, shouldDeduct);
-                if (shouldDeduct) {
-                    inventoryDeducted = true;
-                }
 
                 if (user.getId().equals(authenticatedUserId)) {
                     mainUserSaved = saved;
-                } else if (mainUserSaved == null) {
-                    mainUserSaved = saved;
                 }
+            }
+            
+            if (mainUserSaved == null) {
+                // Eğer ana kullanıcı listede yoksa, ama members listesi işlendiyse, 
+                // bir 200 OK dönebiliriz (tüm üyeler işlendi) ancak metod ConsumptionResponse beklediği için 
+                // işlenen ilk üyenin sonucunu veya sanal bir özet dönebiliriz. 
+                // Front-end'in kafası karışmaması için boş bir response yerine success döneceğiz.
+                User authUser = userService.findById(authenticatedUserId)
+                    .orElseGet(() -> userService.save(User.builder().id(authenticatedUserId).build()));
+                    
+                return mapToResponse(DailyConsumption.builder()
+                    .user(authUser)
+                    .foodName("Grup Tüketimi")
+                    .mealType(request.getMealType())
+                    .build());
             }
             return mapToResponse(mainUserSaved);
         }
@@ -195,12 +230,14 @@ public class ConsumptionController {
     }
 
     private Double parseGramsFromLabel(String label, Ingredient ingredient) {
-        String lowerLabel = label.toLowerCase();
+        if (label == null || label.isBlank()) return null;
+        String lowerLabel = label.toLowerCase().trim();
         if (lowerLabel.contains(" ")) {
             try {
-                String[] parts = lowerLabel.split(" ");
-                Double val = Double.parseDouble(parts[0]);
-                String unit = parts[1];
+                int lastSpace = lowerLabel.lastIndexOf(" ");
+                String valPart = lowerLabel.substring(0, lastSpace).trim();
+                String unit = lowerLabel.substring(lastSpace + 1).trim();
+                Double val = Double.parseDouble(valPart);
                 return UnitConverter.convertToGrams(val, unit, ingredient);
             } catch (Exception ignored) {}
         }
@@ -285,5 +322,10 @@ public class ConsumptionController {
         }
 
         return DailyConsumption.PortionSize.MEDIUM;
+    }
+
+    private boolean isUserInGroup(User user, InventoryGroup group) {
+        if (group.getUsers() == null) return false;
+        return group.getUsers().stream().anyMatch(u -> u.getId().equals(user.getId()));
     }
 }

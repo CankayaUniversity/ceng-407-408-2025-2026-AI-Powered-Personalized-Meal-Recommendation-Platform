@@ -2,23 +2,31 @@ package com.mealapp.app.controller;
 
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
+import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
 import com.mealapp.domain.inventory.service.InventoryService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeIngredient;
+import com.mealapp.domain.recipe.entity.IngredientNutrition;
 import com.mealapp.domain.recipe.service.IngredientService;
 import com.mealapp.domain.recipe.service.RecipeService;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
 import com.mealapp.infrastructure.test.AbstractMockMvcTest;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -175,7 +183,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
     }
 
     @Test
-    void shouldLogConsumptionForMultipleMembersAndDeductFromInventoryOnlyOnce() throws Exception {
+    void shouldLogConsumptionForMultipleMembersAndDeductFromInventoryForEveryMember() throws Exception {
         User me = User.builder().id("system-user").name("Me").build();
         User friend = User.builder().id("friend-user").name("Friend").build();
         Recipe recipe = Recipe.builder().id(10L).title("Salad").build();
@@ -185,13 +193,16 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         when(userService.findById("friend-user")).thenReturn(Optional.of(friend));
         when(recipeService.findById(10L)).thenReturn(Optional.of(recipe));
         when(inventoryService.getUserInventoryGroup("system-user", 5L)).thenReturn(group);
+        
+        // Group users listesini set edelim
+        group.setUsers(new java.util.ArrayList<>(java.util.List.of(me, friend)));
 
         DailyConsumption savedMe = DailyConsumption.builder().id(101L).user(me).foodName("Salad").build();
         DailyConsumption savedFriend = DailyConsumption.builder().id(102L).user(friend).foodName("Salad").build();
 
-        // Beklenti: İlk kullanıcı için true, ikinci kullanıcı için false (veya tam tersi ama sadece bir kere true)
+        // Beklenti: Her kullanıcı için true (kendi paylarını stoktan düşecekler)
         when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "system-user".equals(c.getUser().getId())), eq(true))).thenReturn(savedMe);
-        when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "friend-user".equals(c.getUser().getId())), eq(false))).thenReturn(savedFriend);
+        when(dailyConsumptionService.logConsumption(argThat(c -> c != null && c.getUser() != null && "friend-user".equals(c.getUser().getId())), eq(true))).thenReturn(savedFriend);
 
         mockMvc.perform(post("/api/v1/consumptions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -212,7 +223,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         verify(dailyConsumptionService).logConsumption(argThat(c -> "system-user".equals(c.getUser().getId()) 
                 && c.getPortionMultiplier() == 1.0), eq(true));
         verify(dailyConsumptionService).logConsumption(argThat(c -> "friend-user".equals(c.getUser().getId()) 
-                && c.getPortionMultiplier() == 0.5), eq(false));
+                && c.getPortionMultiplier() == 0.5), eq(true));
     }
 
     @Test
@@ -282,9 +293,9 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
                                 """))
                 .andExpect(status().isOk());
 
-        // system-user, 1 üye değil 2 üye olduğu için ana istekteki multiplier yerine varsayılan 1.0 almalı (yeni mantığa göre)
+        // system-user, 1 üye değil 2 üye olduğu için ana istekteki multiplier 1.5'i almalı (yeni mantığa göre fallback)
         verify(dailyConsumptionService).logConsumption(argThat(c -> "system-user".equals(c.getUser().getId()) 
-                && c.getPortionMultiplier() == 1.0
+                && c.getPortionMultiplier() == 1.5
                 && "1 large bowl".equals(c.getPortionLabel())), anyBoolean());
         
         // friend-user, kendi multiplier (0.8) ve etiketini (small bowl) almalı
@@ -422,5 +433,243 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         
         verify(dailyConsumptionService).logConsumption(argThat(c -> 
                 "friend-user".equals(c.getUser().getId()) && c.getEstimatedCalories() == 500), anyBoolean());
+    }
+
+    @Test
+    void shouldFixTotalCaloriesBugWhenMultipleMembersPresent() throws Exception {
+        User berk = User.builder().id("system-user").name("Berk").build();
+        User ufuk = User.builder().id("ufuk-id").name("Ufuk").build();
+        Recipe recipe = Recipe.builder().id(30L).title("Test Recipe").totalCalories(1000.0).build();
+        
+        // InventoryGroup ve User listesi ekleyelim
+        InventoryGroup group = InventoryGroup.builder().id(99L).name("Office").build();
+        group.setUsers(new java.util.ArrayList<>(java.util.List.of(berk, ufuk)));
+
+        // berk-id olarak MockMvc'yi kandıramayabiliriz, system-user üzerinden gidelim.
+        when(userService.findById("system-user")).thenReturn(Optional.of(berk));
+        when(userService.findById("ufuk-id")).thenReturn(Optional.of(ufuk));
+        when(recipeService.findById(30L)).thenReturn(Optional.of(recipe));
+        when(inventoryService.getUserInventoryGroup(any(), eq(99L))).thenReturn(group);
+        
+        when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenAnswer(inv -> inv.getArgument(0));
+
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "recipeId": 30,
+                                  "inventoryGroupId": 99,
+                                  "mealType": "LUNCH",
+                                  "members": [
+                                    { "userId": "system-user", "portionMultiplier": 3.0 },
+                                    { "userId": "ufuk-id", "portionMultiplier": 6.0 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        // Veritabanına (Service'e) giden nesneleri yakalayalım.
+        ArgumentCaptor<DailyConsumption> captor = ArgumentCaptor.forClass(DailyConsumption.class);
+        verify(dailyConsumptionService, atLeastOnce()).logConsumption(captor.capture(), anyBoolean());
+        
+        List<DailyConsumption> captured = captor.getAllValues();
+        
+        boolean berkFound = captured.stream().anyMatch(c -> "system-user".equals(c.getUser().getId()) && c.getPortionMultiplier() == 3.0);
+        boolean ufukFound = captured.stream().anyMatch(c -> "ufuk-id".equals(c.getUser().getId()) && c.getPortionMultiplier() == 6.0);
+        
+        assertTrue(berkFound, "Berk should have a log with multiplier 3.0");
+        assertTrue(ufukFound, "Ufuk should have a log with multiplier 6.0");
+    }
+
+    @Test
+    void shouldHandleIndependentItemsForMultipleMembers() throws Exception {
+        User berk = User.builder().id("system-user").name("Berk").build();
+        User ufuk = User.builder().id("ufuk-id").name("Ufuk").build();
+        Recipe popcorn = Recipe.builder().id(101L).title("Popcorn").totalCalories(300.0).build();
+        Recipe meatballs = Recipe.builder().id(102L).title("Meatballs").totalCalories(600.0).build();
+        
+        InventoryGroup group = InventoryGroup.builder().id(99L).name("Office").build();
+        group.setUsers(new java.util.ArrayList<>(java.util.List.of(berk, ufuk)));
+
+        when(userService.findById("system-user")).thenReturn(Optional.of(berk));
+        when(userService.findById("ufuk-id")).thenReturn(Optional.of(ufuk));
+        when(recipeService.findById(101L)).thenReturn(Optional.of(popcorn));
+        when(recipeService.findById(102L)).thenReturn(Optional.of(meatballs));
+        when(inventoryService.getUserInventoryGroup(any(), eq(99L))).thenReturn(group);
+        when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Bu test, her üyenin kendi bağımsız tarifini seçebilmesini doğrular.
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inventoryGroupId": 99,
+                                  "mealType": "SNACK",
+                                  "members": [
+                                    { "userId": "system-user", "recipeId": 101, "portionMultiplier": 1.0 },
+                                    { "userId": "ufuk-id", "recipeId": 102, "portionMultiplier": 2.0 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<DailyConsumption> captor = ArgumentCaptor.forClass(DailyConsumption.class);
+        verify(dailyConsumptionService, times(2)).logConsumption(captor.capture(), eq(true));
+        
+        List<DailyConsumption> captured = captor.getAllValues();
+        assertEquals(2, captured.size());
+        
+        DailyConsumption berkLog = captured.stream().filter(c -> "system-user".equals(c.getUser().getId())).findFirst().orElseThrow();
+        DailyConsumption ufukLog = captured.stream().filter(c -> "ufuk-id".equals(c.getUser().getId())).findFirst().orElseThrow();
+        
+        assertEquals("Popcorn", berkLog.getFoodName());
+        assertEquals(1.0, berkLog.getPortionMultiplier());
+        
+        assertEquals("Meatballs", ufukLog.getFoodName());
+        assertEquals(2.0, ufukLog.getPortionMultiplier());
+        assertEquals(99L, berkLog.getInventoryGroup().getId());
+        assertEquals(99L, ufukLog.getInventoryGroup().getId());
+    }
+
+    @Test
+    void shouldHandleBulkRequestWithoutMainUser() throws Exception {
+        User ufuk = User.builder().id("ufuk-id").name("Ufuk").build();
+        Recipe popcorn = Recipe.builder().id(101L).title("Popcorn").totalCalories(300.0).build();
+        
+        InventoryGroup group = InventoryGroup.builder().id(99L).name("Office").build();
+        group.setUsers(new java.util.ArrayList<>(java.util.List.of(ufuk)));
+
+        // system-user login ama members listesinde yok
+        when(userService.findById("system-user")).thenReturn(Optional.of(User.builder().id("system-user").build()));
+        when(userService.findById("ufuk-id")).thenReturn(Optional.of(ufuk));
+        when(recipeService.findById(101L)).thenReturn(Optional.of(popcorn));
+        when(inventoryService.getUserInventoryGroup(any(), eq(99L))).thenReturn(group);
+
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inventoryGroupId": 99,
+                                  "mealType": "SNACK",
+                                  "members": [
+                                    { "userId": "ufuk-id", "recipeId": 101, "portionMultiplier": 1.0 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+    }
+    @Test
+    void shouldHandleBulkRequestWithIngredientsFromUserPayload() throws Exception {
+        User berk = User.builder().id("b055b4bf-33c9-4d2e-812a-961b829a6676").name("Berk").build();
+        User ufuk = User.builder().id("b29cd78c-8450-4fb9-96a0-f667f336445d").name("Ufuk").build();
+
+        Ingredient sauce = Ingredient.builder().id(98L).name("alfredo sauce").build();
+        sauce.setNutrition(IngredientNutrition.builder().ingredient(sauce).caloriesPer100g(100.0).proteinPer100g(10.0).carbsPer100g(10.0).fatPer100g(10.0).build());
+        
+        Ingredient nuts = Ingredient.builder().id(127L).name("almond nut meats").build();
+        nuts.setNutrition(IngredientNutrition.builder().ingredient(nuts).caloriesPer100g(500.0).proteinPer100g(20.0).carbsPer100g(10.0).fatPer100g(40.0).build());
+
+        InventoryGroup group = InventoryGroup.builder().id(3L).name("Office").build();
+        group.setUsers(new java.util.ArrayList<>(java.util.List.of(berk, ufuk)));
+
+        // system-user login ama payload'da üyeler arasında var
+        when(userService.findById("system-user")).thenReturn(Optional.of(berk));
+        when(userService.findById("b055b4bf-33c9-4d2e-812a-961b829a6676")).thenReturn(Optional.of(berk));
+        when(userService.findById("b29cd78c-8450-4fb9-96a0-f667f336445d")).thenReturn(Optional.of(ufuk));
+        when(ingredientService.findById(98L)).thenReturn(Optional.of(sauce));
+        when(ingredientService.findById(127L)).thenReturn(Optional.of(nuts));
+        when(inventoryService.getUserInventoryGroup(any(), eq(3L))).thenReturn(group);
+        when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenAnswer(inv -> inv.getArgument(0));
+
+        // Kullanıcının attığı payload'ın aynısını simüle edelim
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inventoryGroupId": 3,
+                                  "mealType": "LUNCH",
+                                  "members": [
+                                    {
+                                      "userId": "b055b4bf-33c9-4d2e-812a-961b829a6676",
+                                      "ingredientId": 98,
+                                      "foodName": "alfredo sauce",
+                                      "portionLabel": "10 ML",
+                                      "portionGrams": 10
+                                    },
+                                    {
+                                      "userId": "b29cd78c-8450-4fb9-96a0-f667f336445d",
+                                      "ingredientId": 127,
+                                      "foodName": "almond nut meats",
+                                      "portionLabel": "1 PAKET",
+                                      "portionGrams": 500
+                                    }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldFailWhenItemInfoIsMissingInBulkRequest() throws Exception {
+        User berk = User.builder().id("berk-id").build();
+        InventoryGroup group = InventoryGroup.builder().id(3L).users(List.of(berk)).build();
+        
+        when(userService.findById(anyString())).thenReturn(Optional.of(berk));
+        when(inventoryService.getUserInventoryGroup(any(), anyLong())).thenReturn(group);
+
+        // members içinde ne recipeId ne ingredientId ne de foodName var
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inventoryGroupId": 3,
+                                  "mealType": "LUNCH",
+                                  "members": [
+                                    { "userId": "berk-id", "portionMultiplier": 1.0 }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isBadRequest()); // 500 değil 400 bekliyoruz
+    }
+
+    @Test
+    void shouldHandleDensityWhenDeductingLiquidFromInventory() throws Exception {
+        User user = User.builder().id("system-user").build();
+        // Alfredo Sauce: Density = 1.2 (100ml = 120g)
+        Ingredient sauce = Ingredient.builder().id(98L).name("alfredo sauce").density(1.2).build();
+        
+        InventoryGroup group = InventoryGroup.builder().id(3L).name("Kitchen").build();
+        group.setUsers(new java.util.ArrayList<>(List.of(user)));
+
+        when(userService.findById("system-user")).thenReturn(Optional.of(user));
+        when(ingredientService.findById(98L)).thenReturn(Optional.of(sauce));
+        // Also mock recipeService just in case
+        when(recipeService.findById(any())).thenReturn(Optional.empty());
+        when(inventoryService.getUserInventoryGroup(any(), eq(3L))).thenReturn(group);
+        
+        // Mock the service call instead of the repository
+        // We want to test that the controller calculates the correct grams and passes them to the service
+        DailyConsumption saved = DailyConsumption.builder().id(1L).foodName("sauce").build();
+        when(dailyConsumptionService.logConsumption(any())).thenReturn(saved);
+
+        // Simulation: User consumes "10 ml"
+        // 10 ml * 1.2 density = 12 grams
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inventoryGroupId": 3,
+                                  "mealType": "LUNCH",
+                                  "ingredientId": 98,
+                                  "foodName": "sauce",
+                                  "portionLabel": "10 ml"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        // Verify that the controller passed 12.0 grams to the service
+        verify(dailyConsumptionService).logConsumption(argThat(consumption -> 
+            consumption.getPortionGrams() != null && Math.abs(consumption.getPortionGrams() - 12.0) < 0.01
+        ));
     }
 }

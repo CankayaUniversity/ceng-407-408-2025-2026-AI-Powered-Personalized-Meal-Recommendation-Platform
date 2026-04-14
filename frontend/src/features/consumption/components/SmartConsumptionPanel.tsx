@@ -162,17 +162,29 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     return sumNutrition(allItems.map(getSelectedItemNutrition));
   }, [selectedItems, memberSelections]);
 
-  const memberSummaryRows = useMemo(() => {
-    const rows: Array<{ name: string; calories: number; protein: number }> = [];
+    const memberSummaryRows = useMemo(() => {
+    const rows: Array<{ name: string; calories: number; protein: number; carbs: number; fat: number }> = [];
     if (selectedItems.length > 0 && user) {
       const nutrition = sumNutrition(selectedItems.map(getSelectedItemNutrition));
-      rows.push({ name: (user.firstName || user.name || 'Ben'), calories: nutrition.calories || 0, protein: nutrition.protein || 0 });
+      rows.push({ 
+        name: (user.firstName || user.name || 'Ben'), 
+        calories: nutrition.calories || 0, 
+        protein: nutrition.protein || 0,
+        carbs: nutrition.carbs || 0,
+        fat: nutrition.fat || 0
+      });
     }
     Object.entries(memberSelections).forEach(([userId, items]) => {
       if (items.length === 0) return;
       const member = selectedGroup?.users.find((u: any) => String(u.id) === userId);
       const nutrition = sumNutrition(items.map(getSelectedItemNutrition));
-      rows.push({ name: member?.firstName || member?.name || `Üye #${userId}`, calories: nutrition.calories || 0, protein: nutrition.protein || 0 });
+      rows.push({ 
+        name: member?.firstName || member?.name || `Üye #${userId}`, 
+        calories: nutrition.calories || 0, 
+        protein: nutrition.protein || 0,
+        carbs: nutrition.carbs || 0,
+        fat: nutrition.fat || 0
+      });
     });
     return rows;
   }, [selectedItems, memberSelections, user, selectedGroup]);
@@ -248,72 +260,68 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                 return next;
               });
             }}
+            loggedInUserId={loggedInUserIdStr}
           />
         </div>
 
-        {!hasSelectedMembers && (
-          <div className="mt-2 grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-            <SearchSection 
-              entryMode={entryMode}
-              onEntryModeChange={(mode) => { setEntryMode(mode); setErrorMessage(null); setSubmitSummary(null); }}
-              searchQuery={searchQuery}
-              onSearchQueryChange={(q) => { setSearchQuery(q); setErrorMessage(null); setSubmitSummary(null); }}
-              ingredientSearchQuery={ingredientSearchQuery}
-              onIngredientSearchQueryChange={(q) => { setIngredientSearchQuery(q); setErrorMessage(null); setSubmitSummary(null); }}
-              searching={searching}
-              isSearchStale={isSearchStale}
-              recipeResults={recipeResults}
-              ingredientResults={ingredientResults}
-              onRecipeSelect={handleRecipeSelect}
-              onIngredientSelect={handleIngredientSelect}
+        <div className="mt-2 grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+          <SearchSection 
+            entryMode={entryMode}
+            onEntryModeChange={(mode) => { setEntryMode(mode); setErrorMessage(null); setSubmitSummary(null); }}
+            searchQuery={searchQuery}
+            onSearchQueryChange={(q) => { setSearchQuery(q); setErrorMessage(null); setSubmitSummary(null); }}
+            ingredientSearchQuery={ingredientSearchQuery}
+            onIngredientSearchQueryChange={(q) => { setIngredientSearchQuery(q); setErrorMessage(null); setSubmitSummary(null); }}
+            searching={searching}
+            isSearchStale={isSearchStale}
+            recipeResults={recipeResults}
+            ingredientResults={ingredientResults}
+            onRecipeSelect={handleRecipeSelect}
+            onIngredientSelect={handleIngredientSelect}
+          />
+
+          <div className="space-y-6">
+            <SelectedItemsList 
+              selectedItems={selectedItems}
+              submitting={submitting}
+              onRemoveItem={handleRemoveItem}
+              onRecipePortionChange={handleRecipePortionChange}
+              getIngredientUnits={getIngredientUnits}
+              unitWeights={unitWeights}
+              ingredientSpecificWeights={ingredientSpecificWeights}
+              onQuickUnitAdjust={(key, ing, unit, delta) => handleQuickUnitAdjust(key, ing, unit, delta)}
+              manualInputs={manualInputs}
+              toggleManualInput={toggleManualInput}
+              onManualPortionUpdate={(key, ing, qty, unit) => handleManualPortionUpdate(key, ing, qty, unit)}
             />
 
-            <div className="space-y-6">
-              <SelectedItemsList 
-                selectedItems={selectedItems}
-                submitting={submitting}
-                onRemoveItem={handleRemoveItem}
-                onRecipePortionChange={handleRecipePortionChange}
-                getIngredientUnits={getIngredientUnits}
-                unitWeights={unitWeights}
-                ingredientSpecificWeights={ingredientSpecificWeights}
-                onQuickUnitAdjust={(key, ing, unit, delta) => handleQuickUnitAdjust(key, ing, unit, delta)}
-                manualInputs={manualInputs}
-                toggleManualInput={toggleManualInput}
-                onManualPortionUpdate={(key, ing, qty, unit) => handleManualPortionUpdate(key, ing, qty, unit)}
-              />
+            {errorMessage && (
+              <div className="rounded-[1.8rem] border border-terracotta/20 bg-terracotta/5 px-4 py-4 text-sm font-bold text-terracotta">{errorMessage}</div>
+            )}
 
-              {errorMessage && (
-                <div className="rounded-[1.8rem] border border-terracotta/20 bg-terracotta/5 px-4 py-4 text-sm font-bold text-terracotta">{errorMessage}</div>
-              )}
-
-              {submitSummary && successTitle && (
-                <div className="rounded-[1.8rem] border border-moss-sage/30 bg-moss-sage/10 px-4 py-4 text-moss-forest">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-moss-sage" />
-                    <div>
-                      <p className="font-semibold">{successTitle}</p>
-                      <p className="mt-1 text-sm text-moss-forest/80">{formatNameList(submitSummary.responses.map(r => r.foodName))}</p>
-                    </div>
+            {submitSummary && successTitle && (
+              <div className="rounded-[1.8rem] border border-moss-sage/30 bg-moss-sage/10 px-4 py-4 text-moss-forest">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-moss-sage" />
+                  <div>
+                    <p className="font-semibold">{successTitle}</p>
+                    <p className="mt-1 text-sm text-moss-forest/80">{formatNameList(submitSummary.responses.map(r => r.foodName))}</p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {hasSelectedMembers && (
-          <div className="mt-2 space-y-12">
+          <div className="mt-12 space-y-12 border-t border-espresso-midnight/5 pt-12 dark:border-alabaster/5">
             {activeMembers.map(userId => {
-              const isLoggedInUser = userId === loggedInUserIdStr;
-              const member = selectedGroup?.users.find((u: any) => String(u.id) === userId) || (isLoggedInUser ? user : null);
-              const mState = isLoggedInUser 
-                ? { query: entryMode === 'RECIPE' ? searchQuery : ingredientSearchQuery, mode: entryMode, recipeResults, ingredientResults, searching }
-                : { 
-                    ...(memberQueries[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
-                    ...(memberResults[userId] || { recipeResults: [], ingredientResults: [], searching: false }) 
-                  };
-              const mSelections = isLoggedInUser ? selectedItems : (memberSelections[userId] || []);
+              const member = selectedGroup?.users.find((u: any) => String(u.id) === userId);
+              const mState = { 
+                ...(memberQueries[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
+                ...(memberResults[userId] || { recipeResults: [], ingredientResults: [], searching: false }) 
+              };
+              const mSelections = memberSelections[userId] || [];
               
               return (
                 <div key={userId} className="space-y-6">
@@ -323,18 +331,17 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-espresso-midnight dark:text-alabaster">
-                        {isLoggedInUser ? 'Senin Seçimin' : `${member?.firstName || member?.name} için Seçim`}
+                        {member?.firstName || member?.name} için Seçim
                       </h3>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
                     <SearchSection 
-                      userId={isLoggedInUser ? undefined : userId}
+                      userId={userId}
                       entryMode={mState.mode}
                       onEntryModeChange={(mode) => {
-                        if (isLoggedInUser) setEntryMode(mode);
-                        else setMemberQueries(prev => ({ 
+                        setMemberQueries(prev => ({ 
                           ...prev, 
                           [userId]: { 
                             ...(prev[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
@@ -344,8 +351,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       }}
                       searchQuery={mState.mode === 'RECIPE' ? (mState.query || '') : ''}
                       onSearchQueryChange={(q) => {
-                        if (isLoggedInUser) setSearchQuery(q);
-                        else setMemberQueries(prev => ({ 
+                        setMemberQueries(prev => ({ 
                           ...prev, 
                           [userId]: { 
                             ...(prev[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
@@ -355,8 +361,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       }}
                       ingredientSearchQuery={mState.mode === 'INGREDIENT' ? (mState.query || '') : ''}
                       onIngredientSearchQueryChange={(q) => {
-                        if (isLoggedInUser) setIngredientSearchQuery(q);
-                        else setMemberQueries(prev => ({ 
+                        setMemberQueries(prev => ({ 
                           ...prev, 
                           [userId]: { 
                             ...(prev[userId] || { query: '', mode: 'RECIPE' as EntryMode }), 
@@ -365,7 +370,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                         }));
                       }}
                       searching={mState.searching}
-                      isSearchStale={isLoggedInUser ? isSearchStale : false}
+                      isSearchStale={false}
                       recipeResults={mState.recipeResults || []}
                       ingredientResults={mState.ingredientResults || []}
                       onRecipeSelect={handleRecipeSelect}
@@ -373,11 +378,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     />
                     
                     <SelectedItemsList 
-                      userId={isLoggedInUser ? undefined : userId}
-                      title={isLoggedInUser ? 'Senin Seçtiklerin' : `${member?.firstName || member?.name} için Seçilenler`}
+                      userId={userId}
+                      title={`${member?.firstName || member?.name} için Seçilenler`}
                       selectedItems={mSelections}
                       submitting={submitting}
-                      onRemoveItem={(key) => isLoggedInUser ? handleRemoveItem(key) : handleRemoveMemberItem(userId, key)}
+                      onRemoveItem={(key) => handleRemoveMemberItem(userId, key)}
                       onRecipePortionChange={handleRecipePortionChange}
                       getIngredientUnits={getIngredientUnits}
                       unitWeights={unitWeights}

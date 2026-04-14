@@ -16,7 +16,7 @@ interface QuickSummaryProps {
   summarySubtitle: string | null;
   entryMode: EntryMode;
   nutritionPreview: NutritionPreview;
-  memberSummaryRows: Array<{ name: string; calories: number; protein: number }>;
+  memberSummaryRows: Array<{ name: string; calories: number; protein: number; carbs: number; fat: number }>;
   inventoryDeductions: Array<{ name: string; grams: number }>;
   isOutside: boolean;
   selectedGroup: InventoryGroup | null;
@@ -82,6 +82,8 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
                 <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50">Kullanıcı</th>
                 <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50">Kalori</th>
                 <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50 text-right">Protein</th>
+                <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50 text-right">Karbonhidrat</th>
+                <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50 text-right">Yağ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-card-border/50 dark:divide-white/10">
@@ -90,6 +92,8 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
                   <td className="px-6 py-4 font-bold text-espresso-midnight dark:text-white">{row.name}</td>
                   <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70">{formatCalories(row.calories)}</td>
                   <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70 text-right font-mono">{formatMacro(row.protein)}</td>
+                  <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70 text-right font-mono">{formatMacro(row.carbs)}</td>
+                  <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70 text-right font-mono">{formatMacro(row.fat)}</td>
                 </tr>
               ))}
             </tbody>

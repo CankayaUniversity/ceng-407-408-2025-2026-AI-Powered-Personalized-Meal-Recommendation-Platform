@@ -69,11 +69,16 @@ public class InventoryController {
             @PathVariable Long groupId,
             @Valid @RequestBody InventoryItemRequest request
     ) {
+        Ingredient ingredient = ingredientRepository.findById(request.getIngredientId())
+                .orElseThrow(() -> new MealAppDomainException("Malzeme bulunamadı"));
+
         Double grams = request.getGrams();
         if (grams == null) {
-            Ingredient ingredient = ingredientRepository.findById(request.getIngredientId()).orElse(null);
             grams = UnitConverter.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
         }
+
+        // Katı ise 'g', sıvı ise 'ml' birimine sabitle
+        String standardUnit = ingredient.getPhysicalState() == Ingredient.PhysicalState.LIQUID ? "ml" : "g";
 
         return inventoryMapper.toItemResponse(
                 inventoryService.upsertInventoryItem(
@@ -81,7 +86,7 @@ public class InventoryController {
                         groupId,
                         request.getIngredientId(),
                         grams,
-                        request.getUnit() // Store the original unit instead of "g"
+                        standardUnit
                 )
         );
     }
@@ -94,11 +99,16 @@ public class InventoryController {
             @PathVariable Long itemId,
             @Valid @RequestBody InventoryItemRequest request
     ) {
+        Ingredient ingredient = ingredientRepository.findById(request.getIngredientId())
+                .orElseThrow(() -> new MealAppDomainException("Malzeme bulunamadı"));
+
         Double grams = request.getGrams();
         if (grams == null) {
-            Ingredient ingredient = ingredientRepository.findById(request.getIngredientId()).orElse(null);
             grams = UnitConverter.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
         }
+
+        // Katı ise 'g', sıvı ise 'ml' birimine sabitle
+        String standardUnit = ingredient.getPhysicalState() == Ingredient.PhysicalState.LIQUID ? "ml" : "g";
 
         return inventoryMapper.toItemResponse(
                 inventoryService.updateInventoryItem(
@@ -107,7 +117,7 @@ public class InventoryController {
                         itemId,
                         request.getIngredientId(),
                         grams,
-                        request.getUnit() // Store the original unit instead of "g"
+                        standardUnit
                 )
         );
     }

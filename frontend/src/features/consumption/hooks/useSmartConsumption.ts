@@ -70,17 +70,19 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     if (authenticated && user && selectedLocationId && selectedGroup) {
       const currentSelected = selectedMembers[selectedLocationId] || {};
       const loggedInUserIdStr = String(user.id);
-      if (currentSelected[loggedInUserIdStr] === undefined) {
-        setSelectedMembersForLocation(prev => ({
-          ...prev,
-          [selectedLocationId]: {
-            ...prev[selectedLocationId],
-            [loggedInUserIdStr]: true
-          }
-        }));
+      // Login olan kullanıcıyı otomatik seçme, sadece diğer üyeler seçilebilir olsun.
+      // Eğer kullanıcı listede varsa bile varsayılan olarak seçili gelmesin.
+      if (currentSelected[loggedInUserIdStr] !== false) {
+          setSelectedMembersForLocation(prev => ({
+              ...prev,
+              [selectedLocationId]: {
+                  ...prev[selectedLocationId],
+                  [loggedInUserIdStr]: false
+              }
+          }));
       }
     }
-  }, [authenticated, user, selectedLocationId, selectedGroup, selectedMembers]);
+  }, [authenticated, user, selectedLocationId, selectedGroup]);
 
   const stockedIngredients = useMemo(
     () =>
@@ -480,48 +482,59 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     setSubmitSummary(null);
 
     try {
-      const promises: Promise<any>[] = [];
-
-      selectedMemberIds.forEach((userId) => {
-        const userItems = userId === user?.id ? selectedItems : (memberSelections[userId] || []);
-        userItems.forEach((item) => {
-          promises.push(consumptionService.logConsumption({
-            userId: userId,
-            recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
-            ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
-            inventoryGroupId: currentGroup?.id,
-            foodName: getSelectedItemName(item),
-            mealType,
-            portionSize: item.portion.portionSize,
-            portionLabel: item.portion.label,
-            portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
-            portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
-            isCustomEntry: false,
-            isFromInventory: !isOutside && Boolean(selectedGroup)
-          }));
-        });
-      });
-
-      const results = await Promise.allSettled(promises);
-      const successfulResponses: any[] = [];
-      let firstFailureMessage: string | null = null;
-
-      results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          successfulResponses.push(result.value);
-        } else if (!firstFailureMessage) {
-          firstFailureMessage = getErrorMessage(result.reason, 'Tuketim kaydi olusturulamadi.');
-        }
-      });
-
-      if (successfulResponses.length === promises.length) {
-        setSelectedItems([]);
-        setMemberSelections({});
+      const currentGroup = !isOutside && selectedGroup ? selectedGroup : null;
+      const activeLocationMembers = currentGroup ? selectedMembers[String(currentGroup.id)] || {} : {};
+      
+      const membersToLog: any[] = [];
+      
+      // Login olan kullanıcıyı ekle
+      if (selectedItems.length > 0 && user) {
+          membersToLog.push({
+              userId: user.id,
+              items: selectedItems
+          });
       }
 
+      // Diğer seçili grup üyelerini ekle
+      if (currentGroup) {
+          Object.entries(activeLocationMembers)
+              .filter(([uid, isSelected]) => isSelected && uid !== user?.id)
+              .forEach(([userId]) => {
+                  const items = memberSelections[userId] || [];
+                  if (items.length > 0) {
+                      membersToLog.push({ userId, items });
+                  }
+              });
+      }
+
+      if (membersToLog.length === 0) {
+          setErrorMessage('Önce en az bir tarif veya malzeme seç.');
+          setSubmitting(false);
+          return;
+      }
+
+      // Backend'e tek bir toplu istek gönderiyoruz
+      const bulkRequest = {
+          inventoryGroupId: currentGroup?.id,
+          mealType,
+          members: membersToLog.flatMap(m => m.items.map((item: any) => ({
+              userId: m.userId,
+              recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
+              ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
+              foodName: getSelectedItemName(item),
+              portionLabel: item.portion.label,
+              portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
+              portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
+          })))
+      };
+
+      const response = await consumptionService.logConsumption(bulkRequest);
+      
+      setSelectedItems([]);
+      setMemberSelections({});
       setSearchQuery('');
       setIngredientSearchQuery('');
-      setSubmitSummary({ responses: successfulResponses, failedNames: [] });
+      setSubmitSummary({ responses: [response], failedNames: [] });
       if (onConsumptionLogged) onConsumptionLogged();
       
     } catch (error) {

@@ -78,5 +78,8 @@ public class ConsumptionRequest {
         private Double portionMultiplier;
         private Double portionGrams;
         private String portionLabel;
+        private Long recipeId;
+        private Long ingredientId;
+        private String foodName;
     }
 }

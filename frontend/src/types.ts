@@ -237,13 +237,13 @@ export interface RecommendationResponse {
 }
 
 export interface ConsumptionRequest {
-  userId: string;
+  userId?: string | null;
   recipeId?: number;
   ingredientId?: number;
   inventoryGroupId?: number;
-  foodName: string;
+  foodName?: string | null;
   mealType: MealType;
-  portionSize: PortionSize;
+  portionSize?: PortionSize | null;
   portionLabel?: string | null;
   portionMultiplier?: number | null;
   portionGrams?: number | null;
@@ -257,6 +257,9 @@ export interface MemberConsumption {
   portionMultiplier?: number | null;
   portionGrams?: number | null;
   portionLabel?: string | null;
+  recipeId?: number;
+  ingredientId?: number;
+  foodName?: string;
 }
 
 export interface ConsumptionResponse {

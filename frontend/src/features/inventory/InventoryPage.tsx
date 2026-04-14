@@ -369,12 +369,14 @@ const InventoryPage: React.FC = () => {
         if (['LITRE', 'LITER', 'L'].includes(itemDraft.unit)) weight = 1000 * density;
       }
 
+      const standardUnit = itemDraft.selectedIngredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM';
+
       const payload: InventoryItemRequest = {
         ingredientId: itemDraft.selectedIngredient.id,
-        quantity,
-        unit: itemDraft.unit,
+        quantity: weight ? quantity * weight : quantity,
+        unit: standardUnit,
         grams: weight ? quantity * weight : quantity,
-        unitGramWeight: weight
+        unitGramWeight: 1
       };
 
       if (editingItemId) {
@@ -978,13 +980,8 @@ const InventoryPage: React.FC = () => {
                             <p className="text-[9px] font-bold uppercase tracking-widest text-foreground/30">Mevcut Stok</p>
                             <div className="mt-1 flex items-baseline gap-2">
                               <span className="font-serif text-3xl font-bold text-espresso-midnight dark:text-alabaster">{formatQuantity(item.quantity)}</span>
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-terracotta">{item.unit}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-terracotta">{item.unit === 'GRAM' ? 'g' : item.unit === 'ML' ? 'ml' : item.unit}</span>
                             </div>
-                            {item.grams && Math.abs((item.grams || 0) - (item.quantity || 0)) > 0.01 && (
-                                <p className="mt-1 text-[9px] font-medium text-foreground/40 italic">
-                                  ≈ {formatQuantity(item.grams)}g
-                                </p>
-                            )}
                           </div>
                         </article>
                     ))}

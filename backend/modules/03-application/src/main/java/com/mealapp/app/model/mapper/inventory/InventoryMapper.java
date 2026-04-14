@@ -56,14 +56,10 @@ public class InventoryMapper {
         String unit = item.getUnit();
         Double displayQuantity = grams;
 
-        // Convert back to display quantity if unit is not g/gram
-        if (unit != null && !unit.equalsIgnoreCase("g") && !unit.equalsIgnoreCase("gram")) {
-            Double unitWeight = UnitConverter.getUnitGramWeight(unit, item.getIngredient());
-            if (unitWeight != null && unitWeight > 0) {
-                displayQuantity = grams / unitWeight;
-            }
-        }
-
+        // Katı malzeme ise ve birimi 'g' ise gram olarak göster
+        // Sıvı malzeme ise ve birimi 'ml' ise ml olarak göster
+        // Display quantity artık her zaman grams/ml değerini yansıtacak çünkü envanterde öyle saklıyoruz
+        
         return InventoryItemResponse.builder()
                 .id(item.getId())
                 .inventoryGroupId(item.getInventoryGroup() != null ? item.getInventoryGroup().getId() : null)

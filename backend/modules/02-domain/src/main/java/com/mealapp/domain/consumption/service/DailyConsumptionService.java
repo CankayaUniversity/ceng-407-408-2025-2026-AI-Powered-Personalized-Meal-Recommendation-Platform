@@ -134,15 +134,15 @@ public class DailyConsumptionService {
     }
 
     private void applyIngredientNutrition(DailyConsumption consumption, Ingredient ingredient) {
+        double grams = resolveIngredientGrams(consumption);
+        consumption.setPortionGrams(grams);
+
         IngredientNutrition nutrition = ingredient.getNutrition();
         if (nutrition == null) {
             return;
         }
 
-        double grams = resolveIngredientGrams(consumption);
         double factor = grams / 100.0;
-
-        consumption.setPortionGrams(grams);
         consumption.setEstimatedCalories((int) Math.round(nutrition.getCaloriesPer100g() * factor));
         consumption.setEstimatedProtein(roundDouble(nutrition.getProteinPer100g() * factor));
         consumption.setEstimatedCarbs(roundDouble(nutrition.getCarbsPer100g() * factor));
@@ -243,15 +243,8 @@ public class DailyConsumptionService {
             return consumption.getPortionGrams();
         }
 
-        if (consumption.getPortionSize() == null) {
-            return 100.0;
-        }
-
-        return switch (consumption.getPortionSize()) {
-            case SMALL -> 40.0;
-            case MEDIUM -> 100.0;
-            case LARGE -> 180.0;
-        };
+        double multiplier = resolvePortionMultiplier(consumption);
+        return 100.0 * multiplier;
     }
 
     private double roundDouble(double value) {

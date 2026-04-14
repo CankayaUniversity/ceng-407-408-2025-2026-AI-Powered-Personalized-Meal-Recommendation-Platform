@@ -77,7 +77,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(1L),
                 eq(300.0), // 2 * 150
-                eq("adet")
+                eq("g") // Artık 'adet' değil 'g' bekliyoruz
         );
     }
 
@@ -91,6 +91,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .unit("g")
                 .build();
 
+        when(ingredientRepository.findById(2L)).thenReturn(Optional.of(ingredient));
         when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString()))
                 .thenReturn(inventory);
 
@@ -111,7 +112,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(2L),
                 eq(2500.0), // 5 * 500
-                eq("paket")
+                eq("g") // Artık 'paket' değil 'g' bekliyoruz
         );
     }
 
@@ -152,7 +153,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(3L),
                 eq(1030.0), // 1000 * 1.03
-                eq("ml")
+                eq("g") // Süt katı (PhysicalState.SOLID default) kabul edildiği için 'g'
         );
     }
 
@@ -166,6 +167,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .unit("g")
                 .build();
 
+        when(ingredientRepository.findById(1L)).thenReturn(Optional.of(ingredient));
         when(inventoryService.updateInventoryItem(anyString(), anyLong(), anyLong(), anyLong(), anyDouble(), anyString()))
                 .thenReturn(inventory);
 
@@ -190,8 +192,13 @@ class InventoryControllerTest extends AbstractMockMvcTest {
         );
     }
     @Test
-    void shouldCreateInventoryItemWithMlUnit() throws Exception {
-        Ingredient ingredient = Ingredient.builder().id(1L).name("Alfredo Sauce").density(1.1).build();
+    void shouldCreateInventoryItemWithMlUnitForLiquids() throws Exception {
+        Ingredient ingredient = Ingredient.builder()
+                .id(1L)
+                .name("Alfredo Sauce")
+                .density(1.1)
+                .physicalState(Ingredient.PhysicalState.LIQUID)
+                .build();
         Inventory inventory = Inventory.builder()
                 .id(10L)
                 .ingredient(ingredient)
@@ -218,8 +225,8 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq("system-user"),
                 eq(3L),
                 eq(1L),
-                eq(433.0 * 1.1),
-                eq("ml")
+                eq(476.3), // 433.0 * 1.1
+                eq("ml") // Liquid olduğu için ml
         );
     }
 }

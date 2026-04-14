@@ -44,6 +44,17 @@ public class GlobalExceptionHandler {
     /**
      * Genel Domain iş kuralı ihlalleri (400 Bad Request).
      */
+    @ExceptionHandler(com.mealapp.domain.common.exception.InsufficientStockException.class)
+    public ResponseEntity<ApiErrorResponse> handleInsufficientStockException(com.mealapp.domain.common.exception.InsufficientStockException ex, HttpServletRequest request) {
+        log.warn("Stok yetersiz: {}", ex.getMessage());
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(MealAppDomainException.class)
     public ResponseEntity<ApiErrorResponse> handleDomainException(MealAppDomainException ex, HttpServletRequest request) {
         ApiErrorResponse error = ApiErrorResponse.builder()
@@ -108,6 +119,12 @@ public class GlobalExceptionHandler {
         Throwable root = ex.getMostSpecificCause();
         if (root instanceof ConstraintViolationException constraintViolationException) {
             return handleConstraintViolation(constraintViolationException, request);
+        }
+        if (root instanceof com.mealapp.domain.common.exception.InsufficientStockException insufficientStockException) {
+            return handleInsufficientStockException(insufficientStockException, request);
+        }
+        if (root instanceof MealAppDomainException domainException) {
+            return handleDomainException(domainException, request);
         }
         ApiErrorResponse error = ApiErrorResponse.builder()
                 .message("İşlem sırasında beklenmeyen bir hata oluştu.")
