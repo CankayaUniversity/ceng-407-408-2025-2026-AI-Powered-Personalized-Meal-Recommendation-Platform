@@ -24,7 +24,7 @@ export const MemberSelection: React.FC<MemberSelectionProps> = ({
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="meal-overline tracking-[0.18em] text-terracotta">Group Members</p>
-          <h3 className="text-xl font-bold text-espresso-midnight dark:text-alabaster">Kimin için kayıt yapıyorsun?</h3>
+          <h3 className="text-xl font-bold text-foreground">Kimin için kayıt yapıyorsun?</h3>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -35,29 +35,29 @@ export const MemberSelection: React.FC<MemberSelectionProps> = ({
           return (
             <div
               key={groupUser.id}
-              className={`group flex items-center justify-between rounded-3xl border p-4 transition-all duration-300 ${
+              className={`group flex items-center justify-between rounded-3xl border transition-all duration-300 p-4 ${
                 isSelected
                   ? 'border-terracotta bg-terracotta/5 shadow-lg shadow-terracotta/5'
-                  : 'border-card-border bg-white/50 hover:border-terracotta/30 dark:bg-white/5'
+                  : 'border-card-border bg-card hover:border-terracotta/30'
               }`}
             >
               <div className="flex items-center gap-4">
                 <div className={`relative h-12 w-12 overflow-hidden rounded-2xl transition-transform group-hover:scale-105 ${
-                  isSelected ? 'ring-2 ring-terracotta ring-offset-2 dark:ring-offset-espresso-midnight' : ''
+                  isSelected ? 'ring-2 ring-terracotta ring-offset-2 dark:ring-offset-background' : ''
                 }`}>
                   <div className={`flex h-full w-full items-center justify-center font-serif text-lg font-bold ${
-                    isSelected ? 'bg-terracotta text-white' : 'bg-espresso-midnight/5 text-espresso-midnight/40'
+                    isSelected ? 'bg-terracotta text-white' : 'bg-foreground/5 text-foreground/40'
                   }`}>
                     {groupUser.firstName?.charAt(0) || groupUser.name?.charAt(0) || '?'}
                   </div>
                 </div>
                 <div>
                   <p className={`font-serif text-base font-bold transition-colors ${
-                    isSelected ? 'text-terracotta' : 'text-espresso-midnight dark:text-alabaster'
+                    isSelected ? 'text-terracotta' : 'text-foreground'
                   }`}>
                     {groupUser.firstName || groupUser.name}
                   </p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/30">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">
                     Member
                   </p>
                 </div>
@@ -66,7 +66,7 @@ export const MemberSelection: React.FC<MemberSelectionProps> = ({
                 type="button"
                 onClick={() => onToggleMember(String(groupUser.id))}
                 className={`p-1.5 rounded-full transition-colors ${
-                  isSelected ? 'bg-terracotta text-white' : 'bg-espresso-midnight/5 text-espresso-midnight/40'
+                  isSelected ? 'bg-terracotta text-white' : 'bg-foreground/5 text-foreground/40'
                 }`}
               >
                 {isSelected ? <CheckCircle2 size={16} /> : <Plus size={16} />}

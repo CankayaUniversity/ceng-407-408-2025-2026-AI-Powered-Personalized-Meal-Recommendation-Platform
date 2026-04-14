@@ -30,6 +30,10 @@ public class InventoryService {
     private final UserRepository userRepository;
     private final IngredientRepository ingredientRepository;
 
+    public enum UpdateMode {
+        ADD, SUBTRACT, SET
+    }
+
     /**
      * Kullanıcının tüm lokasyonlardaki envanterini getirir.
      */
@@ -110,15 +114,27 @@ public class InventoryService {
 
     /**
      * Belirli bir lokasyona malzeme ekler ya da aynı malzemeyi günceller.
+     * Eğer malzeme zaten varsa, updateMode parametresine göre miktar güncellenir.
      */
     @Transactional
-    public Inventory upsertInventoryItem(String userId, Long inventoryGroupId, Long ingredientId, Double quantity, String unit) {
+    public Inventory upsertInventoryItem(String userId, Long inventoryGroupId, Long ingredientId, Double quantity, String unit, UpdateMode updateMode) {
         InventoryGroup group = getRequiredGroup(userId, inventoryGroupId);
         Ingredient ingredient = getRequiredIngredient(ingredientId);
 
         return inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
                 .map(existing -> {
-                    existing.setQuantity(quantity);
+                    double currentQuantity = existing.getQuantity() != null ? existing.getQuantity() : 0.0;
+                    double finalQuantity;
+
+                    if (updateMode == UpdateMode.ADD) {
+                        finalQuantity = currentQuantity + quantity;
+                    } else if (updateMode == UpdateMode.SUBTRACT) {
+                        finalQuantity = Math.max(0, currentQuantity - quantity);
+                    } else {
+                        finalQuantity = quantity;
+                    }
+
+                    existing.setQuantity(finalQuantity);
                     existing.setUnit(normalizeUnit(unit));
                     return inventoryRepository.save(existing);
                 })
@@ -131,10 +147,18 @@ public class InventoryService {
     }
 
     /**
+     * Belirli bir lokasyona malzeme ekler ya da aynı malzemeyi günceller (SET modu ile).
+     */
+    @Transactional
+    public Inventory upsertInventoryItem(String userId, Long inventoryGroupId, Long ingredientId, Double quantity, String unit) {
+        return upsertInventoryItem(userId, inventoryGroupId, ingredientId, quantity, unit, UpdateMode.SET);
+    }
+
+    /**
      * Mevcut bir envanter kalemini günceller.
      */
     @Transactional
-    public Inventory updateInventoryItem(String userId, Long inventoryGroupId, Long itemId, Long ingredientId, Double quantity, String unit) {
+    public Inventory updateInventoryItem(String userId, Long inventoryGroupId, Long itemId, Long ingredientId, Double quantity, String unit, UpdateMode updateMode) {
         Inventory item = inventoryRepository.findByIdAndInventoryGroupUsersIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Envanter kalemi bulunamadı ID: " + itemId));
 
@@ -147,7 +171,19 @@ public class InventoryService {
         }
 
         item.setIngredient(getRequiredIngredient(ingredientId));
-        item.setQuantity(quantity);
+
+        Double finalQuantity;
+        double currentQuantity = item.getQuantity() != null ? item.getQuantity() : 0.0;
+
+        if (updateMode == UpdateMode.ADD) {
+            finalQuantity = currentQuantity + quantity;
+        } else if (updateMode == UpdateMode.SUBTRACT) {
+            finalQuantity = Math.max(0, currentQuantity - quantity);
+        } else {
+            finalQuantity = quantity;
+        }
+
+        item.setQuantity(finalQuantity);
         item.setUnit(normalizeUnit(unit));
         return inventoryRepository.save(item);
     }

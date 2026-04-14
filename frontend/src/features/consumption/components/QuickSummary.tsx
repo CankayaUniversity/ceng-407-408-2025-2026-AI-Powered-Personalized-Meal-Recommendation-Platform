@@ -39,15 +39,15 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
   memberSelectionsCount
 }) => {
   return (
-    <div className="mt-4 rounded-[2rem] meal-highlight-frame bg-white p-6 text-espresso-midnight shadow-brand-hero dark:bg-espresso-midnight dark:text-white">
+    <div className="mt-4 rounded-[2rem] meal-highlight-frame bg-card p-6 text-foreground shadow-brand-hero">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="meal-overline tracking-[0.18em] text-espresso-midnight/45 dark:text-white/45">Quick Summary</p>
-          <h3 className="meal-section-title mt-2 text-2xl text-espresso-midnight dark:text-white">
+          <p className="meal-overline tracking-[0.18em] text-foreground/45">Quick Summary</p>
+          <h3 className="meal-section-title mt-2 text-2xl text-foreground">
             {summaryTitle}
           </h3>
           {summarySubtitle ? (
-              <p className="mt-2 text-sm text-espresso-midnight/60 dark:text-white/60">{summarySubtitle}</p>
+              <p className="mt-2 text-sm text-foreground/60">{summarySubtitle}</p>
           ) : null}
         </div>
         <div className="rounded-full bg-terracotta/10 p-3 text-terracotta">
@@ -56,44 +56,44 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-5 py-5 dark:bg-white/5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Calories</p>
+        <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Calories</p>
           <p className="mt-2 font-serif text-3xl font-bold">{formatCalories(nutritionPreview.calories)}</p>
         </div>
-        <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-5 py-5 dark:bg-white/5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Protein</p>
+        <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Protein</p>
           <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.protein)}</p>
         </div>
-        <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-5 py-5 dark:bg-white/5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Carbs</p>
+        <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Carbs</p>
           <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.carbs)}</p>
         </div>
-        <div className="rounded-[1.5rem] bg-espresso-midnight/[0.03] px-5 py-5 dark:bg-white/5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-espresso-midnight/40 dark:text-white/40">Fat</p>
+        <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Fat</p>
           <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.fat)}</p>
         </div>
       </div>
 
       {memberSummaryRows.length > 0 && (
-        <div className="mt-8 overflow-hidden rounded-[1.8rem] border border-card-border bg-white/40 dark:bg-white/5">
+        <div className="mt-8 overflow-hidden rounded-[1.8rem] border border-card-border bg-foreground/[0.02]">
           <table className="w-full text-left text-sm">
-            <thead className="bg-espresso-midnight/[0.03] dark:bg-white/5">
+            <thead className="bg-foreground/[0.03]">
               <tr>
-                <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50">Kullanıcı</th>
-                <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50">Kalori</th>
-                <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50 text-right">Protein</th>
-                <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50 text-right">Karbonhidrat</th>
-                <th className="px-6 py-3 font-semibold text-espresso-midnight/50 dark:text-white/50 text-right">Yağ</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50">Kullanıcı</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50">Kalori</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Protein</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Karbonhidrat</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Yağ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-card-border/50 dark:divide-white/10">
+            <tbody className="divide-y divide-card-border/50">
               {memberSummaryRows.map((row, idx) => (
-                <tr key={idx} className="hover:bg-espresso-midnight/[0.01] dark:hover:bg-white/[0.01]">
-                  <td className="px-6 py-4 font-bold text-espresso-midnight dark:text-white">{row.name}</td>
-                  <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70">{formatCalories(row.calories)}</td>
-                  <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70 text-right font-mono">{formatMacro(row.protein)}</td>
-                  <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70 text-right font-mono">{formatMacro(row.carbs)}</td>
-                  <td className="px-6 py-4 text-espresso-midnight/70 dark:text-white/70 text-right font-mono">{formatMacro(row.fat)}</td>
+                <tr key={idx} className="hover:bg-foreground/[0.01]">
+                  <td className="px-6 py-4 font-bold text-foreground">{row.name}</td>
+                  <td className="px-6 py-4 text-foreground/70">{formatCalories(row.calories)}</td>
+                  <td className="px-6 py-4 text-foreground/70 text-right font-mono">{formatMacro(row.protein)}</td>
+                  <td className="px-6 py-4 text-foreground/70 text-right font-mono">{formatMacro(row.carbs)}</td>
+                  <td className="px-6 py-4 text-foreground/70 text-right font-mono">{formatMacro(row.fat)}</td>
                 </tr>
               ))}
             </tbody>
@@ -109,8 +109,8 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
           </div>
           <div className="flex flex-wrap gap-2">
             {inventoryDeductions.map((d, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1.5 text-xs shadow-sm dark:bg-white/5 border border-moss-sage/10">
-                <span className="font-semibold text-espresso-midnight/80 dark:text-white/80">{d.name}</span>
+              <div key={i} className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs shadow-sm border border-moss-sage/10">
+                <span className="font-semibold text-foreground/80">{d.name}</span>
                 <span className="text-moss-forest dark:text-moss-sage font-mono">{d.grams >= 1000 ? `${(d.grams/1000).toFixed(1)}kg` : `${Math.round(d.grams)}g`}</span>
               </div>
             ))}
@@ -119,7 +119,7 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
       )}
 
       <div className="mt-6 flex flex-col items-center justify-between gap-6 md:flex-row">
-        <div className="flex-1 rounded-[1.5rem] border border-card-border bg-espresso-midnight/[0.02] px-5 py-4 text-sm text-espresso-midnight/70 dark:border-white/10 dark:bg-white/5 dark:text-white/70">
+        <div className="flex-1 rounded-[1.5rem] border border-card-border bg-foreground/[0.02] px-5 py-4 text-sm text-foreground/70">
           {isOutside
               ? 'Outside / Other seçildi. Yalnızca günlük tüketim özeti güncellenecek.'
               : `${locationLabel(selectedGroup)} stokundan otomatik düşüm yapılacak.`}

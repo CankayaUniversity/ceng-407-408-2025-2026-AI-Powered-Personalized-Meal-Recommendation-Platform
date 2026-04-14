@@ -169,6 +169,17 @@ export const getInventoryService = (api: AxiosInstance) => ({
     } catch (error) {
       return mapAxiosError(error, 'Kullanıcı çıkarılamadı');
     }
+  },
+
+  getUnitConversions: async (ingredientId: number, amount: number, unit: string): Promise<any[]> => {
+    try {
+      const response = await api.get<any[]>(`/v1/ingredients/${ingredientId}/conversions`, {
+        params: { amount, unit }
+      });
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Birim dönüşümleri alınamadı');
+    }
   }
 });
 

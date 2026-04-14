@@ -24,7 +24,12 @@ public class InventoryItemRequest {
     private Double grams;
 
     /**
-     * Birim başına kabul edilen gram ağırlığı (kullanıcıya gösterilebilir).
+     * Güncelleme modu: ADD (ekle), SUBTRACT (çıkar), SET (belirle).
+     * Varsayılan olarak SET seçili kalabilir (geriye dönük uyumluluk).
      */
-    private Double unitGramWeight;
+    private UpdateMode updateMode = UpdateMode.SET;
+
+    public enum UpdateMode {
+        ADD, SUBTRACT, SET
+    }
 }

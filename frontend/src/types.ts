@@ -298,6 +298,7 @@ export interface InventoryItemRequest {
   unit: string;
   grams?: number;
   unitGramWeight?: number;
+  updateMode?: 'ADD' | 'SUBTRACT' | 'SET';
 }
 
 export interface RecipeRatingRequest {
@@ -328,4 +329,10 @@ export interface ApiErrorResponse {
   path?: string;
   validationErrors?: ApiValidationErrorItem[];
   fields?: Record<string, string>;
+}
+
+export interface UnitConversion {
+  unit: string;
+  amount: number;
+  displayName: string;
 }

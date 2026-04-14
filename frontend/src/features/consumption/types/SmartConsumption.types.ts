@@ -25,6 +25,7 @@ export type IngredientPortionOption = {
   id: string;
   label: string;
   grams: number;
+  amount?: number;
   portionSize: PortionSize;
   note: string;
 };
@@ -48,6 +49,7 @@ export type SelectedIngredientItem = {
   kind: 'INGREDIENT';
   ingredient: Ingredient;
   portion: IngredientPortionOption;
+  unit: string;
 };
 
 export type SelectedConsumptionItem = SelectedRecipeItem | SelectedIngredientItem;

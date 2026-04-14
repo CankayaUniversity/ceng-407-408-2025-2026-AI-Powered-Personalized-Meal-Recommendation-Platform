@@ -48,13 +48,13 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
   const resultCards = entryMode === 'RECIPE' ? recipeResults : ingredientResults;
 
   return (
-    <div className="meal-card rounded-[2rem] bg-white/65 p-5 shadow-sm dark:bg-white/5">
+    <div className="meal-card rounded-[2rem] bg-foreground/[0.02] p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="meal-overline tracking-[0.18em]">Entry Type</p>
-          <h3 className="meal-section-title mt-2 text-2xl">Tarif ya da malzeme sec</h3>
+          <p className="meal-overline text-foreground/40 tracking-[0.18em]">Entry Type</p>
+          <h3 className="meal-section-title mt-2 text-2xl text-foreground">Tarif ya da malzeme sec</h3>
         </div>
-        <div className="inline-flex rounded-full border border-card-border bg-white/70 p-1 dark:bg-white/5">
+        <div className="inline-flex rounded-full border border-card-border bg-card p-1">
           {ENTRY_MODE_OPTIONS.map((option) => {
             const Icon = option.icon;
             const selected = option.value === entryMode;
@@ -64,7 +64,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
                 type="button"
                 onClick={() => onEntryModeChange(option.value)}
                 className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                  selected ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20' : 'text-espresso-midnight/60 hover:text-terracotta dark:text-alabaster/60'
+                  selected ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20' : 'text-foreground/60 hover:text-terracotta'
                 }`}
               >
                 <Icon size={16} />
@@ -76,11 +76,11 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
       </div>
 
       <label className="mt-5 block space-y-2">
-        <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">
+        <span className="text-sm font-semibold text-foreground/80 px-2">
           {entryMode === 'RECIPE' ? 'Tarif ara' : 'Malzeme ara'}
         </span>
         <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-espresso-midnight/30 dark:text-alabaster/30" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30" />
           <input
             type="text"
             value={mQuery}
@@ -93,19 +93,19 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
               }
             }}
             placeholder={entryMode === 'RECIPE' ? 'Mercimek çorbası, menemen...' : 'Yoğurt, muz, badem...'}
-            className="base-input py-4 pl-12 pr-4"
+            className="base-input py-4 pl-12 pr-4 text-foreground"
           />
         </div>
       </label>
 
-      <div className="mt-4 flex items-center gap-2 text-xs text-espresso-midnight/45 dark:text-alabaster/45">
+      <div className="mt-4 flex items-center gap-2 text-xs text-foreground/40">
         {searching || isSearchStale ? <Loader2 size={14} className="animate-spin text-terracotta" /> : <Clock3 size={14} className="text-moss-sage" />}
         <span>{searching || isSearchStale ? 'Arama guncelleniyor...' : 'Asagidaki sonuclardan bir veya daha fazla sec.'}</span>
       </div>
 
       <div className="mt-4 grid gap-3">
         {(resultCards || []).length === 0 && mQuery.trim().length >= 2 && !searching ? (
-          <div className="meal-metric-card rounded-[1.5rem] border-dashed border-card-border px-4 py-6 text-sm text-espresso-midnight/55 dark:text-alabaster/55">
+          <div className="meal-metric-card rounded-[1.5rem] border-dashed border-card-border px-4 py-6 text-sm text-foreground/50 bg-transparent">
             Sonuç bulunamadı. Daha kısa veya farklı bir arama dene.
           </div>
         ) : null}
@@ -115,16 +115,16 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
             key={recipe.id}
             type="button"
             onClick={() => onRecipeSelect(recipe, userId)}
-            className="rounded-[1.7rem] border border-card-border bg-white/80 px-4 py-4 text-left transition-all hover:border-terracotta/30 dark:bg-white/5 dark:text-alabaster"
+            className="rounded-[1.7rem] border border-card-border bg-card px-4 py-4 text-left transition-all hover:border-terracotta/30 text-foreground"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-serif text-xl font-bold">{recipe.title}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">
+                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-foreground/40">
                   {formatCategoryLabel(recipe.category)}
                 </p>
               </div>
-              <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-forest dark:text-moss-sage">
+              <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-sage">
                 {formatCalories(recipe.totalCalories)}
               </div>
             </div>
@@ -136,16 +136,16 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
             key={ingredient.id}
             type="button"
             onClick={() => onIngredientSelect(ingredient, userId)}
-            className="rounded-[1.7rem] border border-card-border bg-white/80 px-4 py-4 text-left transition-all hover:border-terracotta/30 dark:bg-white/5 dark:text-alabaster"
+            className="rounded-[1.7rem] border border-card-border bg-card px-4 py-4 text-left transition-all hover:border-terracotta/30 text-foreground"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-serif text-xl font-bold">{ingredient.name}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-moss-forest/45 dark:text-moss-sage/55">
+                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-foreground/40">
                   {formatCategoryLabel(ingredient.category)}
                 </p>
               </div>
-              <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-forest dark:text-moss-sage">
+              <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-sage">
                 {formatCalories(ingredient.caloriesPer100g ?? ingredient.nutrition?.caloriesPer100g)}
               </div>
             </div>

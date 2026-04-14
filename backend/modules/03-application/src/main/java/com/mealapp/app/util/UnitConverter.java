@@ -13,6 +13,10 @@ import java.util.Map;
 public class UnitConverter {
 
     private static final Map<String, Double> UNIT_TO_GRAMS = new HashMap<>();
+    private static final List<String> VOLUME_UNITS = List.of(
+            "ml", "litre", "liter", "glass", "bardak", "tablespoon", "yemek kaşığı", 
+            "teaspoon", "tatlı kaşığı", "çay kaşığı", "cup", "bowl", "kase"
+    );
 
     static {
         // Standart birimler
@@ -23,8 +27,9 @@ public class UnitConverter {
         
         // Porsiyon bazlı birimler (Ortalama değerler - Fallback olarak kullanılır)
         UNIT_TO_GRAMS.put("slice", 30.0);       // Dilim (Örn: Ekmek)
-        UNIT_TO_GRAMS.put("cup", 240.0);        // Su bardağı
-        UNIT_TO_GRAMS.put("bowl", 350.0);       // Kase
+        UNIT_TO_GRAMS.put("cup", 240.0);        // Su bardağı (Hacimsel)
+        UNIT_TO_GRAMS.put("bowl", 350.0);       // Kase (Hacimsel)
+        UNIT_TO_GRAMS.put("kase", 350.0);
         UNIT_TO_GRAMS.put("piece", 50.0);       // Adet/Tane
         UNIT_TO_GRAMS.put("adet", 50.0);        // Adet
         UNIT_TO_GRAMS.put("tane", 50.0);        // Tane
@@ -36,7 +41,12 @@ public class UnitConverter {
         UNIT_TO_GRAMS.put("litre", 1000.0);     // Litre
         UNIT_TO_GRAMS.put("liter", 1000.0);     // Liter
         UNIT_TO_GRAMS.put("tablespoon", 15.0);  // Yemek kaşığı
+        UNIT_TO_GRAMS.put("yemek kaşığı", 15.0);
         UNIT_TO_GRAMS.put("teaspoon", 5.0);     // Tatlı/Çay kaşığı
+        UNIT_TO_GRAMS.put("tatlı kaşığı", 10.0);
+        UNIT_TO_GRAMS.put("çay kaşığı", 5.0);
+        UNIT_TO_GRAMS.put("glass", 200.0);      // Bardak
+        UNIT_TO_GRAMS.put("bardak", 200.0);     // Bardak
         UNIT_TO_GRAMS.put("clove", 5.0);        // Diş (Örn: Sarımsak)
         UNIT_TO_GRAMS.put("handful", 30.0);     // Avuç
         UNIT_TO_GRAMS.put("pinch", 1.0);        // Tutam
@@ -69,8 +79,8 @@ public class UnitConverter {
         // 2. Yoksa standart birim katsayısını kullanalım
         Double multiplier = UNIT_TO_GRAMS.getOrDefault(normalizedUnit, 1.0);
 
-        // Sıvı birimler (ml, litre) için malzeme yoğunluğunu uygulayalım
-        if (ingredient != null && (normalizedUnit.equals("ml") || normalizedUnit.equals("litre") || normalizedUnit.equals("liter"))) {
+        // Hacimsel birimler (ml, litre, bardak, kaşık, kase vb.) için malzeme yoğunluğunu uygulayalım
+        if (ingredient != null && isVolumeUnit(normalizedUnit)) {
             multiplier *= ingredient.getDensity();
         }
         
@@ -88,9 +98,18 @@ public class UnitConverter {
             }
             
             multiplier = UNIT_TO_GRAMS.getOrDefault(singularUnit, 1.0);
+            
+            // Tekil hali için yoğunluk kontrolü
+            if (ingredient != null && isVolumeUnit(singularUnit)) {
+                multiplier *= ingredient.getDensity();
+            }
         }
 
         return amount * multiplier;
+    }
+
+    private static boolean isVolumeUnit(String unit) {
+        return VOLUME_UNITS.contains(unit);
     }
 
     /**
@@ -119,8 +138,8 @@ public class UnitConverter {
 
         Double weight = UNIT_TO_GRAMS.get(normalizedUnit);
 
-        // Sıvı birimler için yoğunluk katsayısını uygula
-        if (weight != null && ingredient != null && (normalizedUnit.equals("ml") || normalizedUnit.equals("litre") || normalizedUnit.equals("liter"))) {
+        // Hacimsel birimler için yoğunluk katsayısını uygula
+        if (weight != null && ingredient != null && isVolumeUnit(normalizedUnit)) {
             weight *= ingredient.getDensity();
         }
 
@@ -137,6 +156,11 @@ public class UnitConverter {
             }
             
             weight = UNIT_TO_GRAMS.get(singularUnit);
+
+            // Tekil hali için yoğunluk kontrolü
+            if (weight != null && ingredient != null && isVolumeUnit(singularUnit)) {
+                weight *= ingredient.getDensity();
+            }
         }
         return weight != null ? weight : 0.0;
     }
@@ -175,9 +199,14 @@ public class UnitConverter {
         allWeights.put("package", 500.0);
         allWeights.put("slice", 30.0);
         allWeights.put("cup", 240.0);
+        allWeights.put("glass", 200.0);
+        allWeights.put("bardak", 200.0);
         allWeights.put("bowl", 350.0);
         allWeights.put("tablespoon", 15.0);
+        allWeights.put("yemek kaşığı", 15.0);
         allWeights.put("teaspoon", 5.0);
+        allWeights.put("tatlı kaşığı", 10.0);
+        allWeights.put("çay kaşığı", 5.0);
         allWeights.put("clove", 5.0);
         allWeights.put("handful", 30.0);
         allWeights.put("pinch", 1.0);
@@ -191,9 +220,9 @@ public class UnitConverter {
 
         // Sıvı birimler için yoğunluk katsayısını uygulayalım (Eğer malzeme verilmişse)
         if (ingredient != null && ingredient.getDensity() != 1.0) {
-            allWeights.computeIfPresent("ml", (k, v) -> v * ingredient.getDensity());
-            allWeights.computeIfPresent("litre", (k, v) -> v * ingredient.getDensity());
-            allWeights.computeIfPresent("liter", (k, v) -> v * ingredient.getDensity());
+            for (String volUnit : VOLUME_UNITS) {
+                allWeights.computeIfPresent(volUnit, (k, v) -> v * ingredient.getDensity());
+            }
         }
         
         return allWeights;

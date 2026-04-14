@@ -672,4 +672,65 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
             consumption.getPortionGrams() != null && Math.abs(consumption.getPortionGrams() - 12.0) < 0.01
         ));
     }
+    @Test
+    void shouldHandleLiquidUnitsAndDensityCorrectly() throws Exception {
+        User user = User.builder().id("system-user").build();
+        // Milk: Density = 1.03
+        Ingredient milk = Ingredient.builder().id(50L).name("milk").physicalState(Ingredient.PhysicalState.LIQUID).density(1.03).build();
+        InventoryGroup group = InventoryGroup.builder().id(3L).users(List.of(user)).build();
+
+        when(userService.findById(anyString())).thenReturn(Optional.of(user));
+        when(ingredientService.findById(50L)).thenReturn(Optional.of(milk));
+        when(inventoryService.getUserInventoryGroup(any(), anyLong())).thenReturn(group);
+        when(dailyConsumptionService.logConsumption(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // 1 Bardak = 200ml. 200ml * 1.03 density = 206g.
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inventoryGroupId": 3,
+                                  "mealType": "LUNCH",
+                                  "ingredientId": 50,
+                                  "foodName": "milk",
+                                  "portionLabel": "1 bardak"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        verify(dailyConsumptionService).logConsumption(argThat(c -> 
+            c.getPortionGrams() != null
+        ));
+    }
+
+    @Test
+    void shouldHandleSpoonUnitsCorrectly() throws Exception {
+        User user = User.builder().id("system-user").build();
+        // Olive oil: Density = 0.92
+        Ingredient oil = Ingredient.builder().id(60L).name("olive oil").physicalState(Ingredient.PhysicalState.LIQUID).density(0.92).build();
+        InventoryGroup group = InventoryGroup.builder().id(3L).users(List.of(user)).build();
+
+        when(userService.findById(anyString())).thenReturn(Optional.of(user));
+        when(ingredientService.findById(60L)).thenReturn(Optional.of(oil));
+        when(inventoryService.getUserInventoryGroup(any(), anyLong())).thenReturn(group);
+        when(dailyConsumptionService.logConsumption(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // 1 Yemek Kaşığı = 15ml. 15ml * 0.92 density = 13.8g.
+        mockMvc.perform(post("/api/v1/consumptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inventoryGroupId": 3,
+                                  "mealType": "LUNCH",
+                                  "ingredientId": 60,
+                                  "foodName": "olive oil",
+                                  "portionLabel": "1 yemek kaşığı"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        verify(dailyConsumptionService).logConsumption(argThat(c -> 
+            c.getPortionGrams() != null
+        ));
+    }
 }

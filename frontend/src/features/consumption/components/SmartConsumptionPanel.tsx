@@ -48,8 +48,6 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     memberSelections,
     searching,
     isSearchStale,
-    errorMessage,
-    setErrorMessage,
     submitSummary,
     setSubmitSummary,
     submitting,
@@ -70,7 +68,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     recipeDetailsMap,
     memberQueries,
     setMemberQueries,
-    memberResults
+    memberResults,
+    conversions
   } = useSmartConsumption(onConsumptionLogged);
 
   const activeMembers = useMemo(() => {
@@ -209,7 +208,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   if (!user) return null;
 
   return (
-    <section className="meal-card rounded-[2.75rem] shadow-brand-hero">
+    <section className="meal-card shadow-brand-hero">
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
@@ -217,29 +216,29 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               <Sparkles size={14} />
               Smart Consumption
             </div>
-            <h2 className="meal-section-title mt-4 text-4xl lg:text-5xl">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-espresso-midnight/60 dark:text-alabaster/60">
+            <h2 className="meal-section-title mt-4 text-4xl lg:text-5xl text-foreground">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-foreground-muted">
               Home veya Office seçersen tarifin içindeki malzemeler seçili lokasyondan otomatik düşülür. Outside / Other seçeneğinde ise yalnızca kalori ve makrolar loglanır.
             </p>
           </div>
 
           <div className="flex min-w-0 w-full flex-col gap-3 sm:max-w-[27rem]">
-            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between px-4 py-2 dark:bg-white/5">
+            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between px-4 py-2">
               <p className="meal-overline tracking-[0.18em]">Mode</p>
-              <p className="mt-1.5 line-clamp-2 min-h-[1.6rem] font-serif text-[1.02rem] font-bold text-espresso-midnight dark:text-alabaster">{activeEntryModeLabel}</p>
+              <p className="mt-1.5 line-clamp-2 min-h-[1.6rem] font-serif text-[1.02rem] font-bold text-foreground">{activeEntryModeLabel}</p>
             </div>
-            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between px-4 py-2 dark:bg-white/5">
+            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between px-4 py-2">
               <p className="meal-overline tracking-[0.18em]">Location</p>
-              <p className="mt-1.5 line-clamp-2 min-h-[1.6rem] font-serif text-[1.02rem] font-bold text-espresso-midnight dark:text-alabaster">{locationLabel(selectedGroup)}</p>
+              <p className="mt-1.5 line-clamp-2 min-h-[1.6rem] font-serif text-[1.02rem] font-bold text-foreground">{locationLabel(selectedGroup)}</p>
             </div>
-            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between border-terracotta/20 px-4 py-2 dark:bg-white/5">
+            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between border-terracotta/20 px-4 py-2">
               <p className="meal-overline tracking-[0.18em]">Selected</p>
               <p className="mt-1.5 line-clamp-2 min-h-[1.6rem] font-serif text-[1.02rem] font-bold text-terracotta">{selectionLabel}</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-[2.5rem] bg-white/40 p-6 backdrop-blur-sm dark:bg-white/[0.02]">
+        <div className="rounded-[2.5rem] bg-foreground/[0.02] p-6 backdrop-blur-sm">
           <LocationAndMealSelector 
             inventoryGroups={inventoryGroups}
             selectedLocationId={selectedLocationId}
@@ -267,11 +266,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
         <div className="mt-2 grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
           <SearchSection 
             entryMode={entryMode}
-            onEntryModeChange={(mode) => { setEntryMode(mode); setErrorMessage(null); setSubmitSummary(null); }}
+            onEntryModeChange={(mode) => { setEntryMode(mode); setSubmitSummary(null); }}
             searchQuery={searchQuery}
-            onSearchQueryChange={(q) => { setSearchQuery(q); setErrorMessage(null); setSubmitSummary(null); }}
+            onSearchQueryChange={(q) => { setSearchQuery(q); setSubmitSummary(null); }}
             ingredientSearchQuery={ingredientSearchQuery}
-            onIngredientSearchQueryChange={(q) => { setIngredientSearchQuery(q); setErrorMessage(null); setSubmitSummary(null); }}
+            onIngredientSearchQueryChange={(q) => { setIngredientSearchQuery(q); setSubmitSummary(null); }}
             searching={searching}
             isSearchStale={isSearchStale}
             recipeResults={recipeResults}
@@ -293,11 +292,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               manualInputs={manualInputs}
               toggleManualInput={toggleManualInput}
               onManualPortionUpdate={(key, ing, qty, unit) => handleManualPortionUpdate(key, ing, qty, unit)}
+              conversions={conversions}
             />
-
-            {errorMessage && (
-              <div className="rounded-[1.8rem] border border-terracotta/20 bg-terracotta/5 px-4 py-4 text-sm font-bold text-terracotta">{errorMessage}</div>
-            )}
 
             {submitSummary && successTitle && (
               <div className="rounded-[1.8rem] border border-moss-sage/30 bg-moss-sage/10 px-4 py-4 text-moss-forest">
@@ -330,7 +326,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       {member?.firstName?.charAt(0) || member?.name?.charAt(0) || '?'}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-espresso-midnight dark:text-alabaster">
+                      <h3 className="text-xl font-bold text-foreground">
                         {member?.firstName || member?.name} için Seçim
                       </h3>
                     </div>
@@ -391,16 +387,13 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       manualInputs={manualInputs}
                       toggleManualInput={toggleManualInput}
                       onManualPortionUpdate={(key, ing, qty, unit, uid) => handleManualPortionUpdate(key, ing, qty, unit, uid)}
+                      conversions={conversions}
                     />
                   </div>
                 </div>
               );
             })}
             
-            {errorMessage && (
-              <div className="rounded-[1.8rem] border border-terracotta/20 bg-terracotta/5 px-4 py-4 text-sm font-bold text-terracotta">{errorMessage}</div>
-            )}
-
             {submitSummary && successTitle && (
               <div className="rounded-[1.8rem] border border-moss-sage/30 bg-moss-sage/10 px-4 py-4 text-moss-forest">
                 <div className="flex items-start gap-3">

@@ -3,6 +3,7 @@ import { useAuth } from '../../../infrastructure/auth/AuthContext';
 import { useInventoryService } from '../../../services/inventoryService';
 import { useRecipeService } from '../../../services/recipeService';
 import { useConsumptionService } from '../../../services/consumptionService';
+import { useToast } from '../../../shared/hooks/useToast';
 import {
   type EntryMode,
   type SelectedConsumptionItem,
@@ -30,6 +31,7 @@ import {
 
 export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const { authenticated, user } = useAuth();
+  const { showToast } = useToast();
   const inventoryService = useInventoryService();
   const recipeService = useRecipeService();
   const consumptionService = useConsumptionService();
@@ -57,6 +59,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const [submitting, setSubmitting] = useState(false);
   const [recipeDetailsMap, setRecipeDetailsMap] = useState<Record<number, Recipe>>({});
   const [selectedMembers, setSelectedMembersForLocation] = useState<Record<string, { [userId: string]: boolean }>>({});
+  const [conversions, setConversions] = useState<Record<string, { list: any[]; loading: boolean }>>({});
 
   const isOutside = selectedLocationId === OUTSIDE_LOCATION;
   const isSearchStale = searchQuery.trim() !== deferredQuery;
@@ -111,9 +114,9 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       const groups = await inventoryService.getInventoryGroups();
       setInventoryGroups(groups);
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'Lokasyon bilgileri yüklenemedi.'));
+      showToast(getErrorMessage(error, 'Lokasyon bilgileri yüklenemedi.'), 'error');
     }
-  }, [inventoryService]);
+  }, [inventoryService, showToast]);
 
   // --- Effects ---
   useEffect(() => {
@@ -285,7 +288,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
         }));
       } catch (error) {
         if (!active) return;
-        setErrorMessage(getErrorMessage(error, 'Arama sonuçları yüklenemedi.'));
+        showToast(getErrorMessage(error, 'Arama sonuçları yüklenemedi.'), 'error');
       }
     };
 
@@ -346,7 +349,6 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       setIngredientSearchQuery('');
     }
 
-    setErrorMessage(null);
     setSubmitSummary(null);
   };
 
@@ -361,14 +363,21 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       key: targetUserId ? `${targetUserId}-${key}` : key,
       kind: 'INGREDIENT',
       ingredient,
-      portion: INGREDIENT_PORTION_OPTIONS[1]
+      portion: INGREDIENT_PORTION_OPTIONS[1],
+      unit: ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM'
     };
 
     if (targetUserId) {
       setMemberSelections((prev) => {
         const userItems = prev[targetUserId] || [];
         if (userItems.some((i) => i.kind === 'INGREDIENT' && i.ingredient.id === ingredient.id)) return prev;
-        return { ...prev, [targetUserId]: [...userItems, item] };
+        
+        const newItems = [...userItems, item];
+        // Fetch conversions for the new item
+        const amount = item.portion.amount || (item.portion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[item.unit.toLowerCase()] || unitWeights[item.unit.toLowerCase()] || 1));
+        void fetchConversions(item.key, item.ingredient.id, amount, item.unit);
+        
+        return { ...prev, [targetUserId]: newItems };
       });
       setMemberQueries(prev => ({
         ...prev,
@@ -384,13 +393,16 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     } else {
       setSelectedItems((current) => {
         if (current.some((i) => i.kind === 'INGREDIENT' && i.ingredient.id === ingredient.id)) return current;
+        
+        const amount = item.portion.amount || (item.portion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[item.unit.toLowerCase()] || unitWeights[item.unit.toLowerCase()] || 1));
+        void fetchConversions(item.key, item.ingredient.id, amount, item.unit);
+        
         return [...current, item];
       });
       setSearchQuery('');
       setIngredientSearchQuery('');
     }
 
-    setErrorMessage(null);
     setSubmitSummary(null);
   };
 
@@ -429,23 +441,53 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     setSubmitSummary(null);
   };
 
+  const fetchConversions = useCallback(async (itemKey: string, ingredientId: number, amount: number, unit: string) => {
+    if (!ingredientId || !amount || !unit) return;
+
+    setConversions(prev => ({
+        ...prev,
+        [itemKey]: { list: prev[itemKey]?.list || [], loading: true }
+    }));
+
+    try {
+        const results = await inventoryService.getUnitConversions(ingredientId, amount, unit);
+        setConversions(prev => ({
+            ...prev,
+            [itemKey]: { list: results.filter((c: any) => c.unit.toLowerCase() !== unit.toLowerCase()), loading: false }
+        }));
+    } catch (error) {
+        console.error('Dönüşümler alınamadı:', error);
+        setConversions(prev => ({
+            ...prev,
+            [itemKey]: { list: [], loading: false }
+        }));
+    }
+  }, [inventoryService]);
+
   const handleIngredientPortionChange = (itemKey: string, nextPortion: IngredientPortionOption, userId?: string) => {
     if (userId) {
-      setMemberSelections((prev: any) => ({
-        ...prev,
-        [userId]: (prev[userId] || []).map((item: any) =>
-          item.key === itemKey && item.kind === 'INGREDIENT'
-            ? { ...item, portion: nextPortion }
-            : item
-        )
-      }));
+      setMemberSelections((prev: any) => {
+        const userItems = prev[userId] || [];
+        const updatedItems = userItems.map((item: any) => {
+            if (item.key === itemKey && item.kind === 'INGREDIENT') {
+                const amount = typeof nextPortion === 'string' ? parseFloat(nextPortion) : (nextPortion.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[item.unit.toLowerCase()] || unitWeights[item.unit.toLowerCase()] || 1)));
+                fetchConversions(itemKey, item.ingredient.id, amount, item.unit);
+                return { ...item, portion: nextPortion };
+            }
+            return item;
+        });
+        return { ...prev, [userId]: updatedItems };
+      });
     } else {
       setSelectedItems((current) =>
-        current.map((item) =>
-          item.key === itemKey && item.kind === 'INGREDIENT'
-            ? { ...item, portion: nextPortion }
-            : item
-        )
+        current.map((item) => {
+            if (item.key === itemKey && item.kind === 'INGREDIENT') {
+                const amount = typeof nextPortion === 'string' ? parseFloat(nextPortion) : (nextPortion.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[item.unit.toLowerCase()] || unitWeights[item.unit.toLowerCase()] || 1)));
+                fetchConversions(itemKey, item.ingredient.id, amount, item.unit);
+                return { ...item, portion: nextPortion };
+            }
+            return item;
+        })
       );
     }
     setSubmitSummary(null);
@@ -473,12 +515,11 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     }, 0);
 
     if (totalSelectedCount === 0) {
-      setErrorMessage('Önce en az bir tarif veya malzeme seç.');
+      showToast('Önce en az bir tarif veya malzeme seç.', 'info');
       return;
     }
 
     setSubmitting(true);
-    setErrorMessage(null);
     setSubmitSummary(null);
 
     try {
@@ -508,7 +549,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       }
 
       if (membersToLog.length === 0) {
-          setErrorMessage('Önce en az bir tarif veya malzeme seç.');
+          showToast('Önce en az bir tarif veya malzeme seç.', 'info');
           setSubmitting(false);
           return;
       }
@@ -535,10 +576,11 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       setSearchQuery('');
       setIngredientSearchQuery('');
       setSubmitSummary({ responses: [response], failedNames: [] });
+      showToast('Tüketim başarıyla kaydedildi.', 'success');
       if (onConsumptionLogged) onConsumptionLogged();
       
     } catch (error) {
-      setErrorMessage(getErrorMessage(error, 'Beklenmedik bir hata oluştu.'));
+      showToast(getErrorMessage(error, 'Beklenmedik bir hata oluştu.'), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -553,13 +595,27 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     const commonBase = ['GRAM', 'ML', 'KG', 'LITRE', 'L'];
 
     let base = commonBase;
-    if (physicalState === 'SOLID') base = solidBase;
-    if (physicalState === 'LIQUID') base = liquidBase;
+    const allowedQuickUnits: string[] = [];
+    const forbiddenUnits: string[] = [];
+    
+    if (physicalState === 'LIQUID') {
+      base = liquidBase;
+      allowedQuickUnits.push('BARDAK', 'YEMEK KAŞIĞI', 'TATLI KAŞIĞI', 'ÇAY KAŞIĞI', 'ML');
+      forbiddenUnits.push('GRAM', 'KG', 'ADET', 'PAKET', 'DILIM');
+    } else {
+      // SOLID veya SEMI_SOLID veya null (varsayılan SOLID gibi davran)
+      base = solidBase;
+      allowedQuickUnits.push('ADET', 'PAKET', 'DILIM', 'CUP', 'GRAM');
+      forbiddenUnits.push('ML', 'LITRE', 'L');
+      
+      if (physicalState === 'SEMI_SOLID') {
+          allowedQuickUnits.push('KASE', 'BARDAK');
+      }
+    }
 
     const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
     const extra = Object.keys(weights).map((u: any) => u.toUpperCase());
-    const allUnits = Array.from(new Set([...base, ...extra]));
-    const allowedQuickUnits = ['PAKET', 'PORSIYON', 'DILIM', 'CUP', 'ADET', 'KASE', 'BARDAK'];
+    const allUnits = Array.from(new Set([...base, ...extra])).filter(u => !forbiddenUnits.includes(u));
 
     const quick = allUnits
       .filter(u => allowedQuickUnits.includes(u))
@@ -628,6 +684,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     getIngredientUnits,
     unitWeights,
     ingredientSpecificWeights,
-    recipeDetailsMap
+    recipeDetailsMap,
+    conversions
   };
 };

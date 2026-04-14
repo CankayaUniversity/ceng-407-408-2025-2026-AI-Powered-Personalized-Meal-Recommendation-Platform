@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     ChefHat, LayoutDashboard, Utensils, User as UserIcon,
     LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
-    Bell, Settings, Check, X
+    Bell, Settings, Check, X, Calculator
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
@@ -16,6 +16,8 @@ import { useToast } from '../hooks/useToast';
 import { UIProvider, useUI } from '../../infrastructure/ui/UIContext';
 import ConsumptionModal from '../../features/consumption/components/ConsumptionModal';
 import SettingsModal from '../../features/profile/SettingsModal';
+import UnitConverterModal from '../components/UnitConverterModal';
+
 const formatTimeAgo = (date: Date, locale: string) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -38,7 +40,7 @@ const formatTimeAgo = (date: Date, locale: string) => {
 const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { authenticated, user, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
-    const { openConsumption, openSettings } = useUI(); // UIContext'ten açma fonksiyonunu aldık
+    const { openConsumption, openSettings, openUnitConverter } = useUI(); // UIContext'ten açma fonksiyonunu aldık
     const location = useLocation();
     const { t, i18n } = useTranslation();
     const notificationService = useNotificationService();
@@ -220,13 +222,23 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
                     {/* --- YENİ: ÖĞÜN EKLE BUTONU (Global Trigger) --- */}
                     {authenticated && (
-                        <button
-                            onClick={openConsumption}
-                            className="mr-auto flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-terracotta/20 bg-terracotta/5 hover:bg-terracotta hover:text-white transition-all text-terracotta font-bold text-xs shadow-sm hover:shadow-terracotta/20 active:scale-95"
-                        >
-                            <Plus size={16} strokeWidth={3} />
-                            <span className="hidden md:block tracking-wide">ÖĞÜN EKLE</span>
-                        </button>
+                        <div className="mr-auto flex items-center gap-2">
+                            <button
+                                onClick={openConsumption}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-terracotta/20 bg-terracotta/5 hover:bg-terracotta hover:text-white transition-all text-terracotta font-bold text-xs shadow-sm hover:shadow-terracotta/20 active:scale-95"
+                            >
+                                <Plus size={16} strokeWidth={3} />
+                                <span className="hidden md:block tracking-wide">ÖĞÜN EKLE</span>
+                            </button>
+                            <button
+                                onClick={openUnitConverter}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-espresso-midnight/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-espresso-midnight dark:hover:bg-white hover:text-white dark:hover:text-espresso-midnight transition-all text-espresso-midnight dark:text-white font-bold text-xs shadow-sm active:scale-95"
+                                title="Birim Dönüştürücü"
+                            >
+                                <Calculator size={16} />
+                                <span className="hidden lg:block tracking-wide uppercase">Birimler</span>
+                            </button>
+                        </div>
                     )}
 
                     <div className="flex items-center p-1 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
@@ -415,6 +427,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             {/* PANEL BURADA GİZLİ BEKLİYOR */}
             <ConsumptionModal />
             <SettingsModal />
+            <UnitConverterModal />
         </div>
     );
 };

@@ -52,13 +52,15 @@ public class InventoryMapper {
     }
 
     public InventoryItemResponse toItemResponse(Inventory item) {
-        Double grams = item.getQuantity();
+        Double displayQuantity = item.getQuantity();
         String unit = item.getUnit();
-        Double displayQuantity = grams;
+        Double grams = displayQuantity;
 
-        // Katı malzeme ise ve birimi 'g' ise gram olarak göster
-        // Sıvı malzeme ise ve birimi 'ml' ise ml olarak göster
-        // Display quantity artık her zaman grams/ml değerini yansıtacak çünkü envanterde öyle saklıyoruz
+        // Eğer sıvı ise, quantity alanında hacim (ml) saklıyoruz, grams alanına yoğunlukla çarparak kütleyi (g) yazalım.
+        // Eğer katı ise, quantity ve grams zaten aynı (g).
+        if (item.getIngredient() != null && item.getIngredient().getPhysicalState() == com.mealapp.domain.recipe.entity.Ingredient.PhysicalState.LIQUID) {
+            grams = displayQuantity * item.getIngredient().getDensity();
+        }
         
         return InventoryItemResponse.builder()
                 .id(item.getId())

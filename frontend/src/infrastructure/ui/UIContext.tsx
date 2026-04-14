@@ -7,6 +7,9 @@ type UIContextType = {
     isSettingsOpen: boolean;
     openSettings: () => void;
     closeSettings: () => void;
+    isUnitConverterOpen: boolean;
+    openUnitConverter: () => void;
+    closeUnitConverter: () => void;
 };
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -20,10 +23,15 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const openSettings = () => setIsSettingsOpen(true);
     const closeSettings = () => setIsSettingsOpen(false);
 
+    const [isUnitConverterOpen, setIsUnitConverterOpen] = useState(false);
+    const openUnitConverter = () => setIsUnitConverterOpen(true);
+    const closeUnitConverter = () => setIsUnitConverterOpen(false);
+
     return (
         <UIContext.Provider value={{ 
             isConsumptionOpen, openConsumption, closeConsumption,
-            isSettingsOpen, openSettings, closeSettings 
+            isSettingsOpen, openSettings, closeSettings,
+            isUnitConverterOpen, openUnitConverter, closeUnitConverter
         }}>
             {children}
         </UIContext.Provider>

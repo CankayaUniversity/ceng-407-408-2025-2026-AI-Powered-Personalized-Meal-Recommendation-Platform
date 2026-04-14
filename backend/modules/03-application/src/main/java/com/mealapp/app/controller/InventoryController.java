@@ -77,16 +77,22 @@ public class InventoryController {
             grams = UnitConverter.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
         }
 
-        // Katı ise 'g', sıvı ise 'ml' birimine sabitle
-        String standardUnit = ingredient.getPhysicalState() == Ingredient.PhysicalState.LIQUID ? "ml" : "g";
+        // Katı ise 'g', sıvı ise 'ml' birimine sabitle. 
+        // ML için 'quantity' alanında hacim bilgisini (grams / density) saklayacağız.
+        boolean isLiquid = ingredient.getPhysicalState() == Ingredient.PhysicalState.LIQUID;
+        String standardUnit = isLiquid ? "ml" : "g";
+        Double finalQuantity = isLiquid 
+                ? grams / ingredient.getDensity() 
+                : grams;
 
         return inventoryMapper.toItemResponse(
                 inventoryService.upsertInventoryItem(
                         requireAuthenticatedUserId(jwt),
                         groupId,
                         request.getIngredientId(),
-                        grams,
-                        standardUnit
+                        finalQuantity,
+                        standardUnit,
+                        InventoryService.UpdateMode.valueOf(request.getUpdateMode().name())
                 )
         );
     }
@@ -107,8 +113,13 @@ public class InventoryController {
             grams = UnitConverter.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
         }
 
-        // Katı ise 'g', sıvı ise 'ml' birimine sabitle
-        String standardUnit = ingredient.getPhysicalState() == Ingredient.PhysicalState.LIQUID ? "ml" : "g";
+        // Katı ise 'g', sıvı ise 'ml' birimine sabitle.
+        // ML için 'quantity' alanında hacim bilgisini (grams / density) saklayacağız.
+        boolean isLiquid = ingredient.getPhysicalState() == Ingredient.PhysicalState.LIQUID;
+        String standardUnit = isLiquid ? "ml" : "g";
+        Double finalQuantity = isLiquid 
+                ? grams / ingredient.getDensity() 
+                : grams;
 
         return inventoryMapper.toItemResponse(
                 inventoryService.updateInventoryItem(
@@ -116,8 +127,9 @@ public class InventoryController {
                         groupId,
                         itemId,
                         request.getIngredientId(),
-                        grams,
-                        standardUnit
+                        finalQuantity,
+                        standardUnit,
+                        InventoryService.UpdateMode.valueOf(request.getUpdateMode().name())
                 )
         );
     }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -57,7 +58,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .build();
 
         when(ingredientRepository.findById(1L)).thenReturn(Optional.of(ingredient));
-        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString()))
+        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString(), any()))
                 .thenReturn(inventory);
 
         // Test: 2 adet domates = 2 * 150 = 300g
@@ -77,7 +78,8 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(1L),
                 eq(300.0), // 2 * 150
-                eq("g") // Artık 'adet' değil 'g' bekliyoruz
+                eq("g"), // Artık 'adet' değil 'g' bekliyoruz
+                eq(InventoryService.UpdateMode.SET)
         );
     }
 
@@ -92,7 +94,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .build();
 
         when(ingredientRepository.findById(2L)).thenReturn(Optional.of(ingredient));
-        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString()))
+        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString(), any()))
                 .thenReturn(inventory);
 
         // Test: 5 paket = 5 * 500 = 2500g
@@ -112,7 +114,8 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(2L),
                 eq(2500.0), // 5 * 500
-                eq("g") // Artık 'paket' değil 'g' bekliyoruz
+                eq("g"), // Artık 'paket' değil 'g' bekliyoruz
+                eq(InventoryService.UpdateMode.SET)
         );
     }
 
@@ -133,7 +136,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .build();
 
         when(ingredientRepository.findById(3L)).thenReturn(Optional.of(milk));
-        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString()))
+        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString(), any()))
                 .thenReturn(inventory);
 
         // Test: 1000 ml süt = 1000 * 1.03 = 1030g
@@ -153,7 +156,8 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(1L),
                 eq(3L),
                 eq(1030.0), // 1000 * 1.03
-                eq("g") // Süt katı (PhysicalState.SOLID default) kabul edildiği için 'g'
+                eq("g"), // Süt katı (PhysicalState.SOLID default) kabul edildiği için 'g'
+                eq(InventoryService.UpdateMode.SET)
         );
     }
 
@@ -168,7 +172,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .build();
 
         when(ingredientRepository.findById(1L)).thenReturn(Optional.of(ingredient));
-        when(inventoryService.updateInventoryItem(anyString(), anyLong(), anyLong(), anyLong(), anyDouble(), anyString()))
+        when(inventoryService.updateInventoryItem(anyString(), anyLong(), anyLong(), anyLong(), anyDouble(), anyString(), any()))
                 .thenReturn(inventory);
 
         mockMvc.perform(put("/api/v1/inventory-groups/1/items/10")
@@ -188,7 +192,45 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq(10L),
                 eq(1L),
                 eq(500.0),
-                eq("g")
+                eq("g"),
+                eq(InventoryService.UpdateMode.SET)
+        );
+    }
+
+    @Test
+    void shouldUpdateInventoryItemWithAddMode() throws Exception {
+        Ingredient ingredient = Ingredient.builder().id(1L).name("Domates").build();
+        Inventory inventory = Inventory.builder()
+                .id(10L)
+                .ingredient(ingredient)
+                .quantity(2500.0)
+                .unit("g")
+                .build();
+
+        when(ingredientRepository.findById(1L)).thenReturn(Optional.of(ingredient));
+        when(inventoryService.updateInventoryItem(anyString(), anyLong(), anyLong(), anyLong(), anyDouble(), anyString(), any()))
+                .thenReturn(inventory);
+
+        mockMvc.perform(put("/api/v1/inventory-groups/1/items/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "ingredientId": 1,
+                                  "quantity": 500,
+                                  "unit": "g",
+                                  "updateMode": "ADD"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        verify(inventoryService).updateInventoryItem(
+                eq("system-user"),
+                eq(1L),
+                eq(10L),
+                eq(1L),
+                eq(500.0),
+                eq("g"),
+                eq(InventoryService.UpdateMode.ADD)
         );
     }
     @Test
@@ -207,7 +249,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .build();
 
         when(ingredientRepository.findById(1L)).thenReturn(Optional.of(ingredient));
-        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString()))
+        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString(), any()))
                 .thenReturn(inventory);
 
         mockMvc.perform(post("/api/v1/inventory-groups/3/items")
@@ -225,8 +267,45 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq("system-user"),
                 eq(3L),
                 eq(1L),
-                eq(476.3), // 433.0 * 1.1
-                eq("ml") // Liquid olduğu için ml
+                eq(433.0), // Artık hacim (ml) bazlı saklıyoruz, kütle (476.3) değil.
+                eq("ml"), // Liquid olduğu için ml
+                eq(InventoryService.UpdateMode.SET)
+        );
+    }
+
+    @Test
+    void shouldCreateInventoryItemWithAddMode() throws Exception {
+        Ingredient ingredient = Ingredient.builder().id(1L).name("Domates").build();
+        Inventory inventory = Inventory.builder()
+                .id(10L)
+                .ingredient(ingredient)
+                .quantity(1000.0)
+                .unit("g")
+                .build();
+
+        when(ingredientRepository.findById(1L)).thenReturn(Optional.of(ingredient));
+        when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString(), any()))
+                .thenReturn(inventory);
+
+        mockMvc.perform(post("/api/v1/inventory-groups/1/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "ingredientId": 1,
+                                  "quantity": 500,
+                                  "unit": "g",
+                                  "updateMode": "ADD"
+                                }
+                                """))
+                .andExpect(status().isCreated());
+
+        verify(inventoryService).upsertInventoryItem(
+                eq("system-user"),
+                eq(1L),
+                eq(1L),
+                eq(500.0),
+                eq("g"),
+                eq(InventoryService.UpdateMode.ADD)
         );
     }
 }

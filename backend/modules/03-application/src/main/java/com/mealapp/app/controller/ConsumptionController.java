@@ -232,15 +232,18 @@ public class ConsumptionController {
     private Double parseGramsFromLabel(String label, Ingredient ingredient) {
         if (label == null || label.isBlank()) return null;
         String lowerLabel = label.toLowerCase().trim();
-        if (lowerLabel.contains(" ")) {
-            try {
-                int lastSpace = lowerLabel.lastIndexOf(" ");
-                String valPart = lowerLabel.substring(0, lastSpace).trim();
-                String unit = lowerLabel.substring(lastSpace + 1).trim();
-                Double val = Double.parseDouble(valPart);
+        
+        // Önce sayıyı ve birimi düzgünce ayıralım (Örn: "1 yemek kaşığı")
+        // Sayı başta olmalı, geri kalanı birim olmalı.
+        try {
+            String[] parts = lowerLabel.split(" ", 2);
+            if (parts.length == 2) {
+                Double val = Double.parseDouble(parts[0].trim());
+                String unit = parts[1].trim();
                 return UnitConverter.convertToGrams(val, unit, ingredient);
-            } catch (Exception ignored) {}
-        }
+            }
+        } catch (Exception ignored) {}
+        
         return null;
     }
 
