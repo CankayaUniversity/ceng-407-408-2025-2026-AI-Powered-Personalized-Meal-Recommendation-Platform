@@ -200,8 +200,11 @@ public class ConsumptionController {
 
     /**
      * Günlük tüketim kaydı oluşturur.
+     * Toplu üye girişlerinde tüm kayıtlar tek atomik transaction içinde işlenir;
+     * herhangi bir üyede hata oluşursa tüm kayıtlar geri alınır.
      */
     @PostMapping
+    @Transactional
     public ConsumptionResponse log(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ConsumptionRequest request) {
         String authenticatedUserId = requireAuthenticatedUserId(jwt, request.getUserId());
         
