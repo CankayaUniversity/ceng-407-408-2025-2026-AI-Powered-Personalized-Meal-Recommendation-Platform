@@ -39,7 +39,7 @@ public class IngredientController {
             @RequestParam Double amount,
             @RequestParam String unit
     ) {
-        Ingredient ingredient = ingredientService.findById(id)
+        Ingredient ingredient = ingredientService.findByIdWithUnits(id)
                 .orElseThrow(() -> new RuntimeException("Ingredient not found"));
 
         Double grams = UnitConverter.convertToGrams(amount, unit, ingredient);
@@ -116,7 +116,7 @@ public class IngredientController {
     public Map<String, Double> getAllUnitWeights(@RequestParam(required = false) Long ingredientId) {
         Ingredient ingredient = null;
         if (ingredientId != null) {
-            ingredient = ingredientService.findById(ingredientId).orElse(null);
+            ingredient = ingredientService.findByIdWithUnits(ingredientId).orElse(null);
         }
         return UnitConverter.getAllUnitWeights(ingredient);
     }

@@ -137,7 +137,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
                 .build();
 
         when(userService.findById("system-user")).thenReturn(Optional.of(user));
-        when(ingredientService.findById(3L)).thenReturn(Optional.of(ingredient));
+        when(ingredientService.findByIdWithUnits(3L)).thenReturn(Optional.of(ingredient));
         when(dailyConsumptionService.logConsumption(argThat(consumption ->
                 consumption.getInventoryGroup() == null
                         && consumption.getIngredient() != null
@@ -233,7 +233,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
 
         when(userService.findById("system-user")).thenReturn(Optional.of(me));
         when(userService.findById("friend-user")).thenReturn(Optional.of(friend));
-        when(ingredientService.findById(3L)).thenReturn(Optional.of(ingredient));
+        when(ingredientService.findByIdWithUnits(3L)).thenReturn(Optional.of(ingredient));
 
         DailyConsumption savedMe = DailyConsumption.builder().id(101L).user(me).foodName("Banana").build();
         DailyConsumption savedFriend = DailyConsumption.builder().id(102L).user(friend).foodName("Banana").build();
@@ -316,7 +316,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
             return Optional.empty();
         });
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(ingredientService.findById(3L)).thenReturn(Optional.of(ingredient));
+        when(ingredientService.findByIdWithUnits(3L)).thenReturn(Optional.of(ingredient));
         when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenReturn(DailyConsumption.builder().id(101L).user(me).foodName("Banana").build());
 
         mockMvc.perform(post("/api/v1/consumptions")
@@ -352,7 +352,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
 
         when(userService.findById("system-user")).thenReturn(Optional.of(me));
         when(userService.findById("friend-user")).thenReturn(Optional.of(friend));
-        when(ingredientService.findById(3L)).thenReturn(Optional.of(ingredient));
+        when(ingredientService.findByIdWithUnits(3L)).thenReturn(Optional.of(ingredient));
 
         // Mock service: Her çağrıda farklı bir nesne dönsün ve içindeki değerler girişten (portionGrams) türesin
         when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenAnswer(invocation -> {
@@ -575,8 +575,8 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         when(userService.findById("system-user")).thenReturn(Optional.of(berk));
         when(userService.findById("b055b4bf-33c9-4d2e-812a-961b829a6676")).thenReturn(Optional.of(berk));
         when(userService.findById("b29cd78c-8450-4fb9-96a0-f667f336445d")).thenReturn(Optional.of(ufuk));
-        when(ingredientService.findById(98L)).thenReturn(Optional.of(sauce));
-        when(ingredientService.findById(127L)).thenReturn(Optional.of(nuts));
+        when(ingredientService.findByIdWithUnits(98L)).thenReturn(Optional.of(sauce));
+        when(ingredientService.findByIdWithUnits(127L)).thenReturn(Optional.of(nuts));
         when(inventoryService.getUserInventoryGroup(any(), eq(3L))).thenReturn(group);
         when(dailyConsumptionService.logConsumption(any(), anyBoolean())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -641,7 +641,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         group.setUsers(new java.util.ArrayList<>(List.of(user)));
 
         when(userService.findById("system-user")).thenReturn(Optional.of(user));
-        when(ingredientService.findById(98L)).thenReturn(Optional.of(sauce));
+        when(ingredientService.findByIdWithUnits(98L)).thenReturn(Optional.of(sauce));
         // Also mock recipeService just in case
         when(recipeService.findById(any())).thenReturn(Optional.empty());
         when(inventoryService.getUserInventoryGroup(any(), eq(3L))).thenReturn(group);
@@ -679,7 +679,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         InventoryGroup group = InventoryGroup.builder().id(3L).users(List.of(user)).build();
 
         when(userService.findById(anyString())).thenReturn(Optional.of(user));
-        when(ingredientService.findById(50L)).thenReturn(Optional.of(milk));
+        when(ingredientService.findByIdWithUnits(50L)).thenReturn(Optional.of(milk));
         when(inventoryService.getUserInventoryGroup(any(), anyLong())).thenReturn(group);
         when(dailyConsumptionService.logConsumption(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -710,7 +710,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         InventoryGroup group = InventoryGroup.builder().id(3L).users(List.of(user)).build();
 
         when(userService.findById(anyString())).thenReturn(Optional.of(user));
-        when(ingredientService.findById(60L)).thenReturn(Optional.of(oil));
+        when(ingredientService.findByIdWithUnits(60L)).thenReturn(Optional.of(oil));
         when(inventoryService.getUserInventoryGroup(any(), anyLong())).thenReturn(group);
         when(dailyConsumptionService.logConsumption(any())).thenAnswer(invocation -> invocation.getArgument(0));
 

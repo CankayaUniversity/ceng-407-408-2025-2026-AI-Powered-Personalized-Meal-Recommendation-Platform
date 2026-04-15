@@ -55,4 +55,10 @@ public class IngredientServiceImpl implements IngredientService {
     public Optional<Ingredient> findById(Long id) {
         return ingredientRepository.findById(id);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Ingredient> findByIdWithUnits(Long id) {
+        return ingredientRepository.findByIdWithUnits(id);
+    }
 }

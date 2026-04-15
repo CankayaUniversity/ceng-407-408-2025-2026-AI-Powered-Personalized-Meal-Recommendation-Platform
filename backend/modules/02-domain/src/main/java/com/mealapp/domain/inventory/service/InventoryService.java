@@ -238,7 +238,7 @@ public class InventoryService {
      */
     @Transactional(readOnly = true)
     public InventoryGroup getUserInventoryGroup(String userId, Long inventoryGroupId) {
-        return getRequiredGroup(userId, inventoryGroupId);
+        return getRequiredGroupWithUsers(userId, inventoryGroupId);
     }
 
     /**
@@ -310,7 +310,7 @@ public class InventoryService {
             return;
         }
 
-        InventoryGroup group = getRequiredGroup(userId, inventoryGroupId);
+        InventoryGroup group = getRequiredGroupWithUsers(userId, inventoryGroupId);
         Ingredient ingredient = getRequiredIngredient(ingredientId);
 
         Inventory inventory = inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
@@ -352,6 +352,11 @@ public class InventoryService {
 
     public InventoryGroup getRequiredGroup(String userId, Long groupId) {
         return inventoryGroupRepository.findByIdAndUsersId(groupId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Envanter lokasyonu bulunamadı ID: " + groupId));
+    }
+
+    public InventoryGroup getRequiredGroupWithUsers(String userId, Long groupId) {
+        return inventoryGroupRepository.findByIdAndUsersIdWithUsers(groupId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Envanter lokasyonu bulunamadı ID: " + groupId));
     }
 
@@ -398,7 +403,7 @@ public class InventoryService {
     }
 
     private Ingredient getRequiredIngredient(Long ingredientId) {
-        return ingredientRepository.findById(ingredientId)
+        return ingredientRepository.findByIdWithUnits(ingredientId)
                 .orElseThrow(() -> new ResourceNotFoundException("Malzeme bulunamadı ID: " + ingredientId));
     }
 
@@ -441,7 +446,7 @@ public class InventoryService {
      * Envanter lokasyonundan kullanıcıyı çıkarır.
      */
     public InventoryGroup removeUserFromGroup(String userId, Long groupId, String userIdToRemove) {
-        InventoryGroup group = getRequiredGroup(userId, groupId);
+        InventoryGroup group = getRequiredGroupWithUsers(userId, groupId);
         
         if (userId.equals(userIdToRemove)) {
             throw new MealAppDomainException("Kendinizi lokasyondan çıkaramazsınız.");

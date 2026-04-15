@@ -10,4 +10,5 @@ public interface IngredientService {
     void deleteById(Long id);
     List<Ingredient> searchByName(String query, int limit);
     Optional<Ingredient> findById(Long id);
+    Optional<Ingredient> findByIdWithUnits(Long id);
 }

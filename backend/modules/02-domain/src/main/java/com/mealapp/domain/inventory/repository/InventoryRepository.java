@@ -28,6 +28,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
      */
     List<Inventory> findByInventoryGroupUsersIdAndIngredientId(String userId, Long ingredientId);
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"ingredient", "inventoryGroup", "ingredient.ingredientUnits"})
     java.util.Optional<Inventory> findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(String userId, Long inventoryGroupId, Long ingredientId);
 
     java.util.Optional<Inventory> findByIdAndInventoryGroupUsersIdAndInventoryGroupId(Long id, String userId, Long inventoryGroupId);

@@ -184,7 +184,7 @@ public class DailyConsumptionService {
             return ingredient;
         }
 
-        return ingredientRepository.findById(ingredient.getId()).orElse(ingredient);
+        return ingredientRepository.findByIdWithUnits(ingredient.getId()).orElse(ingredient);
     }
 
     private NutritionTotals calculateRecipeNutrition(Recipe recipe) {

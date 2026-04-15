@@ -18,6 +18,9 @@ public interface InventoryGroupRepository extends JpaRepository<InventoryGroup, 
     org.springframework.data.domain.Page<InventoryGroup> findByUsersIdOrderByIdAsc(String userId, org.springframework.data.domain.Pageable pageable);
 
     Optional<InventoryGroup> findByIdAndUsersId(Long id, String userId);
+    
+    @org.springframework.data.jpa.repository.Query("SELECT ig FROM InventoryGroup ig LEFT JOIN FETCH ig.users WHERE ig.id = :id AND EXISTS (SELECT 1 FROM ig.users u WHERE u.id = :userId)")
+    Optional<InventoryGroup> findByIdAndUsersIdWithUsers(@org.springframework.data.repository.query.Param("id") Long id, @org.springframework.data.repository.query.Param("userId") String userId);
 
     Optional<InventoryGroup> findFirstByUsersIdOrderByIdAsc(String userId);
 

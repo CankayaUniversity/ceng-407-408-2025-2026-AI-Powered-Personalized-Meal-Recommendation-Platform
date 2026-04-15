@@ -176,7 +176,7 @@ public class ConsumptionController {
     public java.util.Map<String, Double> getStandardUnits(@RequestParam(required = false) Long ingredientId) {
         Ingredient ingredient = null;
         if (ingredientId != null) {
-            ingredient = ingredientService.findById(ingredientId).orElse(null);
+            ingredient = ingredientService.findByIdWithUnits(ingredientId).orElse(null);
         }
         return UnitConverter.getAllUnitWeights(ingredient);
     }
@@ -193,7 +193,7 @@ public class ConsumptionController {
     ) {
         Ingredient ingredient = null;
         if (ingredientId != null) {
-            ingredient = ingredientService.findById(ingredientId).orElse(null);
+            ingredient = ingredientService.findByIdWithUnits(ingredientId).orElse(null);
         }
         return UnitConverter.convertToGrams(amount, unit, ingredient);
     }
@@ -217,7 +217,7 @@ public class ConsumptionController {
 
         Ingredient ingredient = null;
         if (request.getIngredientId() != null) {
-            ingredient = ingredientService.findById(request.getIngredientId())
+            ingredient = ingredientService.findByIdWithUnits(request.getIngredientId())
                     .orElseThrow(() -> new ResourceNotFoundException("Malzeme bulunamadı ID: " + request.getIngredientId()));
         }
 
@@ -248,7 +248,7 @@ public class ConsumptionController {
 
                 Ingredient memberIngredient = null;
                 if (member.getIngredientId() != null) {
-                    memberIngredient = ingredientService.findById(member.getIngredientId())
+                    memberIngredient = ingredientService.findByIdWithUnits(member.getIngredientId())
                             .orElseThrow(() -> new ResourceNotFoundException("Üye malzemesi bulunamadı ID: " + member.getIngredientId()));
                 } else if (ingredient != null) {
                     memberIngredient = ingredient;
