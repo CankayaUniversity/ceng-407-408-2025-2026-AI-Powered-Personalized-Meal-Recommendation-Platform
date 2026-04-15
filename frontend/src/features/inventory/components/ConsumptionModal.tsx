@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Users, Check, Plus } from 'lucide-react';
+import { X, Users, Check, Plus, Loader2 } from 'lucide-react';
 import { Inventory } from '../../../types';
 
 interface ConsumptionModalProps {
@@ -35,14 +35,15 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
   );
   
   const isOverLimit = totalConsumed > consumingItem.quantity;
+  const canSubmit = !isConsuming && selectedUserIds.length > 0 && !isOverLimit;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
       <div className="w-full max-w-xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-12 duration-500">
         <div className="p-10 flex-1 overflow-y-auto custom-scrollbar">
           <div className="flex items-start justify-between mb-10">
             <div className="flex items-center gap-5">
-              <div className="p-5 rounded-[1.8rem] bg-moss-sage/10 text-moss-sage shadow-brand-card">
+              <div className="p-5 rounded-[1.8rem] bg-moss-sage/10 text-moss-sage shadow-brand-soft">
                 <Users size={28} />
               </div>
               <div>
@@ -72,7 +73,7 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
                       key={user.id} 
                       className={`group p-4 rounded-[2rem] border transition-all duration-300 ${
                         isSelected 
-                          ? 'bg-moss-sage/5 border-moss-sage/30 shadow-brand-card' 
+                          ? 'bg-moss-sage/5 border-moss-sage/30 shadow-brand-soft' 
                           : 'border-card-border bg-card hover:border-moss-sage/30 hover:bg-foreground/[0.01]'
                       }`}
                     >
@@ -97,7 +98,7 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
                                 onChange={(e) => {
                                   setMemberAmounts(prev => ({ ...prev, [user.id]: e.target.value }));
                                 }}
-                                className="w-full bg-card dark:bg-foreground/5 border border-moss-sage/30 rounded-xl py-2 px-3 text-sm font-bold text-foreground text-right pr-10 focus:ring-2 focus:ring-moss-sage/20 focus:border-moss-sage transition-all outline-none"
+                                className="base-input w-full rounded-xl border-moss-sage/30 py-2 pl-3 pr-10 text-right text-sm font-bold focus:border-moss-sage focus:ring-2 focus:ring-moss-sage/20"
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-moss-sage/60 uppercase">
                                 {consumingItem.unit}
@@ -154,16 +155,16 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
               <button 
                 type="button" 
                 onClick={onClose} 
-                className="flex-1 py-4 rounded-2xl border border-card-border font-bold text-xs hover:bg-foreground/5 text-foreground transition-all"
+                className="flex-1 py-4 rounded-2xl border border-card-border font-bold text-xs hover:bg-foreground/5 text-foreground/60 transition-all"
               >
                 İPTAL
               </button>
               <button 
                 type="submit" 
-                disabled={isConsuming || selectedUserIds.length === 0 || isOverLimit} 
-                className="flex-[2] py-4 rounded-2xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-600/20 hover:scale-[1.02] transition-all disabled:opacity-50"
+                disabled={!canSubmit}
+                className="flex-[2] py-4 rounded-2xl bg-terracotta text-white font-bold shadow-xl shadow-terracotta/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isConsuming ? 'İŞLENİYOR...' : 'TÜKETİMİ KAYDET'}
+                {isConsuming ? <Loader2 className="mx-auto animate-spin" size={20} /> : 'TÜKETİMİ KAYDET'}
               </button>
             </div>
           </form>
