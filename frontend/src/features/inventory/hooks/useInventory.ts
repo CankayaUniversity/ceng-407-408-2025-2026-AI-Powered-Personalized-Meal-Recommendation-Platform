@@ -61,6 +61,22 @@ export const useInventory = () => {
   const [conversions, setConversions] = useState<UnitConversion[]>([]);
   const [loadingConversions, setLoadingConversions] = useState(false);
   const [itemSearchQuery, setItemSearchQuery] = useState('');
+  const [shoppingListItems, setShoppingListItems] = useState<any[]>([]);
+  const [loadingShoppingList, setLoadingShoppingList] = useState(false);
+
+  const fetchShoppingList = useCallback(async (groupIds?: number[]) => {
+    setLoadingShoppingList(true);
+    try {
+      const data = await inventoryService.getShoppingList(groupIds);
+      setShoppingListItems(data.items || []);
+      return data.items || [];
+    } catch (error) {
+      showToast('Alışveriş listesi yüklenemedi.', 'error');
+      return [];
+    } finally {
+      setLoadingShoppingList(false);
+    }
+  }, [inventoryService, showToast]);
 
   const activeGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId) ?? groups[0] ?? null,
@@ -89,12 +105,17 @@ export const useInventory = () => {
         if (preferred && nextGroups.some((group) => group.id === preferred)) return preferred;
         return nextGroups[0]?.id ?? null;
       });
+
+      // Fetch shopping list for all groups to identify low stock items globally
+      if (nextGroups.length > 0) {
+        await fetchShoppingList(nextGroups.map(g => g.id));
+      }
     } catch (error) {
       showToast('Envanter bilgileri alınamadı.', 'error');
     } finally {
       if (options?.showLoader) setLoading(false);
     }
-  }, [inventoryService, showToast]);
+  }, [inventoryService, showToast, fetchShoppingList]);
 
   const loadInvitations = useCallback(async () => {
     setLoadingInvitations(true);
@@ -250,6 +271,9 @@ export const useInventory = () => {
     resetItemForm,
     itemSearchQuery,
     setItemSearchQuery,
-    filteredItems
+    filteredItems,
+    shoppingListItems,
+    loadingShoppingList,
+    fetchShoppingList
   };
 };

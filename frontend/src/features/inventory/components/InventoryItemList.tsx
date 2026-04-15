@@ -7,6 +7,7 @@ interface InventoryItemListProps {
   activeGroupName: string;
   items: Inventory[];
   searchQuery: string;
+  shoppingListItems: any[];
   onSearchChange: (query: string) => void;
   onEditGroup: () => void;
   onAddItem: () => void;
@@ -19,6 +20,7 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
   activeGroupName,
   items,
   searchQuery,
+  shoppingListItems,
   onSearchChange,
   onEditGroup,
   onAddItem,
@@ -27,6 +29,14 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
   onConsumeItem
 }) => {
   const categoryCount = new Set(items.map((item) => item.ingredient?.category).filter(Boolean)).size;
+
+  const getStockStatus = (item: Inventory) => {
+    return shoppingListItems.find(
+      si => si.ingredientId === item.ingredient?.id && si.groupName === activeGroupName
+    )?.status;
+  };
+
+  const lowStockCount = items.filter(item => getStockStatus(item)).length;
 
   return (
     <section className="space-y-6">
@@ -65,7 +75,7 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
             </div>
             <div className="p-5 rounded-3xl bg-terracotta/5 border border-terracotta/10">
               <p className="text-[10px] font-bold uppercase tracking-widest text-terracotta/40">Kritik Stok</p>
-              <p className="mt-2 text-3xl font-serif font-bold text-terracotta">0</p>
+              <p className="mt-2 text-3xl font-serif font-bold text-terracotta">{lowStockCount}</p>
             </div>
           </div>
         </div>
@@ -111,55 +121,69 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
                   </td>
                 </tr>
               ) : (
-                items.map((item) => (
-                  <tr key={item.id} className="group hover:bg-foreground/[0.01] transition-colors">
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground/20 group-hover:bg-terracotta group-hover:text-white transition-all font-black">
-                          {item.ingredient?.name.charAt(0)}
+                items.map((item) => {
+                  const status = getStockStatus(item);
+                  return (
+                    <tr key={item.id} className={`group transition-colors ${status ? 'bg-terracotta/[0.02]' : 'hover:bg-foreground/[0.01]'}`}>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className={`h-10 w-10 rounded-xl flex items-center justify-center transition-all font-black ${
+                            status 
+                              ? 'bg-terracotta text-white' 
+                              : 'bg-foreground/5 text-foreground/20 group-hover:bg-terracotta group-hover:text-white'
+                          }`}>
+                            {item.ingredient?.name.charAt(0)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-foreground">{item.ingredient?.name}</span>
+                            {status && (
+                              <span className={`text-[9px] font-black uppercase tracking-widest ${status === 'MISSING' ? 'text-terracotta' : 'text-amber-600'}`}>
+                                {status === 'MISSING' ? 'EKSİK' : 'AZALDI'}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <span className="font-bold text-foreground">{item.ingredient?.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className="px-3 py-1 bg-foreground/5 rounded-full text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
-                        {formatCategory(item.ingredient?.category)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <div className="flex flex-col items-end">
-                        <span className="text-lg font-serif font-black text-foreground">
-                          {formatQuantity(item.quantity)}
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className="px-3 py-1 bg-foreground/5 rounded-full text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
+                          {formatCategory(item.ingredient?.category)}
                         </span>
-                        <span className="text-[10px] font-bold text-foreground/30 uppercase tracking-widest">
-                          {item.unit}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => onConsumeItem(item)}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-moss-sage/10 text-moss-sage text-[10px] font-black hover:bg-moss-sage hover:text-white transition-all"
-                        >
-                          TÜKET
-                        </button>
-                        <button 
-                          onClick={() => onEditItem(item)} 
-                          className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button 
-                          onClick={() => onDeleteItem(item.id)} 
-                          className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-6 py-5 text-right">
+                        <div className="flex flex-col items-end">
+                          <span className={`text-lg font-serif font-black ${status ? 'text-terracotta' : 'text-foreground'}`}>
+                            {formatQuantity(item.quantity)}
+                          </span>
+                          <span className="text-[10px] font-bold text-foreground/30 uppercase tracking-widest">
+                            {item.unit}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={() => onConsumeItem(item)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-moss-sage/10 text-moss-sage text-[10px] font-black hover:bg-moss-sage hover:text-white transition-all"
+                          >
+                            TÜKET
+                          </button>
+                          <button 
+                            onClick={() => onEditItem(item)} 
+                            className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button 
+                            onClick={() => onDeleteItem(item.id)} 
+                            className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

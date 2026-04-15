@@ -17,6 +17,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.bind.annotation.RequestParam;
+
 import java.util.List;
 
 @RestController
@@ -205,6 +207,41 @@ public class InventoryController {
         inventoryService.getRequiredGroup(requireAuthenticatedUserId(jwt), groupId);
         
         consumptionService.consume(itemId, request.getUserAmounts());
+    }
+
+    @GetMapping("/shopping-list")
+    public ShoppingListResponse getShoppingList(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) List<Long> groupIds
+    ) {
+        String userId = requireAuthenticatedUserId(jwt);
+        
+        // Boş listenin [null] içermesi durumunu temizle (Spring parametre bağlama bazen yapabilir)
+        List<Long> cleanedGroupIds = groupIds;
+        if (groupIds != null) {
+            cleanedGroupIds = groupIds.stream().filter(java.util.Objects::nonNull).toList();
+            if (cleanedGroupIds.isEmpty()) {
+                cleanedGroupIds = null;
+            }
+        }
+
+        List<com.mealapp.domain.inventory.entity.Inventory> lowStockItems = inventoryService.getLowAndMissingStockItems(userId, cleanedGroupIds);
+
+        List<ShoppingListResponse.ShoppingItem> shoppingItems = lowStockItems.stream()
+                .filter(item -> item != null && item.getIngredient() != null && item.getInventoryGroup() != null)
+                .map(item -> ShoppingListResponse.ShoppingItem.builder()
+                        .ingredientId(item.getIngredient().getId())
+                        .ingredientName(item.getIngredient().getName() != null ? item.getIngredient().getName() : "Unknown Ingredient")
+                        .currentQuantity(item.getQuantity() != null ? item.getQuantity() : 0.0)
+                        .unit(item.getUnit() != null ? item.getUnit() : "")
+                        .groupName(item.getInventoryGroup().getName() != null ? item.getInventoryGroup().getName() : "Unknown Group")
+                        .status(item.getQuantity() != null && item.getQuantity() > 0 ? "LOW" : "MISSING")
+                        .build())
+                .toList();
+
+        return ShoppingListResponse.builder()
+                .items(shoppingItems)
+                .build();
     }
 
     private String requireAuthenticatedUserId(Jwt jwt) {

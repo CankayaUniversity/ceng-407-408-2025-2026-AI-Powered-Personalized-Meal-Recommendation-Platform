@@ -16,6 +16,7 @@ import { InventoryGroupModal } from './components/InventoryGroupModal';
 import { InventoryItemModal } from './components/InventoryItemModal';
 import { ConsumptionModal } from './components/ConsumptionModal';
 import { InvitationsModal } from './components/InvitationsModal';
+import { ShoppingListModal } from './components/ShoppingListModal';
 import { MemberManagement } from './components/MemberManagement';
 import { createGroupDraft } from './utils/inventoryUtils';
 
@@ -86,8 +87,38 @@ const InventoryPage: React.FC = () => {
     resetItemForm,
     itemSearchQuery,
     setItemSearchQuery,
-    filteredItems
+    filteredItems,
+    shoppingListItems,
+    loadingShoppingList,
+    fetchShoppingList
   } = useInventory();
+
+  // Shopping List Modal state
+  const [shoppingListModalOpen, setShoppingListModalOpen] = React.useState(false);
+  const [selectedShoppingGroupIds, setSelectedShoppingGroupIds] = React.useState<number[]>([]);
+  const [hasInitializedGroups, setHasInitializedGroups] = React.useState(false);
+
+  // Initialize selected groups when groups change for the first time
+  useEffect(() => {
+    if (groups.length > 0 && !hasInitializedGroups) {
+      setSelectedShoppingGroupIds(groups.map(g => g.id));
+      setHasInitializedGroups(true);
+    }
+  }, [groups, hasInitializedGroups]);
+
+  const handleOpenShoppingList = () => {
+    setShoppingListModalOpen(true);
+    const targetGroupIds = selectedShoppingGroupIds.length > 0 
+      ? selectedShoppingGroupIds 
+      : groups.map(g => g.id);
+    
+    fetchShoppingList(targetGroupIds);
+  };
+
+  const handleShoppingGroupChange = (newGroupIds: number[]) => {
+    setSelectedShoppingGroupIds(newGroupIds);
+    fetchShoppingList(newGroupIds);
+  };
 
   // Ingredient Search logic (kept here or can be moved to hook)
   const handleSearchIngredients = async (query: string) => {
@@ -125,7 +156,7 @@ const InventoryPage: React.FC = () => {
       }
       setLoadingConversions(true);
       try {
-        const data = await inventoryService.getUnitConversions(
+        const data = await ingredientService.getUnitConversions(
           itemDraft.selectedIngredient.id,
           parseFloat(itemDraft.quantity),
           itemDraft.unit
@@ -308,6 +339,7 @@ const InventoryPage: React.FC = () => {
         invitationsCount={invitations.length}
         onNewLocation={() => { setEditingGroupId(null); setGroupDraft(createGroupDraft()); setLocationModalOpen(true); }}
         onOpenInvitations={() => setInvitationsModalOpen(true)}
+        onOpenShoppingList={handleOpenShoppingList}
       />
 
       <InventoryGroupList 
@@ -331,6 +363,7 @@ const InventoryPage: React.FC = () => {
         activeGroupName={activeGroup?.name || ''}
         items={filteredItems}
         searchQuery={itemSearchQuery}
+        shoppingListItems={shoppingListItems}
         onSearchChange={setItemSearchQuery}
         onEditGroup={() => { setEditingGroupId(activeGroup?.id || null); setGroupDraft({ name: activeGroup?.name || '', icon: activeGroup?.icon || 'home' }); setLocationModalOpen(true); }}
         onAddItem={() => { resetItemForm(); setEditModalOpen(true); }}
@@ -404,6 +437,16 @@ const InventoryPage: React.FC = () => {
         loading={loadingInvitations}
         invitations={invitations}
         onAccept={handleAcceptInvitation}
+      />
+
+      <ShoppingListModal 
+        isOpen={shoppingListModalOpen}
+        onClose={() => setShoppingListModalOpen(false)}
+        items={shoppingListItems}
+        isLoading={loadingShoppingList}
+        groups={groups}
+        selectedGroupIds={selectedShoppingGroupIds}
+        onGroupChange={handleShoppingGroupChange}
       />
     </div>
   );

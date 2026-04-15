@@ -1,18 +1,20 @@
 import React from 'react';
-import { Boxes, Plus, Users } from 'lucide-react';
+import { Boxes, Plus, Users, ShoppingCart } from 'lucide-react';
 
 interface InventoryHeaderProps {
   locationsCount: number;
   invitationsCount: number;
   onNewLocation: () => void;
   onOpenInvitations: () => void;
+  onOpenShoppingList: () => void;
 }
 
 export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   locationsCount,
   invitationsCount,
   onNewLocation,
-  onOpenInvitations
+  onOpenInvitations,
+  onOpenShoppingList
 }) => {
   return (
     <header className="relative overflow-hidden rounded-[2.75rem] bg-card px-8 py-10 text-foreground shadow-brand-hero meal-highlight-frame dark:bg-espresso-midnight dark:text-white">
@@ -38,6 +40,14 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">Lokasyonlar</p>
             <p className="mt-1 text-3xl font-serif font-bold text-foreground dark:text-white">{locationsCount}</p>
           </div>
+          <button
+            type="button"
+            onClick={onOpenShoppingList}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-terracotta/30 bg-terracotta/5 px-6 py-4 font-bold text-terracotta hover:bg-terracotta/10 transition-all"
+          >
+            <ShoppingCart size={18} />
+            Alışveriş Listesi
+          </button>
           <button
             type="button"
             onClick={onNewLocation}

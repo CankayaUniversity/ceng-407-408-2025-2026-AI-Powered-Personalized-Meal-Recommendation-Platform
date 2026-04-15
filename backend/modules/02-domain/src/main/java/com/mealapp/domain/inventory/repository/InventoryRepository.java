@@ -11,10 +11,8 @@ import java.util.List;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     
-    /**
-     * Belirli bir kullanıcıya ait tüm malzemeleri listeler.
-     */
-    List<Inventory> findByInventoryGroupUsersIdOrderByInventoryGroupIdAscIngredientNameAsc(String userId);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"ingredient", "inventoryGroup"})
+    List<Inventory> findByInventoryGroupUsersIdAndInventoryGroupIdInOrderByInventoryGroupIdAscIngredientNameAsc(String userId, List<Long> groupIds);
 
     List<Inventory> findByInventoryGroupIdAndInventoryGroupUsersIdOrderByIngredientNameAsc(Long inventoryGroupId, String userId);
 

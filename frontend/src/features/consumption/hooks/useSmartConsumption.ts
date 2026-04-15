@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useDeferredValue } from 'react';
 import { useAuth } from '../../../infrastructure/auth/AuthContext';
 import { useInventoryService } from '../../../services/inventoryService';
+import { useIngredientService } from '../../../services/ingredientService';
 import { useRecipeService } from '../../../services/recipeService';
 import { useConsumptionService } from '../../../services/consumptionService';
 import { useToast } from '../../../shared/hooks/useToast';
@@ -33,6 +34,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const { authenticated, user } = useAuth();
   const { showToast } = useToast();
   const inventoryService = useInventoryService();
+  const ingredientService = useIngredientService();
   const recipeService = useRecipeService();
   const consumptionService = useConsumptionService();
 
@@ -252,7 +254,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
                   })
                   .slice(0, 6);
               } else {
-                const searchRes = await inventoryService.searchIngredients(q.query, 6);
+                const searchRes = await ingredientService.searchIngredients(q.query, 6);
                 results = searchRes.filter(ingredient => {
                   const items = q.userId ? (memberSelections[q.userId] || []) : selectedItems;
                   return !items.some(i => i.kind === 'INGREDIENT' && i.ingredient.id === ingredient.id);
@@ -450,7 +452,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     }));
 
     try {
-        const results = await inventoryService.getUnitConversions(ingredientId, amount, unit);
+        const results = await ingredientService.getUnitConversions(ingredientId, amount, unit);
         setConversions(prev => ({
             ...prev,
             [itemKey]: { list: results.filter((c: any) => c.unit.toLowerCase() !== unit.toLowerCase()), loading: false }
@@ -462,7 +464,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
             [itemKey]: { list: [], loading: false }
         }));
     }
-  }, [inventoryService]);
+  }, [ingredientService]);
 
   const handleIngredientPortionChange = (itemKey: string, nextPortion: IngredientPortionOption, userId?: string) => {
     if (userId) {

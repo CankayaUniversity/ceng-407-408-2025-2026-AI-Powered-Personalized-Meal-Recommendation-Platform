@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import com.mealapp.domain.inventory.entity.InventoryGroup;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Locale;
 
 /**
@@ -39,8 +42,15 @@ public class InventoryService {
      */
     @Transactional
     public List<Inventory> getUserInventory(String userId) {
-        ensureUserHasDefaultGroup(userId);
-        return inventoryRepository.findByInventoryGroupUsersIdOrderByInventoryGroupIdAscIngredientNameAsc(userId);
+        List<Long> groupIds = inventoryGroupRepository.findByUsersIdOrderByIdAsc(userId).stream()
+                .map(InventoryGroup::getId)
+                .toList();
+        if (groupIds.isEmpty()) {
+            return Collections.singletonList(ensureUserHasDefaultGroup(userId)).stream()
+                    .flatMap(g -> inventoryRepository.findByInventoryGroupIdAndInventoryGroupUsersIdOrderByIngredientNameAsc(g.getId(), userId).stream())
+                    .toList();
+        }
+        return inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdInOrderByInventoryGroupIdAscIngredientNameAsc(userId, groupIds);
     }
 
     /**
@@ -57,8 +67,11 @@ public class InventoryService {
      */
     @Transactional
     public List<InventoryGroup> getUserInventoryGroups(String userId) {
-        ensureUserHasDefaultGroup(userId);
         List<InventoryGroup> groups = inventoryGroupRepository.findByUsersIdOrderByIdAsc(userId);
+        if (groups.isEmpty()) {
+            ensureUserHasDefaultGroup(userId);
+            groups = inventoryGroupRepository.findByUsersIdOrderByIdAsc(userId);
+        }
         groups.forEach(this::hydrateGroup);
         return groups;
     }
@@ -74,10 +87,9 @@ public class InventoryService {
         InventoryGroup group = InventoryGroup.builder()
                 .name(normalizedName)
                 .icon(normalizeIcon(icon))
+                .users(new ArrayList<>(List.of(user)))
                 .build();
         
-        // ManyToMany ilişkiyi her iki tarafta da kur (owning side: User)
-        group.getUsers().add(user);
         user.getInventoryGroups().add(group);
 
         inventoryGroupRepository.save(group);
@@ -255,7 +267,8 @@ public class InventoryService {
 
             if (currentQuantity <= remaining) {
                 remaining -= currentQuantity;
-                inventoryRepository.delete(existing);
+                existing.setQuantity(0.0);
+                inventoryRepository.save(existing);
             } else {
                 existing.setQuantity(currentQuantity - remaining);
                 inventoryRepository.save(existing);
@@ -289,12 +302,8 @@ public class InventoryService {
                             group.getName(), ingredient.getName(), currentQuantity, inventory.getUnit(), quantityToDeduct, inventory.getUnit()));
         }
 
-        if (currentQuantity == quantityToDeduct) {
-            inventoryRepository.delete(inventory);
-        } else {
-            inventory.setQuantity(currentQuantity - quantityToDeduct);
-            inventoryRepository.save(inventory);
-        }
+        inventory.setQuantity(Math.max(0, currentQuantity - quantityToDeduct));
+        inventoryRepository.save(inventory);
     }
 
     @Transactional
@@ -305,10 +314,9 @@ public class InventoryService {
                     InventoryGroup group = InventoryGroup.builder()
                             .name("Home")
                             .icon("home")
+                            .users(new ArrayList<>(List.of(user))) // users listesini başlat
                             .build();
                     
-                    // ManyToMany ilişkiyi her iki tarafta da kur (owning side: User)
-                    group.getUsers().add(user);
                     user.getInventoryGroups().add(group);
 
                     inventoryGroupRepository.save(group);
@@ -321,6 +329,41 @@ public class InventoryService {
     public InventoryGroup getRequiredGroup(String userId, Long groupId) {
         return inventoryGroupRepository.findByIdAndUsersId(groupId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Envanter lokasyonu bulunamadı ID: " + groupId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Inventory> getLowAndMissingStockItems(String userId, List<Long> groupIds) {
+        // Eğer grup ID'leri verilmemişse kullanıcının tüm gruplarını al
+        List<Long> finalGroupIds = (groupIds == null || groupIds.isEmpty())
+                ? inventoryGroupRepository.findByUsersIdOrderByIdAsc(userId).stream()
+                    .map(InventoryGroup::getId)
+                    .toList()
+                : groupIds;
+
+        if (finalGroupIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Miktarı 0 olanlar (MISSING) veya belirli bir eşiğin altında olanlar (LOW)
+        return inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdInOrderByInventoryGroupIdAscIngredientNameAsc(userId, finalGroupIds)
+                .stream()
+                .filter(item -> {
+                    if (item.getQuantity() == null || item.getQuantity() <= 0) return true;
+                    
+                    String unit = item.getUnit() != null ? item.getUnit().toUpperCase() : "";
+                    double qty = item.getQuantity();
+                    
+                    // Birime göre dinamik eşik değerleri
+                    return switch (unit) {
+                        case "GRAM" -> qty <= 250.0;
+                        case "ML" -> qty <= 500.0;
+                        case "LITRE" -> qty <= 1.0;
+                        case "KG", "KILOGRAM" -> qty <= 0.5;
+                        case "ADET", "PAKET" -> qty <= 2.0;
+                        default -> qty <= 2.0;
+                    };
+                })
+                .toList();
     }
 
     private User getRequiredUser(String userId) {

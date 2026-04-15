@@ -1,6 +1,7 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Loader2, Plus, Search, X, Ban } from 'lucide-react';
 import { useInventoryService } from '../../services/inventoryService';
+import { useIngredientService } from '../../services/ingredientService';
 import { type Ingredient } from '../../types';
 
 interface TastePreferencePickerProps {
@@ -29,6 +30,7 @@ const formatCategory = (category: Ingredient['category']): string => category.re
 
 const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, onChange, error }) => {
   const inventoryService = useInventoryService();
+  const ingredientService = useIngredientService();
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
   const [results, setResults] = useState<Ingredient[]>([]);
@@ -53,7 +55,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
       try {
         setSearching(true);
         setSearchError(null);
-        const nextResults = await inventoryService.searchIngredients(searchTerm, 6);
+        const nextResults = await ingredientService.searchIngredients(searchTerm, 6);
         if (!active) return;
         setResults(nextResults.filter((ingredient) => !selectedKeys.has(normalizeKey(ingredient.name))));
       } catch (_error) {

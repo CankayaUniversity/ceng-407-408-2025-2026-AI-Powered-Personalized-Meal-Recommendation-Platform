@@ -37,11 +37,15 @@ public class ConsumptionService {
         double totalAmount = userAmounts.values().stream().mapToDouble(Double::doubleValue).sum();
 
         if (inventory.getQuantity() < totalAmount) {
+            // Miktar 0'a düşebilir ancak yetersiz stok hatası verilmeli mi? 
+            // Issue description'a göre kullanıcı 0 malzeme girebilmeli.
+            // Ama tüketim yaparken stok yetersizse uyarı vermeli.
+            // Mevcut mantığı koruyorum ancak silme işlemini yapmıyorum.
             throw new RuntimeException("Yetersiz stok!");
         }
 
-        // 1. Stoktan düş
-        inventory.setQuantity(inventory.getQuantity() - totalAmount);
+        // 1. Stoktan düş (Miktar 0 olsa bile silme)
+        inventory.setQuantity(Math.max(0, inventory.getQuantity() - totalAmount));
         inventoryRepository.save(inventory);
 
         // 2. Besin değerlerini her kullanıcıya kendi miktarına göre ekle

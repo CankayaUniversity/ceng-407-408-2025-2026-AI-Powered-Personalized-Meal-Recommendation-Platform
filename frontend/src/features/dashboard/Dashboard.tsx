@@ -12,16 +12,18 @@ import {
   Target,
   TrendingUp,
   UtensilsCrossed,
-  Info
+  Info,
+  ShoppingCart
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useConsumptionService } from '../../services/consumptionService';
 import { ApiError, NotFoundError } from '../../services/errors';
 import { useInventoryService } from '../../services/inventoryService';
 import { useUserService } from '../../services/userService';
-import type { ConsumptionSummary, Inventory, InventoryGroup, User } from '../../types';
+import type { ConsumptionSummary, InventoryGroup, User } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
 import { useUI } from '../../infrastructure/ui/UIContext';
+import { ShoppingListModal } from '../inventory/components/ShoppingListModal';
 
 const formatNumber = (value: number) =>
     new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(value);
@@ -36,19 +38,6 @@ const formatEnumLabel = (value?: string | null) =>
             .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
             .join(' ')
         : null;
-
-const lowStockThresholdForUnit = (unit?: string | null) => {
-  switch (unit?.toUpperCase()) {
-    case 'GRAM': return 250;
-    case 'ML': return 500;
-    case 'LITRE': return 1;
-    case 'ADET':
-    case 'PAKET': return 2;
-    default: return 2;
-  }
-};
-
-const isRunningLow = (item: Inventory) => item.quantity <= lowStockThresholdForUnit(item.unit);
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -65,6 +54,48 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [shoppingListModalOpen, setShoppingListModalOpen] = useState(false);
+  const [shoppingListItems, setShoppingListItems] = useState<any[]>([]);
+  const [loadingShoppingList, setLoadingShoppingList] = useState(false);
+  const [selectedShoppingGroupIds, setSelectedShoppingGroupIds] = useState<number[]>([]);
+  const [hasInitializedGroups, setHasInitializedGroups] = useState(false);
+
+  // Initialize selected groups when groups change for the first time
+  useEffect(() => {
+    if (inventoryGroups.length > 0 && !hasInitializedGroups) {
+      setSelectedShoppingGroupIds(inventoryGroups.map(g => g.id));
+      setHasInitializedGroups(true);
+    }
+  }, [inventoryGroups, hasInitializedGroups]);
+
+  const fetchShoppingList = async (groupIds: number[]) => {
+    setLoadingShoppingList(true);
+    try {
+      const data = await inventoryService.getShoppingList(groupIds);
+      setShoppingListItems(data.items || []);
+      return data.items || [];
+    } catch (error) {
+      showToast('Alışveriş listesi yüklenemedi.', 'error');
+      return [];
+    } finally {
+      setLoadingShoppingList(false);
+    }
+  };
+
+  const handleOpenShoppingList = () => {
+    setShoppingListModalOpen(true);
+    const targetGroupIds = selectedShoppingGroupIds.length > 0 
+      ? selectedShoppingGroupIds 
+      : inventoryGroups.map(g => g.id);
+    
+    fetchShoppingList(targetGroupIds);
+  };
+
+  const handleShoppingGroupChange = (newGroupIds: number[]) => {
+    setSelectedShoppingGroupIds(newGroupIds);
+    fetchShoppingList(newGroupIds);
+  };
+
   const loadDashboardData = useCallback(async (options?: { silent?: boolean }) => {
     if (!authenticated || !authUser) return;
 
@@ -72,9 +103,12 @@ const Dashboard: React.FC = () => {
     else setLoading(true);
 
     try {
-      const [groups, summary] = await Promise.all([
-        inventoryService.getInventoryGroups(),
-        consumptionService.getDailySummary()
+      const groups = await inventoryService.getInventoryGroups();
+      const groupIds = groups.map(g => g.id);
+      
+      const [summary, shoppingList] = await Promise.all([
+        consumptionService.getDailySummary(),
+        inventoryService.getShoppingList(groupIds)
       ]);
 
       let nextProfile: User | null = null;
@@ -88,6 +122,7 @@ const Dashboard: React.FC = () => {
         setInventoryGroups(groups);
         setDailySummary(summary);
         setProfile(nextProfile);
+        setShoppingListItems(shoppingList.items || []);
       });
     } catch (error) {
       const msg = error instanceof ApiError ? error.message : 'Veriler senkronize edilemedi.';
@@ -103,23 +138,20 @@ const Dashboard: React.FC = () => {
   }, [loadDashboardData]);
 
   const inventoryMetrics = useMemo(() => {
-    const itemsWithGroup = inventoryGroups.flatMap((group) =>
-        group.items.map((item) => ({ group, item }))
-    );
-    const lowItems = itemsWithGroup.filter(({ item }) => isRunningLow(item));
-
-    const categories = new Set(
-        itemsWithGroup.flatMap(({ item }) => (item.ingredient?.category ? [item.ingredient.category] : []))
-    );
+    const totalLocations = inventoryGroups.length;
+    const totalItems = inventoryGroups.reduce((acc, g) => acc + (g.items?.length || 0), 0);
+    const totalCategories = new Set(
+      inventoryGroups.flatMap(g => g.items?.map(i => i.ingredient?.category).filter(Boolean) || [])
+    ).size;
 
     return {
-      totalLocations: inventoryGroups.length,
-      totalItems: itemsWithGroup.length,
-      totalLowItems: lowItems.length,
-      totalCategories: categories.size,
-      lowItems
+      totalLocations,
+      totalItems,
+      totalLowItems: shoppingListItems.length,
+      totalCategories,
+      lowItems: shoppingListItems
     };
-  }, [inventoryGroups]);
+  }, [inventoryGroups, shoppingListItems]);
 
   const dailyGoal = profile?.dailyCalorieTarget ?? 0;
   const consumedCalories = dailySummary?.totalCalories ?? 0;
@@ -241,6 +273,12 @@ const Dashboard: React.FC = () => {
               <button onClick={() => navigate('/inventory')} className="btn-secondary flex items-center gap-2 whitespace-nowrap">
                 Envanteri Aç <ArrowRight size={16} />
               </button>
+              <button 
+                onClick={handleOpenShoppingList} 
+                className="btn-primary py-3 px-6 flex items-center gap-2 bg-terracotta text-white shadow-lg shadow-terracotta/20 hover:scale-[1.02] transition-all"
+              >
+                <ShoppingCart size={18} /> Alışveriş Listesi Hazırla
+              </button>
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -259,9 +297,13 @@ const Dashboard: React.FC = () => {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-2">
-              {inventoryMetrics.lowItems.slice(0, 5).map(({ item }, i) => (
-                  <span key={i} className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-terracotta/10 text-terracotta border border-terracotta/20">
-                {item.ingredient?.name} ({item.quantity} {item.unit?.toLowerCase()})
+              {inventoryMetrics.lowItems.slice(0, 5).map((item, i) => (
+                  <span key={i} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                    item.status === 'MISSING' 
+                      ? 'bg-terracotta text-white border-terracotta shadow-sm' 
+                      : 'bg-terracotta/10 text-terracotta border-terracotta/20'
+                  }`}>
+                {item.ingredientName} ({item.currentQuantity} {item.unit?.toLowerCase()})
               </span>
               ))}
             </div>
@@ -358,6 +400,16 @@ const Dashboard: React.FC = () => {
           </section>
 
         </div>
+
+        <ShoppingListModal 
+          isOpen={shoppingListModalOpen}
+          onClose={() => setShoppingListModalOpen(false)}
+          items={shoppingListItems}
+          isLoading={loadingShoppingList}
+          groups={inventoryGroups}
+          selectedGroupIds={selectedShoppingGroupIds}
+          onGroupChange={handleShoppingGroupChange}
+        />
       </div>
   );
 };

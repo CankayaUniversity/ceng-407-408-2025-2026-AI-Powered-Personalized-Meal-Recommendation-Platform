@@ -12,7 +12,7 @@ public class InventoryItemRequest {
     private Long ingredientId;
 
     @NotNull(message = "Miktar zorunludur")
-    @Positive(message = "Miktar sıfırdan büyük olmalıdır")
+    @jakarta.validation.constraints.Min(value = 0, message = "Miktar negatif olamaz")
     private Double quantity;
 
     @NotBlank(message = "Birim zorunludur")

@@ -10,17 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.*;
 
+import com.mealapp.domain.inventory.entity.InventoryGroup;
+import java.util.ArrayList;
+import java.util.Collections;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.recipe.entity.IngredientUnit;
 import java.util.Optional;
@@ -307,5 +303,82 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq("g"),
                 eq(InventoryService.UpdateMode.ADD)
         );
+    }
+    @Test
+    void shouldGetShoppingListWithoutGroupIds() throws Exception {
+        Ingredient ingredient = Ingredient.builder().id(1L).name("Tuz").build();
+        InventoryGroup group = InventoryGroup.builder().id(1L).name("Mutfak").build();
+        Inventory item = Inventory.builder()
+                .id(1L)
+                .ingredient(ingredient)
+                .inventoryGroup(group)
+                .quantity(0.0)
+                .unit("g")
+                .build();
+
+        when(inventoryService.getLowAndMissingStockItems(anyString(), eq(null)))
+                .thenReturn(List.of(item));
+
+        mockMvc.perform(get("/api/v1/inventory-groups/shopping-list"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].ingredientName").value("Tuz"))
+                .andExpect(jsonPath("$.items[0].status").value("MISSING"));
+    }
+
+    @Test
+    void shouldGetShoppingListWithEmptyGroupIdsParam() throws Exception {
+        // Bu senaryo ?groupIds= durumunu test eder
+        when(inventoryService.getLowAndMissingStockItems(anyString(), any()))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/v1/inventory-groups/shopping-list")
+                        .param("groupIds", ""))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldGetShoppingListWithMultipleGroupIds() throws Exception {
+        when(inventoryService.getLowAndMissingStockItems(anyString(), any()))
+                .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/api/v1/inventory-groups/shopping-list")
+                        .param("groupIds", "1,2,3"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldGetInventoryGroups() throws Exception {
+        InventoryGroup group = InventoryGroup.builder()
+                .id(1L)
+                .name("Home")
+                .icon("home")
+                .build();
+
+        when(inventoryService.getUserInventoryGroups(anyString()))
+                .thenReturn(List.of(group));
+
+        mockMvc.perform(get("/api/v1/inventory-groups"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value("Home"));
+    }
+
+    @Test
+    void shouldNotThrow500WhenMappingInventoryWithNullIngredient() throws Exception {
+        InventoryGroup group = InventoryGroup.builder().id(1L).name("Mutfak").build();
+        Inventory item = Inventory.builder()
+                .id(1L)
+                .ingredient(null)
+                .inventoryGroup(group)
+                .quantity(0.0)
+                .unit("g")
+                .build();
+
+        when(inventoryService.getLowAndMissingStockItems(anyString(), any()))
+                .thenReturn(List.of(item));
+
+        mockMvc.perform(get("/api/v1/inventory-groups/shopping-list"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty());
     }
 }

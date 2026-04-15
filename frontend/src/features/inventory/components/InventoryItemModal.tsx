@@ -237,7 +237,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={savingItem || !itemDraft.selectedIngredient || !itemDraft.quantity || parseFloat(itemDraft.quantity) <= 0}
+                disabled={savingItem || !itemDraft.selectedIngredient || itemDraft.quantity === '' || parseFloat(itemDraft.quantity) < 0}
                 className="flex-[2] rounded-[1.8rem] bg-terracotta py-5 font-bold text-white shadow-2xl shadow-terracotta/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {savingItem ? <Loader2 className="animate-spin" size={20} /> : (editingItemId ? 'DEĞİŞİKLİKLERİ KAYDET' : 'ENVANTERE EKLE')}

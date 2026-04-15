@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { useService } from '../infrastructure/di';
 import { HttpClientKey } from '../infrastructure/services';
 import {
-  Ingredient,
   Inventory,
   InventoryGroup,
   InventoryGroupRequest,
@@ -103,20 +102,6 @@ export const getInventoryService = (api: AxiosInstance) => ({
     }
   },
 
-  searchIngredients: async (query: string, limit: number = 8): Promise<Ingredient[]> => {
-    try {
-      const response = await api.get<Ingredient[]>('/v1/ingredients', {
-        params: {
-          query,
-          limit
-        }
-      });
-      return response.data;
-    } catch (error) {
-      return mapAxiosError(error, 'Malzeme araması yapılamadı');
-    }
-  },
-
   consumeInventoryItem: async (groupId: number, itemId: number, userAmounts: Record<string, number>): Promise<void> => {
     try {
       await api.post(`/v1/inventory-groups/${groupId}/items/${itemId}/consume`, {
@@ -171,14 +156,14 @@ export const getInventoryService = (api: AxiosInstance) => ({
     }
   },
 
-  getUnitConversions: async (ingredientId: number, amount: number, unit: string): Promise<any[]> => {
+  getShoppingList: async (groupIds?: number[]): Promise<any> => {
     try {
-      const response = await api.get<any[]>(`/v1/ingredients/${ingredientId}/conversions`, {
-        params: { amount, unit }
+      const response = await api.get('/v1/inventory-groups/shopping-list', {
+        params: { groupIds: groupIds?.join(',') }
       });
       return response.data;
     } catch (error) {
-      return mapAxiosError(error, 'Birim dönüşümleri alınamadı');
+      return mapAxiosError(error, 'Alışveriş listesi alınamadı');
     }
   }
 });
