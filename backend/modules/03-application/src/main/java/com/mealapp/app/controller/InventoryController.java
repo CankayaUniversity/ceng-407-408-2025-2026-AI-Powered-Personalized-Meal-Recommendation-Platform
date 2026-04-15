@@ -34,8 +34,29 @@ public class InventoryController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    public List<InventoryGroupResponse> getGroups(@AuthenticationPrincipal Jwt jwt) {
-        return inventoryMapper.toGroupResponses(inventoryService.getUserInventoryGroups(requireAuthenticatedUserId(jwt)));
+    public List<InventoryGroupResponse> getGroups(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(page, size);
+        return inventoryMapper.toGroupResponses(
+                inventoryService.getUserInventoryGroups(requireAuthenticatedUserId(jwt), pageRequest).getContent()
+        );
+    }
+
+    @GetMapping("/{groupId}/items")
+    @Transactional(readOnly = true)
+    public List<InventoryItemResponse> getItems(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long groupId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(page, size);
+        return inventoryMapper.toItemResponses(
+                inventoryService.getInventoryItemsByGroup(requireAuthenticatedUserId(jwt), groupId, pageRequest).getContent()
+        );
     }
 
     @PostMapping

@@ -15,6 +15,8 @@ public interface InventoryGroupRepository extends JpaRepository<InventoryGroup, 
 
     List<InventoryGroup> findByUsersIdOrderByIdAsc(String userId);
 
+    org.springframework.data.domain.Page<InventoryGroup> findByUsersIdOrderByIdAsc(String userId, org.springframework.data.domain.Pageable pageable);
+
     Optional<InventoryGroup> findByIdAndUsersId(Long id, String userId);
 
     Optional<InventoryGroup> findFirstByUsersIdOrderByIdAsc(String userId);

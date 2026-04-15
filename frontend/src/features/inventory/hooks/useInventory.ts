@@ -64,6 +64,31 @@ export const useInventory = () => {
   const [shoppingListItems, setShoppingListItems] = useState<any[]>([]);
   const [loadingShoppingList, setLoadingShoppingList] = useState(false);
 
+  // Pagination state for items
+  const [items, setItems] = useState<Inventory[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(10);
+  const [loadingItems, setLoadingItems] = useState(false);
+
+  const loadItems = useCallback(async (groupId: number, page: number) => {
+    setLoadingItems(true);
+    try {
+      const data = await inventoryService.getInventoryItems(groupId, page, pageSize);
+      // Backend should return a Page object ideally, but currently getInventoryItems returns Inventory[]
+      // based on previous_issue_solution. Let me check the service again.
+      setItems(data);
+      // Since backend is returning List currently (from my previous analysis of InventoryController.java)
+      // and not the whole Page object, I might need to adjust this if I want total pages.
+      // Actually, my previous change in InventoryController.java was:
+      // return inventoryMapper.toItemResponses(inventoryService.getInventoryItemsByGroup(userId, groupId, pageRequest).getContent());
+      // So it returns List<InventoryItemResponse>.
+    } catch (error) {
+      showToast('Ürünler yüklenemedi.', 'error');
+    } finally {
+      setLoadingItems(false);
+    }
+  }, [inventoryService, pageSize, showToast]);
+
   const fetchShoppingList = useCallback(async (groupIds?: number[]) => {
     setLoadingShoppingList(true);
     try {
@@ -83,7 +108,7 @@ export const useInventory = () => {
     [groups, selectedGroupId]
   );
 
-  const activeItems = useMemo(() => activeGroup?.items ?? [], [activeGroup]);
+  const activeItems = useMemo(() => items, [items]);
 
   const filteredItems = useMemo(() => {
     if (!itemSearchQuery.trim()) return activeItems;
@@ -93,6 +118,12 @@ export const useInventory = () => {
       item.ingredient?.category.toLowerCase().includes(query)
     );
   }, [activeItems, itemSearchQuery]);
+
+  useEffect(() => {
+    if (selectedGroupId) {
+      loadItems(selectedGroupId, currentPage);
+    }
+  }, [selectedGroupId, currentPage, loadItems]);
 
   const loadGroups = useCallback(async (options?: { preferredGroupId?: number | null; showLoader?: boolean }) => {
     if (options?.showLoader) setLoading(true);
@@ -105,6 +136,9 @@ export const useInventory = () => {
         if (preferred && nextGroups.some((group) => group.id === preferred)) return preferred;
         return nextGroups[0]?.id ?? null;
       });
+
+      // Reset page when group changes or reloads
+      setCurrentPage(0);
 
       // Fetch shopping list for all groups to identify low stock items globally
       if (nextGroups.length > 0) {
@@ -266,6 +300,10 @@ export const useInventory = () => {
     ingredientSpecificWeights,
     loadGroups,
     loadInvitations,
+    loadItems,
+    currentPage,
+    setCurrentPage,
+    loadingItems,
     handleUserSearch,
     handleIngredientSelect,
     resetItemForm,

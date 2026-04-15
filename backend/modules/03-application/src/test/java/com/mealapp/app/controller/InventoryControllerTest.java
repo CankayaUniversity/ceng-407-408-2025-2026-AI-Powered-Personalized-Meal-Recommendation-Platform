@@ -354,13 +354,61 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .icon("home")
                 .build();
 
-        when(inventoryService.getUserInventoryGroups(anyString()))
-                .thenReturn(List.of(group));
+        org.springframework.data.domain.Page<InventoryGroup> page = new org.springframework.data.domain.PageImpl<>(List.of(group));
+
+        when(inventoryService.getUserInventoryGroups(anyString(), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(page);
 
         mockMvc.perform(get("/api/v1/inventory-groups"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("Home"));
+    }
+
+    @Test
+    void shouldGetInventoryGroupsWithPagination() throws Exception {
+        InventoryGroup group = InventoryGroup.builder()
+                .id(1L)
+                .name("Home")
+                .icon("home")
+                .build();
+
+        org.springframework.data.domain.Page<InventoryGroup> page = new org.springframework.data.domain.PageImpl<>(List.of(group));
+
+        when(inventoryService.getUserInventoryGroups(anyString(), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/inventory-groups")
+                        .param("page", "0")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value("Home"));
+
+        verify(inventoryService).getUserInventoryGroups(eq("system-user"), argThat(p -> p.getPageNumber() == 0 && p.getPageSize() == 5));
+    }
+
+    @Test
+    void shouldGetInventoryItemsWithPagination() throws Exception {
+        Inventory item = Inventory.builder()
+                .id(1L)
+                .quantity(500.0)
+                .unit("g")
+                .build();
+
+        org.springframework.data.domain.Page<Inventory> page = new org.springframework.data.domain.PageImpl<>(List.of(item));
+
+        when(inventoryService.getInventoryItemsByGroup(anyString(), anyLong(), any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/v1/inventory-groups/1/items")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].quantity").value(500.0));
+
+        verify(inventoryService).getInventoryItemsByGroup(eq("system-user"), eq(1L), argThat(p -> p.getPageNumber() == 0 && p.getPageSize() == 10));
     }
 
     @Test

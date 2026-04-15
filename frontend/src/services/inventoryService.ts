@@ -41,12 +41,25 @@ const mapAxiosError = (error: unknown, fallback: string): never => {
 };
 
 export const getInventoryService = (api: AxiosInstance) => ({
-  getInventoryGroups: async (): Promise<InventoryGroup[]> => {
+  getInventoryGroups: async (page: number = 0, size: number = 10): Promise<InventoryGroup[]> => {
     try {
-      const response = await api.get<InventoryGroup[]>('/v1/inventory-groups');
+      const response = await api.get<InventoryGroup[]>('/v1/inventory-groups', {
+        params: { page, size }
+      });
       return response.data;
     } catch (error) {
       return mapAxiosError(error, 'Envanter lokasyonları alınamadı');
+    }
+  },
+
+  getInventoryItems: async (groupId: number, page: number = 0, size: number = 10): Promise<Inventory[]> => {
+    try {
+      const response = await api.get<Inventory[]>(`/v1/inventory-groups/${groupId}/items`, {
+        params: { page, size }
+      });
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Malzeme listesi alınamadı');
     }
   },
 

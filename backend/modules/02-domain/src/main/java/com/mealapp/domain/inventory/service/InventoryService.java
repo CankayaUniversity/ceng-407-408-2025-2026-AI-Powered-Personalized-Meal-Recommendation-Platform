@@ -77,6 +77,30 @@ public class InventoryService {
     }
 
     /**
+     * Kullanıcıya ait envanter lokasyonlarını ve içeriklerini sayfalanmış şekilde getirir.
+     */
+    @Transactional
+    public org.springframework.data.domain.Page<InventoryGroup> getUserInventoryGroups(String userId, org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Page<InventoryGroup> groups = inventoryGroupRepository.findByUsersIdOrderByIdAsc(userId, pageable);
+        if (groups.isEmpty() && pageable.getPageNumber() == 0) {
+            ensureUserHasDefaultGroup(userId);
+            groups = inventoryGroupRepository.findByUsersIdOrderByIdAsc(userId, pageable);
+        }
+        groups.forEach(this::hydrateGroup);
+        return groups;
+    }
+
+    /**
+     * Belirli bir envanter grubundaki malzemeleri sayfalanmış şekilde getirir.
+     */
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<Inventory> getInventoryItemsByGroup(String userId, Long groupId, org.springframework.data.domain.Pageable pageable) {
+        // Güvenlik kontrolü: Kullanıcı bu gruba dahil mi?
+        getRequiredGroup(userId, groupId);
+        return inventoryRepository.findByInventoryGroupIdAndInventoryGroupUsersIdOrderByIngredientNameAsc(groupId, userId, pageable);
+    }
+
+    /**
      * Yeni bir envanter lokasyonu oluşturur.
      */
     public InventoryGroup createGroup(String userId, String name, String icon) {

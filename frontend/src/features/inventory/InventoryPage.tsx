@@ -82,6 +82,9 @@ const InventoryPage: React.FC = () => {
     setLoadingConversions,
     loadGroups,
     loadInvitations,
+    currentPage,
+    setCurrentPage,
+    loadingItems,
     handleUserSearch,
     handleIngredientSelect,
     resetItemForm,
@@ -385,6 +388,9 @@ const InventoryPage: React.FC = () => {
           setSelectedUserIds([]);
           setConsumeModalOpen(true);
         }}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        loadingItems={loadingItems}
       />
 
       {/* Modals */}

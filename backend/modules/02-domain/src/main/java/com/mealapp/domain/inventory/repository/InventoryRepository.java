@@ -16,6 +16,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     List<Inventory> findByInventoryGroupIdAndInventoryGroupUsersIdOrderByIngredientNameAsc(Long inventoryGroupId, String userId);
 
+    org.springframework.data.domain.Page<Inventory> findByInventoryGroupIdAndInventoryGroupUsersIdOrderByIngredientNameAsc(Long inventoryGroupId, String userId, org.springframework.data.domain.Pageable pageable);
+
     /**
      * Kullanıcının üye olduğu lokasyonlardaki belirli bir malzemeyi bulur.
      */

@@ -1,8 +1,8 @@
 package com.mealapp.app.model.mapper.inventory;
 
 import com.mealapp.app.model.dto.inventory.InventoryGroupResponse;
-import com.mealapp.app.model.dto.inventory.InventoryInvitationResponse;
 import com.mealapp.app.model.dto.inventory.InventoryItemResponse;
+import com.mealapp.app.model.dto.inventory.InventoryInvitationResponse;
 import com.mealapp.app.model.dto.notification.NotificationResponse;
 import com.mealapp.app.model.mapper.recipe.IngredientMapper;
 import com.mealapp.app.model.mapper.user.UserMapper;
@@ -49,6 +49,10 @@ public class InventoryMapper {
         return groups.stream()
                 .map(this::toGroupResponse)
                 .toList();
+    }
+
+    public List<InventoryItemResponse> toItemResponses(List<Inventory> items) {
+        return items.stream().map(this::toItemResponse).toList();
     }
 
     public InventoryItemResponse toItemResponse(Inventory item) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pencil, Utensils, Trash2, Search, PlusCircle } from 'lucide-react';
+import { Pencil, Utensils, Trash2, Search, PlusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Inventory } from '../../../types';
 import { formatCategory, formatQuantity } from '../utils/inventoryUtils';
 
@@ -14,6 +14,9 @@ interface InventoryItemListProps {
   onEditItem: (item: Inventory) => void;
   onDeleteItem: (id: number) => void;
   onConsumeItem: (item: Inventory) => void;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  loadingItems: boolean;
 }
 
 export const InventoryItemList: React.FC<InventoryItemListProps> = ({
@@ -26,7 +29,10 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
   onAddItem,
   onEditItem,
   onDeleteItem,
-  onConsumeItem
+  onConsumeItem,
+  currentPage,
+  onPageChange,
+  loadingItems
 }) => {
   const categoryCount = new Set(items.map((item) => item.ingredient?.category).filter(Boolean)).size;
 
@@ -100,99 +106,133 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
       </div>
 
       <div className="meal-card shadow-brand-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-card-border/50 bg-foreground/[0.01]">
-                <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Ürün / Malzeme</th>
-                <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 hidden md:table-cell">Kategori</th>
-                <th className="px-6 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Miktar</th>
-                <th className="px-6 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-card-border/30">
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-3 opacity-20">
-                      <Utensils size={48} />
-                      <p className="font-serif text-lg font-bold">Burada henüz bir şey yok.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                items.map((item) => {
-                  const status = getStockStatus(item);
-                  return (
-                    <tr key={item.id} className={`group transition-colors ${status ? 'bg-terracotta/[0.02]' : 'hover:bg-foreground/[0.01]'}`}>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className={`h-10 w-10 rounded-xl flex items-center justify-center transition-all font-black ${
-                            status 
-                              ? 'bg-terracotta text-white' 
-                              : 'bg-foreground/5 text-foreground/20 group-hover:bg-terracotta group-hover:text-white'
-                          }`}>
-                            {item.ingredient?.name.charAt(0)}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-foreground">{item.ingredient?.name}</span>
-                            {status && (
-                              <span className={`text-[9px] font-black uppercase tracking-widest ${status === 'MISSING' ? 'text-terracotta' : 'text-amber-600'}`}>
-                                {status === 'MISSING' ? 'EKSİK' : 'AZALDI'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 hidden md:table-cell">
-                        <span className="px-3 py-1 bg-foreground/5 rounded-full text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
-                          {formatCategory(item.ingredient?.category)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5 text-right meal-no-wrap">
-                        <div className="flex flex-col items-end">
-                          <span className={`text-lg font-serif font-black ${status ? 'text-terracotta' : 'text-foreground'}`}>
-                            {formatQuantity(item.quantity)}
-                          </span>
-                          <span className="text-[10px] font-bold text-foreground/30 uppercase tracking-widest">
-                            {item.unit}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center justify-end gap-1 sm:gap-2">
-                          <button 
-                            onClick={() => onConsumeItem(item)}
-                            className="btn-table-action bg-moss-sage/10 text-moss-sage hover:bg-moss-sage hover:text-white"
-                          >
-                            <Utensils size={14} className="sm:hidden" />
-                            <span className="hidden sm:inline">TÜKET</span>
-                          </button>
-                          <div className="flex items-center">
-                            <button 
-                              onClick={() => onEditItem(item)} 
-                              className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
-                              title="Düzenle"
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            <button 
-                              onClick={() => onDeleteItem(item.id)} 
-                              className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
-                              title="Sil"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
+        {loadingItems ? (
+          <div className="px-6 py-20 text-center">
+            <div className="flex flex-col items-center gap-3 opacity-20 animate-pulse">
+              <Utensils size={48} />
+              <p className="font-serif text-lg font-bold">Yükleniyor...</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-card-border/50 bg-foreground/[0.01]">
+                    <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Ürün / Malzeme</th>
+                    <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 hidden md:table-cell">Kategori</th>
+                    <th className="px-6 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Miktar</th>
+                    <th className="px-6 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-card-border/30">
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center gap-3 opacity-20">
+                          <Utensils size={48} />
+                          <p className="font-serif text-lg font-bold">Burada henüz bir şey yok.</p>
                         </div>
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ) : (
+                    items.map((item) => {
+                      const status = getStockStatus(item);
+                      return (
+                        <tr key={item.id} className={`group transition-colors ${status ? 'bg-terracotta/[0.02]' : 'hover:bg-foreground/[0.01]'}`}>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-4">
+                              <div className={`h-10 w-10 rounded-xl flex items-center justify-center transition-all font-black ${
+                                status 
+                                  ? 'bg-terracotta text-white' 
+                                  : 'bg-foreground/5 text-foreground/20 group-hover:bg-terracotta group-hover:text-white'
+                              }`}>
+                                {item.ingredient?.name.charAt(0)}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-foreground">{item.ingredient?.name}</span>
+                                {status && (
+                                  <span className={`text-[9px] font-black uppercase tracking-widest ${status === 'MISSING' ? 'text-terracotta' : 'text-amber-600'}`}>
+                                    {status === 'MISSING' ? 'EKSİK' : 'AZALDI'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 hidden md:table-cell">
+                            <span className="px-3 py-1 bg-foreground/5 rounded-full text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
+                              {formatCategory(item.ingredient?.category)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-right meal-no-wrap">
+                            <div className="flex flex-col items-end">
+                              <span className={`text-lg font-serif font-black ${status ? 'text-terracotta' : 'text-foreground'}`}>
+                                {formatQuantity(item.quantity)}
+                              </span>
+                              <span className="text-[10px] font-bold text-foreground/30 uppercase tracking-widest">
+                                {item.unit}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <div className="flex items-center justify-end gap-1 sm:gap-2">
+                              <button 
+                                onClick={() => onConsumeItem(item)}
+                                className="btn-table-action bg-moss-sage/10 text-moss-sage hover:bg-moss-sage hover:text-white"
+                              >
+                                <Utensils size={14} className="sm:hidden" />
+                                <span className="hidden sm:inline">TÜKET</span>
+                              </button>
+                              <div className="flex items-center">
+                                <button 
+                                  onClick={() => onEditItem(item)} 
+                                  className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
+                                  title="Düzenle"
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                <button 
+                                  onClick={() => onDeleteItem(item.id)} 
+                                  className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
+                                  title="Sil"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between px-6 py-4 bg-foreground/[0.01] border-t border-card-border/50">
+              <p className="text-xs font-bold text-foreground/30 uppercase tracking-widest">
+                Sayfa {currentPage + 1}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onPageChange(currentPage - 1)}
+                  disabled={currentPage === 0}
+                  className="p-2 rounded-xl border border-card-border/50 text-foreground/30 hover:text-terracotta hover:bg-terracotta/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  onClick={() => onPageChange(currentPage + 1)}
+                  disabled={items.length < 10}
+                  className="p-2 rounded-xl border border-card-border/50 text-foreground/30 hover:text-terracotta hover:bg-terracotta/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
