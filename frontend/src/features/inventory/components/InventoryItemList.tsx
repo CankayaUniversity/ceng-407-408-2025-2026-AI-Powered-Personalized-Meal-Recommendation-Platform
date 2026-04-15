@@ -5,6 +5,9 @@ import { formatCategory, formatQuantity } from '../utils/inventoryUtils';
 
 interface InventoryItemListProps {
   activeGroupName: string;
+  totalItems: number;
+  categoryCount: number;
+  lowStockCount: number;
   items: Inventory[];
   searchQuery: string;
   shoppingListItems: any[];
@@ -21,6 +24,9 @@ interface InventoryItemListProps {
 
 export const InventoryItemList: React.FC<InventoryItemListProps> = ({
   activeGroupName,
+  totalItems,
+  categoryCount: totalCategoryCount,
+  lowStockCount: totalLowStockCount,
   items,
   searchQuery,
   shoppingListItems,
@@ -34,15 +40,11 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
   onPageChange,
   loadingItems
 }) => {
-  const categoryCount = new Set(items.map((item) => item.ingredient?.category).filter(Boolean)).size;
-
   const getStockStatus = (item: Inventory) => {
     return shoppingListItems.find(
       si => si.ingredientId === item.ingredient?.id && si.groupName === activeGroupName
     )?.status;
   };
-
-  const lowStockCount = items.filter(item => getStockStatus(item)).length;
 
   return (
     <section className="space-y-6">
@@ -73,15 +75,15 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-card-border/50">
               <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Toplam Kalem</p>
-              <p className="mt-2 text-3xl font-serif font-bold text-foreground">{items.length}</p>
+              <p className="mt-2 text-3xl font-serif font-bold text-foreground">{totalItems}</p>
             </div>
             <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-card-border/50">
               <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Kategoriler</p>
-              <p className="mt-2 text-3xl font-serif font-bold text-foreground">{categoryCount}</p>
+              <p className="mt-2 text-3xl font-serif font-bold text-foreground">{totalCategoryCount}</p>
             </div>
             <div className="p-5 rounded-3xl bg-terracotta/5 border border-terracotta/10">
               <p className="text-[10px] font-bold uppercase tracking-widest text-terracotta/40">Kritik Stok</p>
-              <p className="mt-2 text-3xl font-serif font-bold text-terracotta">{lowStockCount}</p>
+              <p className="mt-2 text-3xl font-serif font-bold text-terracotta">{totalLowStockCount}</p>
             </div>
           </div>
         </div>

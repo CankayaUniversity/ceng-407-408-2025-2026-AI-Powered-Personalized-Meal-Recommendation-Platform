@@ -17,6 +17,8 @@ public class InventoryGroupResponse {
     private String name;
     private String icon;
     private int itemCount;
+    private int categoryCount;
+    private int lowStockCount;
     private List<UserDto> users;
     private List<InventoryItemResponse> items;
 }

@@ -24,8 +24,8 @@ public class InventoryMapper {
     private final IngredientMapper ingredientMapper;
     private final UserMapper userMapper;
 
-    public InventoryGroupResponse toGroupResponse(InventoryGroup group) {
-        List<InventoryItemResponse> items = group.getItems() == null
+    public InventoryGroupResponse toGroupResponse(InventoryGroup group, int lowStockCount) {
+        List<InventoryItemResponse> itemResponses = group.getItems() == null
                 ? List.of()
                 : group.getItems().stream()
                 .sorted(Comparator.comparing(
@@ -35,19 +35,34 @@ public class InventoryMapper {
                 .map(this::toItemResponse)
                 .toList();
 
+        long categoryCount = group.getItems() == null
+                ? 0
+                : group.getItems().stream()
+                .filter(item -> item.getIngredient() != null && item.getIngredient().getCategory() != null)
+                .map(item -> item.getIngredient().getCategory())
+                .distinct()
+                .count();
+
         return InventoryGroupResponse.builder()
                 .id(group.getId())
                 .name(group.getName())
                 .icon(group.getIcon())
-                .itemCount(items.size())
+                .itemCount(group.getItems() != null ? group.getItems().size() : 0)
+                .categoryCount((int) categoryCount)
+                .lowStockCount(lowStockCount)
                 .users(group.getUsers() != null ? group.getUsers().stream().map(userMapper::toDto).toList() : List.of())
-                .items(items)
+                .items(itemResponses)
                 .build();
     }
 
-    public List<InventoryGroupResponse> toGroupResponses(List<InventoryGroup> groups) {
+    public List<InventoryGroupResponse> toGroupResponses(List<InventoryGroup> groups, List<Inventory> allUserLowStockItems) {
         return groups.stream()
-                .map(this::toGroupResponse)
+                .map(group -> {
+                    int groupLowStockCount = (int) allUserLowStockItems.stream()
+                            .filter(item -> item.getInventoryGroup() != null && item.getInventoryGroup().getId().equals(group.getId()))
+                            .count();
+                    return toGroupResponse(group, groupLowStockCount);
+                })
                 .toList();
     }
 

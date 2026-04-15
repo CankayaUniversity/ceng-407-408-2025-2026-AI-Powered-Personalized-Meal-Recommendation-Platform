@@ -199,6 +199,8 @@ export interface InventoryGroup {
   name: string;
   icon?: string | null;
   itemCount: number;
+  categoryCount: number;
+  lowStockCount: number;
   users: User[];
   items: Inventory[];
 }

@@ -364,6 +364,9 @@ const InventoryPage: React.FC = () => {
 
       <InventoryItemList 
         activeGroupName={activeGroup?.name || ''}
+        totalItems={activeGroup?.itemCount || 0}
+        categoryCount={activeGroup?.categoryCount || 0}
+        lowStockCount={activeGroup?.lowStockCount || 0}
         items={filteredItems}
         searchQuery={itemSearchQuery}
         shoppingListItems={shoppingListItems}

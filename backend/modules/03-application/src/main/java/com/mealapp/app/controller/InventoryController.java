@@ -5,6 +5,7 @@ import com.mealapp.app.model.mapper.inventory.InventoryMapper;
 import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.consumption.service.ConsumptionService;
+import com.mealapp.domain.inventory.entity.InventoryGroup;
 import com.mealapp.domain.inventory.service.InventoryInvitationService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
@@ -39,10 +40,12 @@ public class InventoryController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
+        String userId = requireAuthenticatedUserId(jwt);
         org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(page, size);
-        return inventoryMapper.toGroupResponses(
-                inventoryService.getUserInventoryGroups(requireAuthenticatedUserId(jwt), pageRequest).getContent()
-        );
+        List<InventoryGroup> groups = inventoryService.getUserInventoryGroups(userId, pageRequest).getContent();
+        List<com.mealapp.domain.inventory.entity.Inventory> lowStockItems = inventoryService.getLowAndMissingStockItems(userId, null);
+        
+        return inventoryMapper.toGroupResponses(groups, lowStockItems);
     }
 
     @GetMapping("/{groupId}/items")
@@ -62,8 +65,10 @@ public class InventoryController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public InventoryGroupResponse createGroup(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody InventoryGroupRequest request) {
+        String userId = requireAuthenticatedUserId(jwt);
         return inventoryMapper.toGroupResponse(
-                inventoryService.createGroup(requireAuthenticatedUserId(jwt), request.getName(), request.getIcon())
+                inventoryService.createGroup(userId, request.getName(), request.getIcon()),
+                0 // New group has 0 low stock items
         );
     }
 
@@ -73,9 +78,10 @@ public class InventoryController {
             @PathVariable Long groupId,
             @Valid @RequestBody InventoryGroupRequest request
     ) {
-        return inventoryMapper.toGroupResponse(
-                inventoryService.updateGroup(requireAuthenticatedUserId(jwt), groupId, request.getName(), request.getIcon())
-        );
+        String userId = requireAuthenticatedUserId(jwt);
+        InventoryGroup group = inventoryService.updateGroup(userId, groupId, request.getName(), request.getIcon());
+        int lowStockCount = (int) inventoryService.getLowAndMissingStockItems(userId, List.of(groupId)).size();
+        return inventoryMapper.toGroupResponse(group, lowStockCount);
     }
 
     @DeleteMapping("/{groupId}")
@@ -211,9 +217,10 @@ public class InventoryController {
             @PathVariable Long groupId,
             @PathVariable String userIdToRemove
     ) {
-        return inventoryMapper.toGroupResponse(
-                inventoryService.removeUserFromGroup(requireAuthenticatedUserId(jwt), groupId, userIdToRemove)
-        );
+        String userId = requireAuthenticatedUserId(jwt);
+        InventoryGroup group = inventoryService.removeUserFromGroup(userId, groupId, userIdToRemove);
+        int lowStockCount = (int) inventoryService.getLowAndMissingStockItems(userId, List.of(groupId)).size();
+        return inventoryMapper.toGroupResponse(group, lowStockCount);
     }
 
     @PostMapping("/{groupId}/items/{itemId}/consume")
