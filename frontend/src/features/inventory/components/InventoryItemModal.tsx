@@ -13,6 +13,9 @@ interface InventoryItemModalProps {
   savingItem: boolean;
   searchingIngredients: boolean;
   ingredientResults: Ingredient[];
+  ingredientSearchError: string | null;
+  hasCompletedIngredientSearch: boolean;
+  canSearchIngredients: boolean;
   expandedManualInput: boolean;
   setExpandedManualInput: (val: boolean) => void;
   conversions: any[];
@@ -32,6 +35,9 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
   savingItem,
   searchingIngredients,
   ingredientResults,
+  ingredientSearchError,
+  hasCompletedIngredientSearch,
+  canSearchIngredients,
   expandedManualInput,
   setExpandedManualInput,
   conversions,
@@ -41,7 +47,33 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
   onQuickUnitAdjust,
   onSave
 }) => {
+  const searchContainerRef = React.useRef<HTMLDivElement>(null);
+  const [isSearchFocused, setIsSearchFocused] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      setIsSearchFocused(false);
+    }
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!searchContainerRef.current?.contains(event.target as Node)) {
+        setIsSearchFocused(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
+
   if (!isOpen) return null;
+
+  const shouldShowSearchDropdown =
+    isSearchFocused &&
+    !itemDraft.selectedIngredient &&
+    canSearchIngredients &&
+    (searchingIngredients || ingredientResults.length > 0 || !!ingredientSearchError || hasCompletedIngredientSearch);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
@@ -68,7 +100,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
           <form onSubmit={onSave} className="mt-10 space-y-8">
             <div className="space-y-4">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 px-2">Malzeme Ara</label>
-              <div className="relative group">
+              <div ref={searchContainerRef} className="relative group">
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-foreground/20 group-focus-within:text-terracotta transition-colors">
                   <Search size={20} />
                 </div>
@@ -78,6 +110,12 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                   placeholder="Örn: Domates, Süt, Tavuk..."
                   value={itemDraft.ingredientQuery}
                   onChange={(e) => onSearchIngredients(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setIsSearchFocused(false);
+                    }
+                  }}
                   className="w-full rounded-[2rem] border border-card-border bg-foreground/[0.02] pl-16 pr-6 py-5 font-bold text-foreground focus:bg-card focus:border-terracotta focus:ring-8 focus:ring-terracotta/5 transition-all outline-none"
                   required
                 />
@@ -87,25 +125,43 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                   </div>
                 )}
 
-                {ingredientResults.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-10 mt-3 max-h-[320px] overflow-y-auto rounded-[2rem] border border-card-border bg-card p-3 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
-                    {ingredientResults.map((ing) => (
-                      <button
-                        key={ing.id}
-                        type="button"
-                        onClick={() => onSelectIngredient(ing)}
-                        className="flex w-full items-center gap-4 rounded-2xl p-4 text-left transition-all hover:bg-terracotta/5 group"
-                      >
-                        <div className="h-12 w-12 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground/20 group-hover:bg-terracotta group-hover:text-white transition-colors font-black">
-                          {ing.name.charAt(0)}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-foreground">{ing.name}</p>
-                          <p className="text-[10px] font-medium text-foreground-muted uppercase tracking-widest mt-0.5">{ing.category?.replace('_', ' ') || 'Genel'}</p>
-                        </div>
-                        <Plus size={16} className="text-foreground/10 group-hover:text-terracotta" />
-                      </button>
-                    ))}
+                {shouldShowSearchDropdown && (
+                  <div className="absolute left-0 right-0 top-full z-40 mt-3 max-h-[320px] overflow-y-auto rounded-[2rem] border border-card-border bg-card p-3 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
+                    {searchingIngredients ? (
+                      <div className="flex items-center justify-center gap-3 px-4 py-6 text-sm font-medium text-foreground/50">
+                        <Loader2 size={18} className="animate-spin text-terracotta" />
+                        Malzemeler aranıyor...
+                      </div>
+                    ) : ingredientSearchError ? (
+                      <div className="px-4 py-5 text-sm font-semibold text-red-500 bg-red-500/5 rounded-[1.5rem]">
+                        {ingredientSearchError}
+                      </div>
+                    ) : ingredientResults.length > 0 ? (
+                      ingredientResults.map((ing) => (
+                        <button
+                          key={ing.id}
+                          type="button"
+                          onClick={() => {
+                            onSelectIngredient(ing);
+                            setIsSearchFocused(false);
+                          }}
+                          className="flex w-full items-center gap-4 rounded-2xl p-4 text-left transition-all hover:bg-terracotta/5 group"
+                        >
+                          <div className="h-12 w-12 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground/20 group-hover:bg-terracotta group-hover:text-white transition-colors font-black">
+                            {ing.name.charAt(0)}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-foreground">{ing.name}</p>
+                            <p className="text-[10px] font-medium text-foreground-muted uppercase tracking-widest mt-0.5">{ing.category?.replace('_', ' ') || 'Genel'}</p>
+                          </div>
+                          <Plus size={16} className="text-foreground/10 group-hover:text-terracotta" />
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-6 text-sm font-medium text-foreground/45">
+                        Bu aramayla eşleşen bir malzeme bulunamadı.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -227,7 +283,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
               </div>
             )}
 
-            <div className="flex gap-4 pt-4 mt-10 border-t border-card-border/50 sticky bottom-0 bg-card py-4 z-20">
+            <div className="flex gap-4 pt-4 mt-10 border-t border-card-border/50 sticky bottom-0 bg-card py-4 z-10">
               <button 
                 type="button" 
                 onClick={onClose} 
