@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { useMemo } from 'react';
 import { useService } from '../infrastructure/di';
 import { HttpClientKey } from '../infrastructure/services';
-import { ConsumptionRequest, ConsumptionResponse, ConsumptionSummary } from '../types';
+import { ConsumptionRequest, ConsumptionResponse, ConsumptionSummary, ConsumptionAnalysis } from '../types';
 import {
   ApiError,
   AuthenticationError,
@@ -75,6 +75,34 @@ export const getConsumptionService = (api: AxiosInstance) => ({
       return response.data;
     } catch (error) {
       return mapAxiosError(error, 'Birim dönüştürülemedi');
+    }
+  },
+
+  getAnalysis: async (params: { startDate?: string; endDate?: string; period?: string }): Promise<ConsumptionAnalysis> => {
+    try {
+      const response = await api.get<ConsumptionAnalysis>('/v1/consumptions/analysis', { params });
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Tüketim analizi alınamadı');
+    }
+  },
+
+  getHistory: async (startDate?: string, endDate?: string): Promise<ConsumptionResponse[]> => {
+    try {
+      const response = await api.get<ConsumptionResponse[]>('/v1/consumptions/history', {
+        params: { startDate, endDate }
+      });
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Tüketim geçmişi alınamadı');
+    }
+  },
+
+  deleteConsumption: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/v1/consumptions/${id}`);
+    } catch (error) {
+      return mapAxiosError(error, 'Tüketim kaydı silinemedi');
     }
   }
 });

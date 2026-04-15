@@ -20,6 +20,7 @@ import Profile from './features/profile/Profile';
 import InventoryPage from './features/inventory/InventoryPage';
 import NotificationsPage from './features/notifications/NotificationsPage';
 import RecommendationPage from './features/recommendations/RecommendationPage';
+import ConsumptionHistoryPage from './features/consumption/pages/ConsumptionHistoryPage';
 import keycloakConfig from './keycloak-config.json';
 import type { AuthService } from './infrastructure/services/auth/AuthService';
 
@@ -127,8 +128,18 @@ const App: React.FC = () => {
                             </MainLayout>
                           </PrivateRoute>
                         }
-                    />
-                  </Routes>
+                      />
+                      <Route
+                        path="/history"
+                        element={
+                          <PrivateRoute>
+                            <MainLayout>
+                              <ConsumptionHistoryPage />
+                            </MainLayout>
+                          </PrivateRoute>
+                        }
+                      />
+                    </Routes>
                 </Router>
               </AuthGate>
             </AuthContextProvider>

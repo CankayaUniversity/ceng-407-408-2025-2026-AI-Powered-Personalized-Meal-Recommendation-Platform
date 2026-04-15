@@ -1,5 +1,6 @@
 package com.mealapp.app.controller;
 
+import com.mealapp.app.model.dto.consumption.ConsumptionAnalysisResponse;
 import com.mealapp.app.model.dto.consumption.ConsumptionRequest;
 import com.mealapp.app.model.dto.consumption.ConsumptionResponse;
 import com.mealapp.app.model.dto.consumption.ConsumptionSummaryResponse;
@@ -19,12 +20,17 @@ import com.mealapp.domain.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Günlük tüketim (yemek) kayıtlarını yöneten uç noktalar.
@@ -40,6 +46,104 @@ public class ConsumptionController {
     private final RecipeService recipeService;
     private final IngredientService ingredientService;
     private final InventoryService inventoryService;
+
+    /**
+     * Belirli bir tarih aralığı için tüketim analizi ve hedeften sapma raporu döner.
+     */
+    @GetMapping("/analysis")
+    public ConsumptionAnalysisResponse getAnalysis(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "WEEKLY") String period
+    ) {
+        String userId = requireAuthenticatedUserId(jwt, null);
+        User user = userService.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+
+        LocalDate start = startDate;
+        LocalDate end = endDate;
+
+        if (start == null) {
+            if ("MONTHLY".equalsIgnoreCase(period)) {
+                start = LocalDate.now().minusMonths(1);
+            } else {
+                start = LocalDate.now().minusWeeks(1);
+            }
+        }
+        if (end == null) {
+            end = LocalDate.now();
+        }
+
+        List<DailyConsumption> logs = dailyConsumptionService.getConsumptionsBetween(userId, start, end);
+        Map<LocalDate, DailyConsumptionService.DailyNutritionSummary> dailySummaries = 
+                dailyConsumptionService.groupConsumptionsByDate(logs);
+
+        List<ConsumptionAnalysisResponse.DailyDetail> details = new ArrayList<>();
+        int totalCal = 0;
+        double totalPro = 0, totalCarb = 0, totalFat = 0;
+        int targetCal = user.getDailyCalorieTarget() != null ? user.getDailyCalorieTarget() : 2000;
+
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            DailyConsumptionService.DailyNutritionSummary daySum = dailySummaries.get(date);
+            int consumed = daySum != null ? daySum.totalCalories() : 0;
+            
+            details.add(ConsumptionAnalysisResponse.DailyDetail.builder()
+                    .date(date)
+                    .consumedCalories(consumed)
+                    .targetCalories(targetCal)
+                    .deviation(consumed - targetCal)
+                    .protein(daySum != null ? daySum.totalProtein() : 0.0)
+                    .carbs(daySum != null ? daySum.totalCarbs() : 0.0)
+                    .fat(daySum != null ? daySum.totalFat() : 0.0)
+                    .build());
+
+            if (daySum != null) {
+                totalCal += daySum.totalCalories();
+                totalPro += daySum.totalProtein();
+                totalCarb += daySum.totalCarbs();
+                totalFat += daySum.totalFat();
+            }
+        }
+
+        long days = java.time.temporal.ChronoUnit.DAYS.between(start, end) + 1;
+        
+        return ConsumptionAnalysisResponse.builder()
+                .startDate(start)
+                .endDate(end)
+                .period(period)
+                .dailyDetails(details)
+                .totals(ConsumptionAnalysisResponse.Summary.builder()
+                        .calories(totalCal)
+                        .protein(totalPro)
+                        .carbs(totalCarb)
+                        .fat(totalFat)
+                        .build())
+                .averages(ConsumptionAnalysisResponse.Summary.builder()
+                        .calories((int) (totalCal / days))
+                        .protein(totalPro / days)
+                        .carbs(totalCarb / days)
+                        .fat(totalFat / days)
+                        .build())
+                .build();
+    }
+
+    /**
+     * Geçmiş tüketim kayıtlarını detaylı liste halinde döner.
+     */
+    @GetMapping("/history")
+    public List<ConsumptionResponse> getHistory(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        String userId = requireAuthenticatedUserId(jwt, null);
+        LocalDate start = startDate != null ? startDate : LocalDate.now().minusWeeks(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+
+        return dailyConsumptionService.getConsumptionsBetween(userId, start, end).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 
     /**
      * Belirli bir gün için toplam kalori ve makro özetini döner.
@@ -245,6 +349,16 @@ public class ConsumptionController {
         } catch (Exception ignored) {}
         
         return null;
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteConsumption(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id
+    ) {
+        String userId = requireAuthenticatedUserId(jwt, null);
+        dailyConsumptionService.deleteConsumption(userId, id);
     }
 
     private ConsumptionResponse mapToResponse(DailyConsumption saved) {

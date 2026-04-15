@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     ChefHat, LayoutDashboard, Utensils, User as UserIcon,
     LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
-    Bell, Settings, Check, X, Calculator
+    Bell, Settings, Check, X, Calculator, BarChart2
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
@@ -141,6 +141,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const menuItems = [
         { id: 'dashboard', text: t('navigation.home'), icon: <LayoutDashboard size={20} />, route: '/dashboard' },
         { id: 'recipes', text: t('navigation.recipes'), icon: <Utensils size={20} />, route: '/recipes', private: true },
+        { id: 'analysis', text: t('navigation.analysis'), icon: <BarChart2 size={20} />, route: '/history', private: true },
         { id: 'inventory', text: t('navigation.inventory'), icon: <Boxes size={20} />, route: '/inventory', private: true },
         { id: 'recommendations', text: t('navigation.recommendations'), icon: <Sparkles size={20} />, route: '/recommendations', private: true },
         { id: 'profile', text: t('navigation.profile'), icon: <UserIcon size={20} />, route: '/profile', private: true },

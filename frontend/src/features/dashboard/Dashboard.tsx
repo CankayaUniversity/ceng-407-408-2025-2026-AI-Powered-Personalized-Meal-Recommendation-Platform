@@ -227,6 +227,9 @@ const Dashboard: React.FC = () => {
             </div>
 
             <div className="meal-hero-actions">
+              <button onClick={() => navigate('/history')} className="btn-responsive btn-secondary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base bg-primary/10 text-primary border-primary/20">
+                <TrendingUp size={18} /> <span className="meal-no-wrap">Analiz</span>
+              </button>
               <button onClick={openConsumption} className="btn-responsive btn-primary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base">
                 <UtensilsCrossed size={18} /> <span className="meal-no-wrap">Öğün Ekle</span>
               </button>
@@ -318,9 +321,12 @@ const Dashboard: React.FC = () => {
                 <span className="meal-overline">Beslenme Takibi</span>
                 <h3 className="meal-section-title">Günlük Özet</h3>
               </div>
-              <div className="p-3 bg-terracotta/10 text-terracotta rounded-2xl">
-                <Flame size={20} />
-              </div>
+              <button 
+                onClick={() => navigate('/history')}
+                className="p-3 bg-terracotta/10 text-terracotta rounded-2xl hover:bg-terracotta/20 transition-all"
+              >
+                <TrendingUp size={20} />
+              </button>
             </div>
 
             <div className="space-y-4">

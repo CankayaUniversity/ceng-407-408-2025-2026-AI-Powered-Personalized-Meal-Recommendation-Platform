@@ -29,8 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -732,5 +731,27 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         verify(dailyConsumptionService).logConsumption(argThat(c -> 
             c.getPortionGrams() != null
         ));
+    }
+
+    @Test
+    void shouldReturnAnalysisData() throws Exception {
+        User user = User.builder().id("system-user").dailyCalorieTarget(2200).build();
+        when(userService.findById("system-user")).thenReturn(Optional.of(user));
+
+        when(dailyConsumptionService.getConsumptionsBetween(eq("system-user"), any(), any())).thenReturn(new java.util.ArrayList<>());
+        
+        mockMvc.perform(get("/api/v1/consumptions/analysis")
+                        .param("period", "WEEKLY"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.period").value("WEEKLY"))
+                .andExpect(jsonPath("$.dailyDetails").isArray())
+                .andExpect(jsonPath("$.dailyDetails[0].targetCalories").value(2200));
+    }
+    @Test
+    void shouldDeleteConsumption() throws Exception {
+        mockMvc.perform(delete("/api/v1/consumptions/123"))
+                .andExpect(status().isNoContent());
+
+        verify(dailyConsumptionService).deleteConsumption("system-user", 123L);
     }
 }

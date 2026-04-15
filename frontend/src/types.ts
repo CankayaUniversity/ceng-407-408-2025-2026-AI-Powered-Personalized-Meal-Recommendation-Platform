@@ -289,6 +289,32 @@ export interface ConsumptionSummary {
   totalFat: number;
 }
 
+export interface ConsumptionAnalysis {
+  startDate: string;
+  endDate: string;
+  period: 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
+  totals: AnalysisSummary;
+  averages: AnalysisSummary;
+  dailyDetails: DailyAnalysisDetail[];
+}
+
+export interface AnalysisSummary {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface DailyAnalysisDetail {
+  date: string;
+  consumedCalories: number;
+  targetCalories: number;
+  deviation: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export interface InventoryGroupRequest {
   name: string;
   icon?: string;

@@ -16,7 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Günlük tüketim kayıtlarını yöneten domain servisi.
@@ -310,6 +313,46 @@ public class DailyConsumptionService {
                 .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0);
+    }
+
+    /**
+     * Verilen tarih aralığı için tüketim verilerini çeker.
+     */
+    public List<DailyConsumption> getConsumptionsBetween(String userId, LocalDate startDate, LocalDate endDate) {
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+        return dailyConsumptionRepository.findByUserIdAndConsumedAtBetween(userId, start, end);
+    }
+
+    public void deleteConsumption(String userId, Long id) {
+        DailyConsumption consumption = dailyConsumptionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tüketim kaydı bulunamadı."));
+        
+        if (!consumption.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Bu kaydı silme yetkiniz yok.");
+        }
+        
+        dailyConsumptionRepository.delete(consumption);
+    }
+
+    /**
+     * Tüketim listesini güne göre gruplayıp özetler.
+     */
+    public Map<LocalDate, DailyNutritionSummary> groupConsumptionsByDate(List<DailyConsumption> logs) {
+        return logs.stream()
+                .collect(Collectors.groupingBy(
+                        log -> log.getConsumedAt().toLocalDate(),
+                        Collectors.collectingAndThen(
+                                Collectors.toList(),
+                                list -> {
+                                    int cal = list.stream().map(DailyConsumption::getEstimatedCalories).filter(java.util.Objects::nonNull).mapToInt(Integer::intValue).sum();
+                                    double pro = list.stream().map(DailyConsumption::getEstimatedProtein).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue).sum();
+                                    double carb = list.stream().map(DailyConsumption::getEstimatedCarbs).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue).sum();
+                                    double fat = list.stream().map(DailyConsumption::getEstimatedFat).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue).sum();
+                                    return new DailyNutritionSummary(cal, pro, carb, fat);
+                                }
+                        )
+                ));
     }
 
     private record NutritionTotals(
