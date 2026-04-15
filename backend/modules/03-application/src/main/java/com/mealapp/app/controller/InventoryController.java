@@ -41,8 +41,7 @@ public class InventoryController {
             @RequestParam(defaultValue = "10") int size
     ) {
         String userId = requireAuthenticatedUserId(jwt);
-        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(page, size);
-        List<InventoryGroup> groups = inventoryService.getUserInventoryGroups(userId, pageRequest).getContent();
+        List<InventoryGroup> groups = inventoryService.getUserInventoryGroups(userId);
         List<com.mealapp.domain.inventory.entity.Inventory> lowStockItems = inventoryService.getLowAndMissingStockItems(userId, null);
         
         return inventoryMapper.toGroupResponses(groups, lowStockItems);

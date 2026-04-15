@@ -21,6 +21,7 @@ import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.recipe.entity.IngredientUnit;
 import java.util.Optional;
 import java.util.List;
+import java.util.stream.IntStream;
 
 class InventoryControllerTest extends AbstractMockMvcTest {
 
@@ -347,45 +348,54 @@ class InventoryControllerTest extends AbstractMockMvcTest {
     }
 
     @Test
-    void shouldGetInventoryGroups() throws Exception {
-        InventoryGroup group = InventoryGroup.builder()
-                .id(1L)
-                .name("Home")
-                .icon("home")
-                .build();
+    void shouldGetAllInventoryGroupsWithoutTruncation() throws Exception {
+        List<InventoryGroup> groups = IntStream.rangeClosed(1, 12)
+                .mapToObj(index -> InventoryGroup.builder()
+                        .id((long) index)
+                        .name("Group " + index)
+                        .icon("icon-" + index)
+                        .build())
+                .toList();
 
-        org.springframework.data.domain.Page<InventoryGroup> page = new org.springframework.data.domain.PageImpl<>(List.of(group));
-
-        when(inventoryService.getUserInventoryGroups(anyString(), any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(page);
+        when(inventoryService.getUserInventoryGroups("system-user"))
+                .thenReturn(groups);
+        when(inventoryService.getLowAndMissingStockItems("system-user", null))
+                .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/v1/inventory-groups"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("Home"));
+                .andExpect(jsonPath("$[0].name").value("Group 1"))
+                .andExpect(jsonPath("$[11].id").value(12))
+                .andExpect(jsonPath("$[11].name").value("Group 12"));
     }
 
     @Test
-    void shouldGetInventoryGroupsWithPagination() throws Exception {
-        InventoryGroup group = InventoryGroup.builder()
-                .id(1L)
-                .name("Home")
-                .icon("home")
-                .build();
+    void shouldIgnorePageAndSizeParamsForInventoryGroups() throws Exception {
+        List<InventoryGroup> groups = IntStream.rangeClosed(1, 12)
+                .mapToObj(index -> InventoryGroup.builder()
+                        .id((long) index)
+                        .name("Group " + index)
+                        .icon("icon-" + index)
+                        .build())
+                .toList();
 
-        org.springframework.data.domain.Page<InventoryGroup> page = new org.springframework.data.domain.PageImpl<>(List.of(group));
-
-        when(inventoryService.getUserInventoryGroups(anyString(), any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(page);
+        when(inventoryService.getUserInventoryGroups("system-user"))
+                .thenReturn(groups);
+        when(inventoryService.getLowAndMissingStockItems("system-user", null))
+                .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/v1/inventory-groups")
                         .param("page", "0")
                         .param("size", "5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("Home"));
+                .andExpect(jsonPath("$[0].name").value("Group 1"))
+                .andExpect(jsonPath("$[11].id").value(12))
+                .andExpect(jsonPath("$[11].name").value("Group 12"));
 
-        verify(inventoryService).getUserInventoryGroups(eq("system-user"), argThat(p -> p.getPageNumber() == 0 && p.getPageSize() == 5));
+        verify(inventoryService).getUserInventoryGroups("system-user");
+        verify(inventoryService, never()).getUserInventoryGroups(anyString(), any(org.springframework.data.domain.Pageable.class));
     }
 
     @Test
