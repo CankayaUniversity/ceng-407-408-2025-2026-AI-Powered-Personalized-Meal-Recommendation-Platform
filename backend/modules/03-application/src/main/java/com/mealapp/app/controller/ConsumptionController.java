@@ -41,6 +41,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ConsumptionController {
 
+    private static final String INVALID_DATE_RANGE_MESSAGE = "Başlangıç tarihi bitiş tarihinden sonra olamaz.";
+
     private final DailyConsumptionService dailyConsumptionService;
     private final UserService userService;
     private final RecipeService recipeService;
@@ -60,19 +62,9 @@ public class ConsumptionController {
         String userId = requireAuthenticatedUserId(jwt, null);
         User user = userService.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
 
-        LocalDate start = startDate;
-        LocalDate end = endDate;
-
-        if (start == null) {
-            if ("MONTHLY".equalsIgnoreCase(period)) {
-                start = LocalDate.now().minusMonths(1);
-            } else {
-                start = LocalDate.now().minusWeeks(1);
-            }
-        }
-        if (end == null) {
-            end = LocalDate.now();
-        }
+        DateRange dateRange = resolveAnalysisDateRange(startDate, endDate, period);
+        LocalDate start = dateRange.start();
+        LocalDate end = dateRange.end();
 
         List<DailyConsumption> logs = dailyConsumptionService.getConsumptionsBetween(userId, start, end);
         Map<LocalDate, DailyConsumptionService.DailyNutritionSummary> dailySummaries = 
@@ -137,8 +129,9 @@ public class ConsumptionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         String userId = requireAuthenticatedUserId(jwt, null);
-        LocalDate start = startDate != null ? startDate : LocalDate.now().minusWeeks(1);
-        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        DateRange dateRange = resolveHistoryDateRange(startDate, endDate);
+        LocalDate start = dateRange.start();
+        LocalDate end = dateRange.end();
 
         return dailyConsumptionService.getConsumptionsBetween(userId, start, end).stream()
                 .map(this::mapToResponse)
@@ -402,6 +395,39 @@ public class ConsumptionController {
         throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
     }
 
+    private DateRange resolveAnalysisDateRange(LocalDate startDate, LocalDate endDate, String period) {
+        LocalDate start = startDate;
+        LocalDate end = endDate;
+
+        if (start == null) {
+            if ("MONTHLY".equalsIgnoreCase(period)) {
+                start = LocalDate.now().minusMonths(1);
+            } else {
+                start = LocalDate.now().minusWeeks(1);
+            }
+        }
+        if (end == null) {
+            end = LocalDate.now();
+        }
+
+        validateDateRange(start, end);
+        return new DateRange(start, end);
+    }
+
+    private DateRange resolveHistoryDateRange(LocalDate startDate, LocalDate endDate) {
+        LocalDate start = startDate != null ? startDate : LocalDate.now().minusWeeks(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+
+        validateDateRange(start, end);
+        return new DateRange(start, end);
+    }
+
+    private void validateDateRange(LocalDate start, LocalDate end) {
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException(INVALID_DATE_RANGE_MESSAGE);
+        }
+    }
+
     private String resolveFoodName(ConsumptionRequest request, Recipe recipe, Ingredient ingredient) {
         if (request.getFoodName() != null && !request.getFoodName().isBlank()) {
             return request.getFoodName().trim();
@@ -447,5 +473,8 @@ public class ConsumptionController {
     private boolean isUserInGroup(User user, InventoryGroup group) {
         if (group.getUsers() == null) return false;
         return group.getUsers().stream().anyMatch(u -> u.getId().equals(user.getId()));
+    }
+
+    private record DateRange(LocalDate start, LocalDate end) {
     }
 }
