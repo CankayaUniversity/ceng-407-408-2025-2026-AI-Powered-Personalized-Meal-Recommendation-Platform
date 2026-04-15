@@ -42,24 +42,24 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
     <section className="space-y-6">
       <div className="grid grid-cols-1 gap-6">
         <div className="meal-card meal-highlight-frame shadow-brand-card flex flex-col justify-between">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="meal-overline">Current Inventory</p>
-              <h3 className="meal-section-title mt-1 text-3xl">{activeGroupName || 'Seçili Alan'}</h3>
+              <h3 className="meal-section-title mt-1 text-2xl sm:text-3xl">{activeGroupName || 'Seçili Alan'}</h3>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button 
                 onClick={onEditGroup} 
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-card-border bg-background text-xs font-bold hover:text-terracotta transition-colors dark:bg-foreground/5"
+                className="btn-responsive px-4 py-2.5 rounded-xl border border-card-border bg-background text-xs font-bold hover:text-terracotta transition-colors dark:bg-foreground/5"
               >
-                <Pencil size={14} /> Düzenle
+                <Pencil size={14} /> <span className="meal-no-wrap">Düzenle</span>
               </button>
               <button 
                 onClick={onAddItem} 
-                className="flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-espresso-midnight text-white text-sm font-black hover:bg-terracotta hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-espresso-midnight/20 dark:bg-terracotta dark:shadow-terracotta/30"
+                className="flex-[2] sm:flex-none btn-flex-icon bg-espresso-midnight text-white text-[11px] sm:text-sm font-black hover:bg-terracotta hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-espresso-midnight/20 dark:bg-terracotta dark:shadow-terracotta/30"
               >
-                <PlusCircle size={20} />
-                ÜRÜN EKLE
+                <PlusCircle size={20} className="hidden sm:block" />
+                <span className="meal-no-wrap text-center">ÜRÜN EKLE</span>
               </button>
             </div>
           </div>
@@ -105,7 +105,7 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
             <thead>
               <tr className="border-b border-card-border/50 bg-foreground/[0.01]">
                 <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Ürün / Malzeme</th>
-                <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Kategori</th>
+                <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 hidden md:table-cell">Kategori</th>
                 <th className="px-6 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Miktar</th>
                 <th className="px-6 py-5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">İşlemler</th>
               </tr>
@@ -144,12 +144,12 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5">
+                      <td className="px-6 py-5 hidden md:table-cell">
                         <span className="px-3 py-1 bg-foreground/5 rounded-full text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
                           {formatCategory(item.ingredient?.category)}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-right">
+                      <td className="px-6 py-5 text-right meal-no-wrap">
                         <div className="flex flex-col items-end">
                           <span className={`text-lg font-serif font-black ${status ? 'text-terracotta' : 'text-foreground'}`}>
                             {formatQuantity(item.quantity)}
@@ -160,25 +160,30 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1 sm:gap-2">
                           <button 
                             onClick={() => onConsumeItem(item)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-moss-sage/10 text-moss-sage text-[10px] font-black hover:bg-moss-sage hover:text-white transition-all"
+                            className="btn-table-action bg-moss-sage/10 text-moss-sage hover:bg-moss-sage hover:text-white"
                           >
-                            TÜKET
+                            <Utensils size={14} className="sm:hidden" />
+                            <span className="hidden sm:inline">TÜKET</span>
                           </button>
-                          <button 
-                            onClick={() => onEditItem(item)} 
-                            className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button 
-                            onClick={() => onDeleteItem(item.id)} 
-                            className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <div className="flex items-center">
+                            <button 
+                              onClick={() => onEditItem(item)} 
+                              className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
+                              title="Düzenle"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button 
+                              onClick={() => onDeleteItem(item.id)} 
+                              className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
+                              title="Sil"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>

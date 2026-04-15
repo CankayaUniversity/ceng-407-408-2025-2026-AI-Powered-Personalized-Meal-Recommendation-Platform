@@ -35,35 +35,35 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
             </p>
           </div>
         </div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="rounded-[1.8rem] border border-card-border bg-white/70 px-6 py-4 text-foreground backdrop-blur-md dark:border-white/10 dark:bg-white/5 dark:text-white">
+        <div className="meal-hero-actions">
+          <div className="flex-1 min-w-[120px] rounded-[1.8rem] border border-card-border bg-white/70 px-6 py-4 text-foreground backdrop-blur-md dark:border-white/10 dark:bg-white/5 dark:text-white sm:flex-none">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">Lokasyonlar</p>
             <p className="mt-1 text-3xl font-serif font-bold text-foreground dark:text-white">{locationsCount}</p>
           </div>
           <button
             type="button"
             onClick={onOpenShoppingList}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-terracotta/30 bg-terracotta/5 px-6 py-4 font-bold text-terracotta hover:bg-terracotta/10 transition-all"
+            className="btn-responsive rounded-2xl border border-terracotta/30 bg-terracotta/5 px-6 py-4 font-bold text-terracotta hover:bg-terracotta/10 transition-all"
           >
             <ShoppingCart size={18} />
-            Alışveriş Listesi
+            <span className="meal-no-wrap">Alışveriş Listesi</span>
           </button>
           <button
             type="button"
             onClick={onNewLocation}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-terracotta px-6 py-4 font-bold text-white shadow-xl shadow-terracotta/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="btn-responsive rounded-2xl bg-terracotta px-6 py-4 font-bold text-white shadow-xl shadow-terracotta/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <Plus size={18} />
-            Yeni Lokasyon
+            <span className="meal-no-wrap">Yeni Lokasyon</span>
           </button>
           {invitationsCount > 0 && (
             <button
               type="button"
               onClick={onOpenInvitations}
-              className="relative inline-flex items-center justify-center gap-2 rounded-2xl bg-moss-sage px-6 py-4 font-bold text-white shadow-xl shadow-moss-sage/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="relative btn-responsive rounded-2xl bg-moss-sage px-6 py-4 font-bold text-white shadow-xl shadow-moss-sage/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               <Users size={18} />
-              Davetler
+              <span className="meal-no-wrap">Davetler</span>
               <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-terracotta text-[10px] font-bold ring-4 ring-background">
                 {invitationsCount}
               </span>

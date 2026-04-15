@@ -226,12 +226,12 @@ const Dashboard: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <button onClick={openConsumption} className="btn-primary py-3 px-6 flex items-center gap-2">
-                <UtensilsCrossed size={18} /> Öğün Ekle
+            <div className="meal-hero-actions">
+              <button onClick={openConsumption} className="btn-responsive btn-primary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base">
+                <UtensilsCrossed size={18} /> <span className="meal-no-wrap">Öğün Ekle</span>
               </button>
-              <button onClick={() => navigate('/recommendations')} className="btn-secondary py-3 px-6 flex items-center gap-2">
-                <Sparkles size={18} /> Tarif Öner
+              <button onClick={() => navigate('/recommendations')} className="btn-responsive btn-secondary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base">
+                <Sparkles size={18} /> <span className="meal-no-wrap">Tarif Öner</span>
               </button>
             </div>
           </div>
@@ -258,7 +258,7 @@ const Dashboard: React.FC = () => {
 
           {/* Inventory Summary */}
           <section className="lg:col-span-8 meal-card meal-highlight-frame flex flex-col justify-between group">
-            <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="space-y-2">
                 <span className="meal-overline">Envanter Sağlığı</span>
                 <h2 className="meal-section-title">
@@ -270,15 +270,17 @@ const Dashboard: React.FC = () => {
                   Kritik seviyedeki malzemeler kırmızı ile işaretlenmiştir.
                 </p>
               </div>
-              <button onClick={() => navigate('/inventory')} className="btn-secondary flex items-center gap-2 whitespace-nowrap">
-                Envanteri Aç <ArrowRight size={16} />
-              </button>
-              <button 
-                onClick={handleOpenShoppingList} 
-                className="btn-primary py-3 px-6 flex items-center gap-2 bg-terracotta text-white shadow-lg shadow-terracotta/20 hover:scale-[1.02] transition-all"
-              >
-                <ShoppingCart size={18} /> Alışveriş Listesi Hazırla
-              </button>
+              <div className="meal-action-group">
+                <button onClick={() => navigate('/inventory')} className="btn-responsive btn-secondary py-3 px-6">
+                  Envanteri Aç <ArrowRight size={16} />
+                </button>
+                <button 
+                  onClick={handleOpenShoppingList} 
+                  className="btn-responsive btn-primary py-3 px-6 bg-terracotta text-white shadow-lg shadow-terracotta/20 hover:scale-[1.02]"
+                >
+                  <ShoppingCart size={18} /> Alışveriş Listesi
+                </button>
+              </div>
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
