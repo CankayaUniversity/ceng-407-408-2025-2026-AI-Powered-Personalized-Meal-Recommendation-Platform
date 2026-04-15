@@ -39,8 +39,6 @@ export const useInventory = () => {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
-  const [ingredientResults, setIngredientResults] = useState<Ingredient[]>([]);
-  const [searchingIngredients, setSearchingIngredients] = useState(false);
   const [expandedManualInput, setExpandedManualInput] = useState(false);
 
   // Tüketim Modalı State'leri
@@ -218,8 +216,6 @@ export const useInventory = () => {
       showToast(`${ing.name} zaten envanterinizde var. Eklemek istediğiniz miktarı girin.`, 'info');
     }
 
-    setIngredientResults([]);
-
     if (!ingredientSpecificWeights[ing.id]) {
       try {
         const weights = await consumptionService.getUnitWeights(ing.id);
@@ -234,7 +230,6 @@ export const useInventory = () => {
     setEditingItemId(null);
     setEditModalOpen(false);
     setItemDraft(createItemDraft());
-    setIngredientResults([]);
     setExpandedManualInput(false);
     setConversions([]);
   };
@@ -263,10 +258,6 @@ export const useInventory = () => {
     setEditModalOpen,
     savingItem,
     setSavingItem,
-    ingredientResults,
-    setIngredientResults,
-    searchingIngredients,
-    setSearchingIngredients,
     expandedManualInput,
     setExpandedManualInput,
     consumeModalOpen,

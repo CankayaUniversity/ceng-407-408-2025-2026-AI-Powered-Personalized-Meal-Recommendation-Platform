@@ -5,6 +5,7 @@ import { useInventoryService } from '../../services/inventoryService';
 import { useConsumptionService } from '../../services/consumptionService';
 import { useToast } from '../../shared/hooks/useToast';
 import { useIngredientService } from '../../services/ingredientService';
+import { matchesIngredientQuery, useIngredientLookup } from '../../shared/hooks/useIngredientLookup';
 import { User, MealType } from '../../types';
 
 // New Components & Hooks
@@ -49,10 +50,6 @@ const InventoryPage: React.FC = () => {
     setEditModalOpen,
     savingItem,
     setSavingItem,
-    ingredientResults,
-    setIngredientResults,
-    searchingIngredients,
-    setSearchingIngredients,
     expandedManualInput,
     setExpandedManualInput,
     consumeModalOpen,
@@ -100,6 +97,17 @@ const InventoryPage: React.FC = () => {
   const [shoppingListModalOpen, setShoppingListModalOpen] = React.useState(false);
   const [selectedShoppingGroupIds, setSelectedShoppingGroupIds] = React.useState<number[]>([]);
   const [hasInitializedGroups, setHasInitializedGroups] = React.useState(false);
+  const {
+    results: ingredientResults,
+    searching: searchingIngredients,
+    searchError: ingredientSearchError,
+    hasCompletedSearch: hasCompletedIngredientSearch,
+    canSearch: canSearchIngredients,
+    resetSearch: resetIngredientSearch
+  } = useIngredientLookup({
+    query: itemDraft.ingredientQuery,
+    enabled: editModalOpen && !itemDraft.selectedIngredient
+  });
 
   // Initialize selected groups when groups change for the first time
   useEffect(() => {
@@ -123,21 +131,19 @@ const InventoryPage: React.FC = () => {
     fetchShoppingList(newGroupIds);
   };
 
-  // Ingredient Search logic (kept here or can be moved to hook)
-  const handleSearchIngredients = async (query: string) => {
-    setItemDraft(prev => ({ ...prev, ingredientQuery: query }));
-    if (query.length < 2) {
-      setIngredientResults([]);
-      return;
-    }
-    setSearchingIngredients(true);
-    try {
-      const results = await ingredientService.searchIngredients(query);
-      setIngredientResults(results);
-    } catch (error) {
-      showToast('Malzeme araması başarısız oldu.', 'error');
-    } finally {
-      setSearchingIngredients(false);
+  const handleIngredientQueryChange = (query: string) => {
+    const shouldClearSelection = itemDraft.selectedIngredient
+      ? !matchesIngredientQuery(query, itemDraft.selectedIngredient.name)
+      : false;
+
+    setItemDraft(prev => ({
+      ...prev,
+      ingredientQuery: query,
+      selectedIngredient: shouldClearSelection ? null : prev.selectedIngredient
+    }));
+
+    if (shouldClearSelection) {
+      setConversions([]);
     }
   };
 
@@ -175,6 +181,12 @@ const InventoryPage: React.FC = () => {
     const timer = setTimeout(fetchConversions, 500);
     return () => clearTimeout(timer);
   }, [itemDraft.selectedIngredient, itemDraft.quantity, itemDraft.unit, inventoryService, setConversions, setLoadingConversions]);
+
+  useEffect(() => {
+    if (!editModalOpen) {
+      resetIngredientSearch();
+    }
+  }, [editModalOpen, resetIngredientSearch]);
 
   // Actions
   const handleSaveGroup = async (e: React.FormEvent) => {
@@ -417,11 +429,14 @@ const InventoryPage: React.FC = () => {
         savingItem={savingItem}
         searchingIngredients={searchingIngredients}
         ingredientResults={ingredientResults}
+        ingredientSearchError={ingredientSearchError}
+        hasCompletedIngredientSearch={hasCompletedIngredientSearch}
+        canSearchIngredients={canSearchIngredients}
         expandedManualInput={expandedManualInput}
         setExpandedManualInput={setExpandedManualInput}
         conversions={conversions}
         loadingConversions={loadingConversions}
-        onSearchIngredients={handleSearchIngredients}
+        onSearchIngredients={handleIngredientQueryChange}
         onSelectIngredient={handleIngredientSelect}
         onQuickUnitAdjust={handleQuickUnitAdjust}
         onSave={handleSaveItem}

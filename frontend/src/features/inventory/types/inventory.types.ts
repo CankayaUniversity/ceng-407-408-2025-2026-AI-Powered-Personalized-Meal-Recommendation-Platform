@@ -27,8 +27,6 @@ export interface InventoryState {
   editingItemId: number | null;
   editModalOpen: boolean;
   savingItem: boolean;
-  ingredientResults: Ingredient[];
-  searchingIngredients: boolean;
   consumeModalOpen: boolean;
   consumingItem: Inventory | null;
   memberAmounts: Record<string, string>;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { 
   TrendingUp, 
   Calendar, 
@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useConsumptionService } from '../../../services/consumptionService';
+import { ApiError } from '../../../services/errors';
 import { ConsumptionAnalysis, ConsumptionResponse } from '../../../types';
 import { useToast } from '../../../shared/hooks/useToast';
 import { useAuth } from '../../../infrastructure/auth/AuthContext';
@@ -43,6 +44,12 @@ const ConsumptionHistoryPage: React.FC = () => {
   );
   const [showFilters, setShowFilters] = useState(false);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const lastInvalidRangeKeyRef = useRef<string | null>(null);
+
+  const hasInvalidCustomRange = useMemo(
+    () => period === 'CUSTOM' && Boolean(startDate) && Boolean(endDate) && startDate > endDate,
+    [period, startDate, endDate]
+  );
 
   const loadData = async () => {
     setLoading(true);
@@ -63,7 +70,7 @@ const ConsumptionHistoryPage: React.FC = () => {
       setAnalysis(analysisData);
       setHistory(historyData);
     } catch (error) {
-      showToast(t('analysis.noData'), 'error');
+      showToast(error instanceof ApiError ? error.message : t('analysis.noData'), 'error');
     } finally {
       setLoading(false);
     }
@@ -75,8 +82,19 @@ const ConsumptionHistoryPage: React.FC = () => {
       return;
     }
 
+    if (hasInvalidCustomRange) {
+      const rangeKey = `${startDate}:${endDate}`;
+      if (lastInvalidRangeKeyRef.current !== rangeKey) {
+        showToast(t('analysis.invalidDateRange'), 'error');
+        lastInvalidRangeKeyRef.current = rangeKey;
+      }
+      setLoading(false);
+      return;
+    }
+
+    lastInvalidRangeKeyRef.current = null;
     loadData();
-  }, [authenticated, period, startDate, endDate, consumptionService, navigate, showToast, t]);
+  }, [authenticated, hasInvalidCustomRange, period, startDate, endDate, consumptionService, navigate, showToast, t]);
 
   const handleDelete = async (id: number) => {
     if (!window.confirm(t('analysis.deleteConfirm'))) return;
@@ -197,10 +215,20 @@ const ConsumptionHistoryPage: React.FC = () => {
               className="w-full bg-card border-card-border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex flex-col justify-end gap-2">
+             {hasInvalidCustomRange && (
+               <p className="text-xs font-medium text-terracotta">
+                 {t('analysis.invalidDateRange')}
+               </p>
+             )}
              <button 
                onClick={() => setShowFilters(false)}
-               className="w-full h-[40px] flex items-center justify-center gap-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-hover transition-all"
+               disabled={hasInvalidCustomRange}
+               className={`w-full h-[40px] flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all ${
+                 hasInvalidCustomRange
+                   ? 'bg-foreground-muted/20 text-foreground-muted cursor-not-allowed'
+                   : 'bg-primary text-white hover:bg-primary-hover'
+               }`}
              >
                <Check size={18} /> {t('analysis.apply')}
              </button>

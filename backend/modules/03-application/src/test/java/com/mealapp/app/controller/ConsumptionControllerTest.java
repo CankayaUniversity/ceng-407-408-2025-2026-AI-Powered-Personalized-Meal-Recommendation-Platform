@@ -747,6 +747,33 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
                 .andExpect(jsonPath("$.dailyDetails").isArray())
                 .andExpect(jsonPath("$.dailyDetails[0].targetCalories").value(2200));
     }
+
+    @Test
+    void shouldRejectInvalidDateRangeForAnalysis() throws Exception {
+        User user = User.builder().id("system-user").dailyCalorieTarget(2200).build();
+        when(userService.findById("system-user")).thenReturn(Optional.of(user));
+
+        mockMvc.perform(get("/api/v1/consumptions/analysis")
+                        .param("period", "CUSTOM")
+                        .param("startDate", "2026-04-16")
+                        .param("endDate", "2026-04-15"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Başlangıç tarihi bitiş tarihinden sonra olamaz."));
+
+        verify(dailyConsumptionService, never()).getConsumptionsBetween(anyString(), any(), any());
+    }
+
+    @Test
+    void shouldRejectInvalidDateRangeForHistory() throws Exception {
+        mockMvc.perform(get("/api/v1/consumptions/history")
+                        .param("startDate", "2026-04-16")
+                        .param("endDate", "2026-04-15"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Başlangıç tarihi bitiş tarihinden sonra olamaz."));
+
+        verify(dailyConsumptionService, never()).getConsumptionsBetween(anyString(), any(), any());
+    }
+
     @Test
     void shouldDeleteConsumption() throws Exception {
         mockMvc.perform(delete("/api/v1/consumptions/123"))
