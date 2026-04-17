@@ -10,6 +10,10 @@ export default {
       colors: {
         // --- DİNAMİK RENKLER (index.css Değişkenleri) ---
         background: 'var(--color-bg)',
+        surface: 'var(--color-surface)',
+        sidebar: 'var(--color-sidebar-bg)',
+        header: 'var(--color-header-bg)',
+        tooltip: 'var(--color-tooltip-bg)',
         foreground: {
           DEFAULT: 'var(--color-text)',
           muted: 'var(--color-text-muted)', // Sidebar ve alt metinler için kritik

@@ -1,5 +1,5 @@
 import React from 'react';
-import logo from '../../assets/logo.png';
+import amblem from '../../assets/meal_amblem.png';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -30,12 +30,12 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         <div className={`absolute border-4 border-terracotta/20 border-t-terracotta rounded-full animate-spin ${sizeClasses[size]}`} />
         
         {/* Logo */}
-        <div className={`flex items-center justify-center bg-white dark:bg-white/10 rounded-2xl shadow-xl p-2 animate-pulse ${
+        <div className={`meal-brand-amblem-container spinner-amblem-box bg-transparent border-none shadow-none ${
           size === 'sm' ? 'w-5 h-5 p-1' : 
           size === 'md' ? 'w-10 h-10' : 
           size === 'lg' ? 'w-16 h-16' : 'w-20 h-20'
         }`}>
-          <img src={logo} alt="Loading..." className="w-full h-full object-contain" />
+          <img src={amblem} alt="Loading..." className="meal-brand-amblem-img" />
         </div>
       </div>
       

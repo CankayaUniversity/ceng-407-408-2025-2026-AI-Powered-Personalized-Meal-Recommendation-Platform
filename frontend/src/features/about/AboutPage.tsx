@@ -2,14 +2,15 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Rocket, Eye, Heart, Info } from 'lucide-react';
-import logo_tr from '../../assets/logo_hakkimizda_tr.png';
-import logo_en from '../../assets/logo_hakkimizda_en.png';
+import { useTheme } from '../../infrastructure/theme/ThemeContext';
+import amblem from '../../assets/meal_amblem.png';
+import logoDark from '../../assets/meal_logo_dark.png';
+import logoLight from '../../assets/meal_logo_light.png';
 
 const AboutPage: React.FC = () => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const { isDark } = useTheme();
     const navigate = useNavigate();
-
-    const logo = i18n.language === 'tr' ? logo_tr : logo_en;
 
     return (
         <div className="max-w-4xl mx-auto space-y-12 pb-20">
@@ -29,14 +30,21 @@ const AboutPage: React.FC = () => {
             </div>
 
             {/* Hero Section with Logo */}
-            <div className="relative group overflow-hidden rounded-[3rem] border-2 border-terracotta/10 dark:border-white/5 shadow-2xl bg-white dark:bg-white/[0.02]">
+            <div className="relative group overflow-hidden rounded-[3rem] border-2 border-terracotta/10 dark:border-white/5 shadow-2xl bg-transparent">
                 <div className="p-10 md:p-16 flex flex-col md:flex-row items-center gap-12">
-                    <div className="w-48 h-48 md:w-64 md:h-64 shrink-0 bg-white dark:bg-white/10 p-4 rounded-[2rem] shadow-brand-card flex items-center justify-center overflow-hidden transform group-hover:scale-105 transition-transform duration-700">
+                    <div className="meal-brand-amblem-container about-hero-amblem-box bg-transparent border-none shadow-none">
                         <img 
-                            src={logo} 
-                            alt="MealAI About Logo" 
-                            className="w-full h-full object-contain"
+                            src={amblem} 
+                            alt="MealAI Amblem" 
+                            className="meal-brand-amblem-img"
                         />
+                        <div className="h-20 meal-brand-logo-container bg-transparent border-none shadow-none">
+                            <img 
+                                src={isDark ? logoDark : logoLight} 
+                                alt="MealAI Logo" 
+                                className="meal-brand-logo-img" 
+                            />
+                        </div>
                     </div>
                     <div className="space-y-6 text-center md:text-left">
                         <h1 className="text-4xl md:text-6xl font-serif font-bold text-espresso-midnight dark:text-white leading-tight">

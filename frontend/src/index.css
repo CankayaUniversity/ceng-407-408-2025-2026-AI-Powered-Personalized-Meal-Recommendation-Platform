@@ -12,7 +12,11 @@
   --raw-ochre: #DAA520;
 
   /* --- LIGHT MODE AYARLARI --- */
-  --color-bg: #FDFBFA;
+  --color-bg: #F1F1F1;
+  --color-surface: #F5F5F5;
+  --color-sidebar-bg: #F5F5F5;
+  --color-header-bg: rgba(245, 245, 245, 0.7);
+  --color-tooltip-bg: #1A1817;
   --color-text: var(--raw-espresso);
   --color-text-muted: rgba(40, 36, 33, 0.6);
 
@@ -20,7 +24,7 @@
   --color-primary-hover: #C55D48;
   --color-primary-soft: rgba(226, 114, 91, 0.08);
 
-  --color-card-bg: #FFFFFF;
+  --color-card-bg: #F5F5F5;
   --color-card-border: rgba(40, 36, 33, 0.06);
 
   --brand-shadow-soft: 0 12px 40px -12px rgba(40, 36, 33, 0.08);
@@ -30,6 +34,10 @@
 .dark {
   /* --- DARK MODE AYARLARI --- */
   --color-bg: var(--raw-espresso-deep);
+  --color-surface: rgba(0, 0, 0, 0.4);
+  --color-sidebar-bg: rgba(0, 0, 0, 0.4);
+  --color-header-bg: rgba(0, 0, 0, 0.2);
+  --color-tooltip-bg: #1A1817;
   --color-text: var(--raw-alabaster);
   --color-text-muted: rgba(249, 246, 240, 0.5);
 
@@ -186,6 +194,71 @@
   }
 
   /* --- /RESPONSIVE MERKEZİ KONTROL SINIFLARI --- */
+  
+  /* --- BRANDING & LOGO CENTRAL MANAGEMENT --- */
+  
+  /* Amblem kapsayıcısı: Boyut ve efektlerin merkezi yönetimi */
+  .meal-brand-amblem-container {
+    @apply flex items-center justify-center overflow-hidden transition-all duration-500 bg-transparent border-none shadow-none;
+    background-color: transparent !important;
+    background: transparent !important;
+  }
+  
+  /* Amblem görseli */
+  .meal-brand-amblem-img {
+    @apply w-full h-full object-contain bg-transparent;
+    background-color: transparent !important;
+  }
+  
+  /* Logo metni görseli kapsayıcısı: Tema duyarlı logo metni için */
+  .meal-brand-logo-container {
+    @apply flex items-center overflow-hidden transition-all duration-500 bg-transparent border-none shadow-none;
+    background-color: transparent !important;
+    background: transparent !important;
+  }
+  
+  /* Logo metni görseli */
+  .meal-brand-logo-img {
+    @apply h-full w-auto object-contain bg-transparent;
+    background-color: transparent !important;
+  }
+
+  /* Sidebar özel amblem stili */
+  .sidebar-amblem-box {
+    @apply p-0.5 min-w-[64px] h-[64px] group-hover:rotate-6 transition-transform border-none shadow-none bg-transparent;
+    background-color: transparent !important;
+    background: transparent !important;
+  }
+
+  /* Navbar özel amblem stili */
+  .navbar-amblem-box {
+    @apply p-1 w-24 h-24 group-hover:scale-110 group-hover:rotate-6 transition-all border-none shadow-none bg-transparent;
+    background-color: transparent !important;
+    background: transparent !important;
+  }
+
+  /* Footer özel amblem stili */
+  .footer-amblem-box {
+    @apply p-1.5 w-20 h-20 border-none shadow-none bg-transparent;
+    background-color: transparent !important;
+    background: transparent !important;
+  }
+
+  /* About sayfası büyük amblem kutusu */
+  .about-hero-amblem-box {
+    @apply w-72 h-72 md:w-96 md:h-96 shrink-0 p-8 flex flex-col items-center justify-center transform group-hover:scale-105 duration-700 gap-4 border-none shadow-none bg-transparent;
+    background-color: transparent !important;
+    background: transparent !important;
+  }
+
+  /* Loading Spinner amblem kutusu */
+  .spinner-amblem-box {
+    @apply flex items-center justify-center p-2 w-36 h-36 animate-pulse border-none shadow-none bg-transparent;
+    background-color: transparent !important;
+    background: transparent !important;
+  }
+  
+  /* --- /BRANDING & LOGO CENTRAL MANAGEMENT --- */
 
   /* SCROLLBAR */
   ::-webkit-scrollbar {

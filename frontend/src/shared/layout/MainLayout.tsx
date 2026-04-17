@@ -5,7 +5,9 @@ import {
     LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
     Bell, Settings, Check, X, Calculator, BarChart2, Info
 } from 'lucide-react';
-import logo from '../../assets/logo.png';
+import amblem from '../../assets/meal_amblem.png';
+import logoDark from '../../assets/meal_logo_dark.png';
+import logoLight from '../../assets/meal_logo_light.png';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -152,11 +154,11 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const visibleItems = menuItems.filter(item => !item.private || authenticated);
 
     return (
-        <div className="flex h-screen bg-alabaster dark:bg-espresso-midnight transition-colors duration-500 overflow-hidden font-sans text-espresso-midnight dark:text-alabaster">
+        <div className="flex h-screen bg-background dark:bg-espresso-midnight transition-colors duration-500 overflow-hidden font-sans text-espresso-midnight dark:text-alabaster">
 
             {/* --- SIDEBAR --- */}
             <aside className={`
-                relative z-50 flex flex-col bg-white dark:bg-black/40 dark:backdrop-blur-3xl border-r border-black/5 dark:border-white/5 transition-all duration-500 ease-in-out
+                relative z-50 flex flex-col bg-sidebar dark:bg-black/40 dark:backdrop-blur-3xl border-r border-black/5 dark:border-white/5 transition-all duration-500 ease-in-out
                 ${expanded ? 'w-72' : 'w-24'}
             `}>
                 <button
@@ -166,15 +168,19 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     {expanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
                 </button>
 
-                <div className={`p-8 mb-6 flex items-center ${expanded ? 'justify-start' : 'justify-center'}`}>
-                    <Link to="/" className="flex items-center gap-4 group">
-                        <div className="p-1 bg-white dark:bg-white/10 rounded-xl shadow-lg shadow-black/5 min-w-[40px] h-[40px] flex items-center justify-center group-hover:rotate-6 transition-transform overflow-hidden">
-                            <img src={logo} alt="MealAI Logo" className="w-full h-full object-contain" />
+                <div className={`flex items-center ${expanded ? 'pl-4 p-8 mb-6 justify-start' : 'p-4 mb-4 justify-center'}`}>
+                    <Link to="/" className="flex items-center gap-1 group">
+                        <div className="meal-brand-amblem-container sidebar-amblem-box bg-transparent border-none shadow-none">
+                            <img src={amblem} alt="MealAI Amblem" className="meal-brand-amblem-img" />
                         </div>
                         {expanded && (
-                            <span className="text-xl font-serif font-bold tracking-tight text-espresso-midnight dark:text-white animate-in fade-in slide-in-from-left-2 whitespace-nowrap">
-                                Meal<span className="text-terracotta">AI</span>
-                            </span>
+                            <div className="h-14 meal-brand-logo-container animate-in fade-in slide-in-from-left-2 bg-transparent border-none shadow-none">
+                                <img 
+                                    src={isDark ? logoDark : logoLight} 
+                                    alt="MealAI" 
+                                    className="meal-brand-logo-img" 
+                                />
+                            </div>
                         )}
                     </Link>
                 </div>
@@ -218,10 +224,10 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </aside>
 
             {/* --- ANA İÇERİK ALANI --- */}
-            <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden bg-alabaster dark:bg-espresso-midnight transition-colors duration-500">
+            <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden bg-background dark:bg-espresso-midnight transition-colors duration-500">
 
                 {/* HEADER */}
-                <header className="h-20 z-40 flex items-center justify-end px-8 gap-6 bg-white/70 dark:bg-black/20 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
+                <header className="h-20 z-40 flex items-center justify-end px-8 gap-6 bg-header dark:bg-black/20 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
 
                     {/* --- YENİ: ÖĞÜN EKLE BUTONU (Global Trigger) --- */}
                     {authenticated && (

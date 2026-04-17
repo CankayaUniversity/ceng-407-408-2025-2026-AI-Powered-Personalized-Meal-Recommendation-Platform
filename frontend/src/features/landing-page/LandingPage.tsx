@@ -8,7 +8,9 @@ import {
     Activity, Wind, Sun, Moon, Languages, ArrowRight,
     Users, Zap, ChevronRight, BarChart3, Shield, Cpu, RefreshCw, Info
 } from 'lucide-react';
-import logo from '../../assets/logo.png';
+import amblem from '../../assets/meal_amblem.png';
+import logoDark from '../../assets/meal_logo_dark.png';
+import logoLight from '../../assets/meal_logo_light.png';
 
 /**
  * MealAI Landing Page - The "Digital Private Chef" Experience
@@ -54,7 +56,7 @@ const LandingPage: React.FC = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-alabaster dark:bg-[#1A1817] transition-colors duration-500 font-sans selection:bg-terracotta/20 overflow-x-hidden">
+        <div className="min-h-screen bg-background dark:bg-espresso-midnight transition-colors duration-500 font-sans selection:bg-terracotta/20 overflow-x-hidden">
 
             {/* Dynamic Background Blur - Ambient Effects */}
             <div className="fixed inset-0 pointer-events-none">
@@ -66,10 +68,16 @@ const LandingPage: React.FC = () => {
             <nav className="sticky top-0 z-50 px-6 py-5 max-w-7xl mx-auto">
                 <div className="glass-card flex items-center justify-between px-8 py-4 rounded-[2rem] border-white/40 dark:border-white/5 shadow-brand-card">
                     <div className="flex items-center gap-3 group cursor-pointer">
-                        <div className="bg-white dark:bg-white/10 p-1 rounded-2xl shadow-xl shadow-black/5 transition-all group-hover:scale-110 group-hover:rotate-6 w-11 h-11 flex items-center justify-center overflow-hidden">
-                            <img src={logo} alt="MealAI Logo" className="w-full h-full object-contain" />
+                        <div className="meal-brand-amblem-container navbar-amblem-box bg-transparent border-none shadow-none">
+                            <img src={amblem} alt="MealAI Amblem" className="meal-brand-amblem-img" />
                         </div>
-                        <span className="text-xl font-serif font-bold tracking-tight text-espresso-midnight dark:text-white">MealAI</span>
+                        <div className="h-16 meal-brand-logo-container bg-transparent border-none shadow-none">
+                            <img 
+                                src={isDark ? logoDark : logoLight} 
+                                alt="MealAI" 
+                                className="meal-brand-logo-img" 
+                            />
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-4 sm:gap-6">
@@ -147,7 +155,7 @@ const LandingPage: React.FC = () => {
                 <div className="relative animate-in zoom-in fade-in duration-1000 lg:ml-auto w-full max-w-[400px]">
                     <div className="relative z-10 w-full group">
                         {/* Recipe Card Mockup */}
-                        <div className="meal-card meal-highlight-frame cursor-default rounded-[2.5rem] overflow-hidden border-2 border-terracotta/10 dark:border-white/5 shadow-2xl bg-white dark:bg-white/[0.02] -rotate-3 group-hover:rotate-0 group-hover:border-terracotta/30 group-hover:shadow-brand-hero transition-all duration-700">
+                        <div className="meal-card meal-highlight-frame cursor-default rounded-[2.5rem] overflow-hidden border-2 border-terracotta/10 dark:border-white/5 shadow-2xl bg-transparent -rotate-3 group-hover:rotate-0 group-hover:border-terracotta/30 group-hover:shadow-brand-hero transition-all duration-700">
                             <div className="h-64 relative overflow-hidden">
                                 <img
                                     src="https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&q=80&w=1000"
@@ -295,10 +303,16 @@ const LandingPage: React.FC = () => {
             <footer className="py-20 px-6 max-w-7xl mx-auto border-t border-card-border">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                     <div className="flex items-center gap-4">
-                        <div className="bg-white dark:bg-white/10 p-1.5 rounded-xl shadow-lg shadow-black/5 w-10 h-10 flex items-center justify-center overflow-hidden">
-                            <img src={logo} alt="MealAI Logo" className="w-full h-full object-contain" />
+                        <div className="meal-brand-amblem-container footer-amblem-box bg-transparent border-none shadow-none">
+                            <img src={amblem} alt="MealAI Amblem" className="meal-brand-amblem-img" />
                         </div>
-                        <span className="text-xl font-serif font-bold text-espresso-midnight dark:text-white tracking-tight">MealAI</span>
+                        <div className="h-14 meal-brand-logo-container bg-transparent border-none shadow-none">
+                            <img 
+                                src={isDark ? logoDark : logoLight} 
+                                alt="MealAI" 
+                                className="meal-brand-logo-img" 
+                            />
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-x-12 gap-y-6 text-[10px] font-black uppercase tracking-[0.3em] text-foreground-muted">
