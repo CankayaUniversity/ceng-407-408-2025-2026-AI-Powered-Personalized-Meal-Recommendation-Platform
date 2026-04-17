@@ -249,11 +249,23 @@ button[name="cancel"]:hover,
 }
 
 #kc-header-wrapper {
+    background-image: url('../img/logo.png');
+    background-size: 80px; /* Logonun boyutunu sabitle */
+    background-repeat: no-repeat;
+    background-position: top center;
+    height: auto !important;
+    min-height: 120px !important;
+    width: 100% !important;
+    margin-bottom: 30px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    padding-top: 90px !important; /* Logonun altında yazıya yer aç */
     color: var(--primary-color) !important;
     font-family: 'Playfair Display', serif !important;
-    font-size: 42px !important;
+    font-size: 32px !important;
     text-align: center !important;
-    margin-bottom: 10px !important;
 }
 
 #kc-page-title {
