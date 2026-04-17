@@ -7,8 +7,12 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/meal-app-realm}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/meal-app-realm/protocol/openid-connect/certs}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://keycloak-auth:8080/realms/meal-app-realm/protocol/openid-connect/certs}
   # Keycloak configuration
+
+  jackson:
+    deserialization:
+      accept-empty-string-as-null-object: true
 
   datasource:
     # Docker ortamı için DB_HOST ve DB_PORT değişkenleri kullanılır.
@@ -21,11 +25,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+    open-in-view: false
     show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
+        default_batch_fetch_size: 100 # N+1 problemini çözmek için batch fetch kullanıyoruz
 
   cache:
     type: caffeine
@@ -78,3 +84,5 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
