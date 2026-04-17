@@ -52,6 +52,21 @@
       "rights": "© 2026 AI-Powered Personalized Meal Recommendation Platform"
     }
   },
+  "about": {
+    "title": "About Us",
+    "mission": {
+      "title": "Our Mission",
+      "content": "To ensure everyone has a healthy and sustainable diet by blending traditional kitchen habits with modern technology."
+    },
+    "vision": {
+      "title": "Our Vision",
+      "content": "To become a global platform that prevents food waste and maximizes individual health by becoming the operating system of kitchens with our AI assistant."
+    },
+    "story": {
+      "title": "Our Story",
+      "content": "MealAI set out to make time spent in the kitchen more efficient and to find the healthiest, inventory-based, and personalized answer to the question 'what should I cook today?'"
+    }
+  },
   "welcome": "Welcome to AI-Powered Meal Recommendation Platform!",
   "navigation": {
     "home": "Home",

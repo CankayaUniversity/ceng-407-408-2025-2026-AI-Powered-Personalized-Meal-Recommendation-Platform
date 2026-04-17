@@ -14,6 +14,7 @@ import AuthGate from './infrastructure/auth/AuthGate';
 import PrivateRoute from './components/PrivateRoute';
 import MainLayout from './shared/layout/MainLayout';
 import LandingPage from './features/landing-page/LandingPage';
+import AboutPage from './features/about/AboutPage';
 import Dashboard from './features/dashboard/Dashboard';
 import RecipeList from './features/recipes/RecipeList';
 import Profile from './features/profile/Profile';
@@ -71,6 +72,14 @@ const App: React.FC = () => {
                 <Router>
                   <Routes>
                     <Route path="/" element={<HomeRedirect />} />
+                    <Route
+                        path="/about"
+                        element={
+                          <MainLayout>
+                            <AboutPage />
+                          </MainLayout>
+                        }
+                    />
                     <Route
                         path="/dashboard"
                         element={

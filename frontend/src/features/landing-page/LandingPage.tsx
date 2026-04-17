@@ -1,11 +1,12 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import {
     Star,
     Activity, Wind, Sun, Moon, Languages, ArrowRight,
-    Users, Zap, ChevronRight, BarChart3, Shield, Cpu, RefreshCw
+    Users, Zap, ChevronRight, BarChart3, Shield, Cpu, RefreshCw, Info
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
@@ -301,7 +302,10 @@ const LandingPage: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-x-12 gap-y-6 text-[10px] font-black uppercase tracking-[0.3em] text-foreground-muted">
-                        <a href="#" className="hover:text-terracotta transition-colors">{t('landing.footer.about')}</a>
+                        <Link to="/about" className="hover:text-terracotta transition-colors flex items-center gap-2">
+                            <Info size={12} />
+                            {t('landing.footer.about')}
+                        </Link>
                     </div>
 
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground-muted/40">

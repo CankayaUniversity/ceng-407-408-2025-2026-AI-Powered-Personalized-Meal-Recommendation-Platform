@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Utensils, User as UserIcon,
     LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
-    Bell, Settings, Check, X, Calculator, BarChart2
+    Bell, Settings, Check, X, Calculator, BarChart2, Info
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
@@ -146,6 +146,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         { id: 'inventory', text: t('navigation.inventory'), icon: <Boxes size={20} />, route: '/inventory', private: true },
         { id: 'recommendations', text: t('navigation.recommendations'), icon: <Sparkles size={20} />, route: '/recommendations', private: true },
         { id: 'profile', text: t('navigation.profile'), icon: <UserIcon size={20} />, route: '/profile', private: true },
+        { id: 'about', text: t('landing.footer.about'), icon: <Info size={20} />, route: '/about' },
     ];
 
     const visibleItems = menuItems.filter(item => !item.private || authenticated);

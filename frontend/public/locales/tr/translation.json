@@ -52,6 +52,21 @@
       "rights": "© 2026 AI-Powered Personalized Meal Recommendation Platform"
     }
   },
+  "about": {
+    "title": "Hakkımızda",
+    "mission": {
+      "title": "Misyonumuz",
+      "content": "Geleneksel mutfak alışkanlıklarını modern teknolojiyle harmanlayarak, herkesin sağlıklı ve sürdürülebilir bir beslenme düzenine sahip olmasını sağlamak."
+    },
+    "vision": {
+      "title": "Vizyonumuz",
+      "content": "Yapay zeka asistanımızla mutfakların işletim sistemi haline gelerek, gıda israfını önleyen ve bireysel sağlığı maksimize eden küresel bir platform olmak."
+    },
+    "story": {
+      "title": "Hikayemiz",
+      "content": "MealAI, mutfakta geçirilen süreyi daha verimli hale getirmek ve 'bugün ne pişirsem' sorusuna en sağlıklı, envantere dayalı ve kişiselleştirilmiş cevabı bulmak amacıyla yola çıktı."
+    }
+  },
   "welcome": "Yapay Zeka Destekli Yemek Önerisi Platformuna Hoş Geldiniz!",
   "navigation": {
     "home": "Anasayfa",
