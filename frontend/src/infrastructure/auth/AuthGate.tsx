@@ -2,19 +2,13 @@ import React from 'react';
 import {useAuth} from './AuthContext';
 import { AlertCircle, RefreshCw, LogIn } from 'lucide-react';
 import keycloakConfig from '../../keycloak-config.json';
+import { LoadingSpinner } from '../../shared/components/LoadingSpinner';
 
 const AuthGate: React.FC<{ children: React.ReactNode }> = ({children}) => {
     const { initialized, error } = useAuth();
 
     if (!initialized) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-gray-50">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-                    <p className="text-gray-500 font-medium">Yükleniyor...</p>
-                </div>
-            </div>
-        );
+        return <LoadingSpinner fullScreen size="lg" message="MealAI Hazırlanıyor" />;
     }
 
     if (error) {

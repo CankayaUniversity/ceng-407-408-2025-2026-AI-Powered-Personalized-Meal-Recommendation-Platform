@@ -3,9 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import {
-    ChefHat, BrainCircuit, Star, Play, ShieldCheck,
-    Activity, Wind, Heart, Clock, Sun, Moon, Languages, ArrowRight
+    Star,
+    Activity, Wind, Sun, Moon, Languages, ArrowRight,
+    Users, Zap, ChevronRight, BarChart3, Shield, Cpu, RefreshCw
 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 /**
  * MealAI Landing Page - The "Digital Private Chef" Experience
@@ -25,27 +27,27 @@ const LandingPage: React.FC = () => {
 
     const features = [
         {
-            title: t('landing.features.items.ai.title'),
-            desc: t('landing.features.items.ai.desc'),
-            icon: <BrainCircuit className="text-terracotta" />,
+            title: t('landing.features.items.inventory.title'),
+            desc: t('landing.features.items.inventory.desc'),
+            icon: <Wind className="text-terracotta" />,
             color: 'bg-terracotta/10'
         },
         {
-            title: t('landing.features.items.clinical.title'),
-            desc: t('landing.features.items.clinical.desc'),
-            icon: <ShieldCheck className="text-moss-sage" />,
+            title: t('landing.features.items.shopping.title'),
+            desc: t('landing.features.items.shopping.desc'),
+            icon: <Activity className="text-moss-sage" />,
             color: 'bg-moss-sage/10'
         },
         {
-            title: t('landing.features.items.gourmet.title'),
-            desc: t('landing.features.items.gourmet.desc'),
-            icon: <Activity className="text-ochre-soft" />,
+            title: t('landing.features.items.recommendation.title'),
+            desc: t('landing.features.items.recommendation.desc'),
+            icon: <Zap className="text-ochre-soft" />,
             color: 'bg-ochre-soft/10'
         },
         {
-            title: t('landing.features.items.inventory.title'),
-            desc: t('landing.features.items.inventory.desc'),
-            icon: <Wind className="text-moss-forest" />,
+            title: t('landing.features.items.group.title'),
+            desc: t('landing.features.items.group.desc'),
+            icon: <Users className="text-moss-forest" />,
             color: 'bg-moss-forest/10'
         }
     ];
@@ -63,8 +65,8 @@ const LandingPage: React.FC = () => {
             <nav className="sticky top-0 z-50 px-6 py-5 max-w-7xl mx-auto">
                 <div className="glass-card flex items-center justify-between px-8 py-4 rounded-[2rem] border-white/40 dark:border-white/5 shadow-brand-card">
                     <div className="flex items-center gap-3 group cursor-pointer">
-                        <div className="bg-terracotta p-2.5 rounded-2xl shadow-xl shadow-terracotta/20 transition-all group-hover:scale-110 group-hover:rotate-6">
-                            <ChefHat className="text-white" size={24} strokeWidth={1.8} />
+                        <div className="bg-white dark:bg-white/10 p-1 rounded-2xl shadow-xl shadow-black/5 transition-all group-hover:scale-110 group-hover:rotate-6 w-11 h-11 flex items-center justify-center overflow-hidden">
+                            <img src={logo} alt="MealAI Logo" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-xl font-serif font-bold tracking-tight text-espresso-midnight dark:text-white">MealAI</span>
                     </div>
@@ -96,14 +98,14 @@ const LandingPage: React.FC = () => {
             </nav>
 
             {/* Hero Section */}
-            <header className="px-6 pt-16 pb-32 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-                <div className="space-y-10 animate-in fade-in slide-in-from-left duration-1000">
+            <header className="px-6 pt-16 pb-32 max-w-7xl mx-auto grid lg:grid-cols-[1.2fr_0.8fr] gap-12 items-center">
+                <div className="space-y-10 animate-in fade-in slide-in-from-left duration-1000 z-20">
                     <div className="inline-flex items-center gap-3 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-card-border px-5 py-2.5 rounded-full text-moss-forest dark:text-moss-sage font-bold text-[10px] uppercase tracking-[0.25em]">
                         <Star size={12} className="fill-terracotta text-terracotta" />
                         <span>{t('landing.hero.badge')}</span>
                     </div>
 
-                    <h1 className="text-6xl md:text-8xl font-serif font-bold text-espresso-midnight dark:text-white leading-[0.95] tracking-tighter">
+                    <h1 className="text-5xl md:text-7xl xl:text-8xl font-serif font-bold text-espresso-midnight dark:text-white leading-[0.95] tracking-tighter">
                         {t('landing.hero.title').split(t('landing.hero.title_italic'))[0]}
                         <span className="text-terracotta italic font-normal">{t('landing.hero.title_italic')}</span>
                         {t('landing.hero.title').split(t('landing.hero.title_italic'))[1]}
@@ -120,12 +122,6 @@ const LandingPage: React.FC = () => {
                         >
                             {t('landing.hero.cta_start')}
                             <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                        </button>
-                        <button className="flex items-center justify-center gap-3 px-10 py-5 rounded-2xl font-bold text-lg text-espresso-midnight dark:text-alabaster hover:bg-white/50 dark:hover:bg-white/5 transition-all glass-card border-card-border">
-                            <div className="bg-terracotta/10 p-2 rounded-full text-terracotta">
-                                <Play size={18} fill="currentColor" />
-                            </div>
-                            {t('landing.hero.cta_manifesto')}
                         </button>
                     </div>
 
@@ -146,38 +142,60 @@ const LandingPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Hero Visual - "App in a Box" Concept */}
-                <div className="relative animate-in zoom-in fade-in duration-1000 lg:ml-10">
-                    <div className="meal-card p-4 rounded-[4rem] shadow-brand-hero relative overflow-hidden group border-white/60 dark:border-white/5 rotate-3 hover:rotate-0 transition-transform duration-700">
-                        <div className="rounded-[3rem] overflow-hidden aspect-[4/5] relative">
-                            <img
-                                src="https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&q=80&w=1000"
-                                alt="Healthy Food MealAI"
-                                className="object-cover w-full h-full"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight/80 via-transparent to-transparent" />
-
-                            {/* Floatings - UI Elements */}
-                            <div className="absolute top-8 left-8 glass-card p-4 rounded-3xl animate-bounce duration-[4000ms]">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-moss-sage rounded-xl flex items-center justify-center text-white shadow-lg">
-                                        <Activity size={20} />
+                {/* Hero Visual - Real Product Feel */}
+                <div className="relative animate-in zoom-in fade-in duration-1000 lg:ml-auto w-full max-w-[400px]">
+                    <div className="relative z-10 w-full group">
+                        {/* Recipe Card Mockup */}
+                        <div className="meal-card meal-highlight-frame cursor-default rounded-[2.5rem] overflow-hidden border-2 border-terracotta/10 dark:border-white/5 shadow-2xl bg-white dark:bg-white/[0.02] -rotate-3 group-hover:rotate-0 group-hover:border-terracotta/30 group-hover:shadow-brand-hero transition-all duration-700">
+                            <div className="h-64 relative overflow-hidden">
+                                <img
+                                    src="https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&q=80&w=1000"
+                                    alt="Healthy Bowl"
+                                    className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-[1.04]"
+                                />
+                                <div className="absolute top-5 left-5 glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
+                                    Gurme & Sağlıklı
+                                </div>
+                                <div className="absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl text-primary">
+                                    <Star size={18} fill="currentColor" className="text-terracotta" />
+                                </div>
+                            </div>
+                            <div className="p-8 space-y-6">
+                                <div className="flex justify-between items-start gap-4">
+                                    <h3 className="text-2xl font-serif font-bold text-espresso-midnight dark:text-white group-hover:text-terracotta transition-colors leading-tight">
+                                        Roasted Quinoa & Salmon Bowl
+                                    </h3>
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-moss-sage/10 text-moss-forest dark:text-moss-sage rounded-lg shrink-0">
+                                        <Star size={14} className="fill-current" />
+                                        <span className="text-xs font-black">4.9</span>
                                     </div>
-                                    <div className="pr-4">
-                                        <p className="text-[9px] uppercase font-black text-espresso-midnight/40 dark:text-white/40 tracking-widest">Macro Match</p>
-                                        <p className="text-sm font-bold text-espresso-midnight dark:text-white">98% Perfect</p>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-2 text-foreground-muted">
+                                        <Activity size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">Macro Match</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-foreground-muted">
+                                        <Zap size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">98% Perfect</span>
+                                    </div>
+                                </div>
+                                <div className="pt-6 border-t border-card-border flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-espresso-midnight/30 dark:text-white/30 uppercase tracking-[0.2em]">Önerilen Menü</span>
+                                    <div className="w-10 h-10 rounded-2xl bg-terracotta text-white flex items-center justify-center">
+                                        <ChevronRight size={20} strokeWidth={3} />
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="absolute bottom-10 left-10 right-10">
-                                <div className="glass-card p-6 rounded-3xl backdrop-blur-xl border-white/20 shadow-2xl">
-                                    <p className="text-[10px] font-bold text-terracotta uppercase tracking-[0.2em] mb-2">Today's Suggestion</p>
-                                    <h4 className="font-serif text-2xl font-bold text-espresso-midnight dark:text-white mb-4">Roasted Quinoa & Salmon Bowl</h4>
-                                    <div className="flex gap-2">
-                                        <span className="meal-badge-neon px-3 py-1 text-[9px]">Gluten-Free</span>
-                                        <span className="meal-badge-neon px-3 py-1 text-[9px]">High Protein</span>
-                                    </div>
+                        {/* Floating Tooltip */}
+                        <div className="absolute -right-8 -top-8 glass-card p-4 rounded-3xl shadow-xl animate-bounce duration-[4000ms] border-white/40 z-20">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-moss-sage rounded-xl flex items-center justify-center text-white shadow-lg">
+                                    <Activity size={20} />
+                                </div>
+                                <div className="pr-4">
+                                    <p className="text-[9px] uppercase font-black text-espresso-midnight/40 dark:text-white/40 tracking-widest">Analysis</p>
+                                    <p className="text-sm font-bold text-espresso-midnight dark:text-white">Ready to Cook</p>
                                 </div>
                             </div>
                         </div>
@@ -205,7 +223,7 @@ const LandingPage: React.FC = () => {
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {features.map((feature, i) => (
-                            <div key={i} className="meal-card p-10 rounded-[3rem] border-card-border hover:-translate-y-2 transition-all group">
+                            <div key={i} className="meal-card meal-highlight-frame p-10 rounded-[3rem] border-2 border-terracotta/5 dark:border-white/5 hover:border-terracotta/20 hover:shadow-brand-hero hover:-translate-y-2 transition-all group">
                                 <div className={`${feature.color} w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500`}>
                                     {React.cloneElement(feature.icon as React.ReactElement, { size: 30, strokeWidth: 1.5 })}
                                 </div>
@@ -219,14 +237,45 @@ const LandingPage: React.FC = () => {
                 </div>
             </section>
 
+            {/* Final CTA Section */}
+            <section className="px-6 py-12">
+                <div className="max-w-7xl mx-auto">
+                    <div className="bg-terracotta rounded-[3rem] p-12 md:p-20 text-center space-y-8 shadow-brand-hero relative overflow-hidden group">
+                        {/* Animated Background Pattern */}
+                        <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-700">
+                            <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+                            <div className="absolute bottom-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+                        </div>
+
+                        <div className="relative z-10 space-y-6">
+                            <h2 className="text-4xl md:text-6xl font-serif font-bold text-white tracking-tight leading-tight max-w-4xl mx-auto">
+                                {t('landing.cta_final.title')}
+                            </h2>
+                            <p className="text-white/80 text-lg md:text-xl font-medium italic max-w-2xl mx-auto">
+                                {t('landing.cta_final.desc')}
+                            </p>
+                            <div className="pt-8">
+                                <button
+                                    onClick={() => register()}
+                                    className="bg-white text-terracotta px-12 py-5 rounded-2xl font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-xl inline-flex items-center gap-3"
+                                >
+                                    {t('landing.cta_final.button')}
+                                    <ArrowRight size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Stats Section */}
             <section className="py-32 px-6 max-w-7xl mx-auto">
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
                     {[
-                        { label: t('landing.stats.recipes'), val: '50k+', icon: <ChefHat className="text-terracotta" /> },
-                        { label: t('landing.stats.members'), val: '12k', icon: <Heart className="text-moss-sage" /> },
-                        { label: t('landing.stats.accuracy'), val: '99%', icon: <Activity className="text-ochre-soft" /> },
-                        { label: t('landing.stats.speed'), val: '< 2s', icon: <Clock className="text-moss-forest" /> },
+                        { label: t('landing.stats.inventory'), val: 'Smart', icon: <Cpu className="text-terracotta" /> },
+                        { label: t('landing.stats.shopping'), val: 'Data', icon: <BarChart3 className="text-moss-sage" /> },
+                        { label: t('landing.stats.accuracy'), val: 'AI', icon: <Shield className="text-ochre-soft" /> },
+                        { label: t('landing.stats.speed'), val: 'Fast', icon: <RefreshCw className="text-moss-forest" /> },
                     ].map((stat, i) => (
                         <div key={i} className="space-y-4 border-l border-card-border pl-8 group hover:border-terracotta transition-colors duration-500">
                             <div className="flex items-center gap-3 text-foreground-muted uppercase tracking-[0.25em] text-[9px] font-black">
@@ -241,49 +290,18 @@ const LandingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Final Call to Action */}
-            <section className="px-6 pb-32 max-w-7xl mx-auto">
-                <div className="bg-espresso-midnight rounded-[4rem] p-12 md:p-24 text-center space-y-12 relative overflow-hidden shadow-brand-hero">
-                    <div className="absolute inset-0 opacity-20 pointer-events-none">
-                        <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-terracotta rounded-full blur-[120px]" />
-                        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-moss-forest rounded-full blur-[120px]" />
-                    </div>
-
-                    <div className="relative z-10 space-y-8">
-                        <h2 className="text-4xl md:text-7xl font-serif font-bold text-white max-w-4xl mx-auto leading-[1.1] tracking-tighter">
-                            {t('landing.cta.title')}
-                        </h2>
-                        <p className="text-alabaster/40 text-lg md:text-xl max-w-2xl mx-auto italic font-medium">
-                            {t('landing.cta.subtitle')}
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={() => login()}
-                        className="relative z-10 bg-terracotta text-white px-12 py-6 rounded-[2rem] font-bold text-xl hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-terracotta/40 group"
-                    >
-              <span className="flex items-center gap-3">
-                {t('landing.cta.button')}
-                  <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
-              </span>
-                    </button>
-                </div>
-            </section>
-
             {/* Minimal Footer */}
             <footer className="py-20 px-6 max-w-7xl mx-auto border-t border-card-border">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                     <div className="flex items-center gap-4">
-                        <div className="bg-espresso-midnight dark:bg-white/5 p-2.5 rounded-xl">
-                            <ChefHat size={20} className="text-white" />
+                        <div className="bg-white dark:bg-white/10 p-1.5 rounded-xl shadow-lg shadow-black/5 w-10 h-10 flex items-center justify-center overflow-hidden">
+                            <img src={logo} alt="MealAI Logo" className="w-full h-full object-contain" />
                         </div>
                         <span className="text-xl font-serif font-bold text-espresso-midnight dark:text-white tracking-tight">MealAI</span>
                     </div>
 
                     <div className="flex flex-wrap justify-center gap-x-12 gap-y-6 text-[10px] font-black uppercase tracking-[0.3em] text-foreground-muted">
-                        <a href="#" className="hover:text-terracotta transition-colors">{t('landing.footer.manifesto')}</a>
-                        <a href="#" className="hover:text-terracotta transition-colors">{t('landing.footer.privacy')}</a>
-                        <a href="#" className="hover:text-terracotta transition-colors">{t('landing.footer.connect')}</a>
+                        <a href="#" className="hover:text-terracotta transition-colors">{t('landing.footer.about')}</a>
                     </div>
 
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground-muted/40">

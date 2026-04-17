@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-    ChefHat, LayoutDashboard, Utensils, User as UserIcon,
+    LayoutDashboard, Utensils, User as UserIcon,
     LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
     Bell, Settings, Check, X, Calculator, BarChart2
 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -166,8 +167,8 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
                 <div className={`p-8 mb-6 flex items-center ${expanded ? 'justify-start' : 'justify-center'}`}>
                     <Link to="/" className="flex items-center gap-4 group">
-                        <div className="p-2 bg-terracotta rounded-xl shadow-lg shadow-terracotta/20 min-w-[40px] flex items-center justify-center group-hover:rotate-6 transition-transform">
-                            <ChefHat className="text-white w-6 h-6" />
+                        <div className="p-1 bg-white dark:bg-white/10 rounded-xl shadow-lg shadow-black/5 min-w-[40px] h-[40px] flex items-center justify-center group-hover:rotate-6 transition-transform overflow-hidden">
+                            <img src={logo} alt="MealAI Logo" className="w-full h-full object-contain" />
                         </div>
                         {expanded && (
                             <span className="text-xl font-serif font-bold tracking-tight text-espresso-midnight dark:text-white animate-in fade-in slide-in-from-left-2 whitespace-nowrap">

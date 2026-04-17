@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ShoppingCart, AlertTriangle, Package, MapPin, Filter, Check } from 'lucide-react';
 import { InventoryGroup } from '../../../types';
+import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
 
 interface ShoppingItem {
   ingredientId: number;
@@ -118,10 +119,7 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-foreground/[0.01]">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 space-y-4">
-              <div className="w-10 h-10 border-4 border-terracotta/20 border-t-terracotta rounded-full animate-spin" />
-              <p className="text-sm font-bold text-foreground/40 animate-pulse">Liste hazırlanıyor...</p>
-            </div>
+            <LoadingSpinner size="md" message="Liste hazırlanıyor..." />
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
               <div className="w-24 h-24 rounded-[2.5rem] bg-moss-sage/5 flex items-center justify-center text-moss-sage/40">

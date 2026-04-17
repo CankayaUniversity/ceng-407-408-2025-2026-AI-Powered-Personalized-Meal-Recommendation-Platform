@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, ArrowRightLeft, Calculator, Search, Loader2, Info, ChevronDown } from 'lucide-react';
+import { X, ArrowRightLeft, Calculator, Search, Info, ChevronDown, Loader2 } from 'lucide-react';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useIngredientService } from '../../services/ingredientService';
 import { matchesIngredientQuery, useIngredientLookup } from '../hooks/useIngredientLookup';
 import { Ingredient, UnitConversion } from '../../types';
+import { LoadingSpinner } from './LoadingSpinner';
 
 const UnitConverterModal: React.FC = () => {
     const { isUnitConverterOpen, closeUnitConverter } = useUI();
@@ -323,10 +324,7 @@ const UnitConverterModal: React.FC = () => {
                                 </div>
 
                                 {isLoading ? (
-                                    <div className="flex flex-col items-center justify-center py-12 space-y-4 bg-black/5 dark:bg-white/5 rounded-3xl">
-                                        <Loader2 size={32} className="animate-spin text-terracotta" />
-                                        <p className="text-xs font-medium text-foreground/40">Hesaplanıyor...</p>
-                                    </div>
+                                    <LoadingSpinner size="md" message="Hesaplanıyor..." />
                                 ) : filteredConversions.length > 0 ? (
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {filteredConversions.map((conv, idx) => (

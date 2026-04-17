@@ -5,54 +5,51 @@
       "join": "Hemen Katıl"
     },
     "hero": {
-      "badge": "Kişisel Gastronomi Asistanın",
-      "title": "Mutfakta Yapay Zeka Hassasiyeti",
-      "title_italic": "Yapay Zeka",
-      "subtitle": "\"Sıradan bir yemek planlayıcı değil, verilerinizle beslenen bir Dijital Özel Şef deneyimi.\"",
+      "badge": "Yeni Nesil Mutfak Deneyimi",
+      "title": "Geleceğin Teknolojisiyle",
+      "title_italic": "Mutfakta Devrim",
+      "subtitle": "\"Geleneksel alışkanlıkları geleceğin teknolojisiyle buluşturan MealAI, sadece bir tarif uygulaması değil, mutfağınızın yeni nesil işletim sistemidir.\"",
       "cta_start": "Deneyimi Başlat",
-      "cta_manifesto": "Manifesto",
-      "users_count": "12,000+",
-      "users_label": "Gourmet Üye"
+      "users_count": "AI",
+      "users_label": "Powered"
     },
     "features": {
-      "title": "Veri ile Gurme Lezzeti Arasındaki Kusursuz Denge",
-      "title_highlight": "Kusursuz Denge",
-      "subtitle": "\"Klinik verileri, mutfak sanatıyla birleştiriyoruz. Alerjenleriniz artık birer engel değil, size özel tarifin parametreleridir.\"",
+      "title": "Veriyle Yönetilen, Sizin İçin Kişiselleşen Mutfak",
+      "title_highlight": "Veriyle Yönetilen",
+      "subtitle": "\"Statik listelerin ötesine geçerek; alerjenlerinizden diyet hedeflerinize kadar her detayı derinlemesine analiz eden bir yaklaşım.\"",
       "items": {
-        "ai": {
-          "title": "Hassas Nutrisyon AI",
-          "desc": "Makro hedeflerine ve alerjenlerine göre %95 uyumlu tarifler üretir."
-        },
-        "clinical": {
-          "title": "Klinik Veri Hassasiyeti",
-          "desc": "Gluten-Free, Keto veya Yüksek Protein gibi \"User DNA\" filtreleri ile tam koruma."
-        },
-        "gourmet": {
-          "title": "Gastronomi Deneyimi",
-          "desc": "50.000+ gurme tarif ile sağlıklı beslenmeyi bir sanat formuna dönüştürür."
-        },
         "inventory": {
-          "title": "Akıllı Envanter",
-          "desc": "Eldeki malzemeleri AI ile tarar, israfı önler ve sana özel menüler sunar."
+          "title": "Akıllı Envanter Yönetimi",
+          "desc": "Eski usul defterleri ve listeleri unutun. Mutfak asistanınızla envanterinizi dijitalde kolayca yönetin; aileniz, ev veya iş arkadaşlarınızla ortak mutfağınızı senkronize tutun."
+        },
+        "shopping": {
+          "title": "Analiz Odaklı Yaklaşım",
+          "desc": "Geçmiş tüketimlerinizi, tercihlerinizi ve fiziksel özelliklerinizi analiz eden; grafikler ve akıllı hesaplamalarla size özel yönlendirmeler sunan analiz yapısı."
+        },
+        "recommendation": {
+          "title": "Yapay Zeka Destekli Öneri",
+          "desc": "Alerjenlerinizden diyet hedeflerinize kadar her detayı analiz ederek envanterinizdeki malzemeleri göz önüne alan ve size en ideal önerileri hazırlayan AI destekli yapı."
+        },
+        "group": {
+          "title": "Dijitalleşen Mutfak Deneyimi",
+          "desc": "Mutfağınızı veriyle yöneten, her öğünü sizin için kişiselleştiren ve analiz odaklı yaklaşımıyla beslenme alışkanlıklarınızı dijitalleştiren en akıllı mutfak ortağınız."
         }
       }
     },
     "stats": {
-      "recipes": "Gurme Tarif",
-      "members": "Mutlu Üye",
-      "accuracy": "AI Doğruluğu",
-      "speed": "Hızlı Öneri"
+      "inventory": "Aktif Envanter",
+      "shopping": "Mutfak Analizi",
+      "accuracy": "Tahmin Skoru",
+      "speed": "Sistem Hızı"
     },
-    "cta": {
-      "title": "Özel Şef Deneyiminize Bugün Başlayın.",
-      "subtitle": "\"Sadece yemek değil, verilerinizle kürate edilmiş bir yaşam tarzı.\"",
+    "cta_final": {
+      "title": "Mutfak Deneyiminizi Bugün Dijitalleştirin",
+      "desc": "MealAI ile tanışın, mutfağınızı veriyle yönetmeye hemen başlayın.",
       "button": "Hemen Katıl"
     },
     "footer": {
-      "manifesto": "Manifesto",
-      "privacy": "Gizlilik",
-      "connect": "İletişim",
-      "rights": "© 2026 AI Powered Private Chef. Gurmeler için tasarlandı."
+      "about": "Hakkımızda",
+      "rights": "© 2026 AI-Powered Personalized Meal Recommendation Platform"
     }
   },
   "welcome": "Yapay Zeka Destekli Yemek Önerisi Platformuna Hoş Geldiniz!",
@@ -78,6 +75,7 @@
     "consumed": "Tüketilen",
     "target": "Hedef",
     "avgTarget": "Ort. Hedef",
+    "average": "Ortalama",
     "noData": "Bu dönem için henüz veri bulunmuyor.",
     "noDataSub": "Tüketim kaydı ekleyerek analizini başlatabilirsin.",
     "summaryTitle": "Dönem Özeti",

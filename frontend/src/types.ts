@@ -293,6 +293,7 @@ export interface ConsumptionAnalysis {
   startDate: string;
   endDate: string;
   period: 'WEEKLY' | 'MONTHLY' | 'CUSTOM';
+  avgCalories: number;
   totals: AnalysisSummary;
   averages: AnalysisSummary;
   dailyDetails: DailyAnalysisDetail[];
