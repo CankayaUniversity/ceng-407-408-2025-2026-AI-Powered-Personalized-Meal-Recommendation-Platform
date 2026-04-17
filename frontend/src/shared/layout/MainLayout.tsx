@@ -141,6 +141,8 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         i18n.changeLanguage(lng);
     };
 
+    const shouldShowSidebar = authenticated || location.pathname !== '/about';
+
     const menuItems = [
         { id: 'dashboard', text: t('navigation.home'), icon: <LayoutDashboard size={20} />, route: '/dashboard' },
         { id: 'recipes', text: t('navigation.recipes'), icon: <Utensils size={20} />, route: '/recipes', private: true },
@@ -157,71 +159,73 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <div className="flex h-screen bg-background dark:bg-espresso-midnight transition-colors duration-500 overflow-hidden font-sans text-espresso-midnight dark:text-alabaster">
 
             {/* --- SIDEBAR --- */}
-            <aside className={`
-                relative z-50 flex flex-col bg-sidebar dark:bg-black/40 dark:backdrop-blur-3xl border-r border-black/5 dark:border-white/5 transition-all duration-500 ease-in-out
-                ${expanded ? 'w-72' : 'w-24'}
-            `}>
-                <button
-                    onClick={() => setExpanded(!expanded)}
-                    className="absolute -right-3.5 top-10 z-[70] flex h-7 w-7 items-center justify-center rounded-full bg-terracotta text-white shadow-xl hover:scale-110 active:scale-95 transition-all border border-white/20"
-                >
-                    {expanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-                </button>
+            {shouldShowSidebar && (
+                <aside className={`
+                    relative z-50 flex flex-col bg-sidebar dark:bg-black/40 dark:backdrop-blur-3xl border-r border-black/5 dark:border-white/5 transition-all duration-500 ease-in-out
+                    ${expanded ? 'w-72' : 'w-24'}
+                `}>
+                    <button
+                        onClick={() => setExpanded(!expanded)}
+                        className="absolute -right-3.5 top-10 z-[70] flex h-7 w-7 items-center justify-center rounded-full bg-terracotta text-white shadow-xl hover:scale-110 active:scale-95 transition-all border border-white/20"
+                    >
+                        {expanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                    </button>
 
-                <div className={`flex items-center ${expanded ? 'pl-4 p-8 mb-6 justify-start' : 'p-4 mb-4 justify-center'}`}>
-                    <Link to="/" className="flex items-center gap-1 group">
-                        <div className="meal-brand-amblem-container sidebar-amblem-box bg-transparent border-none shadow-none">
-                            <img src={amblem} alt="MealAI Amblem" className="meal-brand-amblem-img" />
-                        </div>
-                        {expanded && (
-                            <div className="h-14 meal-brand-logo-container animate-in fade-in slide-in-from-left-2 bg-transparent border-none shadow-none">
-                                <img 
-                                    src={isDark ? logoDark : logoLight} 
-                                    alt="MealAI" 
-                                    className="meal-brand-logo-img" 
-                                />
+                    <div className={`flex items-center ${expanded ? 'pl-4 p-8 mb-6 justify-start' : 'p-4 mb-4 justify-center'}`}>
+                        <Link to="/" className="flex items-center gap-1 group">
+                            <div className="meal-brand-amblem-container sidebar-amblem-box bg-transparent border-none shadow-none">
+                                <img src={amblem} alt="MealAI Amblem" className="meal-brand-amblem-img" />
                             </div>
+                            {expanded && (
+                                <div className="h-14 meal-brand-logo-container animate-in fade-in slide-in-from-left-2 bg-transparent border-none shadow-none">
+                                    <img
+                                        src={isDark ? logoDark : logoLight}
+                                        alt="MealAI"
+                                        className="meal-brand-logo-img"
+                                    />
+                                </div>
+                            )}
+                        </Link>
+                    </div>
+
+                    <nav className="flex-1 px-4 py-2 overflow-y-auto scrollbar-hide">
+                        <ul className="space-y-1.5">
+                            {visibleItems.map((item) => {
+                                const isActive = location.pathname === item.route;
+                                return (
+                                    <li key={item.id}>
+                                        <Link
+                                            to={item.route}
+                                            className={`
+                                                group relative flex items-center px-4 py-3.5 rounded-xl transition-all duration-300
+                                                ${isActive
+                                                ? 'bg-black/5 dark:bg-white/10 text-espresso-midnight dark:text-white shadow-sm'
+                                                : 'text-black/40 dark:text-alabaster/40 hover:text-terracotta dark:hover:text-alabaster hover:bg-black/5 dark:hover:bg-white/5'}
+                                                ${expanded ? 'gap-4' : 'justify-center'}
+                                            `}
+                                        >
+                                            {isActive && <div className="absolute left-0 w-1 h-5 bg-terracotta rounded-r-full shadow-[0_0_10px_rgba(231,76,60,0.5)]" />}
+                                            <span className={`transition-colors duration-300 ${isActive ? 'text-terracotta' : 'text-black/20 dark:text-white/20 group-hover:text-terracotta'}`}>
+                                                {item.icon}
+                                            </span>
+                                            {expanded && <span className="text-sm font-medium tracking-wide whitespace-nowrap">{item.text}</span>}
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </nav>
+
+                    <div className="p-6">
+                        {authenticated && (
+                            <button onClick={logout} className={`w-full flex items-center rounded-xl text-black/40 dark:text-alabaster/40 hover:text-red-500 hover:bg-red-500/10 transition-all group ${expanded ? 'px-4 py-3.5 gap-4' : 'p-3.5 justify-center'}`}>
+                                <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
+                                {expanded && <span className="text-[10px] font-black uppercase tracking-widest">{t('actions.logout')}</span>}
+                            </button>
                         )}
-                    </Link>
-                </div>
-
-                <nav className="flex-1 px-4 py-2 overflow-y-auto scrollbar-hide">
-                    <ul className="space-y-1.5">
-                        {visibleItems.map((item) => {
-                            const isActive = location.pathname === item.route;
-                            return (
-                                <li key={item.id}>
-                                    <Link
-                                        to={item.route}
-                                        className={`
-                                            group relative flex items-center px-4 py-3.5 rounded-xl transition-all duration-300
-                                            ${isActive
-                                            ? 'bg-black/5 dark:bg-white/10 text-espresso-midnight dark:text-white shadow-sm'
-                                            : 'text-black/40 dark:text-alabaster/40 hover:text-terracotta dark:hover:text-alabaster hover:bg-black/5 dark:hover:bg-white/5'}
-                                            ${expanded ? 'gap-4' : 'justify-center'}
-                                        `}
-                                    >
-                                        {isActive && <div className="absolute left-0 w-1 h-5 bg-terracotta rounded-r-full shadow-[0_0_10px_rgba(231,76,60,0.5)]" />}
-                                        <span className={`transition-colors duration-300 ${isActive ? 'text-terracotta' : 'text-black/20 dark:text-white/20 group-hover:text-terracotta'}`}>
-                                            {item.icon}
-                                        </span>
-                                        {expanded && <span className="text-sm font-medium tracking-wide whitespace-nowrap">{item.text}</span>}
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </nav>
-
-                <div className="p-6">
-                    {authenticated && (
-                        <button onClick={logout} className={`w-full flex items-center rounded-xl text-black/40 dark:text-alabaster/40 hover:text-red-500 hover:bg-red-500/10 transition-all group ${expanded ? 'px-4 py-3.5 gap-4' : 'p-3.5 justify-center'}`}>
-                            <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
-                            {expanded && <span className="text-[10px] font-black uppercase tracking-widest">{t('actions.logout')}</span>}
-                        </button>
-                    )}
-                </div>
-            </aside>
+                    </div>
+                </aside>
+            )}
 
             {/* --- ANA İÇERİK ALANI --- */}
             <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden bg-background dark:bg-espresso-midnight transition-colors duration-500">
