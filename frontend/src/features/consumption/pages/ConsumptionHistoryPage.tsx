@@ -325,7 +325,7 @@ const ConsumptionHistoryPage: React.FC = () => {
                             <div className={`absolute -translate-x-1/2 top-1/4 bg-[#1a1614] border border-white/10 text-white text-[11px] p-4 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-[150] shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-w-[170px]
                         ${i < 3 ? 'left-4 translate-x-0' : i > analysis.dailyDetails.length - 4 ? 'right-4 translate-x-0 left-auto' : 'left-1/2'}
                       `}>
-                              <p className="font-bold border-b border-white/10 pb-2 mb-2 text-foreground-muted">
+                              <p className="font-bold border-b border-white/10 pb-2 mb-2 text-white/90">
                                 {new Date(day.date).toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
                               </p>
                               <div className="space-y-1.5">
