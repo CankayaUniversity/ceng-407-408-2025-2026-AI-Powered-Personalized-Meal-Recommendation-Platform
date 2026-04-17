@@ -235,10 +235,24 @@ const Profile: React.FC = () => {
                 <div className="meal-metric-card bg-primary/5 border-primary/10 text-left">
                   <div className="flex items-center gap-2 text-primary mb-1">
                     <Flame size={16} strokeWidth={2.5} />
-                    <span className="meal-overline text-primary opacity-100">Günlük Enerji</span>
+                    <span className="meal-overline text-primary opacity-100">Günlük Hedef Kalori</span>
                   </div>
-                  <div className="text-3xl font-bold text-foreground font-serif tracking-tighter">
-                    {calorieTarget} <span className="text-lg font-sans opacity-60">kcal</span>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/50 dark:bg-black/10 border border-primary/5 shadow-sm">
+                      <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">Günlük Hedef</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-foreground font-serif">{calorieTarget}</span>
+                        <span className="text-xs font-sans opacity-60">kcal</span>
+                      </div>
+                    </div>
+                    {profile?.bmi && (
+                      <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-terracotta/5 border border-terracotta/10 shadow-sm">
+                        <span className="text-[10px] font-bold text-terracotta uppercase tracking-widest mb-1">Vücut Kitle İndeksi (BMI)</span>
+                        <span className="text-2xl font-bold text-terracotta font-serif">
+                          {profile.bmi}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

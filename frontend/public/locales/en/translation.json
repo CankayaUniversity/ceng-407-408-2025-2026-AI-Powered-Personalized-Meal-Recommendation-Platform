@@ -113,6 +113,39 @@
     "deleteError": "An error occurred while deleting the record.",
     "loading": "Preparing analysis report..."
   },
+  "dashboard": {
+    "welcome": "Welcome",
+    "hero": {
+      "live": "Live Dashboard",
+      "subtitle": "Today you are",
+      "away": "away from your goal.",
+      "ahead": "ahead of your goal.",
+      "lowItems": "items",
+      "analyze": "Analysis",
+      "addMeal": "Add Meal",
+      "recommend": "Recommend"
+    },
+    "stats": {
+      "meals": "Total Meals",
+      "criticalStock": "Critical Stock",
+      "bmiValue": "BMI Value",
+      "activeGoal": "Active Goal"
+    },
+    "dietaryGoal": {
+      "LOSE_WEIGHT": "Lose Weight",
+      "MAINTAIN_WEIGHT": "Maintain Weight",
+      "GAIN_WEIGHT": "Gain Weight",
+      "BUILD_MUSCLE": "Build Muscle"
+    },
+    "dietType": {
+      "NONE": "Not Specified",
+      "GLUTEN_FREE": "Gluten-Free",
+      "VEGETARIAN": "Vegetarian",
+      "VEGAN": "Vegan",
+      "KETO": "Keto",
+      "PALEO": "Paleo"
+    }
+  },
   "actions": {
     "login": "Login",
     "logout": "Logout",

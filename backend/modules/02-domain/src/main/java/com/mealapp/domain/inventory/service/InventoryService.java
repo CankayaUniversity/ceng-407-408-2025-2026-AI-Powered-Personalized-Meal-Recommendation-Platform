@@ -191,12 +191,12 @@ public class InventoryService {
     }
 
     /**
-     * Mevcut bir envanter kalemini günceller.
+     * Mevcut bir envanter malzemesini günceller.
      */
     @Transactional
     public Inventory updateInventoryItem(String userId, Long inventoryGroupId, Long itemId, Long ingredientId, Double quantity, String unit, UpdateMode updateMode) {
         Inventory item = inventoryRepository.findByIdAndInventoryGroupUsersIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
-                .orElseThrow(() -> new ResourceNotFoundException("Envanter kalemi bulunamadı ID: " + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException("Envanter malzemesi bulunamadı ID: " + itemId));
 
         if (!item.getIngredient().getId().equals(ingredientId)) {
             inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
@@ -225,11 +225,11 @@ public class InventoryService {
     }
 
     /**
-     * Bir envanter kalemini siler.
+     * Bir envanter malzemesini siler.
      */
     public void deleteInventoryItem(String userId, Long inventoryGroupId, Long itemId) {
         Inventory item = inventoryRepository.findByIdAndInventoryGroupUsersIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
-                .orElseThrow(() -> new ResourceNotFoundException("Envanter kalemi bulunamadı ID: " + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException("Envanter malzemesi bulunamadı ID: " + itemId));
         inventoryRepository.delete(item);
     }
 

@@ -94,7 +94,7 @@ export const getInventoryService = (api: AxiosInstance) => ({
       const response = await api.post<Inventory>(`/v1/inventory-groups/${groupId}/items`, payload);
       return response.data;
     } catch (error) {
-      return mapAxiosError(error, 'Envanter kalemi eklenemedi');
+      return mapAxiosError(error, 'Envanter malzemesi eklenemedi');
     }
   },
 
@@ -103,7 +103,7 @@ export const getInventoryService = (api: AxiosInstance) => ({
       const response = await api.put<Inventory>(`/v1/inventory-groups/${groupId}/items/${itemId}`, payload);
       return response.data;
     } catch (error) {
-      return mapAxiosError(error, 'Envanter kalemi güncellenemedi');
+      return mapAxiosError(error, 'Envanter malzemesi güncellenemedi');
     }
   },
 
@@ -111,7 +111,7 @@ export const getInventoryService = (api: AxiosInstance) => ({
     try {
       await api.delete(`/v1/inventory-groups/${groupId}/items/${itemId}`);
     } catch (error) {
-      return mapAxiosError(error, 'Envanter kalemi silinemedi');
+      return mapAxiosError(error, 'Envanter malzemesi silinemedi');
     }
   },
 

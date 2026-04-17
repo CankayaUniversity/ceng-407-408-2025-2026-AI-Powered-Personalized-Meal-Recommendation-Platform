@@ -1,11 +1,10 @@
 import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AlertCircle,
   ArrowRight,
-  Boxes,
   ChefHat,
-  Flame,
   Loader2,
   ShieldCheck,
   Sparkles,
@@ -13,7 +12,8 @@ import {
   TrendingUp,
   UtensilsCrossed,
   Info,
-  ShoppingCart
+  ShoppingCart,
+  Activity
 } from 'lucide-react';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useConsumptionService } from '../../services/consumptionService';
@@ -31,16 +31,9 @@ const formatNumber = (value: number) =>
 const formatMacro = (value: number) =>
     `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(value)}g`;
 
-const formatEnumLabel = (value?: string | null) =>
-    value
-        ? value
-            .split('_')
-            .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
-            .join(' ')
-        : null;
-
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user: authUser, authenticated, login } = useAuth();
   const { showToast } = useToast();
   const { openConsumption } = useUI();
@@ -158,10 +151,18 @@ const Dashboard: React.FC = () => {
   const calorieProgress = dailyGoal > 0 ? Math.min((consumedCalories / dailyGoal) * 100, 100) : 0;
   const calorieDelta = dailyGoal > 0 ? dailyGoal - consumedCalories : null;
 
+  const bmiStatus = useMemo(() => {
+    if (!profile?.bmi) return null;
+    if (profile.bmi < 18.5) return { color: 'text-blue-500' };
+    if (profile.bmi < 25) return { color: 'text-sage' };
+    if (profile.bmi < 30) return { color: 'text-terracotta' };
+    return { color: 'text-red-500' };
+  }, [profile]);
+
   const profileSignals = useMemo(() => {
     const signals: string[] = [];
-    if (profile?.dietType && profile.dietType !== 'NONE') signals.push(formatEnumLabel(profile.dietType)!);
-    if (profile?.dietaryGoal) signals.push(formatEnumLabel(profile.dietaryGoal)!);
+    if (profile?.dietType && profile.dietType !== 'NONE') signals.push(t(`dashboard.dietType.${profile.dietType}`));
+    if (profile?.dietaryGoal) signals.push(t(`dashboard.dietaryGoal.${profile.dietaryGoal}`));
     profile?.allergies?.slice(0, 2).forEach((a) => signals.push(`${a} Hassasiyeti`));
     return signals.slice(0, 4);
   }, [profile]);
@@ -216,41 +217,51 @@ const Dashboard: React.FC = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-bold uppercase tracking-widest text-primary">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Live Dashboard
               </div>
-              <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground dark:text-white">
-                Hoş geldin, {authUser?.firstName || 'Şef'}!
-              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-4xl md:text-5xl font-serif font-bold text-foreground dark:text-white">
+                  {t('dashboard.welcome')}, {authUser?.firstName || 'Şef'}!
+                </h1>
+                {profile?.bmi && (
+                  <div className="flex items-center gap-3 px-4 py-2 rounded-3xl bg-terracotta text-white shadow-brand-soft border border-terracotta/20 animate-in zoom-in duration-500">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-bold uppercase tracking-[0.15em] opacity-80 leading-none mb-0.5">VKI / BMI</span>
+                      <span className="text-xl font-serif font-bold leading-none">{profile.bmi}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
               <p className="text-foreground-muted max-w-2xl text-lg leading-relaxed font-medium">
-                Bugün hedefinden <span className="text-foreground dark:text-white font-bold">{calorieDelta ? formatNumber(Math.abs(calorieDelta)) : '---'} kcal</span>
-                {calorieDelta && calorieDelta > 0 ? ' uzaktasın.' : ' ileridesin.'} Envanterinde ise kritik seviyede
-                <span className="text-terracotta font-bold"> {inventoryMetrics.totalLowItems} malzeme</span> bulunuyor.
+                {t('dashboard.hero.subtitle')} <span className="text-foreground dark:text-white font-bold">{calorieDelta ? formatNumber(Math.abs(calorieDelta)) : '---'} kcal</span>
+                {calorieDelta && calorieDelta > 0 ? ` ${t('dashboard.hero.away')}` : ` ${t('dashboard.hero.ahead')}`} Envanterinde ise kritik seviyede
+                <span className="text-terracotta font-bold"> {inventoryMetrics.totalLowItems} {t('dashboard.hero.lowItems')}</span> bulunuyor.
               </p>
             </div>
 
             <div className="meal-hero-actions">
               <button onClick={() => navigate('/history')} className="btn-responsive btn-secondary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base bg-primary/10 text-primary border-primary/20">
-                <TrendingUp size={18} /> <span className="meal-no-wrap">Analiz</span>
+                <TrendingUp size={18} /> <span className="meal-no-wrap">{t('dashboard.hero.analyze')}</span>
               </button>
               <button onClick={openConsumption} className="btn-responsive btn-primary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base">
-                <UtensilsCrossed size={18} /> <span className="meal-no-wrap">Öğün Ekle</span>
+                <UtensilsCrossed size={18} /> <span className="meal-no-wrap">{t('dashboard.hero.addMeal')}</span>
               </button>
               <button onClick={() => navigate('/recommendations')} className="btn-responsive btn-secondary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base">
-                <Sparkles size={18} /> <span className="meal-no-wrap">Tarif Öner</span>
+                <Sparkles size={18} /> <span className="meal-no-wrap">{t('dashboard.hero.recommend')}</span>
               </button>
             </div>
           </div>
 
           <div className="relative z-10 mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: 'Konumlar', val: inventoryMetrics.totalLocations, icon: Boxes },
-              { label: 'Eksik Malzeme', val: inventoryMetrics.totalLowItems, icon: AlertCircle, color: 'text-terracotta' },
-              { label: 'Toplam Kalori', val: formatNumber(consumedCalories), icon: Flame },
-              { label: 'Kategoriler', val: inventoryMetrics.totalCategories, icon: TrendingUp }
+              { label: t('dashboard.stats.meals'), val: dailySummary?.totalMeals || 0, icon: UtensilsCrossed },
+              { label: t('dashboard.stats.criticalStock'), val: inventoryMetrics.totalLowItems, icon: AlertCircle, color: 'text-terracotta' },
+              { label: t('dashboard.stats.bmiValue'), val: profile?.bmi || '---', icon: Activity, color: bmiStatus?.color },
+              { label: t('dashboard.stats.activeGoal'), val: profile?.dietaryGoal ? t(`dashboard.dietaryGoal.${profile.dietaryGoal}`) : '---', icon: Target }
             ].map((stat, i) => (
                 <div key={i} className="bg-background/50 dark:bg-white/5 border border-card-border backdrop-blur-md rounded-3xl p-5 group hover:bg-primary/5 transition-all">
                   <p className="text-[10px] uppercase tracking-widest text-foreground-muted mb-2 flex items-center gap-2 font-bold">
                     <stat.icon size={12} /> {stat.label}
                   </p>
-                  <p className={`text-3xl font-serif font-bold ${stat.color || 'text-foreground dark:text-white'}`}>{stat.val}</p>
+                  <p className={`text-xl md:text-2xl font-serif font-bold ${stat.color || 'text-foreground dark:text-white'}`}>{stat.val}</p>
                 </div>
             ))}
           </div>
@@ -292,7 +303,7 @@ const Dashboard: React.FC = () => {
                 <p className="text-4xl font-serif font-bold text-terracotta">{inventoryMetrics.totalLowItems}</p>
               </div>
               <div className="meal-metric-card">
-                <span className="text-[10px] font-bold uppercase text-foreground-muted">Toplam Kalem</span>
+                <span className="text-[10px] font-bold uppercase text-foreground-muted">Toplam Malzeme</span>
                 <p className="text-4xl font-serif font-bold text-foreground">{inventoryMetrics.totalItems}</p>
               </div>
               <div className="meal-metric-card border-sage/20 bg-sage/[0.03] dark:bg-sage/5">
@@ -331,10 +342,12 @@ const Dashboard: React.FC = () => {
 
             <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <p className="text-3xl font-serif font-bold text-foreground dark:text-white">
-                  {formatNumber(consumedCalories)}
-                  <span className="text-sm font-sans text-foreground-muted ml-1">/ {formatNumber(dailyGoal)} kcal</span>
-                </p>
+                <div className="flex flex-col gap-1">
+                  <p className="text-3xl font-serif font-bold text-foreground dark:text-white">
+                    {formatNumber(consumedCalories)}
+                    <span className="text-sm font-sans text-foreground-muted ml-1">/ {formatNumber(dailyGoal)} kcal</span>
+                  </p>
+                </div>
                 <span className="text-xs font-bold text-terracotta">%{Math.round(calorieProgress)}</span>
               </div>
               <div className="h-3 bg-background dark:bg-white/5 rounded-full overflow-hidden border border-card-border">
@@ -380,7 +393,7 @@ const Dashboard: React.FC = () => {
                 <span className="text-[10px] font-bold uppercase tracking-wider">Algoritma Notu</span>
               </div>
               <p className="text-xs text-foreground-muted leading-relaxed font-medium">
-                Önerileriniz {profile?.dietaryGoal ? formatEnumLabel(profile.dietaryGoal)?.toLowerCase() : 'genel'} hedeflerinize göre filtreleniyor.
+                Önerileriniz {profile?.dietaryGoal ? t(`dashboard.dietaryGoal.${profile.dietaryGoal}`).toLowerCase() : 'genel'} hedeflerinize göre filtreleniyor.
               </p>
             </div>
           </section>

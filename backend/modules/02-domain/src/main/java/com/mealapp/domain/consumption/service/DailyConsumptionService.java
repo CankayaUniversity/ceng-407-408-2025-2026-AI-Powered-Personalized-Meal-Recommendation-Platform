@@ -286,11 +286,14 @@ public class DailyConsumptionService {
                 .mapToDouble(Double::doubleValue)
                 .sum();
 
-        return new DailyNutritionSummary(totalCalories, totalProtein, totalCarbs, totalFat);
+        int totalMeals = logs.size();
+
+        return new DailyNutritionSummary(totalCalories, totalMeals, totalProtein, totalCarbs, totalFat);
     }
 
     public record DailyNutritionSummary(
             int totalCalories,
+            int totalMeals,
             double totalProtein,
             double totalCarbs,
             double totalFat
@@ -349,7 +352,8 @@ public class DailyConsumptionService {
                                     double pro = list.stream().map(DailyConsumption::getEstimatedProtein).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue).sum();
                                     double carb = list.stream().map(DailyConsumption::getEstimatedCarbs).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue).sum();
                                     double fat = list.stream().map(DailyConsumption::getEstimatedFat).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue).sum();
-                                    return new DailyNutritionSummary(cal, pro, carb, fat);
+                                    int meals = list.size();
+                                    return new DailyNutritionSummary(cal, meals, pro, carb, fat);
                                 }
                         )
                 ));

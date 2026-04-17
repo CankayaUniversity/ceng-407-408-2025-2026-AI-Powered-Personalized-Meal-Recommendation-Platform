@@ -9,6 +9,22 @@ import com.mealapp.domain.user.entity.User;
 public class CalorieCalculator {
 
     /**
+     * Kullanıcının fiziksel özelliklerine göre vücut kitle indeksini (BMI) hesaplar.
+     * BMI = kilo (kg) / (boy (m) * boy (m))
+     */
+    public static Double calculateBmi(User user) {
+        if (user.getWeight() == null || user.getHeight() == null || user.getHeight() <= 0) {
+            return null;
+        }
+
+        double heightInMeters = user.getHeight() / 100.0;
+        double bmi = user.getWeight() / (heightInMeters * heightInMeters);
+        
+        // Virgülden sonra 2 basamağa yuvarlayalım
+        return Math.round(bmi * 100.0) / 100.0;
+    }
+
+    /**
      * Kullanıcının fiziksel özelliklerine ve hedefine göre günlük kalori ihtiyacını hesaplar.
      */
     public static Integer calculateDailyTarget(User user) {

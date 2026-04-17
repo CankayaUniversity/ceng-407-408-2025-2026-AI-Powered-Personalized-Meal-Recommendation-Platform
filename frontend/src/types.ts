@@ -89,6 +89,7 @@ export interface User {
   gender?: Gender | null;
   activityLevel?: ActivityLevel | null;
   dailyCalorieTarget?: number | null;
+  bmi?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
@@ -284,6 +285,7 @@ export interface ConsumptionResponse {
 export interface ConsumptionSummary {
   date: string;
   totalCalories: number;
+  totalMeals: number;
   totalProtein: number;
   totalCarbs: number;
   totalFat: number;

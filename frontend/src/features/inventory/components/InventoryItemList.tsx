@@ -74,7 +74,7 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-card-border/50">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Toplam Kalem</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Toplam Malzeme</p>
               <p className="mt-2 text-3xl font-serif font-bold text-foreground">{totalItems}</p>
             </div>
             <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-card-border/50">
@@ -102,7 +102,7 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-foreground/5 rounded-2xl border border-card-border/50">
           <span className="text-[10px] font-black uppercase tracking-widest text-foreground/30">
-            {items.length} KALEM GÖSTERİLİYOR
+            {items.length} MALZEME GÖSTERİLİYOR
           </span>
         </div>
       </div>

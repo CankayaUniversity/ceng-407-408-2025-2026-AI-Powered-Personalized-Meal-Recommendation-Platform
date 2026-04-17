@@ -10,13 +10,15 @@ import {
   Check,
   Trash2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Activity
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useConsumptionService } from '../../../services/consumptionService';
+import { useUserService } from '../../../services/userService';
 import { ApiError } from '../../../services/errors';
-import { ConsumptionAnalysis, ConsumptionResponse } from '../../../types';
+import { ConsumptionAnalysis, ConsumptionResponse, User } from '../../../types';
 import { useToast } from '../../../shared/hooks/useToast';
 import { useAuth } from '../../../infrastructure/auth/AuthContext';
 
@@ -30,12 +32,14 @@ const ConsumptionHistoryPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { authenticated } = useAuth();
+  const { authenticated, user } = useAuth();
   const consumptionService = useConsumptionService();
+  const userService = useUserService();
 
   const [loading, setLoading] = useState(true);
   const [analysis, setAnalysis] = useState<ConsumptionAnalysis | null>(null);
   const [history, setHistory] = useState<ConsumptionResponse[]>([]);
+  const [userProfile, setUserProfile] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -82,19 +86,23 @@ const ConsumptionHistoryPage: React.FC = () => {
         params.endDate = endDate;
       }
 
-      const [analysisData, historyData] = await Promise.all([
+      const promises: [Promise<ConsumptionAnalysis>, Promise<ConsumptionResponse[]>, Promise<User> | null] = [
         consumptionService.getAnalysis(params),
-        consumptionService.getHistory(startDate, endDate)
-      ]);
+        consumptionService.getHistory(startDate, endDate),
+        user?.id ? userService.getUserById(user.id) : null
+      ];
+
+      const [analysisData, historyData, userData] = await Promise.all(promises);
       setAnalysis(analysisData);
       setHistory(historyData);
+      if (userData) setUserProfile(userData);
       setCurrentPage(1);
     } catch (error) {
       showToast(error instanceof ApiError ? error.message : t('analysis.noData'), 'error');
     } finally {
       setLoading(false);
     }
-  }, [period, startDate, endDate, consumptionService, showToast, t]);
+  }, [period, startDate, endDate, consumptionService, userService, user?.id, showToast, t]);
 
   useEffect(() => {
     if (!authenticated) {
@@ -379,13 +387,27 @@ const ConsumptionHistoryPage: React.FC = () => {
                   ))}
                 </div>
                 <div className="pt-4 border-t border-card-border">
-                  <div className="flex items-center gap-2 text-foreground-muted text-xs">
-                    <Target size={14} />
-                    <span>{t('analysis.targetScore')}: <span className="text-foreground font-bold">
-                      {analysis && analysis.averages.calories > 0
-                          ? `${Math.round(Math.max(0, 100 - (Math.abs(analysis.averages.calories - 2000) / 2000) * 100))}%`
-                          : '-%'}
-                    </span></span>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-foreground-muted text-xs">
+                      <Target size={14} />
+                      <span>{t('analysis.targetScore')}: <span className="text-foreground font-bold">
+                        {analysis && analysis.averages.calories > 0
+                            ? `${Math.round(Math.max(0, 100 - (Math.abs(analysis.averages.calories - 2000) / 2000) * 100))}%`
+                            : '-%'}
+                      </span></span>
+                    </div>
+
+                    {userProfile?.bmi && (
+                        <div className="flex items-center justify-between bg-white/40 backdrop-blur-sm p-3 rounded-2xl border border-terracotta/10 shadow-sm animate-in slide-in-from-top-2 duration-500">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-terracotta/10 text-terracotta rounded-lg">
+                              <Activity size={14} />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">VKI / BMI</span>
+                          </div>
+                          <span className="text-lg font-serif font-bold text-terracotta">{userProfile.bmi}</span>
+                        </div>
+                    )}
                   </div>
                 </div>
               </div>

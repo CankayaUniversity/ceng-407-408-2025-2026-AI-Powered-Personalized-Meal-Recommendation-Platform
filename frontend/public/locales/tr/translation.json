@@ -113,6 +113,39 @@
     "deleteError": "Kayıt silinirken bir hata oluştu.",
     "loading": "Analiz raporu hazırlanıyor..."
   },
+  "dashboard": {
+    "welcome": "Hoş geldin",
+    "hero": {
+      "live": "Canlı Panel",
+      "subtitle": "Bugün hedefinden",
+      "away": "uzaktasın.",
+      "ahead": "ileridesin.",
+      "lowItems": "malzeme",
+      "analyze": "Analiz",
+      "addMeal": "Öğün Ekle",
+      "recommend": "Tarif Öner"
+    },
+    "stats": {
+      "meals": "Öğün Sayısı",
+      "criticalStock": "Kritik Stok",
+      "bmiValue": "BMI Değeri",
+      "activeGoal": "Aktif Hedef"
+    },
+    "dietaryGoal": {
+      "LOSE_WEIGHT": "Kilo Vermek",
+      "MAINTAIN_WEIGHT": "Kiloyu Korumak",
+      "GAIN_WEIGHT": "Kilo Almak",
+      "BUILD_MUSCLE": "Kas Kazanmak"
+    },
+    "dietType": {
+      "NONE": "Belirtilmemiş",
+      "GLUTEN_FREE": "Glutensiz",
+      "VEGETARIAN": "Vejetaryen",
+      "VEGAN": "Vegan",
+      "KETO": "Keto",
+      "PALEO": "Paleo"
+    }
+  },
   "actions": {
     "login": "Giriş Yap",
     "logout": "Çıkış Yap",

@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class ConsumptionSummaryResponse {
     private LocalDate date;
     private Integer totalCalories;
+    private Integer totalMeals;
     private Double totalProtein;
     private Double totalCarbs;
     private Double totalFat;

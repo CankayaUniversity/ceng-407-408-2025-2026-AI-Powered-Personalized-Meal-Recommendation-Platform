@@ -30,8 +30,9 @@ public class UserMapper {
                 .activityLevel(dto.getActivityLevel())
                 .build();
         
-        // Kayıt/Güncelleme anında kalori hedefini otomatik hesapla
+        // Kayıt/Güncelleme anında kalori hedefini ve BMI değerini otomatik hesapla
         user.setDailyCalorieTarget(CalorieCalculator.calculateDailyTarget(user));
+        user.setBmi(CalorieCalculator.calculateBmi(user));
         
         return user;
     }
@@ -53,6 +54,13 @@ public class UserMapper {
         dto.setGender(entity.getGender());
         dto.setActivityLevel(entity.getActivityLevel());
         dto.setDailyCalorieTarget(entity.getDailyCalorieTarget());
+        
+        // Eğer veritabanında henüz BMI hesaplanmamışsa (eski kayıtlar için), çalışma zamanında hesapla
+        Double bmi = entity.getBmi();
+        if (bmi == null) {
+            bmi = CalorieCalculator.calculateBmi(entity);
+        }
+        dto.setBmi(bmi);
         
         return dto;
     }

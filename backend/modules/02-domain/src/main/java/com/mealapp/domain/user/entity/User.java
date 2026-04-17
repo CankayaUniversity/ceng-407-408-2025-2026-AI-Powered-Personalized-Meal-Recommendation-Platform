@@ -82,6 +82,12 @@ public class User {
     private ActivityLevel activityLevel;
 
     /**
+     * Kullanıcının vücut kitle indeksi (Body Mass Index - BMI).
+     * Sistem tarafından boy ve kilo bilgisine göre otomatik hesaplanır.
+     */
+    private Double bmi;
+
+    /**
      * Kullanıcının günlük hedeflediği toplam kalori miktarı.
      * Sistem tarafından boy, kilo, yaş ve hedefe göre otomatik hesaplanır.
      */

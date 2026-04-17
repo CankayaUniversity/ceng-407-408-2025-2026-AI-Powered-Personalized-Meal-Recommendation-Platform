@@ -31,6 +31,7 @@ public class UserDto {
     private User.Gender gender;
     private User.ActivityLevel activityLevel;
     
-    // Sistem tarafından hesaplanan hedef (Response için)
+    // Sistem tarafından hesaplanan hedefler (Response için)
     private Integer dailyCalorieTarget;
+    private Double bmi;
 }

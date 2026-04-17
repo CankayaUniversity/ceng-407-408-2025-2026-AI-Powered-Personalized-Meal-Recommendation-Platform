@@ -154,6 +154,7 @@ public class ConsumptionController {
         ConsumptionSummaryResponse response = new ConsumptionSummaryResponse();
         response.setDate(requestedDate);
         response.setTotalCalories(summary.totalCalories());
+        response.setTotalMeals(summary.totalMeals());
         response.setTotalProtein(summary.totalProtein());
         response.setTotalCarbs(summary.totalCarbs());
         response.setTotalFat(summary.totalFat());
