@@ -95,7 +95,7 @@ class AiRecommendationStrategyTest {
         when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenReturn("mock prompt");
         when(promptEngine.callAi(anyString())).thenReturn("[{\"recipeTitle\": \"High Match\", \"insight\": \"Great choice!\"}]");
 
-        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0, 50.0);
 
         // When
         List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "spicy chicken");
@@ -123,7 +123,7 @@ class AiRecommendationStrategyTest {
         when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenReturn("mock prompt");
         when(promptEngine.callAi(anyString())).thenThrow(new RuntimeException("AI unavailable"));
 
-        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0,50.0);
 
         List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "comfort food");
 
@@ -149,7 +149,7 @@ class AiRecommendationStrategyTest {
         });
         lenient().when(promptEngine.callAi(anyString())).thenReturn("[]");
 
-        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 100.0, 150.0, 50.0);
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0,50.0);
 
         strategy.recommend(user, inventory, dailySummary, "garlic");
 

@@ -1,105 +1,96 @@
-# Data Processor (Python)
+# MealAI Data Processor (Python)
 
-Bu dizin, yemek tarifi ve malzeme verilerini içeren Excel dosyalarını temizlemek, normalize etmek ve veritabanına aktarıma hazır hale getirmek için kullanılan Python scriptlerini içerir.
+Bu dizin, MealAI projesinin yemek tarifi ve malzeme verilerini işleyen Python tabanlı ETL (Extract, Transform, Load) araçlarını içerir. Excel dosyalarını temizler, mutfak standartlarına göre normalize eder (yoğunluk/density ataması) ve PostgreSQL veritabanına aktarır.
 
-## Kurulum (Hızlı Kurulum Scriptleri)
+## Kurulum (Hızlı Başlangıç)
 
-Gerekli Python ortamını (sanal ortam, bağımlılıklar vb.) otomatik olarak hazırlamak için işletim sisteminize uygun olan scripti çalıştırın:
+Gerekli Python ortamını (sanal ortam ve bağımlılıklar) otomatik olarak hazırlamak için işletim sisteminize uygun scripti çalıştırın:
 
 ### macOS / Linux (Bash)
 ```bash
-# Scriptin bulunduğu dizine gidin (backend/modules/04-utilities/data-processor/python/)
+# Dizine gidin: backend/modules/04-utilities/data-processor/python/
 chmod +x setup_env.sh
 ./setup_env.sh
 ```
 
 ### Windows (CMD/PowerShell)
-Klasöre gidin ve `setup_env.bat` dosyasına çift tıklayın veya terminalden çalıştırın:
 ```cmd
 setup_env.bat
 ```
 
-Bu scriptler; sanal bir ortam (`.venv`) oluşturur, `pip`'i günceller ve tüm bağımlılıkları (`requirements.txt`) otomatik olarak yükler.
+Bu scriptler; `.venv` oluşturur, `pip`'i günceller ve `requirements.txt` içerisindeki (pandas, sqlalchemy, thefuzz, openpyxl vb.) tüm bağımlılıkları yükler.
 
 ---
 
-## IDE Yapılandırması (Önemli - Polyglot Yapı)
+## Önemli: "Module Not Found" Hataları
 
-Proje ana SDK olarak **Java 21 (Zulu)** kullanmaktadır. Python scriptlerinin bu yapıyı bozmadan çalışması için IntelliJ IDEA içerisinde "Facet" veya "Module SDK" mantığı kullanılmalıdır.
-
-### 1. Java SDK'yı Korumak (Project SDK)
-`File` -> `Project Structure` -> `Project` sekmesindeki **Project SDK** ayarının **Zulu 21** olarak kaldığından emin olun. Bu ayarı kesinlikle değiştirmeyin.
-
-### 2. Python'u Ek SDK Olarak Tanımlamak (Kalıcı Çözüm)
-Java ve Python'un aynı modül içerisinde sorunsuz çalışması için:
-
-1.  **Python Plugin:** IntelliJ'de "Python" eklentisinin kurulu olduğundan emin olun.
-2.  **SDK Ekleme:** `File` -> `Project Structure` -> `Platform Settings` -> **SDKs** kısmına gidin.
-    - `+` butonuna basın -> `Add Python SDK`.
-    - `Virtualenv Environment` -> `Existing environment` seçin.
-    - `Interpreter` yoluna oluşturduğumuz `.venv` içerisindeki python dosyasını gösterin:
-        - **macOS/Linux:** `backend/modules/04-utilities/data-processor/python/.venv/bin/python`
-        - **Windows:** `backend\modules\04-utilities\data-processor\python\.venv\Scripts\python.exe`
-3.  **Facet Ekleme (Modül Bazlı):** `File` -> `Project Structure` -> `Project Settings` -> **Modules** sekmesine gidin.
-    - `04-utilities` (veya ilgili alt modül) modülünü seçin.
-    - Üstteki `+` işaretine (veya modüle sağ tıklayıp) basarak **Python** facet'ini ekleyin.
-    - Python Interpreter olarak az önce eklediğimiz `.venv` SDK'sını seçin.
-
-Bu sayede projenin ana motoru Java 21 olarak kalırken, Python scriptlerini açtığınızda IDE otomatik olarak doğru interpreter'ı kullanacak ve "No Python interpreter configured" uyarısı kaybolacaktır.
-
-### 3. Ekip İçi Kurulum
-Her çalışma arkadaşı projeyi klonladığında:
-1. `setup_env.sh` (veya `.bat`) scriptini bir kez çalıştırmalı.
-2. Yukarıdaki IDE adımlarını izleyerek kendi yerel `.venv` yolunu IDE'ye bir kez tanıtmalıdır.
-    - `.venv` dizini `.gitignore` içerisindedir, bu yüzden her kullanıcı kendi yerel ortamını oluşturmalıdır.
+Eğer `No module named 'pandas'` gibi hatalar alıyorsanız:
+1. **Sanal Ortamı Aktif Edin:** - macOS/Linux: `source .venv/bin/activate`
+    - Windows: `.venv\Scripts\activate`
+2. **Interpreter Kontrolü:** IDE'nizin (IntelliJ/PyCharm) bu dizindeki `.venv` içindeki Python'ı kullandığından emin olun.
 
 ---
 
-## Scriptler
+## IDE Yapılandırması (Polyglot Yapı)
 
-### 1. `clean_and_merge.py`
+Proje ana motor olarak **Java 21 (Zulu)** kullanmaktadır. Python scriptlerinin Java yapısını bozmadan çalışması için:
 
-Bu script, malzeme isimlerindeki yazım hatalarını ve benzerlikleri (Fuzzy Matching) tespit ederek mükerrer kayıtları birleştirir.
+### 1. Java SDK (Zulu 21)
+`Project Structure` -> `Project` sekmesindeki SDK ayarı **Zulu 21** olarak kalmalıdır. Bunu değiştirmeyin.
 
-**Kullanım:**
-```bash
-python scripts/clean_and_merge.py --input <input_path.xlsx> --output <output_path.xlsx> --threshold 90
-```
+### 2. Python SDK Tanımlama
+- `File` -> `Project Structure` -> `Platform Settings` -> **SDKs** kısmına gidin.
+- `+` -> `Add Python SDK` -> `Existing Environment` seçin.
+- Yol olarak bu dizindeki `.venv/bin/python` (veya Windows'ta `Scripts/python.exe`) dosyasını gösterin.
 
-- `--threshold`: Benzerlik eşiği (0-100). Varsayılan 90'dır.
+### 3. Modül Facet Ayarı
+- `Project Structure` -> `Modules` sekmesinde `data-processor` modülünü seçin.
+- `+` butonuna basarak **Python** facet'ini ekleyin ve az önce tanımladığınız `.venv` interpreter'ını seçin.
 
-### 2. `generalize_ingredients.py`
+---
 
-Bu script, malzeme isimlerinden hazırlık ve durum belirten kelimeleri ("fresh", "chopped", "sliced" vb.) temizleyerek malzemeleri daha genel kategorilerde birleştirir.
+## Scriptler ve Kullanım
 
-**Kullanım:**
-```bash
-python scripts/generalize_ingredients.py --input <input_path.xlsx> --output <output_path.xlsx>
-```
+### 🛠 V2 Sürümü (Güncel Mimari)
+V2 sürümü, uygulamanın yeni nesil birim dönüştürme (`UnitConverter`) motoruyla tam uyumlu çalışır.
 
-### 3. `import_data.py`
+#### 1. `scripts/v2/DataProcessorExcelV2.py`
+Bu script; yazım hatalarını düzeltir, malzemeleri kategorize eder ve otomatik **yoğunluk (density)** değerlerini atar.
+- **Özellik:** Fındık/Fındık İçi gibi anlamsal farkları koruyan karakter uzunluğu filtreli akıllı benzerlik kontrolüne sahiptir.
+- **Kullanım:**
+  ```bash
+  python scripts/v2/DataProcessorExcelV2.py
+  ```
+  *Çıktı:* `mealai_database_cleaned.xlsx`
 
-Bu script, temizlenmiş ve genelleştirilmiş Excel dosyasındaki verileri PostgreSQL veritabanına aktarır. Aktarım sırasında veritabanı şemasına uygun sütun isimlendirmelerini yapar ve sequence (ID) değerlerini günceller.
+#### 2. `scripts/v2/DatabaseImporterV2.py`
+Temizlenmiş Excel verisini PostgreSQL'e aktarır.
+- **Özellik:** `amount`, `unit`, `density` ve `ingredient_units` tablosunu destekler. Atomik (Transaction) yapısı sayesinde hata anında işlemi geri alır ve ID dizilerini (sequence) otomatik günceller.
+- **Kullanım:**
+  ```bash
+  python scripts/v2/DatabaseImporterV2.py --db-url "postgresql://user:pass@localhost:5432/meal_app_db"
+  ```
 
-**Kullanım:**
-```bash
-python scripts/import_data.py --file <final_excel_path.xlsx> --db-url "postgresql://user:pass@localhost:5432/dbname"
-```
+---
 
-- `--file`: Aktarılacak nihai Excel dosyası. (Varsayılan olarak bu dizindeki `final_food_database.xlsx` kullanılır).
-- `--db-url`: Veritabanı bağlantı adresi (Varsayılan: `postgresql://postgres:postgres@localhost:5432/meal_app_db`).
+### ⚠️ V1 Sürümü (Eski/Arşiv)
+Klasik gramaj odaklı sistem için kullanılan eski scriptlerdir.
 
-### 4. Tek Tıkla Veri Aktarımı (Hızlı Başlangıç)
-Tüm hazırlıklar (sanal ortam ve DB bağlantısı) tamamlandıktan sonra verileri aktarmak için:
-```bash
-# Python dizinindeyken
-source .venv/bin/activate
-python scripts/import_data.py
-```
-Bu komut, projenin içindeki `final_food_database.xlsx` dosyasını kullanarak yerel veritabanınıza tüm malzemeleri ve tarifleri otomatik olarak yükleyecektir.
+1. **`clean_and_merge.py`**: Basit Fuzzy Matching ile malzeme birleştirme.
+2. **`generalize_ingredients.py`**: Hazırlık durumlarını (doğranmış, taze vb.) temizleme.
+3. **`import_data.py`**: Eski şemaya göre DB aktarımı.
 
-## İş Akışı Önerisi
+---
 
-1. Önce `clean_and_merge.py` çalıştırılarak yazım hataları ve çok yakın isimler temizlenir.
-2. Ardından `generalize_ingredients.py` çalıştırılarak hazırlık farkları normalize edilir.
-3. Son olarak `import_data.py` ile veriler veritabanına aktarılır.
+## Yeni Veri Ekleme İş Akışı (Önerilen)
+
+Yeni bir tarif seti eklemek istediğinizde izlemeniz gereken rota:
+
+1. Verileri `mealai_database.xlsx` dosyasına ilgili sekmelere (`recipes`, `ingredients`, `recipe_ingredients`, `ingredient_units`) ekleyin.
+2. `DataProcessorExcelV2.py` scriptini çalıştırarak veriyi valide edin ve temizleyin.
+3. Oluşan `cleaned` dosyasını `DatabaseImporterV2.py` ile veritabanına aktarın.
+4. Java uygulamasını başlatın; backend üzerindeki `UnitConverter` ve `@PrePersist` mantığı, aktarılan `amount/unit` ikililerini otomatik olarak gramaja çevirip `grams` sütununu güncelleyecektir.
+
+---
+
+**Not:** `.venv` dizini `.gitignore` içerisindedir. Her ekip üyesi kurulum adımındaki scriptleri kendi yerel makinesinde bir kez çalıştırmalıdır.

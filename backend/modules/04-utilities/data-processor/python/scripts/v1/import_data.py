@@ -188,7 +188,7 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
 
 if __name__ == "__main__":
     script_dir   = os.path.dirname(os.path.abspath(__file__))
-    default_file = os.path.join(script_dir, '..', 'final_food_database.xlsx')
+    default_file = os.path.normpath(os.path.join(script_dir, '..', '..', 'final_food_database.xlsx'))
 
     parser = argparse.ArgumentParser(
         description='Import food database from Excel into PostgreSQL.'

@@ -166,7 +166,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
     @Test
     void shouldReturnDailySummaryForAuthenticatedUser() throws Exception {
         DailyConsumptionService.DailyNutritionSummary summary =
-                new DailyConsumptionService.DailyNutritionSummary(1280, 86.4, 132.8, 41.2);
+                new DailyConsumptionService.DailyNutritionSummary(1280, 10,86.4, 132.8, 41.2);
 
         when(dailyConsumptionService.getDailyNutritionSummary("system-user", LocalDate.of(2026, 3, 29)))
                 .thenReturn(summary);
