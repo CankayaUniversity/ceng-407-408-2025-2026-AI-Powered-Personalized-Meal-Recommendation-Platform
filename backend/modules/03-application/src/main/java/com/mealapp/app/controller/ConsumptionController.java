@@ -4,7 +4,7 @@ import com.mealapp.app.model.dto.consumption.ConsumptionAnalysisResponse;
 import com.mealapp.app.model.dto.consumption.ConsumptionRequest;
 import com.mealapp.app.model.dto.consumption.ConsumptionResponse;
 import com.mealapp.app.model.dto.consumption.ConsumptionSummaryResponse;
-import com.mealapp.app.util.UnitConverter;
+
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.common.exception.MealAppDomainException;
@@ -15,6 +15,7 @@ import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.service.IngredientService;
 import com.mealapp.domain.recipe.service.RecipeService;
+import com.mealapp.domain.recipe.service.UnitConverterService;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
 import jakarta.validation.Valid;
@@ -48,7 +49,7 @@ public class ConsumptionController {
     private final RecipeService recipeService;
     private final IngredientService ingredientService;
     private final InventoryService inventoryService;
-
+    private final UnitConverterService unitConverterService;
     /**
      * Belirli bir tarih aralığı için tüketim analizi ve hedeften sapma raporu döner.
      */
@@ -172,7 +173,7 @@ public class ConsumptionController {
         if (ingredientId != null) {
             ingredient = ingredientService.findByIdWithUnits(ingredientId).orElse(null);
         }
-        return UnitConverter.getAllUnitWeights(ingredient);
+        return unitConverterService.getAllUnitWeights(ingredient);
     }
 
     /**
@@ -189,7 +190,7 @@ public class ConsumptionController {
         if (ingredientId != null) {
             ingredient = ingredientService.findByIdWithUnits(ingredientId).orElse(null);
         }
-        return UnitConverter.convertToGrams(amount, unit, ingredient);
+        return unitConverterService.convertToGrams(amount, unit, ingredient);
     }
 
     /**
@@ -341,7 +342,7 @@ public class ConsumptionController {
             if (parts.length == 2) {
                 Double val = Double.parseDouble(parts[0].trim());
                 String unit = parts[1].trim();
-                return UnitConverter.convertToGrams(val, unit, ingredient);
+                return unitConverterService.convertToGrams(val, unit, ingredient);
             }
         } catch (Exception ignored) {}
         
@@ -371,7 +372,7 @@ public class ConsumptionController {
         if (saved.getPortionLabel() != null && saved.getPortionLabel().contains(" ")) {
             try {
                 String unit = saved.getPortionLabel().split(" ")[1];
-                response.setUnitGramWeight(UnitConverter.getUnitGramWeight(unit));
+                response.setUnitGramWeight(unitConverterService.getUnitGramWeight(unit, saved.getIngredient()));
             } catch (Exception ignored) {}
         }
 

@@ -2,7 +2,6 @@ package com.mealapp.app.controller;
 
 import com.mealapp.app.model.dto.inventory.*;
 import com.mealapp.app.model.mapper.inventory.InventoryMapper;
-import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.consumption.service.ConsumptionService;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
@@ -10,6 +9,7 @@ import com.mealapp.domain.inventory.service.InventoryInvitationService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.inventory.service.InventoryService;
+import com.mealapp.domain.recipe.service.UnitConverterService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -32,6 +32,7 @@ public class InventoryController {
     private final ConsumptionService consumptionService;
     private final InventoryMapper inventoryMapper;
     private final IngredientRepository ingredientRepository;
+    private final UnitConverterService unitConverterService;
 
     @GetMapping
     @Transactional(readOnly = true)
@@ -102,7 +103,7 @@ public class InventoryController {
 
         Double grams = request.getGrams();
         if (grams == null) {
-            grams = UnitConverter.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
+            grams = unitConverterService.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
         }
 
         // Katı ise 'g', sıvı ise 'ml' birimine sabitle. 
@@ -138,7 +139,7 @@ public class InventoryController {
 
         Double grams = request.getGrams();
         if (grams == null) {
-            grams = UnitConverter.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
+            grams = unitConverterService.convertToGrams(request.getQuantity(), request.getUnit(), ingredient);
         }
 
         // Katı ise 'g', sıvı ise 'ml' birimine sabitle.

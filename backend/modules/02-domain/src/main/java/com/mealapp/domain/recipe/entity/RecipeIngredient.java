@@ -5,6 +5,7 @@ import lombok.*;
 
 /**
  * Recipe and Ingredient relationship entity with quantity in grams.
+ * amount ve unit değerleri Python/Excel'den gelir, grams ise Service katmanında hesaplanır.
  */
 @Entity
 @Table(name = "recipe_ingredients", uniqueConstraints = @UniqueConstraint(name = "unique_recipe_ingredient", columnNames = {"recipe_id", "ingredient_id"}))
@@ -28,5 +29,11 @@ public class RecipeIngredient {
     private Ingredient ingredient;
 
     @Column(nullable = false)
-    private Double grams;
+    private Double amount; // Örn: 2.0
+
+    @Column(nullable = false, length = 50)
+    private String unit; // Örn: "yemek kaşığı"
+
+    @Column(nullable = false)
+    private Double grams; // Servis katmanı tarafından doldurulur
 }

@@ -2,9 +2,9 @@ package com.mealapp.app.controller;
 
 import com.mealapp.app.model.dto.recipe.*;
 import com.mealapp.app.model.mapper.recipe.IngredientMapper;
-import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.service.IngredientService;
+import com.mealapp.domain.recipe.service.UnitConverterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +21,7 @@ public class IngredientController {
 
     private final IngredientService ingredientService;
     private final IngredientMapper ingredientMapper;
+    private final UnitConverterService unitConverterService;
 
     @GetMapping
     public List<IngredientDTO> searchIngredients(
@@ -42,8 +43,8 @@ public class IngredientController {
         Ingredient ingredient = ingredientService.findByIdWithUnits(id)
                 .orElseThrow(() -> new RuntimeException("Ingredient not found"));
 
-        Double grams = UnitConverter.convertToGrams(amount, unit, ingredient);
-        Map<String, Double> unitWeights = UnitConverter.getAllUnitWeights(ingredient);
+        Double grams = unitConverterService.convertToGrams(amount, unit, ingredient);
+        Map<String, Double> unitWeights = unitConverterService.getAllUnitWeights(ingredient);
 
         List<UnitConversionDTO> conversions = new ArrayList<>();
         
@@ -89,8 +90,8 @@ public class IngredientController {
             @RequestParam Double amount,
             @RequestParam String unit
     ) {
-        Double grams = UnitConverter.convertToGrams(amount, unit, null);
-        Map<String, Double> unitWeights = UnitConverter.getAllUnitWeights(null);
+        Double grams = unitConverterService.convertToGrams(amount, unit, null);
+        Map<String, Double> unitWeights = unitConverterService.getAllUnitWeights(null);
 
         List<UnitConversionDTO> conversions = new ArrayList<>();
         
@@ -118,6 +119,6 @@ public class IngredientController {
         if (ingredientId != null) {
             ingredient = ingredientService.findByIdWithUnits(ingredientId).orElse(null);
         }
-        return UnitConverter.getAllUnitWeights(ingredient);
+        return unitConverterService.getAllUnitWeights(ingredient);
     }
 }

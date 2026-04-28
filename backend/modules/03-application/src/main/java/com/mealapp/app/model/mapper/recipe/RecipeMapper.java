@@ -2,15 +2,19 @@ package com.mealapp.app.model.mapper.recipe;
 
 import com.mealapp.app.model.dto.recipe.RecipeIngredientDTO;
 import com.mealapp.app.model.dto.recipe.RecipeResponse;
-import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.service.UnitConverterService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class RecipeMapper {
+
+    private final UnitConverterService unitConverterService;
 
     public RecipeResponse toResponse(Recipe recipe) {
         if (recipe == null) return null;
@@ -27,7 +31,6 @@ public class RecipeMapper {
             .servings(recipe.getServings())
             .rating(recipe.getAverageRating())
             .imageUrl(recipe.getImageUrl())
-            // Yeni Alanlar
             .instructions(recipe.getInstructions())
             .ingredients(mapIngredients(recipe))
             .build();
@@ -41,7 +44,6 @@ public class RecipeMapper {
     }
 
     private List<RecipeIngredientDTO> mapIngredients(Recipe recipe) {
-        // İlişkili listenin yüklenip yüklenmediğini kontrol et (Lazy Safe)
         if (recipe.getRecipeIngredients() == null) {
             return List.of();
         }
@@ -50,28 +52,30 @@ public class RecipeMapper {
             return recipe.getRecipeIngredients().stream()
                 .filter(ri -> ri != null && ri.getIngredient() != null)
                 .map(ri -> {
-                    Double amount = ri.getGrams() != null ? ri.getGrams() : 0.0;
+                    // Önemli: Service zaten grams'ı hesaplamış olmalı.
+                    // Ama garantiye almak için 0 kontrolü yapıyoruz.
+                    Double gramsValue = (ri.getGrams() != null) ? ri.getGrams() : 0.0;
+
                     var builder = RecipeIngredientDTO.builder()
                         .name(ri.getIngredient().getName())
-                        .amount(amount)
-                        .unit("g")
-                        .grams(amount)
-                        .unitGramWeight(UnitConverter.getUnitGramWeight("g", ri.getIngredient()));
+                        .amount(ri.getAmount() != null ? ri.getAmount() : gramsValue)
+                        .unit(ri.getUnit() != null ? ri.getUnit() : "g")
+                        .grams(gramsValue)
+                        .unitGramWeight(unitConverterService.getUnitGramWeight(ri.getUnit(), ri.getIngredient()));
 
                     if (ri.getIngredient().getNutrition() != null) {
                         var n = ri.getIngredient().getNutrition();
-                        double factor = amount / 100.0;
+                        double factor = gramsValue / 100.0;
                         builder.calories(n.getCaloriesPer100g() * factor)
-                               .protein(n.getProteinPer100g() * factor)
-                               .carbs(n.getCarbsPer100g() * factor)
-                               .fat(n.getFatPer100g() * factor);
+                            .protein(n.getProteinPer100g() * factor)
+                            .carbs(n.getCarbsPer100g() * factor)
+                            .fat(n.getFatPer100g() * factor);
                     }
 
                     return builder.build();
                 })
                 .collect(Collectors.toList());
         } catch (Exception e) {
-            // Eğer hala Lazy Load hatası alırsak, listeyi bozmak yerine boş dönüyoruz
             return List.of();
         }
     }

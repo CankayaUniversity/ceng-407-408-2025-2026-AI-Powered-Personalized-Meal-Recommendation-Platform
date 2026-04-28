@@ -6,7 +6,6 @@ import com.mealapp.app.model.dto.inventory.InventoryInvitationResponse;
 import com.mealapp.app.model.dto.notification.NotificationResponse;
 import com.mealapp.app.model.mapper.recipe.IngredientMapper;
 import com.mealapp.app.model.mapper.user.UserMapper;
-import com.mealapp.app.util.UnitConverter;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
 import com.mealapp.domain.inventory.entity.InventoryInvitation;
