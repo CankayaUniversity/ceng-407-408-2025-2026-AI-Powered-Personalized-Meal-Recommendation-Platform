@@ -1,8 +1,10 @@
 package com.mealapp.domain.user.service;
 
+import com.mealapp.domain.user.dto.UserSyncRequest;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -27,17 +30,17 @@ public class UserService {
     }
 
     /**
-     * E-posta adresine göre kullanıcı bulur.
+     * E-posta adresine göre aktif kullanıcı bulur.
      */
     public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmailAndActiveTrue(email);
     }
 
     /**
-     * ID'ye göre kullanıcı detaylarını getirir.
+     * ID'ye göre aktif kullanıcı detaylarını getirir.
      */
     public Optional<User> findById(String id) {
-        return userRepository.findById(id);
+        return userRepository.findByIdAndActiveTrue(id);
     }
 
     /**
@@ -67,11 +70,43 @@ public class UserService {
     }
 
     /**
-     * Kullanıcıyı siler ve değişiklikleri hemen yansıtır.
+     * Kullanıcıyı soft delete ile pasif duruma getirir.
      */
     public void delete(User user) {
-        userRepository.delete(user);
-        userRepository.flush();
+        if (user != null && user.getId() != null) {
+            userRepository.softDelete(user.getId());
+        }
+    }
+
+    /**
+     * Keycloak'tan gelen kullanıcı verilerini senkronize eder.
+     */
+    public User syncUser(UserSyncRequest request) {
+        log.info("Kullanıcı senkronize ediliyor: {}", request.email());
+        
+        User.UserRole role = request.roles().stream()
+                .anyMatch(r -> r.equalsIgnoreCase("admin"))
+                ? User.UserRole.ADMIN
+                : User.UserRole.USER;
+
+        return userRepository.findById(request.keycloakId())
+                .map(user -> {
+                    user.setEmail(request.email());
+                    user.setName(request.name());
+                    user.setRole(role);
+                    user.setActive(true);
+                    return userRepository.save(user);
+                })
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .id(request.keycloakId())
+                            .email(request.email())
+                            .name(request.name())
+                            .role(role)
+                            .active(true)
+                            .build();
+                    return userRepository.save(newUser);
+                });
     }
 
     /**

@@ -29,6 +29,15 @@ public class User {
     @Column(unique = true, nullable = true)
     private String email;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private UserRole role = UserRole.USER;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean active = true;
+
     @ManyToMany
     @JoinTable(
             name = "user_inventory_groups",
@@ -125,4 +134,9 @@ public class User {
     public enum ActivityLevel {
         SEDENTARY, LIGHTLY_ACTIVE, MODERATELY_ACTIVE, VERY_ACTIVE, EXTRA_ACTIVE
     }
+
+    public enum UserRole {
+        USER, ADMIN
+    }
+
 }
