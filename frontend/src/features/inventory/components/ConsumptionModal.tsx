@@ -33,9 +33,13 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
     (sum, id) => sum + (parseFloat(memberAmounts[id]) || 0), 
     0
   );
+  const hasInvalidAmounts = selectedUserIds.some((id) => {
+    const parsedAmount = parseFloat(memberAmounts[id]);
+    return !Number.isFinite(parsedAmount) || parsedAmount <= 0;
+  });
   
   const isOverLimit = totalConsumed > consumingItem.quantity;
-  const canSubmit = !isConsuming && selectedUserIds.length > 0 && !isOverLimit;
+  const canSubmit = !isConsuming && selectedUserIds.length > 0 && !isOverLimit && !hasInvalidAmounts;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
@@ -131,6 +135,12 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
                 })}
               </div>
             </div>
+
+            {selectedUserIds.length > 0 && hasInvalidAmounts && (
+              <div className="rounded-[1.5rem] border border-terracotta/20 bg-terracotta/5 px-4 py-3 text-sm font-medium text-terracotta">
+                Kaydetmeden önce seçili her kullanıcı için 0'dan büyük bir miktar girin.
+              </div>
+            )}
 
             {selectedUserIds.length > 0 && (
               <div className="bg-foreground/[0.03] p-5 rounded-[2rem] space-y-3">
