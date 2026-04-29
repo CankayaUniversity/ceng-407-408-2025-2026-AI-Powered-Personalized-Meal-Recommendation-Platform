@@ -3,8 +3,16 @@ import { X, ArrowRightLeft, Calculator, Search, Info, ChevronDown, Loader2 } fro
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useIngredientService } from '../../services/ingredientService';
 import { matchesIngredientQuery, useIngredientLookup } from '../hooks/useIngredientLookup';
-import { Ingredient, UnitConversion } from '../../types';
+import { Ingredient, type PhysicalState, UnitConversion } from '../../types';
 import { LoadingSpinner } from './LoadingSpinner';
+
+const LIQUID_CATEGORIES = new Set(['BEVERAGE', 'OIL', 'SAUCE']);
+
+const getEffectivePhysicalState = (ingredient?: Pick<Ingredient, 'category' | 'physicalState'> | null): PhysicalState | undefined => {
+    if (!ingredient) return undefined;
+    if (LIQUID_CATEGORIES.has(String(ingredient.category))) return 'LIQUID' as PhysicalState;
+    return ingredient.physicalState;
+};
 
 const UnitConverterModal: React.FC = () => {
     const { isUnitConverterOpen, closeUnitConverter } = useUI();
@@ -40,7 +48,7 @@ const UnitConverterModal: React.FC = () => {
                 
                 // Update source unit if it's no longer valid for selected ingredient
                 if (selectedIngredient && !weights[sourceUnit.toLowerCase()]) {
-                    setSourceUnit(selectedIngredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
+                    setSourceUnit(getEffectivePhysicalState(selectedIngredient) === 'LIQUID' ? 'ML' : 'GRAM');
                 }
             } catch (error) {
                 console.error('Error fetching unit weights:', error);
@@ -101,7 +109,7 @@ const UnitConverterModal: React.FC = () => {
     }, [fetchConversions]);
 
     const unitsList = useMemo(() => {
-        const physicalState = selectedIngredient?.physicalState;
+        const physicalState = getEffectivePhysicalState(selectedIngredient);
         
         // Sıvı/Katı filtrelemesi: 
         // Sıvı ise: GRAM, KG, ADET, PAKET, DILIM gizle
@@ -119,7 +127,7 @@ const UnitConverterModal: React.FC = () => {
     }, [unitWeights, selectedIngredient]);
 
     const filteredConversions = useMemo(() => {
-        const physicalState = selectedIngredient?.physicalState;
+        const physicalState = getEffectivePhysicalState(selectedIngredient);
         if (!physicalState) return conversions;
 
         const forbiddenUnits = physicalState === 'LIQUID' 

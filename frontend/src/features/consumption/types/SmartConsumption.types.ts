@@ -26,6 +26,7 @@ export type IngredientPortionOption = {
   label: string;
   grams: number;
   amount?: number;
+  unit?: string;
   portionSize: PortionSize;
   note: string;
 };
