@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Users, Loader2, Check } from 'lucide-react';
+import ModalPortal from '../../../shared/components/ModalPortal';
 
 interface InvitationsModalProps {
   isOpen: boolean;
@@ -19,8 +20,9 @@ export const InvitationsModal: React.FC<InvitationsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-xl bg-card rounded-[2.5rem] shadow-brand-hero border border-card-border overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
+    <ModalPortal>
+      <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-espresso-midnight/40 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="w-full max-w-xl bg-card rounded-[2.5rem] shadow-brand-hero border border-card-border overflow-hidden animate-in slide-in-from-bottom-8 duration-500">
         <div className="p-8">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
@@ -73,7 +75,8 @@ export const InvitationsModal: React.FC<InvitationsModalProps> = ({
             )}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 };

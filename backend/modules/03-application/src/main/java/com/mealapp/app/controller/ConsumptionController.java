@@ -257,9 +257,33 @@ public class ConsumptionController {
                     memberFoodName = resolveFoodName(request, memberRecipe, memberIngredient);
                 }
 
-                Double grams = member.getPortionGrams();
-                if (grams == null && member.getPortionLabel() != null) {
-                    grams = parseGramsFromLabel(member.getPortionLabel(), memberIngredient);
+                String requestPortionLabel = resolvePortionLabel(
+                        request.getPortionLabel(),
+                        request.getPortionAmount(),
+                        request.getPortionUnit()
+                );
+                String memberPortionLabel = resolvePortionLabel(
+                        member.getPortionLabel(),
+                        member.getPortionAmount(),
+                        member.getPortionUnit()
+                );
+                String resolvedPortionLabel = memberPortionLabel != null ? memberPortionLabel : requestPortionLabel;
+                Double grams = resolvePortionGrams(
+                        member.getPortionGrams(),
+                        member.getPortionAmount(),
+                        member.getPortionUnit(),
+                        memberIngredient
+                );
+                if (grams == null) {
+                    grams = resolvePortionGrams(
+                            null,
+                            request.getPortionAmount(),
+                            request.getPortionUnit(),
+                            memberIngredient
+                    );
+                }
+                if (grams == null && resolvedPortionLabel != null) {
+                    grams = parseGramsFromLabel(resolvedPortionLabel, memberIngredient);
                 }
 
                 DailyConsumption entity = DailyConsumption.builder()
@@ -269,7 +293,7 @@ public class ConsumptionController {
                         .ingredient(memberIngredient)
                         .mealType(request.getMealType())
                         .portionSize(resolvePortionSize(request, grams))
-                        .portionLabel(member.getPortionLabel() != null ? member.getPortionLabel() : request.getPortionLabel())
+                        .portionLabel(resolvedPortionLabel)
                         .portionMultiplier(member.getPortionMultiplier() != null ? member.getPortionMultiplier() : (request.getPortionMultiplier() != null ? request.getPortionMultiplier() : 1.0))
                         .portionGrams(grams)
                         .isCustomEntry(Boolean.TRUE.equals(request.getIsCustomEntry()) || (memberRecipe == null && memberIngredient == null))
@@ -307,9 +331,19 @@ public class ConsumptionController {
         User user = userService.findById(authenticatedUserId)
                 .orElseGet(() -> userService.save(User.builder().id(authenticatedUserId).build()));
 
-        Double grams = request.getPortionGrams();
-        if (grams == null && request.getPortionLabel() != null) {
-            grams = parseGramsFromLabel(request.getPortionLabel(), ingredient);
+        String portionLabel = resolvePortionLabel(
+                request.getPortionLabel(),
+                request.getPortionAmount(),
+                request.getPortionUnit()
+        );
+        Double grams = resolvePortionGrams(
+                request.getPortionGrams(),
+                request.getPortionAmount(),
+                request.getPortionUnit(),
+                ingredient
+        );
+        if (grams == null && portionLabel != null) {
+            grams = parseGramsFromLabel(portionLabel, ingredient);
         }
 
         DailyConsumption entity = DailyConsumption.builder()
@@ -319,7 +353,7 @@ public class ConsumptionController {
                 .ingredient(ingredient)
                 .mealType(request.getMealType())
                 .portionSize(resolvePortionSize(request, grams))
-                .portionLabel(request.getPortionLabel())
+                .portionLabel(portionLabel)
                 .portionMultiplier(request.getPortionMultiplier())
                 .portionGrams(grams)
                 .isCustomEntry(Boolean.TRUE.equals(request.getIsCustomEntry()) || (recipe == null && ingredient == null))
@@ -329,6 +363,22 @@ public class ConsumptionController {
 
         DailyConsumption saved = dailyConsumptionService.logConsumption(entity);
         return mapToResponse(saved);
+    }
+
+    private String resolvePortionLabel(String label, Double amount, String unit) {
+        if (label != null && !label.isBlank()) return label;
+        if (amount != null && unit != null && !unit.isBlank()) {
+            return amount + " " + unit;
+        }
+        return null;
+    }
+
+    private Double resolvePortionGrams(Double grams, Double amount, String unit, Ingredient ingredient) {
+        if (grams != null) return grams;
+        if (amount != null && unit != null && !unit.isBlank()) {
+            return unitConverterService.convertToGrams(amount, unit, ingredient);
+        }
+        return null;
     }
 
     private Double parseGramsFromLabel(String label, Ingredient ingredient) {

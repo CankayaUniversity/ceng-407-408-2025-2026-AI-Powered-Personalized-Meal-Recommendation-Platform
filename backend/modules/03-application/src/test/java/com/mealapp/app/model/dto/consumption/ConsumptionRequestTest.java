@@ -16,6 +16,8 @@ class ConsumptionRequestTest {
         request.setIngredientId(3L);
         request.setInventoryGroupId(5L);
         request.setPortionLabel("1 piece");
+        request.setPortionAmount(1.0);
+        request.setPortionUnit("piece");
         request.setPortionGrams(120.0);
 
         assertEquals("user-1", request.getUserId());
@@ -26,6 +28,8 @@ class ConsumptionRequestTest {
         assertEquals(3L, request.getIngredientId());
         assertEquals(5L, request.getInventoryGroupId());
         assertEquals("1 piece", request.getPortionLabel());
+        assertEquals(1.0, request.getPortionAmount());
+        assertEquals("piece", request.getPortionUnit());
         assertEquals(120.0, request.getPortionGrams());
         
         ConsumptionRequest request2 = new ConsumptionRequest();
@@ -37,6 +41,8 @@ class ConsumptionRequestTest {
         request2.setIngredientId(3L);
         request2.setInventoryGroupId(5L);
         request2.setPortionLabel("1 piece");
+        request2.setPortionAmount(1.0);
+        request2.setPortionUnit("piece");
         request2.setPortionGrams(120.0);
         
         assertEquals(request, request2);

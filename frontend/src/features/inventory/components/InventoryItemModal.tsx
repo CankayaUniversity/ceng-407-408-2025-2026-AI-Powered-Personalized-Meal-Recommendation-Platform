@@ -1,8 +1,10 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, Utensils, Search, Loader2, Plus } from 'lucide-react';
 import { ItemDraft } from '../types/inventory.types';
 import { Ingredient } from '../../../types';
 import { ConversionPreview } from './ConversionPreview';
+import ModalPortal from '../../../shared/components/ModalPortal';
 
 interface InventoryItemModalProps {
   isOpen: boolean;
@@ -48,17 +50,24 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
   onSave
 }) => {
   const searchContainerRef = React.useRef<HTMLDivElement>(null);
+  const searchDropdownRef = React.useRef<HTMLDivElement>(null);
   const [isSearchFocused, setIsSearchFocused] = React.useState(false);
+  const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties | null>(null);
 
   React.useEffect(() => {
     if (!isOpen) {
       setIsSearchFocused(false);
+      setDropdownStyle(null);
     }
   }, [isOpen]);
 
   React.useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      if (!searchContainerRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        !searchContainerRef.current?.contains(target) &&
+        !searchDropdownRef.current?.contains(target)
+      ) {
         setIsSearchFocused(false);
       }
     };
@@ -67,17 +76,114 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
     return () => document.removeEventListener('mousedown', handlePointerDown);
   }, []);
 
-  if (!isOpen) return null;
-
   const shouldShowSearchDropdown =
+    isOpen &&
     isSearchFocused &&
     !itemDraft.selectedIngredient &&
     canSearchIngredients &&
     (searchingIngredients || ingredientResults.length > 0 || !!ingredientSearchError || hasCompletedIngredientSearch);
 
+  const updateDropdownPosition = React.useCallback(() => {
+    const anchor = searchContainerRef.current;
+    if (!anchor) return;
+
+    const rect = anchor.getBoundingClientRect();
+    const viewportPadding = 16;
+    const gap = 12;
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const shouldOpenAbove = spaceBelow < 220 && spaceAbove > spaceBelow;
+    const availableSpace = shouldOpenAbove ? spaceAbove : spaceBelow;
+    const maxHeight = Math.max(160, Math.min(320, availableSpace - gap));
+
+    setDropdownStyle({
+      position: 'fixed',
+      left: rect.left,
+      top: shouldOpenAbove
+        ? Math.max(viewportPadding, rect.top - gap - maxHeight)
+        : Math.min(window.innerHeight - viewportPadding - maxHeight, rect.bottom + gap),
+      width: rect.width,
+      maxHeight,
+      zIndex: 120
+    });
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (!shouldShowSearchDropdown) {
+      setDropdownStyle(null);
+      return;
+    }
+
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [
+    shouldShowSearchDropdown,
+    updateDropdownPosition,
+    searchingIngredients,
+    ingredientResults.length,
+    ingredientSearchError,
+    hasCompletedIngredientSearch
+  ]);
+
+  const searchDropdown = shouldShowSearchDropdown && dropdownStyle
+    ? createPortal(
+        <div
+          ref={searchDropdownRef}
+          style={dropdownStyle}
+          className="overflow-y-auto rounded-[2rem] border border-card-border bg-card p-3 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar"
+        >
+          {searchingIngredients ? (
+            <div className="flex items-center justify-center gap-3 px-4 py-6 text-sm font-medium text-foreground/50">
+              <Loader2 size={18} className="animate-spin text-terracotta" />
+              Malzemeler aranıyor...
+            </div>
+          ) : ingredientSearchError ? (
+            <div className="px-4 py-5 text-sm font-semibold text-red-500 bg-red-500/5 rounded-[1.5rem]">
+              {ingredientSearchError}
+            </div>
+          ) : ingredientResults.length > 0 ? (
+            ingredientResults.map((ing) => (
+              <button
+                key={ing.id}
+                type="button"
+                onClick={() => {
+                  onSelectIngredient(ing);
+                  setIsSearchFocused(false);
+                }}
+                className="flex w-full items-center gap-4 rounded-2xl p-4 text-left transition-all hover:bg-terracotta/5 group"
+              >
+                <div className="h-12 w-12 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground/20 group-hover:bg-terracotta group-hover:text-white transition-colors font-black">
+                  {ing.name.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-bold text-foreground">{ing.name}</p>
+                  <p className="truncate text-[10px] font-medium text-foreground-muted uppercase tracking-widest mt-0.5">{ing.category?.replace('_', ' ') || 'Genel'}</p>
+                </div>
+                <Plus size={16} className="shrink-0 text-foreground/10 group-hover:text-terracotta" />
+              </button>
+            ))
+          ) : (
+            <div className="px-4 py-6 text-sm font-medium text-foreground/45">
+              Bu aramayla eşleşen bir malzeme bulunamadı.
+            </div>
+          )}
+        </div>,
+        document.body
+      )
+    : null;
+
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="w-full max-w-2xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-12 duration-500">
+    <ModalPortal>
+      <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="w-full max-w-2xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-12 duration-500">
         <div className="p-10 flex-1 overflow-y-auto custom-scrollbar">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-5">
@@ -116,52 +222,12 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                       setIsSearchFocused(false);
                     }
                   }}
-                  className="w-full rounded-[2rem] border border-card-border bg-foreground/[0.02] pl-16 pr-6 py-5 font-bold text-foreground focus:bg-card focus:border-terracotta focus:ring-8 focus:ring-terracotta/5 transition-all outline-none"
+                  className="w-full rounded-[2rem] border border-card-border bg-card pl-16 pr-6 py-5 font-bold text-foreground focus:border-terracotta focus:ring-8 focus:ring-terracotta/5 transition-all outline-none"
                   required
                 />
                 {searchingIngredients && (
                   <div className="absolute right-6 top-1/2 -translate-y-1/2">
                     <Loader2 size={20} className="animate-spin text-terracotta" />
-                  </div>
-                )}
-
-                {shouldShowSearchDropdown && (
-                  <div className="absolute left-0 right-0 top-full z-40 mt-3 max-h-[320px] overflow-y-auto rounded-[2rem] border border-card-border bg-card p-3 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
-                    {searchingIngredients ? (
-                      <div className="flex items-center justify-center gap-3 px-4 py-6 text-sm font-medium text-foreground/50">
-                        <Loader2 size={18} className="animate-spin text-terracotta" />
-                        Malzemeler aranıyor...
-                      </div>
-                    ) : ingredientSearchError ? (
-                      <div className="px-4 py-5 text-sm font-semibold text-red-500 bg-red-500/5 rounded-[1.5rem]">
-                        {ingredientSearchError}
-                      </div>
-                    ) : ingredientResults.length > 0 ? (
-                      ingredientResults.map((ing) => (
-                        <button
-                          key={ing.id}
-                          type="button"
-                          onClick={() => {
-                            onSelectIngredient(ing);
-                            setIsSearchFocused(false);
-                          }}
-                          className="flex w-full items-center gap-4 rounded-2xl p-4 text-left transition-all hover:bg-terracotta/5 group"
-                        >
-                          <div className="h-12 w-12 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground/20 group-hover:bg-terracotta group-hover:text-white transition-colors font-black">
-                            {ing.name.charAt(0)}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-bold text-foreground">{ing.name}</p>
-                            <p className="text-[10px] font-medium text-foreground-muted uppercase tracking-widest mt-0.5">{ing.category?.replace('_', ' ') || 'Genel'}</p>
-                          </div>
-                          <Plus size={16} className="text-foreground/10 group-hover:text-terracotta" />
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-6 text-sm font-medium text-foreground/45">
-                        Bu aramayla eşleşen bir malzeme bulunamadı.
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -301,7 +367,9 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
             </div>
           </form>
         </div>
+        </div>
+        {searchDropdown}
       </div>
-    </div>
+    </ModalPortal>
   );
 };

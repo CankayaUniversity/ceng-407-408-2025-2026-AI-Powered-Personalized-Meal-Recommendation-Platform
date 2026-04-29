@@ -27,8 +27,30 @@ import {
   type Recipe,
   type RecipeListItem,
   type Ingredient,
+  type PhysicalState,
   MealType
 } from '../../../types';
+
+const LIQUID_CATEGORIES = new Set(['BEVERAGE', 'OIL', 'SAUCE']);
+
+const getEffectivePhysicalState = (ingredient?: Pick<Ingredient, 'category' | 'physicalState'> | null): PhysicalState | undefined => {
+  if (!ingredient) return undefined;
+  if (LIQUID_CATEGORIES.has(String(ingredient.category))) return 'LIQUID' as PhysicalState;
+  return ingredient.physicalState;
+};
+
+const parsePortionLabel = (label: string): { amount?: number; unit?: string } => {
+  const trimmed = label.trim();
+  const firstSpaceIndex = trimmed.indexOf(' ');
+  if (firstSpaceIndex < 0) return {};
+
+  const amount = parseFloat(trimmed.slice(0, firstSpaceIndex));
+  const unit = trimmed.slice(firstSpaceIndex + 1).trim();
+  return {
+    amount: Number.isFinite(amount) ? amount : undefined,
+    unit: unit || undefined
+  };
+};
 
 export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const { authenticated, user } = useAuth();
@@ -366,7 +388,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       kind: 'INGREDIENT',
       ingredient,
       portion: INGREDIENT_PORTION_OPTIONS[1],
-      unit: ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM'
+      unit: getEffectivePhysicalState(ingredient) === 'LIQUID' ? 'ML' : 'GRAM'
     };
 
     if (targetUserId) {
@@ -472,9 +494,13 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
         const userItems = prev[userId] || [];
         const updatedItems = userItems.map((item: any) => {
             if (item.key === itemKey && item.kind === 'INGREDIENT') {
-                const amount = typeof nextPortion === 'string' ? parseFloat(nextPortion) : (nextPortion.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[item.unit.toLowerCase()] || unitWeights[item.unit.toLowerCase()] || 1)));
-                fetchConversions(itemKey, item.ingredient.id, amount, item.unit);
-                return { ...item, portion: nextPortion };
+                const labelParts = typeof nextPortion === 'string' ? {} : parsePortionLabel(nextPortion.label);
+                const nextUnit = typeof nextPortion === 'string' ? item.unit : (nextPortion.unit || labelParts.unit || item.unit);
+                const amount = typeof nextPortion === 'string'
+                    ? parseFloat(nextPortion)
+                    : (nextPortion.amount || labelParts.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[nextUnit.toLowerCase()] || unitWeights[nextUnit.toLowerCase()] || 1)));
+                fetchConversions(itemKey, item.ingredient.id, amount, nextUnit);
+                return { ...item, portion: nextPortion, unit: nextUnit };
             }
             return item;
         });
@@ -484,9 +510,13 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       setSelectedItems((current) =>
         current.map((item) => {
             if (item.key === itemKey && item.kind === 'INGREDIENT') {
-                const amount = typeof nextPortion === 'string' ? parseFloat(nextPortion) : (nextPortion.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[item.unit.toLowerCase()] || unitWeights[item.unit.toLowerCase()] || 1)));
-                fetchConversions(itemKey, item.ingredient.id, amount, item.unit);
-                return { ...item, portion: nextPortion };
+                const labelParts = typeof nextPortion === 'string' ? {} : parsePortionLabel(nextPortion.label);
+                const nextUnit = typeof nextPortion === 'string' ? item.unit : (nextPortion.unit || labelParts.unit || item.unit);
+                const amount = typeof nextPortion === 'string'
+                    ? parseFloat(nextPortion)
+                    : (nextPortion.amount || labelParts.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[nextUnit.toLowerCase()] || unitWeights[nextUnit.toLowerCase()] || 1)));
+                fetchConversions(itemKey, item.ingredient.id, amount, nextUnit);
+                return { ...item, portion: nextPortion, unit: nextUnit };
             }
             return item;
         })
@@ -560,15 +590,19 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       const bulkRequest = {
           inventoryGroupId: currentGroup?.id,
           mealType,
-          members: membersToLog.flatMap(m => m.items.map((item: any) => ({
-              userId: m.userId,
-              recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
-              ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
-              foodName: getSelectedItemName(item),
-              portionLabel: item.portion.label,
-              portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
-              portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
-          })))
+          members: membersToLog.flatMap(m => m.items.map((item: any) => {
+              const portionInput = item.kind === 'INGREDIENT' ? parsePortionLabel(item.portion.label) : {};
+              return {
+                  userId: m.userId,
+                  recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
+                  ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
+                  foodName: getSelectedItemName(item),
+                  portionLabel: item.portion.label,
+                  portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
+                  portionAmount: item.kind === 'INGREDIENT' ? (item.portion.amount || portionInput.amount) : undefined,
+                  portionUnit: item.kind === 'INGREDIENT' ? (item.portion.unit || portionInput.unit || item.unit) : undefined,
+              };
+          }))
       };
 
       const response = await consumptionService.logConsumption(bulkRequest);
@@ -588,9 +622,10 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     }
   };
 
-  const getIngredientUnits = useCallback((ingredientId?: number) => {
-    const ingredient = ingredientId ? (ingredientResults.find(i => i.id === ingredientId) || stockedIngredients.find((i: any) => i.id === ingredientId)) : null;
-    const physicalState = ingredient?.physicalState;
+  const getIngredientUnits = useCallback((selectedIngredient?: Ingredient) => {
+    const ingredientId = selectedIngredient?.id;
+    const ingredient = ingredientId ? (ingredientResults.find(i => i.id === ingredientId) || stockedIngredients.find((i: any) => i.id === ingredientId) || selectedIngredient) : null;
+    const physicalState = getEffectivePhysicalState(ingredient);
 
     const solidBase = ['GRAM', 'KG'];
     const liquidBase = ['ML', 'LITRE', 'L'];
@@ -604,15 +639,14 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       base = liquidBase;
       allowedQuickUnits.push('BARDAK', 'YEMEK KAŞIĞI', 'TATLI KAŞIĞI', 'ÇAY KAŞIĞI', 'ML');
       forbiddenUnits.push('GRAM', 'KG', 'ADET', 'PAKET', 'DILIM');
+    } else if (physicalState === 'SEMI_SOLID') {
+      base = commonBase;
+      allowedQuickUnits.push('GRAM', 'ML', 'BARDAK', 'KASE', 'YEMEK KAŞIĞI', 'TATLI KAŞIĞI', 'ÇAY KAŞIĞI', 'CUP');
     } else {
-      // SOLID veya SEMI_SOLID veya null (varsayılan SOLID gibi davran)
+      // SOLID veya null (varsayılan SOLID gibi davran)
       base = solidBase;
       allowedQuickUnits.push('ADET', 'PAKET', 'DILIM', 'CUP', 'GRAM');
       forbiddenUnits.push('ML', 'LITRE', 'L');
-      
-      if (physicalState === 'SEMI_SOLID') {
-          allowedQuickUnits.push('KASE', 'BARDAK');
-      }
     }
 
     const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
@@ -628,7 +662,8 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
           return a.localeCompare(b);
       });
 
-    const standard = allUnits.filter(u => !allowedQuickUnits.includes(u));
+    const manualBaseUnits = ['GRAM', 'ML'];
+    const standard = allUnits.filter(u => !allowedQuickUnits.includes(u) || manualBaseUnits.includes(u));
 
     return {
       quickUnits: quick,

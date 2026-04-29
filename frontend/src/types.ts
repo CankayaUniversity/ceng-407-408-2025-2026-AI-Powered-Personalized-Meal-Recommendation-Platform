@@ -249,6 +249,8 @@ export interface ConsumptionRequest {
   portionSize?: PortionSize | null;
   portionLabel?: string | null;
   portionMultiplier?: number | null;
+  portionAmount?: number | null;
+  portionUnit?: string | null;
   portionGrams?: number | null;
   isCustomEntry?: boolean | null;
   isFromInventory?: boolean | null;
@@ -258,6 +260,8 @@ export interface ConsumptionRequest {
 export interface MemberConsumption {
   userId: string;
   portionMultiplier?: number | null;
+  portionAmount?: number | null;
+  portionUnit?: string | null;
   portionGrams?: number | null;
   portionLabel?: string | null;
   recipeId?: number;
