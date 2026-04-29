@@ -4,6 +4,7 @@ import { X, Utensils, Search, Loader2, Plus } from 'lucide-react';
 import { ItemDraft } from '../types/inventory.types';
 import { Ingredient } from '../../../types';
 import { ConversionPreview } from './ConversionPreview';
+import ModalPortal from '../../../shared/components/ModalPortal';
 
 interface InventoryItemModalProps {
   isOpen: boolean;
@@ -180,8 +181,9 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="w-full max-w-2xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-12 duration-500">
+    <ModalPortal>
+      <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="w-full max-w-2xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-12 duration-500">
         <div className="p-10 flex-1 overflow-y-auto custom-scrollbar">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-5">
@@ -220,7 +222,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                       setIsSearchFocused(false);
                     }
                   }}
-                  className="w-full rounded-[2rem] border border-card-border bg-foreground/[0.02] pl-16 pr-6 py-5 font-bold text-foreground focus:bg-card focus:border-terracotta focus:ring-8 focus:ring-terracotta/5 transition-all outline-none"
+                  className="w-full rounded-[2rem] border border-card-border bg-card pl-16 pr-6 py-5 font-bold text-foreground focus:border-terracotta focus:ring-8 focus:ring-terracotta/5 transition-all outline-none"
                   required
                 />
                 {searchingIngredients && (
@@ -365,8 +367,9 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
             </div>
           </form>
         </div>
+        </div>
+        {searchDropdown}
       </div>
-      {searchDropdown}
-    </div>
+    </ModalPortal>
   );
 };

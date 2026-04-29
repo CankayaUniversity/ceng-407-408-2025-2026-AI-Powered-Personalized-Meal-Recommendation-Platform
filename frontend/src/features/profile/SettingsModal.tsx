@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Settings as SettingsIcon, Mail, Lock, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
+import ModalPortal from '../../shared/components/ModalPortal';
 
 const SettingsModal: React.FC = () => {
     const { isSettingsOpen, closeSettings } = useUI();
@@ -33,7 +34,8 @@ const SettingsModal: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6">
+        <ModalPortal>
+        <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 sm:p-6">
             {/* Backdrop */}
             <div 
                 className="absolute inset-0 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300"
@@ -155,6 +157,7 @@ const SettingsModal: React.FC = () => {
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 };
 

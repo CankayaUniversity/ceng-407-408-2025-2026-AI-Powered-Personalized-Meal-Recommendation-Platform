@@ -5,6 +5,7 @@ import { useIngredientService } from '../../services/ingredientService';
 import { matchesIngredientQuery, useIngredientLookup } from '../hooks/useIngredientLookup';
 import { Ingredient, type PhysicalState, UnitConversion } from '../../types';
 import { LoadingSpinner } from './LoadingSpinner';
+import ModalPortal from './ModalPortal';
 
 const LIQUID_CATEGORIES = new Set(['BEVERAGE', 'OIL', 'SAUCE']);
 
@@ -148,7 +149,8 @@ const UnitConverterModal: React.FC = () => {
         (isSearching || searchResults.length > 0 || !!searchError || hasCompletedSearch);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <ModalPortal>
+        <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div 
                 className="relative w-full max-w-2xl bg-white dark:bg-espresso-midnight rounded-3xl shadow-2xl border border-white/10 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
@@ -408,6 +410,7 @@ const UnitConverterModal: React.FC = () => {
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 };
 

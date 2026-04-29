@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useUI } from '../../../infrastructure/ui/UIContext';
 import SmartConsumptionPanel from './SmartConsumptionPanel';
+import ModalPortal from '../../../shared/components/ModalPortal';
 
 const ConsumptionModal: React.FC = () => {
     const { isConsumptionOpen, closeConsumption } = useUI();
@@ -18,7 +19,8 @@ const ConsumptionModal: React.FC = () => {
     if (!isConsumptionOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <ModalPortal>
+        <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 sm:p-6">
             {/* Arka Plan Karartma (Overlay) */}
             <div
                 className="absolute inset-0 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300"
@@ -48,6 +50,7 @@ const ConsumptionModal: React.FC = () => {
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 };
 
