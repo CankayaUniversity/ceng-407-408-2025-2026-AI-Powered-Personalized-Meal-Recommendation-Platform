@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Repeat } from 'lucide-react';
 import { ItemDraft } from '../types/inventory.types';
 import { UnitConversion } from '../../../types';
@@ -14,11 +15,12 @@ export const ConversionPreview: React.FC<ConversionPreviewProps> = ({
   conversions, 
   itemDraft 
 }) => {
+  const { t } = useTranslation();
   if (loadingConversions) {
     return (
       <div className="mt-2 flex items-center justify-center gap-2 p-3 rounded-xl bg-foreground/[0.02] border border-dashed border-card-border animate-pulse">
         <Loader2 size={12} className="animate-spin text-terracotta/40" />
-        <span className="text-[10px] font-bold text-foreground/30 uppercase tracking-widest">Hesaplanıyor...</span>
+        <span className="text-[10px] font-bold text-foreground/30 uppercase tracking-widest">{t('common.calculating')}</span>
       </div>
     );
   }
@@ -39,7 +41,7 @@ export const ConversionPreview: React.FC<ConversionPreviewProps> = ({
     <div className="mt-3 p-3 rounded-2xl bg-terracotta/5 border border-terracotta/10 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
       <p className="text-[10px] font-black uppercase tracking-widest text-terracotta/40 flex items-center gap-1.5">
         <Repeat size={10} />
-        Birim Karşılıkları
+        {t('inventory.conversionPreview.title')}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {filteredConversions.slice(0, 5).map((conv) => (

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info } from 'lucide-react';
 import { useRecipeService } from '../../services/recipeService';
@@ -45,7 +46,7 @@ const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
     <div className={className}>
       <div
         role="img"
-        aria-label={`${title} için varsayılan tarif görseli`}
+        aria-label={t('recipes.defaultImageAlt', { title })}
         className={`relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-alabaster via-white to-terracotta/10 dark:from-espresso-midnight dark:via-espresso-midnight dark:to-terracotta/20 ${mediaClassName}`}
       >
         <div className="absolute inset-0">
@@ -72,7 +73,7 @@ const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
                 isHero ? 'text-2xl' : 'text-lg'
               }`}
             >
-              Şef Dokunuşu
+              {t('recipes.chefTouch')}
             </p>
           </div>
         </div>
@@ -85,6 +86,7 @@ const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
  * MealAI Recipe Explorer - Custom Toast & Portal Integrated
  */
 const RecipeList: React.FC = () => {
+  const { t } = useTranslation();
   const recipeService = useRecipeService();
   const { showToast } = useToast();
 
@@ -93,7 +95,7 @@ const RecipeList: React.FC = () => {
   const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
-  const [activeCategory, setActiveCategory] = useState('Hepsi');
+  const [activeCategory, setActiveCategory] = useState('all');
 
   // --- Modal States ---
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeListItem | null>(null);
@@ -128,7 +130,7 @@ const RecipeList: React.FC = () => {
       } catch (e: any) {
         if (mounted && e?.name !== 'CanceledError' && e?.name !== 'AbortError') {
           // Profil sayfasındaki toast kullanımınıza göre (success/error/info)
-          showToast(e?.message || 'Tarifler yüklenemedi', 'error');
+          showToast(e?.message || t('toasts.recipes.loadError'), 'error');
         }
       } finally {
         if (mounted) setLoading(false);
@@ -154,7 +156,7 @@ const RecipeList: React.FC = () => {
       const details = await recipeService.getRecipeById(recipe.id);
       setRecipeDetail(details);
     } catch (err: any) {
-      showToast(err?.message || "Detaylar yüklenemedi", "error");
+      showToast(err?.message || t('toasts.recipes.detailsError'), 'error');
       handleCloseModal();
     } finally {
       setModalLoading(false);
@@ -169,7 +171,14 @@ const RecipeList: React.FC = () => {
     }, 300);
   };
 
-  const categories = ['Hepsi', 'Ana Yemek', 'Kahvaltı', 'Salata', 'Tatlı', 'Fit & Sağlıklı'];
+  const categories = [
+    { key: 'all', label: t('recipes.categories.all') },
+    { key: 'main', label: t('recipes.categories.main') },
+    { key: 'breakfast', label: t('recipes.categories.breakfast') },
+    { key: 'salad', label: t('recipes.categories.salad') },
+    { key: 'dessert', label: t('recipes.categories.dessert') },
+    { key: 'fit', label: t('recipes.categories.fit') },
+  ];
 
   return (
       <div className="relative space-y-8 animate-in slide-in-from-bottom-4 duration-700 max-w-7xl mx-auto px-4 py-8">
@@ -178,10 +187,10 @@ const RecipeList: React.FC = () => {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 bg-moss-sage/10 text-moss-forest dark:text-moss-sage px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
               <ChefHat size={12} />
-              <span>Küratör Seçimleri</span>
+              <span>{t('recipes.curatorPicks')}</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-espresso-midnight dark:text-white tracking-tight leading-tight">
-              Tarif <span className="text-terracotta italic font-normal">Kütüphanesi</span>
+              {t('recipes.libraryTitlePart1')} <span className="text-terracotta italic font-normal">{t('recipes.libraryTitlePart2')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -199,7 +208,7 @@ const RecipeList: React.FC = () => {
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-espresso-midnight/30 group-focus-within:text-terracotta transition-colors" size={22} />
           <input
               type="text"
-              placeholder="Tarif, malzeme veya mutfak tipi ara..."
+              placeholder={t('recipes.searchPlaceholder')}
               className="w-full pl-16 pr-6 py-5 bg-white dark:bg-white/[0.03] border border-card-border rounded-[2rem] shadow-brand-card focus:border-terracotta text-espresso-midnight dark:text-white text-lg transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -210,15 +219,15 @@ const RecipeList: React.FC = () => {
         <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
           {categories.map((cat) => (
               <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  key={cat.key}
+                  onClick={() => setActiveCategory(cat.key)}
                   className={`px-8 py-3 rounded-2xl whitespace-nowrap text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
-                      activeCategory === cat
+                      activeCategory === cat.key
                           ? 'bg-espresso-midnight dark:bg-terracotta text-white shadow-brand-hero scale-105'
                           : 'bg-white dark:bg-white/5 text-espresso-midnight/50 dark:text-white/40 border border-card-border hover:border-terracotta/50'
                   }`}
               >
-                {cat}
+                {cat.label}
               </button>
           ))}
         </div>
@@ -266,7 +275,7 @@ const RecipeList: React.FC = () => {
                     </div>
                   </div>
                   <div className="pt-6 border-t border-card-border flex items-center justify-between">
-                    <span className="text-[10px] font-black text-espresso-midnight/30 dark:text-white/30 uppercase tracking-[0.2em]">Tarifi İncele</span>
+                    <span className="text-[10px] font-black text-espresso-midnight/30 dark:text-white/30 uppercase tracking-[0.2em]">{t('recipes.viewRecipe')}</span>
                     <div className="w-10 h-10 rounded-2xl bg-terracotta/5 text-terracotta flex items-center justify-center group-hover:bg-terracotta group-hover:text-white transition-all">
                       <ChevronRight size={20} strokeWidth={3} />
                     </div>
@@ -334,7 +343,7 @@ const RecipeList: React.FC = () => {
                     {modalLoading ? (
                         <div className="py-20 flex flex-col items-center justify-center gap-4 text-foreground-muted italic font-serif">
                           <div className="w-12 h-12 border-4 border-terracotta/20 border-t-terracotta rounded-full animate-spin" />
-                          Şef detayları hazırlıyor...
+                          {t('recipes.preparingDetails')}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -356,7 +365,7 @@ const RecipeList: React.FC = () => {
 
                           <div className="lg:col-span-8 space-y-8">
                             <h3 className="text-xl font-bold flex items-center gap-3 text-espresso-midnight dark:text-white">
-                              <Info size={24} className="text-moss-forest" /> Hazırlanışı
+                              <Info size={24} className="text-moss-forest" /> {t('recipes.instructions')}
                             </h3>
                             <div className="space-y-6 text-lg leading-relaxed text-foreground-muted dark:text-white/70 font-light">
                               {recipeDetail?.instructions?.split('\n').filter((s:string)=>s.trim()).map((step: string, i: number) => (

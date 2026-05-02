@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Users, Check, Plus, Loader2 } from 'lucide-react';
 import { Inventory } from '../../../types';
 
@@ -27,6 +28,7 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
   isConsuming,
   onConfirm
 }) => {
+  const { t } = useTranslation();
   if (!isOpen || !consumingItem) return null;
 
   const totalConsumed = selectedUserIds.reduce(
@@ -50,7 +52,7 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
                 <p className="meal-overline text-foreground/40">Consuming Item</p>
                 <h3 className="meal-section-title mt-1 text-3xl font-serif text-foreground">{consumingItem.ingredient?.name}</h3>
                 <p className="mt-1 text-sm font-medium text-foreground-muted flex items-center gap-1.5">
-                  Mevcut Stok: <span className="text-foreground font-black">{consumingItem.quantity} {consumingItem.unit}</span>
+                  {t('inventory.consumptionModal.currentStock')}: <span className="text-foreground font-black">{consumingItem.quantity} {consumingItem.unit}</span>
                 </p>
               </div>
             </div>
@@ -64,7 +66,7 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
 
           <form onSubmit={onConfirm} className="space-y-8">
             <div className="space-y-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 px-2">Tüketen Kişiler & Miktarlar</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 px-2">{t('inventory.consumptionModal.peopleLabel')}</p>
               <div className="grid gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {activeGroupMembers.map((user) => {
                   const isSelected = selectedUserIds.includes(user.id);
@@ -83,7 +85,7 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
                             <Users size={16} />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-foreground truncate max-w-[150px]">{user.name || 'İsimsiz'}</span>
+                            <span className="text-sm font-bold text-foreground truncate max-w-[150px]">{user.name || t('common.unnamed')}</span>
                             <span className="text-[10px] text-foreground/40 truncate max-w-[150px]">{user.email}</span>
                           </div>
                         </div>
@@ -135,7 +137,7 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
             {selectedUserIds.length > 0 && (
               <div className="bg-foreground/[0.03] p-5 rounded-[2rem] space-y-3">
                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-foreground/40">
-                  <span>Toplam Tüketim</span>
+                  <span>{t('inventory.consumptionModal.totalConsumption')}</span>
                   <span className={isOverLimit ? 'text-terracotta' : 'text-moss-sage'}>
                     {totalConsumed.toFixed(2)} / {consumingItem.quantity} {consumingItem.unit}
                   </span>
@@ -157,14 +159,14 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
                 onClick={onClose} 
                 className="flex-1 py-4 rounded-2xl border border-card-border font-bold text-xs hover:bg-foreground/5 text-foreground/60 transition-all"
               >
-                İPTAL
+                {t('common.cancel')}
               </button>
               <button 
                 type="submit" 
                 disabled={!canSubmit}
                 className="flex-[2] py-4 rounded-2xl bg-terracotta text-white font-bold shadow-xl shadow-terracotta/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isConsuming ? <Loader2 className="mx-auto animate-spin" size={20} /> : 'TÜKETİMİ KAYDET'}
+                {isConsuming ? <Loader2 className="mx-auto animate-spin" size={20} /> : t('inventory.consumptionModal.save')}
               </button>
             </div>
           </form>

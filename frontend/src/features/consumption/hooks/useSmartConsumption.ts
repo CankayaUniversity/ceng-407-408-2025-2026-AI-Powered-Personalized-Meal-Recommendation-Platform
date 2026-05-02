@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useMemo, useCallback, useDeferredValue } from 'react';
 import { useAuth } from '../../../infrastructure/auth/AuthContext';
 import { useInventoryService } from '../../../services/inventoryService';
@@ -31,6 +32,7 @@ import {
 } from '../../../types';
 
 export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
+  const { t } = useTranslation();
   const { authenticated, user } = useAuth();
   const { showToast } = useToast();
   const inventoryService = useInventoryService();
@@ -116,7 +118,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       const groups = await inventoryService.getInventoryGroups();
       setInventoryGroups(groups);
     } catch (error) {
-      showToast(getErrorMessage(error, 'Lokasyon bilgileri yüklenemedi.'), 'error');
+      showToast(getErrorMessage(error, t('toasts.consumption.locationLoadError')), 'error');
     }
   }, [inventoryService, showToast]);
 
@@ -290,7 +292,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
         }));
       } catch (error) {
         if (!active) return;
-        showToast(getErrorMessage(error, 'Arama sonuçları yüklenemedi.'), 'error');
+        showToast(getErrorMessage(error, t('toasts.consumption.searchError')), 'error');
       }
     };
 
@@ -517,7 +519,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     }, 0);
 
     if (totalSelectedCount === 0) {
-      showToast('Önce en az bir tarif veya malzeme seç.', 'info');
+      showToast(t('toasts.consumption.selectFirst'), 'info');
       return;
     }
 
@@ -551,7 +553,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       }
 
       if (membersToLog.length === 0) {
-          showToast('Önce en az bir tarif veya malzeme seç.', 'info');
+          showToast(t('toasts.consumption.selectFirst'), 'info');
           setSubmitting(false);
           return;
       }
@@ -578,11 +580,11 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       setSearchQuery('');
       setIngredientSearchQuery('');
       setSubmitSummary({ responses: [response], failedNames: [] });
-      showToast('Tüketim başarıyla kaydedildi.', 'success');
+      showToast(t('toasts.consumption.saved'), 'success');
       if (onConsumptionLogged) onConsumptionLogged();
       
     } catch (error) {
-      showToast(getErrorMessage(error, 'Beklenmedik bir hata oluştu.'), 'error');
+      showToast(getErrorMessage(error, t('toasts.consumption.unexpectedError')), 'error');
     } finally {
       setSubmitting(false);
     }

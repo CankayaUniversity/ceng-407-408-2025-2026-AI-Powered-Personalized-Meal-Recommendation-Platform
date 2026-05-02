@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Bell, 
   Check, 
@@ -17,6 +18,7 @@ import { Notification } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
 
 const NotificationsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -31,7 +33,7 @@ const NotificationsPage: React.FC = () => {
       setNotifications(data);
     } catch (error) {
       console.error('Bildirimler yüklenirken hata:', error);
-      showToast('Bildirimler yüklenemedi', 'error');
+      showToast(t('toasts.notifications.loadError'), 'error');
     } finally {
       setLoading(false);
     }
@@ -58,7 +60,7 @@ const NotificationsPage: React.FC = () => {
         n.id === id ? { ...n, status: 'READ' } : n
       ));
     } catch (error) {
-      showToast('Bildirim işaretlenemedi', 'error');
+      showToast(t('toasts.notifications.markReadError'), 'error');
     }
   };
 
@@ -66,9 +68,9 @@ const NotificationsPage: React.FC = () => {
     try {
       await notificationService.markAllAsRead();
       setNotifications(notifications.map(n => ({ ...n, status: 'READ' })));
-      showToast('Tüm bildirimler okundu olarak işaretlendi', 'success');
+      showToast(t('toasts.notifications.markAllSuccess'), 'success');
     } catch (error) {
-      showToast('Hata oluştu', 'error');
+      showToast(t('toasts.notifications.markAllError'), 'error');
     }
   };
 
@@ -77,37 +79,37 @@ const NotificationsPage: React.FC = () => {
       await notificationService.deleteNotification(id);
       setNotifications(notifications.filter(n => n.id !== id));
       setSelectedIds(selectedIds.filter(sid => sid !== id));
-      showToast('Bildirim silindi', 'success');
+      showToast(t('toasts.notifications.deleteSuccess'), 'success');
     } catch (error) {
-      showToast('Bildirim silinemedi', 'error');
+      showToast(t('toasts.notifications.deleteError'), 'error');
     }
   };
 
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`${selectedIds.length} adet bildirimi silmek istediğinize emin misiniz?`)) return;
+    if (!window.confirm(t('confirms.notifications.deleteSelected', { count: selectedIds.length }))) return;
 
     try {
       await notificationService.deleteSelected(selectedIds);
       setNotifications(notifications.filter(n => !selectedIds.includes(n.id)));
       setSelectedIds([]);
-      showToast('Seçili bildirimler silindi', 'success');
+      showToast(t('toasts.notifications.deleteSuccess'), 'success');
     } catch (error) {
-      showToast('Silme işlemi sırasında hata oluştu', 'error');
+      showToast(t('toasts.notifications.deleteError'), 'error');
     }
   };
 
   const handleDeleteAll = async () => {
     if (notifications.length === 0) return;
-    if (!window.confirm('Tüm bildirimleri silmek istediğinize emin misiniz?')) return;
+    if (!window.confirm(t('confirms.notifications.clearAll'))) return;
 
     try {
       await notificationService.deleteAll();
       setNotifications([]);
       setSelectedIds([]);
-      showToast('Tüm bildirimler silindi', 'success');
+      showToast(t('toasts.notifications.clearSuccess'), 'success');
     } catch (error) {
-      showToast('Hata oluştu', 'error');
+      showToast(t('toasts.notifications.markAllError'), 'error');
     }
   };
 
@@ -131,10 +133,10 @@ const NotificationsPage: React.FC = () => {
     try {
       await inventoryService.acceptInvitation(invitationId);
       await notificationService.markAsRead(notificationId);
-      showToast('Davet kabul edildi', 'success');
+      showToast(t('common.accept'), 'success');
       fetchNotifications();
     } catch (error) {
-      showToast('Davet kabul edilirken hata oluştu', 'error');
+      showToast(t('toasts.notifications.inviteAcceptError'), 'error');
     }
   };
 
@@ -142,10 +144,10 @@ const NotificationsPage: React.FC = () => {
     try {
       await inventoryService.rejectInvitation(invitationId);
       await notificationService.markAsRead(notificationId);
-      showToast('Davet reddedildi', 'info');
+      showToast(t('common.reject'), 'info');
       fetchNotifications();
     } catch (error) {
-      showToast('Davet reddedilirken hata oluştu', 'error');
+      showToast(t('toasts.notifications.inviteRejectError'), 'error');
     }
   };
 
@@ -154,9 +156,9 @@ const NotificationsPage: React.FC = () => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return 'Az önce';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} dk önce`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} saat önce`;
+    if (diffInSeconds < 60) return t('notifications.time.justNow');
+    if (diffInSeconds < 3600) return t('notifications.time.minutesAgo', { count: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t('notifications.time.hoursAgo', { count: Math.floor(diffInSeconds / 3600) });
     return date.toLocaleDateString('tr-TR');
   };
 
@@ -168,8 +170,8 @@ const NotificationsPage: React.FC = () => {
             <Bell size={28} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bildirimler</h1>
-            <p className="text-gray-500">Tüm aktivitelerinizi buradan takip edebilirsiniz</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('navigation.notifications')}</h1>
+            <p className="text-gray-500">{t('notifications.subtitle')}</p>
           </div>
         </div>
         
@@ -177,7 +179,7 @@ const NotificationsPage: React.FC = () => {
           <button
             onClick={toggleSelectAll}
             className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-            title={selectedIds.length === notifications.length ? "Seçimi Kaldır" : "Tümünü Seç"}
+            title={selectedIds.length === notifications.length ? t('notifications.actions.deselect') : t('notifications.actions.selectAll')}
           >
             {selectedIds.length === notifications.length && notifications.length > 0 ? (
               <CheckSquare size={20} className="text-indigo-600" />
@@ -190,7 +192,7 @@ const NotificationsPage: React.FC = () => {
             <button
               onClick={handleDeleteSelected}
               className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              title="Seçilenleri Sil"
+              title={t('notifications.actions.deleteSelected')}
             >
               <Trash2 size={20} />
             </button>
@@ -200,7 +202,7 @@ const NotificationsPage: React.FC = () => {
             <button
               onClick={handleDeleteAll}
               className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              title="Tümünü Temizle"
+              title={t('notifications.actions.clearAll')}
             >
               <Trash2 size={20} />
             </button>
@@ -212,7 +214,7 @@ const NotificationsPage: React.FC = () => {
               className="text-sm font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1 ml-2"
             >
               <CheckCircle2 size={16} />
-              Tümünü Okundu İşaretle
+              {t('notifications.actions.markAllRead')}
             </button>
           )}
         </div>
@@ -221,15 +223,15 @@ const NotificationsPage: React.FC = () => {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-4"></div>
-          <p className="text-gray-500 font-medium">Bildirimler yükleniyor...</p>
+          <p className="text-gray-500 font-medium">{t('notifications.loading')}</p>
         </div>
       ) : notifications.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4">
             <Bell className="text-gray-300" size={32} />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Bildiriminiz bulunmuyor</h3>
-          <p className="text-gray-500">Yeni bir gelişme olduğunda burada görünecektir.</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('navigation.notifications')}</h3>
+          <p className="text-gray-500">{t('notifications.empty')}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -288,7 +290,7 @@ const NotificationsPage: React.FC = () => {
                           handleDeleteNotification(notification.id);
                         }}
                         className="p-1 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                        title="Sil"
+                        title={t('inventory.itemList.colActions')}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -310,7 +312,7 @@ const NotificationsPage: React.FC = () => {
                         className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 active:scale-95"
                       >
                         <Check size={16} />
-                        Kabul Et
+                        {t('common.accept')}
                       </button>
                       <button
                         onClick={(e) => {
@@ -320,7 +322,7 @@ const NotificationsPage: React.FC = () => {
                         className="px-4 py-2 bg-white text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 active:scale-95"
                       >
                         <X size={16} />
-                        Reddet
+                        {t('common.reject')}
                       </button>
                     </div>
                   )}
@@ -328,7 +330,7 @@ const NotificationsPage: React.FC = () => {
                   {notification.type === 'INVITATION' && isRead(notification.status) && (
                     <div className="flex items-center gap-2 text-xs font-medium text-gray-400 bg-gray-50 w-fit px-2 py-1 rounded-md">
                       <CheckCircle2 size={12} />
-                      Bu davet yanıtlandı veya okundu olarak işaretlendi
+                      {t('notifications.inviteAnswered')}
                     </div>
                   )}
 
@@ -341,7 +343,7 @@ const NotificationsPage: React.FC = () => {
                       className="text-xs font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest flex items-center gap-1 transition-colors"
                     >
                       <Check size={12} />
-                      Okundu olarak işaretle
+                      {t('notifications.markRead')}
                     </button>
                   )}
                 </div>

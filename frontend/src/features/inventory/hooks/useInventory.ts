@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../infrastructure/auth/AuthContext';
 import { useInventoryService } from '../../../services/inventoryService';
 import { useConsumptionService } from '../../../services/consumptionService';
@@ -18,6 +19,7 @@ import {
 import { createGroupDraft, createItemDraft } from '../utils/inventoryUtils';
 
 export const useInventory = () => {
+  const { t } = useTranslation();
   const { authenticated } = useAuth();
   const { showToast } = useToast();
   const inventoryService = useInventoryService();
@@ -81,7 +83,7 @@ export const useInventory = () => {
       // return inventoryMapper.toItemResponses(inventoryService.getInventoryItemsByGroup(userId, groupId, pageRequest).getContent());
       // So it returns List<InventoryItemResponse>.
     } catch (error) {
-      showToast('Ürünler yüklenemedi.', 'error');
+      showToast(t('toasts.inventory.loadError'), 'error');
     } finally {
       setLoadingItems(false);
     }
@@ -94,7 +96,7 @@ export const useInventory = () => {
       setShoppingListItems(data.items || []);
       return data.items || [];
     } catch (error) {
-      showToast('Alışveriş listesi yüklenemedi.', 'error');
+      showToast(t('toasts.inventory.shoppingListError'), 'error');
       return [];
     } finally {
       setLoadingShoppingList(false);
@@ -143,7 +145,7 @@ export const useInventory = () => {
         await fetchShoppingList(nextGroups.map(g => g.id));
       }
     } catch (error) {
-      showToast('Envanter bilgileri alınamadı.', 'error');
+      showToast(t('toasts.inventory.loadError'), 'error');
     } finally {
       if (options?.showLoader) setLoading(false);
     }
@@ -155,7 +157,7 @@ export const useInventory = () => {
       const data = await inventoryService.getPendingInvitations();
       setInvitations(data);
     } catch (error) {
-      showToast('Bekleyen davetler yüklenemedi.', 'error');
+      showToast(t('toasts.inventory.invitationsLoadError'), 'error');
     } finally {
       setLoadingInvitations(false);
     }
@@ -174,7 +176,7 @@ export const useInventory = () => {
         setUnitWeights(weights);
         await loadInvitations();
       } catch (error) {
-        console.error('Birimler yüklenemedi:', error);
+        console.error('Units load error:', error);
       } finally {
         setLoading(false);
       }
@@ -195,7 +197,7 @@ export const useInventory = () => {
       const results = await userService.searchUsers(query);
       setUserSearchResults(results);
     } catch (error) {
-      showToast('Kullanıcı araması başarısız oldu.', 'error');
+      showToast(t('toasts.inventory.userSearchError'), 'error');
     } finally {
       setIsSearchingUsers(false);
     }
@@ -213,7 +215,7 @@ export const useInventory = () => {
     
     if (existingItem) {
       setExpandedManualInput(true);
-      showToast(`${ing.name} zaten envanterinizde var. Eklemek istediğiniz miktarı girin.`, 'info');
+      showToast(t('toasts.inventory.alreadyExists', { name: ing.name }), 'info');
     }
 
     if (!ingredientSpecificWeights[ing.id]) {
@@ -221,7 +223,7 @@ export const useInventory = () => {
         const weights = await consumptionService.getUnitWeights(ing.id);
         setIngredientSpecificWeights(prev => ({ ...prev, [ing.id]: weights }));
       } catch (error) {
-        showToast('Birim bilgileri alınamadı.', 'error');
+        showToast(t('toasts.inventory.unitsLoadError'), 'error');
       }
     }
   };

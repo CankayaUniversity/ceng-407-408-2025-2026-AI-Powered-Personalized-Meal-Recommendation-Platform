@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Users, Loader2, Check } from 'lucide-react';
 
 interface InvitationsModalProps {
@@ -16,6 +17,7 @@ export const InvitationsModal: React.FC<InvitationsModalProps> = ({
   invitations,
   onAccept
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -29,7 +31,7 @@ export const InvitationsModal: React.FC<InvitationsModalProps> = ({
               </div>
               <div>
                 <p className="meal-overline text-foreground/40">Invitations</p>
-                <h3 className="meal-section-title mt-1 text-2xl text-foreground">Envanter Davetleri</h3>
+                <h3 className="meal-section-title mt-1 text-2xl text-foreground">{t('inventory.invitations.modalTitle')}</h3>
               </div>
             </div>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-foreground/5 text-foreground/30">
@@ -41,14 +43,14 @@ export const InvitationsModal: React.FC<InvitationsModalProps> = ({
             {loading ? (
               <div className="py-12 text-center">
                 <Loader2 size={32} className="mx-auto animate-spin text-terracotta mb-4" />
-                <p className="text-sm text-foreground-muted">Davetler yükleniyor...</p>
+                <p className="text-sm text-foreground-muted">{t('inventory.invitations.loading')}</p>
               </div>
             ) : invitations.length === 0 ? (
               <div className="py-12 text-center">
                 <div className="mx-auto w-16 h-16 bg-foreground/5 rounded-full flex items-center justify-center text-foreground/20 mb-4">
                   <Users size={32} />
                 </div>
-                <p className="text-sm text-foreground-muted font-medium">Şu an bekleyen davetiniz bulunmuyor.</p>
+                <p className="text-sm text-foreground-muted font-medium">{t('inventory.invitations.empty')}</p>
               </div>
             ) : (
               invitations.map((inv) => (
@@ -59,14 +61,14 @@ export const InvitationsModal: React.FC<InvitationsModalProps> = ({
                     </div>
                     <div>
                       <p className="text-sm font-bold text-foreground">{inv.groupName}</p>
-                      <p className="text-[10px] text-foreground-muted">Gönderen: {inv.inviterEmail}</p>
+                      <p className="text-[10px] text-foreground-muted">{t('inventory.invitations.from', { email: inv.inviterEmail })}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => onAccept(inv.id)}
                     className="flex items-center gap-2 px-5 py-2.5 bg-terracotta text-white rounded-xl text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-terracotta/20"
                   >
-                    <Check size={14} /> Kabul Et
+                    <Check size={14} /> {t('common.accept')}
                   </button>
                 </div>
               ))

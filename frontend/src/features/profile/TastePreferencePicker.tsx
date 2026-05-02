@@ -1,4 +1,5 @@
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Plus, Search, X, Ban } from 'lucide-react';
 import { useInventoryService } from '../../services/inventoryService';
 import { useIngredientService } from '../../services/ingredientService';
@@ -29,6 +30,7 @@ const normalizeValues = (values: string[]): string[] => {
 const formatCategory = (category: Ingredient['category']): string => category.replace(/_/g, ' ');
 
 const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, onChange, error }) => {
+  const { t } = useTranslation();
   const inventoryService = useInventoryService();
   const ingredientService = useIngredientService();
   const [query, setQuery] = useState('');
@@ -61,7 +63,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
       } catch (_error) {
         if (!active) return;
         setResults([]);
-        setSearchError('Arama servisi şu an meşgul.');
+        setSearchError(t('profile.taste.searchBusy'));
       } finally {
         if (active) setSearching(false);
       }
@@ -95,15 +97,15 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
               <div className="p-1.5 bg-terracotta/10 rounded-lg text-terracotta">
                 <Ban size={18} />
               </div>
-              <h4 className="meal-section-title text-lg tracking-tight">Lezzet Tercihleri</h4>
+              <h4 className="meal-section-title text-lg tracking-tight">{t('profile.taste.title')}</h4>
             </div>
             <p className="text-sm text-foreground/50 max-w-md italic">
-              Sevmediğin malzemeleri buraya ekle, MealAI sana özel tariflerde bunları geri plana atsın.
+              {t('profile.taste.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-card border border-card-border rounded-2xl shadow-sm self-start sm:self-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-foreground/40">Liste</span>
-            <span className="text-sm font-bold text-terracotta">{values.length} Öge</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-foreground/40">{t('profile.taste.listLabel')}</span>
+            <span className="text-sm font-bold text-terracotta">{t('profile.taste.itemCount', { count: values.length })}</span>
           </div>
         </div>
 
@@ -118,7 +120,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && trimmedQuery && commitValue(trimmedQuery)}
               className="base-input pl-12 pr-14 py-4 shadow-brand-soft border-terracotta/5 focus:border-terracotta/30"
-              placeholder="Örn: Patlıcan, dereotu, bamya..."
+              placeholder={t("profile.taste.placeholder")}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
             {searching ? (
@@ -139,7 +141,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
               <div className="absolute top-full left-0 right-0 mt-2 z-50 overflow-hidden rounded-2xl border border-card-border bg-card shadow-brand-elevated animate-in slide-in-from-top-2 duration-300">
                 {searching ? (
                     <div className="p-6 text-center text-sm text-foreground/40 flex items-center justify-center gap-3">
-                      <Loader2 size={18} className="animate-spin text-terracotta" /> Kütüphane taranıyor...
+                      <Loader2 size={18} className="animate-spin text-terracotta" /> {t('profile.taste.searching')}
                     </div>
                 ) : searchError ? (
                     <div className="p-5 text-center text-sm text-red-500 bg-red-500/5 flex items-center justify-center gap-2 font-semibold">
@@ -169,8 +171,8 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
                         className="w-full px-5 py-4 text-left hover:bg-terracotta/5 flex items-center justify-between group/add"
                     >
                       <div>
-                        <p className="text-sm font-bold text-foreground">"{trimmedQuery}" listeye eklensin mi?</p>
-                        <p className="text-xs text-foreground/40 mt-0.5">Eşleşme bulunamadı, manuel olarak eklenecek.</p>
+                        <p className="text-sm font-bold text-foreground">"{trimmedQuery}"</p>
+                        <p className="text-xs text-foreground/40 mt-0.5">{t('profile.taste.noMatch')}</p>
                       </div>
                       <Plus size={18} className="text-terracotta" />
                     </button>
@@ -201,7 +203,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
               </div>
           ) : (
               <div className="h-full flex items-center justify-center text-sm text-foreground/30 font-medium italic">
-                Henüz sevmediğin bir malzeme eklemedin.
+                {t('profile.taste.empty')}
               </div>
           )}
         </div>

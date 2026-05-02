@@ -5,10 +5,12 @@ import { useIngredientService } from '../../services/ingredientService';
 import { matchesIngredientQuery, useIngredientLookup } from '../hooks/useIngredientLookup';
 import { Ingredient, UnitConversion } from '../../types';
 import { LoadingSpinner } from './LoadingSpinner';
+import { useTranslation } from 'react-i18next';
 
 const UnitConverterModal: React.FC = () => {
     const { isUnitConverterOpen, closeUnitConverter } = useUI();
     const ingredientService = useIngredientService();
+    const { t } = useTranslation();
 
     const [amount, setAmount] = useState<string>('1');
     const [sourceUnit, setSourceUnit] = useState<string>('GRAM');
@@ -103,14 +105,14 @@ const UnitConverterModal: React.FC = () => {
     const unitsList = useMemo(() => {
         const physicalState = selectedIngredient?.physicalState;
         
-        // Sıvı/Katı filtrelemesi: 
-        // Sıvı ise: GRAM, KG, ADET, PAKET, DILIM gizle
-        // Katı ise: ML, LITRE, L gizle
+        // Liquid/Solid filtering:
+        // Liquid: hide GRAM, KG, ADET, PAKET, DILIM
+        // Solid: hide ML, LITRE, L
         const forbiddenUnits = physicalState === 'LIQUID' 
             ? ['GRAM', 'KG', 'ADET', 'PAKET', 'DILIM'] 
             : physicalState === 'SOLID' 
                 ? ['ML', 'LITRE', 'L']
-                : []; // SEMI_SOLID veya null durumunda her şeyi göster veya varsayılan
+                : []; // SEMI_SOLID or null: show all
 
         return Object.keys(unitWeights)
             .map(u => u.toUpperCase())
@@ -152,8 +154,8 @@ const UnitConverterModal: React.FC = () => {
                             <Calculator size={20} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-serif font-bold">Birim Dönüştürücü</h2>
-                            <p className="text-[10px] font-medium opacity-80 uppercase tracking-widest">Akıllı Miktar Hesaplama</p>
+                            <h2 className="text-lg font-serif font-bold">{t('unitConverter.title')}</h2>
+                            <p className="text-[10px] font-medium opacity-80 uppercase tracking-widest">{t('unitConverter.subtitle')}</p>
                         </div>
                     </div>
                     <button 
@@ -170,13 +172,13 @@ const UnitConverterModal: React.FC = () => {
                         onClick={() => setActiveTab('converter')}
                         className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'converter' ? 'text-terracotta border-b-2 border-terracotta' : 'text-foreground/40 hover:text-foreground/60'}`}
                     >
-                        Dönüştürücü
+                        {t('unitConverter.tabConverter')}
                     </button>
                     <button 
                         onClick={() => setActiveTab('reference')}
                         className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'reference' ? 'text-terracotta border-b-2 border-terracotta' : 'text-foreground/40 hover:text-foreground/60'}`}
                     >
-                        Referans Değerler
+                        {t('unitConverter.tabReference')}
                     </button>
                 </div>
 
@@ -187,7 +189,7 @@ const UnitConverterModal: React.FC = () => {
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1 flex items-center gap-2">
                                     <Info size={10} />
-                                    Malzeme Bazlı Dönüşüm (Opsiyonel)
+                                    {t('unitConverter.ingredientLabel')}
                                 </label>
                                 <div className="relative" data-ingredient-search="unit-converter">
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30">
@@ -215,7 +217,7 @@ const UnitConverterModal: React.FC = () => {
                                                 setIsSearchFocused(false);
                                             }
                                         }}
-                                        placeholder="Malzeme adı (örn: Süt, Un...)"
+                                        placeholder={t('unitConverter.searchPlaceholder')}
                                         className="base-input w-full pl-12 py-4 bg-black/5 dark:bg-white/5 border-transparent focus:border-terracotta/50"
                                     />
                                     {isSearching && (
@@ -230,7 +232,7 @@ const UnitConverterModal: React.FC = () => {
                                             {isSearching ? (
                                                 <div className="px-6 py-5 text-sm text-foreground/50 flex items-center gap-3">
                                                     <Loader2 size={18} className="animate-spin text-terracotta" />
-                                                    Malzemeler aranıyor...
+                                                    {t('unitConverter.searching')}
                                                 </div>
                                             ) : searchError ? (
                                                 <div className="px-6 py-5 text-sm font-semibold text-red-500 bg-red-500/5">
@@ -254,7 +256,7 @@ const UnitConverterModal: React.FC = () => {
                                                 ))
                                             ) : (
                                                 <div className="px-6 py-5 text-sm text-foreground/45">
-                                                    Bu aramayla eşleşen bir malzeme bulunamadı.
+                                                    {t('unitConverter.noResults')}
                                                 </div>
                                             )}
                                         </div>
@@ -262,7 +264,7 @@ const UnitConverterModal: React.FC = () => {
                                 </div>
                                 {selectedIngredient ? (
                                     <div className="flex items-center justify-between px-4 py-2 bg-terracotta/5 border border-terracotta/20 rounded-xl">
-                                        <span className="text-xs font-bold text-terracotta">{selectedIngredient.name} yoğunluğu baz alınıyor</span>
+                                        <span className="text-xs font-bold text-terracotta">{t('unitConverter.usingDensity', { name: selectedIngredient.name })}</span>
                                         <button 
                                             type="button"
                                             onClick={() => {
@@ -273,11 +275,11 @@ const UnitConverterModal: React.FC = () => {
                                             }}
                                             className="text-[10px] font-black text-terracotta hover:underline uppercase"
                                         >
-                                            Genel Moda Dön
+                                            {t('unitConverter.resetToGeneral')}
                                         </button>
                                     </div>
                                 ) : (
-                                    <p className="text-[9px] text-foreground/30 px-1 italic">Herhangi bir malzeme seçilmezse standart su yoğunluğu (1.0) baz alınır.</p>
+                                    <p className="text-[9px] text-foreground/30 px-1 italic">{t('unitConverter.defaultDensityNote')}</p>
                                 )}
                             </div>
 
@@ -285,7 +287,7 @@ const UnitConverterModal: React.FC = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">
-                                        Miktar
+                                        {t('unitConverter.amount')}
                                     </label>
                                     <input
                                         type="number"
@@ -297,7 +299,7 @@ const UnitConverterModal: React.FC = () => {
                                 </div>
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">
-                                        Kaynak Birim
+                                        {t('unitConverter.sourceUnit')}
                                     </label>
                                     <div className="relative">
                                         <select
@@ -320,11 +322,11 @@ const UnitConverterModal: React.FC = () => {
                             <div className="space-y-4 pt-4 pb-4">
                                 <div className="flex items-center gap-2 px-1">
                                     <ArrowRightLeft size={14} className="text-terracotta" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-foreground/40">Dönüşüm Karşılıkları</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-foreground/40">{t('unitConverter.conversionResults')}</span>
                                 </div>
 
                                 {isLoading ? (
-                                    <LoadingSpinner size="md" message="Hesaplanıyor..." />
+                                    <LoadingSpinner size="md" message={t('unitConverter.calculating')} />
                                 ) : filteredConversions.length > 0 ? (
                                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {filteredConversions.map((conv, idx) => (
@@ -345,7 +347,7 @@ const UnitConverterModal: React.FC = () => {
                                     <div className="flex flex-col items-center justify-center py-12 space-y-3 bg-black/5 dark:bg-white/5 rounded-3xl border-2 border-dashed border-black/5 dark:border-white/5">
                                         <Calculator size={32} className="text-foreground/10" />
                                         <p className="text-xs font-medium text-foreground/30 px-8 text-center">
-                                            Dönüşümleri görmek için miktar girin.
+                                            {t('unitConverter.enterAmountHint')}
                                         </p>
                                     </div>
                                 )}
@@ -356,10 +358,10 @@ const UnitConverterModal: React.FC = () => {
                             <div className="space-y-2">
                                 <h3 className="text-sm font-bold flex items-center gap-2">
                                     <Info size={16} className="text-terracotta" />
-                                    Standart Ölçü Birimleri
+                                    {t('unitConverter.referenceTitle')}
                                 </h3>
                                 <p className="text-xs text-foreground/50">
-                                    Sistemimizde varsayılan olarak kabul edilen gramaj değerleri aşağıdadır. Malzeme seçildiğinde bu değerler yoğunluğa göre değişebilir.
+                                    {t('unitConverter.referenceDesc')}
                                 </p>
                             </div>
 
@@ -381,8 +383,7 @@ const UnitConverterModal: React.FC = () => {
                             
                             <div className="p-4 rounded-2xl bg-terracotta/5 border border-terracotta/10">
                                 <p className="text-[10px] leading-relaxed text-terracotta/70 italic">
-                                    * Not: Sıvı malzemelerde (Süt, Yağ vb.) 1 ML su yoğunluğu olan 1 gramdan farklı olabilir. 
-                                    Birim dönüştürücü sekmesinden malzeme seçerek gerçek gramajı hesaplayabilirsiniz.
+                                    {t('unitConverter.referenceNote')}
                                 </p>
                             </div>
                         </div>
@@ -395,7 +396,7 @@ const UnitConverterModal: React.FC = () => {
                         onClick={closeUnitConverter}
                         className="w-full py-4 bg-espresso-midnight text-white dark:bg-white dark:text-espresso-midnight font-bold text-xs rounded-2xl hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-widest"
                     >
-                        KAPAT
+                        {t('common.close')}
                     </button>
                 </div>
             </div>

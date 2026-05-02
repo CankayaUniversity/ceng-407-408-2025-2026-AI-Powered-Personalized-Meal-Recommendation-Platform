@@ -346,7 +346,7 @@ const ConsumptionHistoryPage: React.FC = () => {
                                   <span>{formatNumber(day.targetCalories)} kcal</span>
                                 </div>
                                 <div className={`pt-2 border-t border-white/5 mt-1 font-bold flex justify-between ${day.deviation > 0 ? 'text-terracotta-light' : 'text-sage-light'}`}>
-                                  <span>{day.deviation > 0 ? 'Fazla' : 'Eksik'}:</span>
+                                  <span>{day.deviation > 0 ? t('analysis.over') : t('analysis.under')}:</span>
                                   <span>{formatNumber(Math.abs(day.deviation))} kcal</span>
                                 </div>
                               </div>
@@ -371,7 +371,7 @@ const ConsumptionHistoryPage: React.FC = () => {
                   <p className="text-[10px] uppercase font-bold text-foreground-muted mb-1">{t('analysis.avgCalories')}</p>
                   <p className="text-4xl font-serif font-bold text-terracotta">
                     {formatNumber(analysis?.averages.calories || 0)}
-                    <span className="text-sm font-sans font-normal ml-1 text-foreground-muted">kcal/gün</span>
+                    <span className="text-sm font-sans font-normal ml-1 text-foreground-muted">{t('analysis.kcalPerDay')}</span>
                   </p>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -488,9 +488,11 @@ const ConsumptionHistoryPage: React.FC = () => {
             {totalPages > 1 && (
                 <div className="mt-8 flex items-center justify-between border-t border-card-border pt-6">
                   <p className="text-xs text-foreground-muted">
-                    Toplam <span className="font-bold text-foreground">{history.length}</span> kayıt arasından{' '}
-                    <span className="font-bold text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> -{' '}
-                    <span className="font-bold text-foreground">{Math.min(currentPage * itemsPerPage, history.length)}</span> arası gösteriliyor
+                    {t('analysis.pagination', {
+                      total: history.length,
+                      from: (currentPage - 1) * itemsPerPage + 1,
+                      to: Math.min(currentPage * itemsPerPage, history.length)
+                    })}
                   </p>
                   <div className="flex items-center gap-2">
                     <button

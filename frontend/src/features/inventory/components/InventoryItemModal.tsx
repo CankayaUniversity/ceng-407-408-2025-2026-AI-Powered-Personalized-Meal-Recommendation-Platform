@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Utensils, Search, Loader2, Plus } from 'lucide-react';
 import { ItemDraft } from '../types/inventory.types';
 import { Ingredient } from '../../../types';
@@ -47,6 +48,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
   onQuickUnitAdjust,
   onSave
 }) => {
+  const { t } = useTranslation();
   const searchContainerRef = React.useRef<HTMLDivElement>(null);
   const [isSearchFocused, setIsSearchFocused] = React.useState(false);
 
@@ -86,7 +88,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
               </div>
               <div>
                 <p className="meal-overline text-foreground/40">{editingItemId ? 'Update Item' : 'Add Item'}</p>
-                <h3 className="meal-section-title mt-1 text-3xl font-serif text-foreground">{editingItemId ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}</h3>
+                <h3 className="meal-section-title mt-1 text-3xl font-serif text-foreground">{editingItemId ? t('inventory.edit') : t('inventory.addNew')}</h3>
               </div>
             </div>
             <button 
@@ -99,7 +101,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
 
           <form onSubmit={onSave} className="mt-10 space-y-8">
             <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 px-2">Malzeme Ara</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 px-2">{t('inventory.searchIngredient')}</label>
               <div ref={searchContainerRef} className="relative group">
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-foreground/20 group-focus-within:text-terracotta transition-colors">
                   <Search size={20} />
@@ -107,7 +109,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Örn: Domates, Süt, Tavuk..."
+                  placeholder={t('inventory.searchPlaceholder')}
                   value={itemDraft.ingredientQuery}
                   onChange={(e) => onSearchIngredients(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
@@ -130,7 +132,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                     {searchingIngredients ? (
                       <div className="flex items-center justify-center gap-3 px-4 py-6 text-sm font-medium text-foreground/50">
                         <Loader2 size={18} className="animate-spin text-terracotta" />
-                        Malzemeler aranıyor...
+                        {t('common.calculating')}
                       </div>
                     ) : ingredientSearchError ? (
                       <div className="px-4 py-5 text-sm font-semibold text-red-500 bg-red-500/5 rounded-[1.5rem]">
@@ -159,7 +161,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                       ))
                     ) : (
                       <div className="px-4 py-6 text-sm font-medium text-foreground/45">
-                        Bu aramayla eşleşen bir malzeme bulunamadı.
+                        {t('consumption.search.noResults')}
                       </div>
                     )}
                   </div>
@@ -175,14 +177,14 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                       <Utensils size={20} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-terracotta/40">Seçili Malzeme</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-terracotta/40">{t('inventory.selectedIngredient')}</p>
                       <p className="text-xl font-serif font-bold text-foreground">{itemDraft.selectedIngredient.name}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-foreground/20">Kategori</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-foreground/20">{t('common.category')}</p>
                     <span className="px-3 py-1 bg-card border border-card-border rounded-full text-[10px] font-bold text-foreground/50 shadow-sm">
-                      {itemDraft.selectedIngredient.category?.replace('_', ' ') || 'Genel'}
+                      {itemDraft.selectedIngredient.category?.replace('_', ' ') || t('common.general')}
                     </span>
                   </div>
                 </div>
@@ -198,9 +200,9 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                         <div className="p-2.5 rounded-xl bg-terracotta/10 text-terracotta group-hover:bg-terracotta group-hover:text-white transition-colors">
                           <Plus size={16} />
                         </div>
-                        <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest">Hızlı Ekle</span>
+                        <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest">{t('inventory.quickAdd')}</span>
                       </div>
-                      <p className="text-sm font-bold text-foreground">1 {itemDraft.selectedIngredient?.physicalState === 'LIQUID' ? 'Litre' : 'Kilo'}</p>
+                      <p className="text-sm font-bold text-foreground">{itemDraft.selectedIngredient?.physicalState === 'LIQUID' ? t('inventory.oneLitre') : t('inventory.oneKilo')}</p>
                     </button>
                     <button 
                       type="button" 
@@ -211,9 +213,9 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                         <div className="p-2.5 rounded-xl bg-terracotta/10 text-terracotta group-hover:bg-terracotta group-hover:text-white transition-colors">
                           <Plus size={16} />
                         </div>
-                        <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest">Hızlı Ekle</span>
+                        <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest">{t('inventory.quickAdd')}</span>
                       </div>
-                      <p className="text-sm font-bold text-foreground">1 Adet / Paket</p>
+                      <p className="text-sm font-bold text-foreground">{t('inventory.oneUnit')}</p>
                     </button>
                   </div>
                 )}
@@ -225,7 +227,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                       onClick={() => setExpandedManualInput(!expandedManualInput)}
                       className="text-[10px] font-black uppercase tracking-widest text-terracotta/60 hover:text-terracotta transition-colors flex items-center gap-1.5"
                     >
-                      {expandedManualInput ? 'HIZLI SEÇENEKLERE DÖN' : 'MANUEL MİKTAR GİR'}
+                      {expandedManualInput ? t('inventory.backToQuick') : t('inventory.manualAmount')}
                     </button>
                     <div className="flex gap-2">
                       {['ADD', 'SUBTRACT', 'SET'].map((mode) => (
@@ -239,7 +241,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                               : 'bg-card text-foreground/40 border border-card-border'
                           }`}
                         >
-                          {mode === 'ADD' ? 'EKLE' : mode === 'SUBTRACT' ? 'ÇIKAR' : 'EŞİTLE'}
+                          {mode === 'ADD' ? t('inventory.modeAdd') : mode === 'SUBTRACT' ? t('inventory.modeSubtract') : t('inventory.modeSet')}
                         </button>
                       ))}
                     </div>
@@ -289,14 +291,14 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                 onClick={onClose} 
                 className="flex-1 py-5 rounded-[1.8rem] border border-card-border font-bold text-xs hover:bg-foreground/5 transition-all text-foreground/60"
               >
-                İPTAL
+                {t('common.cancel')}
               </button>
               <button
                 type="submit"
                 disabled={savingItem || !itemDraft.selectedIngredient || itemDraft.quantity === '' || parseFloat(itemDraft.quantity) < 0}
                 className="flex-[2] rounded-[1.8rem] bg-terracotta py-5 font-bold text-white shadow-2xl shadow-terracotta/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {savingItem ? <Loader2 className="animate-spin" size={20} /> : (editingItemId ? 'DEĞİŞİKLİKLERİ KAYDET' : 'ENVANTERE EKLE')}
+                {savingItem ? <Loader2 className="animate-spin" size={20} /> : (editingItemId ? t('inventory.saveChanges') : t('inventory.addToInventory'))}
               </button>
             </div>
           </form>

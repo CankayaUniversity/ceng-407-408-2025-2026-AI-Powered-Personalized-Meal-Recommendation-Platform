@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Flame,
   Loader2,
@@ -28,34 +29,34 @@ interface ProfileFormState {
   dislikedIngredients: string[];
 }
 
-const genderOptions = [
-  { value: Gender.MALE, label: 'Erkek' },
-  { value: Gender.FEMALE, label: 'Kadın' },
-  { value: Gender.OTHER, label: 'Diğer' }
+const genderOptions = (t: Function) => [
+  { value: Gender.MALE, label: t('profile.gender.male') },
+  { value: Gender.FEMALE, label: t('profile.gender.female') },
+  { value: Gender.OTHER, label: t('profile.gender.other') }
 ];
 
-const activityOptions = [
-  { value: ActivityLevel.SEDENTARY, label: 'Sedanter' },
-  { value: ActivityLevel.LIGHTLY_ACTIVE, label: 'Hafif Aktif' },
-  { value: ActivityLevel.MODERATELY_ACTIVE, label: 'Orta Aktif' },
-  { value: ActivityLevel.VERY_ACTIVE, label: 'Çok Aktif' },
-  { value: ActivityLevel.EXTRA_ACTIVE, label: 'Ekstra Aktif' }
+const activityOptions = (t: Function) => [
+  { value: ActivityLevel.SEDENTARY, label: t('profile.activity.sedentary') },
+  { value: ActivityLevel.LIGHTLY_ACTIVE, label: t('profile.activity.lightlyActive') },
+  { value: ActivityLevel.MODERATELY_ACTIVE, label: t('profile.activity.moderatelyActive') },
+  { value: ActivityLevel.VERY_ACTIVE, label: t('profile.activity.veryActive') },
+  { value: ActivityLevel.EXTRA_ACTIVE, label: t('profile.activity.extraActive') }
 ];
 
-const dietOptions = [
-  { value: DietType.NONE, label: 'Kısıtlama Yok' },
-  { value: DietType.VEGAN, label: 'Vegan' },
-  { value: DietType.VEGETARIAN, label: 'Vejetaryen' },
-  { value: DietType.KETO, label: 'Ketojenik' },
-  { value: DietType.PALEO, label: 'Paleo' },
-  { value: DietType.GLUTEN_FREE, label: 'Glutensiz' }
+const dietOptions = (t: Function) => [
+  { value: DietType.NONE, label: t('profile.diet.none') },
+  { value: DietType.VEGAN, label: t('profile.diet.vegan') },
+  { value: DietType.VEGETARIAN, label: t('profile.diet.vegetarian') },
+  { value: DietType.KETO, label: t('profile.diet.keto') },
+  { value: DietType.PALEO, label: t('profile.diet.paleo') },
+  { value: DietType.GLUTEN_FREE, label: t('profile.diet.glutenFree') }
 ];
 
-const goalOptions = [
-  { value: DietaryGoal.LOSE_WEIGHT, label: 'Kilo Vermek' },
-  { value: DietaryGoal.MAINTAIN_WEIGHT, label: 'Kiloyu Korumak' },
-  { value: DietaryGoal.GAIN_WEIGHT, label: 'Kilo Almak' },
-  { value: DietaryGoal.BUILD_MUSCLE, label: 'Kas Kazanmak' }
+const goalOptions = (t: Function) => [
+  { value: DietaryGoal.LOSE_WEIGHT, label: t('profile.goal.loseWeight') },
+  { value: DietaryGoal.MAINTAIN_WEIGHT, label: t('profile.goal.maintainWeight') },
+  { value: DietaryGoal.GAIN_WEIGHT, label: t('profile.goal.gainWeight') },
+  { value: DietaryGoal.BUILD_MUSCLE, label: t('profile.goal.buildMuscle') }
 ];
 
 const emptyForm = (): ProfileFormState => ({
@@ -90,6 +91,7 @@ const normalizePreferenceList = (values: string[]): string[] => {
 };
 
 const Profile: React.FC = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { showToast } = useToast();
   const userService = useUserService();
@@ -138,7 +140,7 @@ const Profile: React.FC = () => {
         });
         if (active) applyProfile(data);
       } catch (err) {
-        if (active) showToast(err instanceof ApiError ? err.message : 'Yükleme başarısız.', 'error');
+        if (active) showToast(err instanceof ApiError ? err.message : t('toasts.profile.loadError'), 'error');
       } finally {
         if (active) setLoading(false);
       }
@@ -175,13 +177,13 @@ const Profile: React.FC = () => {
       };
       const saved = await userService.updateUserProfile(user.id, payload);
       applyProfile(saved);
-      showToast('Profil başarıyla güncellendi.', 'success');
+      showToast(t('toasts.profile.saveSuccess'), 'success');
     } catch (err) {
       if (err instanceof ValidationError) {
         setFieldErrors(err.fields ?? {});
         showToast(err.message, 'error');
       } else {
-        showToast('Kaydedilirken bir hata oluştu.', 'error');
+        showToast(t('toasts.profile.saveError'), 'error');
       }
     } finally {
       setSaving(false);
@@ -193,7 +195,7 @@ const Profile: React.FC = () => {
         <div className="max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
           <div className="meal-card px-8 py-10 flex items-center gap-4">
             <Loader2 size={24} className="animate-spin text-primary" />
-            <p className="font-semibold text-foreground">Profiliniz hazırlanıyor...</p>
+            <p className="font-semibold text-foreground">{t('profile.loading')}</p>
           </div>
         </div>
     );
@@ -203,8 +205,8 @@ const Profile: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between px-2">
           <div>
-            <span className="meal-overline">Kişiselleştirme</span>
-            <h1 className="meal-section-title text-4xl md:text-5xl">Profil Ayarları</h1>
+            <span className="meal-overline">{t('profile.overline')}</span>
+            <h1 className="meal-section-title text-4xl md:text-5xl">{t('profile.title')}</h1>
           </div>
           <button
               type="button"
@@ -235,11 +237,11 @@ const Profile: React.FC = () => {
                 <div className="meal-metric-card bg-primary/5 border-primary/10 text-left">
                   <div className="flex items-center gap-2 text-primary mb-1">
                     <Flame size={16} strokeWidth={2.5} />
-                    <span className="meal-overline text-primary opacity-100">Günlük Hedef Kalori</span>
+                    <span className="meal-overline text-primary opacity-100">{t('profile.dailyEnergy')}</span>
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/50 dark:bg-black/10 border border-primary/5 shadow-sm">
-                      <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">Günlük Hedef</span>
+                      <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">{t('profile.dailyEnergy')}</span>
                       <div className="flex items-baseline gap-1">
                         <span className="text-3xl font-bold text-foreground font-serif">{calorieTarget}</span>
                         <span className="text-xs font-sans opacity-60">kcal</span>
@@ -247,7 +249,7 @@ const Profile: React.FC = () => {
                     </div>
                     {profile?.bmi && (
                       <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-terracotta/5 border border-terracotta/10 shadow-sm">
-                        <span className="text-[10px] font-bold text-terracotta uppercase tracking-widest mb-1">Vücut Kitle İndeksi (BMI)</span>
+                        <span className="text-[10px] font-bold text-terracotta uppercase tracking-widest mb-1">{t('dashboard.stats.bmiValue')}</span>
                         <span className="text-2xl font-bold text-terracotta font-serif">
                           {profile.bmi}
                         </span>
@@ -262,7 +264,7 @@ const Profile: React.FC = () => {
                 onClick={() => logout()}
                 className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-600 rounded-[2rem] font-bold hover:bg-red-600 hover:text-white transition-all duration-300 border border-red-500/20 shadow-sm"
             >
-              <LogOut size={20} /> Oturumu Kapat
+              <LogOut size={20} /> {t('actions.logout')}
             </button>
           </aside>
 
@@ -272,28 +274,28 @@ const Profile: React.FC = () => {
                 <div className="p-2 bg-primary/10 rounded-xl text-primary">
                   <UserIcon size={20} />
                 </div>
-                <h3 className="meal-section-title text-xl">Fiziksel Detaylar</h3>
+                <h3 className="meal-section-title text-xl">{t('profile.physicalDetails')}</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <span className="meal-overline pl-1">Ağırlık (kg)</span>
+                  <span className="meal-overline pl-1">{t('profile.weight')}</span>
                   <input type="number" step="0.1" value={form.weight} onChange={e => updateField('weight', e.target.value)} className="base-input" placeholder="0.0" />
                   {fieldErrors.weight && <p className="text-xs text-red-500 font-bold ml-1 italic">{fieldErrors.weight}</p>}
                 </div>
                 <div className="space-y-2">
-                  <span className="meal-overline pl-1">Boy (cm)</span>
+                  <span className="meal-overline pl-1">{t('profile.height')}</span>
                   <input type="number" step="0.1" value={form.height} onChange={e => updateField('height', e.target.value)} className="base-input" placeholder="0" />
                 </div>
                 <div className="space-y-2">
-                  <span className="meal-overline pl-1">Yaş</span>
+                  <span className="meal-overline pl-1">{t('profile.age')}</span>
                   <input type="number" value={form.age} onChange={e => updateField('age', e.target.value)} className="base-input" placeholder="0" />
                 </div>
                 <div className="space-y-2">
-                  <span className="meal-overline pl-1">Biyolojik Cinsiyet</span>
+                  <span className="meal-overline pl-1">{t('profile.biologicalSex')}</span>
                   <select value={form.gender} onChange={e => updateField('gender', e.target.value as any)} className="base-input">
-                    <option value="">Belirtilmedi</option>
-                    {genderOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    <option value="">{t('profile.notSpecified')}</option>
+                    {genderOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
               </div>
@@ -304,34 +306,34 @@ const Profile: React.FC = () => {
                 <div className="p-2 bg-sage/10 rounded-xl text-sage">
                   <Shield size={20} />
                 </div>
-                <h3 className="meal-section-title text-xl">Beslenme & Yaşam Tarzı</h3>
+                <h3 className="meal-section-title text-xl">{t('profile.lifestyle.title')}</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <span className="meal-overline pl-1">Aktivite Seviyesi</span>
+                  <span className="meal-overline pl-1">{t('profile.activityLevel')}</span>
                   <select value={form.activityLevel} onChange={e => updateField('activityLevel', e.target.value as any)} className="base-input">
-                    <option value="">Seçiniz</option>
-                    {activityOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    <option value="">{t('common.select')}</option>
+                    {activityOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <span className="meal-overline pl-1">Beslenme Hedefi</span>
+                  <span className="meal-overline pl-1">{t('profile.nutritionGoal')}</span>
                   <select value={form.dietaryGoal} onChange={e => updateField('dietaryGoal', e.target.value as any)} className="base-input">
-                    <option value="">Seçiniz</option>
-                    {goalOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    <option value="">{t('common.select')}</option>
+                    {goalOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
                 <div className="md:col-span-2 space-y-2">
-                  <span className="meal-overline pl-1">Diyet Yaklaşımı</span>
+                  <span className="meal-overline pl-1">{t('profile.diet.label')}</span>
                   <select value={form.dietType} onChange={e => updateField('dietType', e.target.value as any)} className="base-input">
-                    {dietOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {dietOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
               </div>
 
               <div className="space-y-4 pt-4">
-                <span className="meal-overline pl-1">Alerjenler & Hassasiyetler</span>
+                <span className="meal-overline pl-1">{t('profile.allergensLabel')}</span>
                 <div className="flex gap-2">
                   <input
                       type="text"
@@ -339,10 +341,10 @@ const Profile: React.FC = () => {
                       onChange={e => setAllergyInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), allergyInput && updateField('allergies', [...form.allergies, allergyInput.trim()]), setAllergyInput(''))}
                       className="base-input"
-                      placeholder="Örn: Yer Fıstığı"
+                      placeholder={t('profile.allergens.placeholder')}
                   />
                   <button type="button" onClick={() => { if(allergyInput) { updateField('allergies', [...form.allergies, allergyInput.trim()]); setAllergyInput(''); }}}
-                          className="btn-primary px-8">Ekle</button>
+                          className="btn-primary px-8">{t('inventory.modeAdd')}</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {form.allergies.map(a => (
@@ -361,14 +363,14 @@ const Profile: React.FC = () => {
 
             <div className="meal-card meal-highlight-frame sticky bottom-6 p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-brand-elevated bg-card/90 backdrop-blur-xl z-10">
               <div className="flex flex-col">
-                <p className="text-xs font-bold uppercase tracking-widest opacity-40">Durum</p>
-                <p className="text-sm font-semibold">{isDirty ? 'Kaydedilmemiş Değişiklikler' : 'Her Şey Güncel'}</p>
+                <p className="text-xs font-bold uppercase tracking-widest opacity-40">{t('profile.statusLabel')}</p>
+                <p className="text-sm font-semibold">{isDirty ? t('profile.dirty') : t('profile.clean')}</p>
               </div>
               <div className="flex gap-3 w-full sm:w-auto">
-                <button type="button" disabled={!isDirty || saving} onClick={() => profile && applyProfile(profile)} className="btn-secondary flex-1 sm:flex-none py-3">Geri Al</button>
+                <button type="button" disabled={!isDirty || saving} onClick={() => profile && applyProfile(profile)} className="btn-secondary flex-1 sm:flex-none py-3">{t('profile.revert')}</button>
                 <button type="submit" disabled={!isDirty || saving} className="btn-primary flex-1 sm:flex-none py-3 px-12 flex items-center justify-center gap-2">
                   {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                  Kaydet
+                  {t('profile.save')}
                 </button>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Home, Loader2, Trash2 } from 'lucide-react';
 import { GroupDraft } from '../types/inventory.types';
 import { LOCATION_ICONS } from '../utils/inventoryUtils';
@@ -24,6 +25,7 @@ export const InventoryGroupModal: React.FC<InventoryGroupModalProps> = ({
   onSave,
   onDelete
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -37,7 +39,7 @@ export const InventoryGroupModal: React.FC<InventoryGroupModalProps> = ({
               </div>
               <div>
                 <p className="meal-overline text-foreground/40">{editingGroupId ? 'Update Location' : 'New Location'}</p>
-                <h3 className="meal-section-title mt-1 text-2xl text-foreground">{editingGroupId ? 'Lokasyonu Düzenle' : 'Yeni Lokasyon Ekle'}</h3>
+                <h3 className="meal-section-title mt-1 text-2xl text-foreground">{editingGroupId ? t('inventory.groupModal.editTitle') : t('inventory.groupModal.addTitle')}</h3>
               </div>
             </div>
             <button onClick={onClose} className="p-2 rounded-full hover:bg-foreground/5 text-foreground/30"><X size={20} /></button>
@@ -45,11 +47,11 @@ export const InventoryGroupModal: React.FC<InventoryGroupModalProps> = ({
 
           <form onSubmit={onSave} className="mt-8 space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-foreground/40 px-2">Lokasyon Adı</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-foreground/40 px-2">{t('inventory.groupModal.nameLabel')}</label>
               <input
                 autoFocus
                 type="text"
-                placeholder="Örn: Benim Mutfağım, Ofis Kilieri..."
+                placeholder={t("inventory.groupModal.namePlaceholder")}
                 value={groupDraft.name}
                 onChange={(e) => setGroupDraft({ ...groupDraft, name: e.target.value })}
                 className="w-full rounded-2xl border border-card-border bg-card px-5 py-4 font-bold text-foreground focus:border-terracotta focus:ring-4 focus:ring-terracotta/10 transition-all outline-none"
@@ -58,7 +60,7 @@ export const InventoryGroupModal: React.FC<InventoryGroupModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-foreground/40 px-2">İkon Seçimi</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-foreground/40 px-2">{t('inventory.groupModal.iconLabel')}</label>
               <div className="grid grid-cols-5 gap-3">
                 {LOCATION_ICONS.map((option) => {
                   const Icon = option.icon;
@@ -96,7 +98,7 @@ export const InventoryGroupModal: React.FC<InventoryGroupModalProps> = ({
                 disabled={savingGroup || !groupDraft.name.trim()}
                 className="flex-1 rounded-2xl bg-terracotta py-4 font-bold text-white shadow-xl shadow-terracotta/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
               >
-                {savingGroup ? <Loader2 className="mx-auto animate-spin" size={20} /> : (editingGroupId ? 'GÜNCELLE' : 'OLUŞTUR')}
+                {savingGroup ? <Loader2 className="mx-auto animate-spin" size={20} /> : (editingGroupId ? t('inventory.groupModal.update') : t('inventory.groupModal.create'))}
               </button>
             </div>
           </form>

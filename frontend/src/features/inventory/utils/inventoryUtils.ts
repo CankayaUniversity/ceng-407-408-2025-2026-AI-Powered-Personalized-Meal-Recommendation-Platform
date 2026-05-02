@@ -2,11 +2,11 @@ import { Home, Briefcase, MapPin, Package, Leaf } from 'lucide-react';
 import { GroupDraft, ItemDraft } from '../types/inventory.types';
 
 export const LOCATION_ICONS = [
-  { value: 'home', label: 'Ev', icon: Home },
-  { value: 'briefcase', label: 'Ofis', icon: Briefcase },
-  { value: 'map-pin', label: 'Şehir', icon: MapPin },
-  { value: 'package', label: 'Kiler', icon: Package },
-  { value: 'leaf', label: 'Yazlık', icon: Leaf }
+  { value: 'home', label: 'inventory.utils.home', icon: Home },
+  { value: 'briefcase', label: 'inventory.utils.office', icon: Briefcase },
+  { value: 'map-pin', label: 'inventory.utils.city', icon: MapPin },
+  { value: 'package', label: 'inventory.utils.pantry', icon: Package },
+  { value: 'leaf', label: 'inventory.utils.summerhouse', icon: Leaf }
 ] as const;
 
 export const createGroupDraft = (): GroupDraft => ({ name: '', icon: 'home' });

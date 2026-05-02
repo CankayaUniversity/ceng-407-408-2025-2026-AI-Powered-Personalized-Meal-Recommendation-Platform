@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Soup, UtensilsCrossed, MapPin, Sparkles, Loader2 } from 'lucide-react';
 import { 
   type EntryMode, 
@@ -38,6 +39,7 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
   selectedItemsCount,
   memberSelectionsCount
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="mt-4 rounded-[2rem] meal-highlight-frame bg-card p-6 text-foreground shadow-brand-hero">
       <div className="flex items-start justify-between gap-4">
@@ -79,11 +81,11 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
           <table className="w-full text-left text-sm">
             <thead className="bg-foreground/[0.03]">
               <tr>
-                <th className="px-6 py-3 font-semibold text-foreground/50">Kullanıcı</th>
-                <th className="px-6 py-3 font-semibold text-foreground/50">Kalori</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50">{t('consumption.summary.colUser')}</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50">Calories</th>
                 <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Protein</th>
-                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Karbonhidrat</th>
-                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Yağ</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Carbs</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">{t('consumption.summary.colFat')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-card-border/50">
@@ -105,7 +107,7 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
         <div className="mt-6 rounded-[1.8rem] bg-moss-sage/5 border border-moss-sage/20 p-5 dark:bg-moss-sage/10">
           <div className="flex items-center gap-2 mb-3">
             <MapPin size={16} className="text-moss-sage" />
-            <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-moss-forest/70 dark:text-moss-sage/80">Envanterden Düşecek Malzemeler</span>
+            <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-moss-forest/70 dark:text-moss-sage/80">{t('consumption.summary.deductionTitle')}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {inventoryDeductions.map((d, i) => (
@@ -121,8 +123,8 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
       <div className="mt-6 flex flex-col items-center justify-between gap-6 md:flex-row">
         <div className="flex-1 rounded-[1.5rem] border border-card-border bg-foreground/[0.02] px-5 py-4 text-sm text-foreground/70">
           {isOutside
-              ? 'Outside / Other seçildi. Yalnızca günlük tüketim özeti güncellenecek.'
-              : `${locationLabel(selectedGroup)} stokundan otomatik düşüm yapılacak.`}
+              ? t('consumption.summary.outsideNote')
+              : t('consumption.summary.locationNote', { location: locationLabel(selectedGroup) })}
         </div>
 
             <button
@@ -131,7 +133,7 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
                 className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-[1.6rem] bg-terracotta px-8 py-5 font-bold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.01] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              {submitting ? 'Kaydediliyor...' : (selectedItemsCount + memberSelectionsCount) > 1 ? 'Tüketimleri Kaydet' : 'Tüketimi Kaydet'}
+              {submitting ? t('consumption.summary.saving') : (selectedItemsCount + memberSelectionsCount) > 1 ? t('consumption.summary.saveMultiple') : t('consumption.summary.saveSingle')}
             </button>
       </div>
     </div>
