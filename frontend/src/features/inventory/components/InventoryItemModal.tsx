@@ -104,7 +104,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
         : Math.min(window.innerHeight - viewportPadding - maxHeight, rect.bottom + gap),
       width: rect.width,
       maxHeight,
-      zIndex: 120
+      zIndex: 230
     });
   }, []);
 
