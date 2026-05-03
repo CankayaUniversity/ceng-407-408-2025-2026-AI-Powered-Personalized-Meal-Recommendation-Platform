@@ -82,7 +82,7 @@ class AiRecommendationStrategyTest {
                 .recipeIngredients(List.of()) // Null olmaması için
                 .build();
 
-        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyList(), any(Pageable.class)))
+        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyString(), anyList(), any(Pageable.class)))
                 .thenReturn(List.of(highRatingLowMatch, lowRatingHighMatch));
 
         // Mock recipeService.isCompatibleWithDiet to return true
@@ -113,7 +113,7 @@ class AiRecommendationStrategyTest {
         Recipe dislikedRecipe = recipeWithIngredients(1L, "Onion Bowl", 5.0, "Chicken", "Onion");
         Recipe preferredRecipe = recipeWithIngredients(2L, "Herb Bowl", 5.0, "Chicken", "Garlic");
 
-        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyList(), any(Pageable.class)))
+        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyString(), anyList(), any(Pageable.class)))
                 .thenReturn(List.of(dislikedRecipe, preferredRecipe));
 
         lenient().when(recipeService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);
@@ -138,7 +138,7 @@ class AiRecommendationStrategyTest {
 
         Recipe recipe = recipeWithIngredients(3L, "Balanced Plate", 4.5, "Chicken", "Garlic");
 
-        lenient().when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyList(), any(Pageable.class)))
+        lenient().when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyString(), anyList(), any(Pageable.class)))
                 .thenReturn(List.of(recipe));
 
         lenient().when(recipeService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);

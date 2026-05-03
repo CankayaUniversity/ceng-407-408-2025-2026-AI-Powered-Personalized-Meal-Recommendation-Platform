@@ -10,6 +10,10 @@ type UIContextType = {
     isUnitConverterOpen: boolean;
     openUnitConverter: () => void;
     closeUnitConverter: () => void;
+    isRecipeModalOpen: boolean;
+    recipeToEdit: any | null;
+    openRecipeModal: (recipe?: any) => void;
+    closeRecipeModal: () => void;
 };
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -27,11 +31,23 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     const openUnitConverter = () => setIsUnitConverterOpen(true);
     const closeUnitConverter = () => setIsUnitConverterOpen(false);
 
+    const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+    const [recipeToEdit, setRecipeToEdit] = useState<any | null>(null);
+    const openRecipeModal = (recipe?: any) => {
+        setRecipeToEdit(recipe || null);
+        setIsRecipeModalOpen(true);
+    };
+    const closeRecipeModal = () => {
+        setIsRecipeModalOpen(false);
+        setRecipeToEdit(null);
+    };
+
     return (
         <UIContext.Provider value={{ 
             isConsumptionOpen, openConsumption, closeConsumption,
             isSettingsOpen, openSettings, closeSettings,
-            isUnitConverterOpen, openUnitConverter, closeUnitConverter
+            isUnitConverterOpen, openUnitConverter, closeUnitConverter,
+            isRecipeModalOpen, recipeToEdit, openRecipeModal, closeRecipeModal
         }}>
             {children}
         </UIContext.Provider>

@@ -1,18 +1,29 @@
 package com.mealapp.app.controller;
 
+import com.mealapp.app.model.dto.recipe.RecipeRequest;
 import com.mealapp.app.model.dto.recipe.RecipeResponse;
 import com.mealapp.app.model.mapper.recipe.RecipeMapper;
 import com.mealapp.domain.common.exception.MealAppDomainException;
+import com.mealapp.domain.recipe.entity.Ingredient;
+import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeIngredient;
+import com.mealapp.domain.recipe.service.RecipeFavoriteService;
 import com.mealapp.domain.recipe.service.RecipeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/recipes")
@@ -21,21 +32,24 @@ public class RecipeController {
 
     private final RecipeService recipeService;
     private final RecipeMapper recipeMapper;
+    private final RecipeFavoriteService favoriteService;
 
     @GetMapping
     @Transactional(readOnly = true)
     public List<RecipeResponse> getAllRecipes(
+            @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) String title,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         PageRequest pageRequest = PageRequest.of(page, size);
         List<RecipeResponse> responses;
+        String userId = (jwt != null) ? jwt.getSubject() : null;
         
         if (title != null && !title.isBlank()) {
-            responses = recipeMapper.toResponseList(recipeService.searchByTitle(title, pageRequest).getContent());
+            responses = recipeMapper.toResponseList(recipeService.searchByTitle(title, userId, pageRequest).getContent(), userId);
         } else {
-            responses = recipeMapper.toResponseList(recipeService.findAll(pageRequest).getContent());
+            responses = recipeMapper.toResponseList(recipeService.findAll(userId, pageRequest).getContent(), userId);
         }
         
         responses.forEach(this::enrichImageUrl);
@@ -44,22 +58,155 @@ public class RecipeController {
 
     @GetMapping("/{id}")
     @Transactional(readOnly = true)
-    public RecipeResponse getRecipeById(@PathVariable Long id) {
-        RecipeResponse response = recipeService.findById(id)
-            .map(recipeMapper::toResponse) // Recipe -> RecipeResponse dönüşümü
+    public RecipeResponse getRecipeById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        String userId = jwt != null ? jwt.getSubject() : null;
+        Recipe recipe = recipeService.findById(id)
             .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
-            
+
+        // Eğer kullanıcı bu tarifin sahibi ise ve bekleyen bir güncelleme varsa, onu gösterelim (düzenleme için)
+        if (userId != null && userId.equals(recipe.getCreatedBy())) {
+            Optional<Recipe> pendingUpdate = recipeService.findPendingUpdate(id);
+            if (pendingUpdate.isPresent()) {
+                RecipeResponse response = recipeMapper.toResponse(pendingUpdate.get(), userId);
+                enrichImageUrl(response);
+                return response;
+            }
+        }
+
+        RecipeResponse response = recipeMapper.toResponse(recipe, userId);
+        enrichImageUrl(response);
+        return response;
+    }
+
+    @PostMapping
+    public RecipeResponse createRecipe(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody RecipeRequest request) {
+        Recipe recipe = Recipe.builder()
+            .title(request.getTitle())
+            .category(request.getCategory())
+            .instructions(request.getInstructions())
+            .preparationTimeMinutes(request.getPreparationTimeMinutes() != null ? request.getPreparationTimeMinutes() : request.getPreparationTime())
+            .servings(request.getServings())
+            .difficulty(request.getDifficulty())
+            .status(request.getStatus() != null ? request.getStatus() : com.mealapp.domain.recipe.entity.RecipeStatus.DRAFT)
+            .createdBy(jwt.getSubject())
+            .build();
+
+        List<RecipeIngredient> ingredients = null;
+        if (request.getIngredients() != null) {
+            ingredients = request.getIngredients().stream()
+                .map(req -> {
+                    RecipeIngredient ri = RecipeIngredient.builder()
+                        .amount(req.getAmount())
+                        .unit(req.getUnit())
+                        .grams(req.getGrams())
+                        .build();
+                    
+                    Ingredient ingredientEntity;
+                    if (req.getIngredientId() != null) {
+                        ingredientEntity = Ingredient.builder().id(req.getIngredientId()).build();
+                    } else {
+                        ingredientEntity = Ingredient.builder().name(req.getIngredientName()).build();
+                    }
+                    ri.setIngredient(ingredientEntity);
+                    return ri;
+                })
+                .collect(Collectors.toList());
+        }
+
+        Recipe created = recipeService.createRecipe(recipe, ingredients);
+        RecipeResponse response = recipeMapper.toResponse(created, jwt.getSubject());
+        enrichImageUrl(response);
+        return response;
+    }
+
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional(readOnly = true)
+    public List<RecipeResponse> getPendingRecipes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<Recipe> pending = recipeService.findPendingRecipes(pageRequest);
+        List<RecipeResponse> responses = recipeMapper.toResponseList(pending.getContent());
+        responses.forEach(this::enrichImageUrl);
+        return responses;
+    }
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void approveRecipe(@PathVariable Long id) {
+        recipeService.approveRecipe(id);
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void rejectRecipe(@PathVariable Long id) {
+        recipeService.rejectRecipe(id);
+    }
+
+    @PostMapping("/{id}/send-to-approval")
+    public void sendToApproval(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        recipeService.sendToApproval(id, jwt.getSubject());
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public RecipeResponse updateRecipe(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @Valid @RequestBody RecipeRequest request) {
+        
+        Recipe recipeData = Recipe.builder()
+            .title(request.getTitle())
+            .instructions(request.getInstructions())
+            .preparationTimeMinutes(request.getPreparationTimeMinutes() != null ? request.getPreparationTimeMinutes() : request.getPreparationTime())
+            .servings(request.getServings())
+            .difficulty(request.getDifficulty())
+            .status(request.getStatus()) // DRAFT or PENDING
+            .build();
+
+        List<RecipeIngredient> ingredients = null;
+        if (request.getIngredients() != null) {
+            ingredients = request.getIngredients().stream()
+                .map(req -> {
+                    RecipeIngredient ri = RecipeIngredient.builder()
+                        .amount(req.getAmount())
+                        .unit(req.getUnit())
+                        .grams(req.getGrams())
+                        .build();
+                    
+                    Ingredient ingredientEntity;
+                    if (req.getIngredientId() != null) {
+                        ingredientEntity = Ingredient.builder().id(req.getIngredientId()).build();
+                    } else {
+                        ingredientEntity = Ingredient.builder().name(req.getIngredientName()).build();
+                    }
+                    ri.setIngredient(ingredientEntity);
+                    return ri;
+                })
+                .collect(Collectors.toList());
+        }
+
+        Recipe updated = recipeService.updateRecipe(id, recipeData, ingredients, jwt.getSubject());
+        RecipeResponse response = recipeMapper.toResponse(updated, jwt.getSubject());
         enrichImageUrl(response);
         return response;
     }
 
     /**
-     * Tarif görselini yükler. Sadece ADMIN yetkisi olanlar erişebilir.
+     * Tarif görselini yükler.
      */
+    @PostMapping("/{id}/favorite")
+    public boolean toggleFavorite(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return favoriteService.toggleFavorite(jwt.getSubject(), id);
+    }
+
     @PostMapping("/{id}/image")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @SneakyThrows
     public RecipeResponse uploadRecipeImage(@PathVariable Long id,
+                                            @AuthenticationPrincipal Jwt jwt,
                                             @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             throw new MealAppDomainException("Yüklenecek dosya bulunamadı.");
@@ -69,11 +216,12 @@ public class RecipeController {
                 id,
                 file.getInputStream(),
                 file.getOriginalFilename(),
-                file.getContentType()
+                file.getContentType(),
+                jwt.getSubject()
         );
 
         RecipeResponse response = recipeService.findById(id)
-                .map(recipeMapper::toResponse)
+                .map(r -> recipeMapper.toResponse(r, jwt.getSubject()))
                 .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
 
         enrichImageUrl(response);

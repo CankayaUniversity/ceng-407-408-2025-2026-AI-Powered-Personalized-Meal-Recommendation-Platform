@@ -8,7 +8,8 @@ import {
   RecommendationRequest,
   RecommendationResponse,
   RecipeRatingRequest,
-  RecipeRatingResponse
+  RecipeRatingResponse,
+  RecipeRequest
 } from '../types';
 import {
   ApiError,
@@ -31,6 +32,7 @@ type RecipeListItemDto = {
   servings?: number;
   rating?: number;
   imageUrl?: string;
+  isFavorite?: boolean;
 };
 
 /**
@@ -193,13 +195,16 @@ export const getRecipeService = (api: AxiosInstance) => {
         preparationTimeMinutes: r.preparationTime,
         servings: r.servings,
         averageRating: r.rating,
-        imageUrl: r.imageUrl
+        imageUrl: r.imageUrl,
+        isFavorite: r.isFavorite || false
       }));
 
-      return mapped; })().finally(() => { inFlight.delete(key); });
+      return mapped; })();
 
       inFlight.set(key, promise);
-      return await promise;
+      const result = await promise;
+      inFlight.delete(key);
+      return result;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (!error.response) {
@@ -262,6 +267,118 @@ export const getRecipeService = (api: AxiosInstance) => {
           throw new ApiError(message, 'UPLOAD_ERROR', error.response?.status);
         }
         throw new ApiError('Dosya yüklenirken beklenmeyen bir hata oluştu');
+      }
+    },
+
+    /**
+     * Yeni bir tarif oluşturur.
+     * @param request - Tarif oluşturma verileri
+     */
+    createRecipe: async (request: RecipeRequest): Promise<Recipe> => {
+      try {
+        const response = await api.post<Recipe>('/v1/recipes', request);
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const status = error.response?.status;
+          const message = error.response?.data?.message || 'Tarif oluşturulamadı';
+          if (status === 400) {
+            throw new ValidationError(message, extractValidationFields(error.response?.data));
+          }
+          throw new ApiError(message, 'CREATE_ERROR', status);
+        }
+        throw new ApiError('Tarif oluşturulurken beklenmeyen bir hata oluştu');
+      }
+    },
+
+    /**
+     * Mevcut bir tarifi günceller.
+     * @param id - Tarif ID'si
+     * @param request - Güncellenecek tarif verileri
+     */
+    updateRecipe: async (id: number, request: RecipeRequest): Promise<Recipe> => {
+      try {
+        const response = await api.put<Recipe>(`/v1/recipes/${id}`, request);
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const status = error.response?.status;
+          const message = error.response?.data?.message || 'Tarif güncellenemedi';
+          if (status === 400) {
+            throw new ValidationError(message, extractValidationFields(error.response?.data));
+          }
+          if (status === 404) {
+            throw new NotFoundError(message);
+          }
+          throw new ApiError(message, 'UPDATE_ERROR', status);
+        }
+        throw new ApiError('Tarif güncellenirken beklenmeyen bir hata oluştu');
+      }
+    },
+
+    /**
+     * Tarifi onaya gönderir.
+     * @param id - Tarif ID'si
+     */
+    sendToApproval: async (id: number): Promise<void> => {
+      try {
+        await api.post(`/v1/recipes/${id}/send-to-approval`);
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const message = error.response?.data?.message || 'Tarif onaya gönderilemedi';
+          throw new ApiError(message, 'APPROVAL_ERROR', error.response?.status);
+        }
+        throw new ApiError('İşlem sırasında beklenmeyen bir hata oluştu');
+      }
+    },
+
+    /**
+     * Tarifi favorilere ekler veya çıkarır.
+     * @param id - Tarif ID'si
+     * @returns Yeni favori durumu (true: eklendi, false: çıkarıldı)
+     */
+    toggleFavorite: async (id: number): Promise<boolean> => {
+      try {
+        const response = await api.post<boolean>(`/v1/recipes/${id}/favorite`);
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const message = error.response?.data?.message || 'Favori işlemi başarısız';
+          throw new ApiError(message, 'FAVORITE_ERROR', error.response?.status);
+        }
+        throw new ApiError('İşlem sırasında beklenmeyen bir hata oluştu');
+      }
+    },
+
+    /**
+     * Tarifi onaylar (Sadece ADMIN)
+     * @param id - Tarif ID'si
+     */
+    approveRecipe: async (id: number): Promise<void> => {
+      try {
+        await api.post(`/v1/recipes/${id}/approve`);
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const message = error.response?.data?.message || 'Tarif onaylanamadı';
+          throw new ApiError(message, 'APPROVE_ERROR', error.response?.status);
+        }
+        throw new ApiError('İşlem sırasında beklenmeyen bir hata oluştu');
+      }
+    },
+
+    /**
+     * Tarifi reddeder (Sadece ADMIN)
+     * @param id - Tarif ID'si
+     */
+    rejectRecipe: async (id: number): Promise<void> => {
+      try {
+        await api.post(`/v1/recipes/${id}/reject`);
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const message = error.response?.data?.message || 'Tarif reddedilemedi';
+          throw new ApiError(message, 'REJECT_ERROR', error.response?.status);
+        }
+        throw new ApiError('İşlem sırasında beklenmeyen bir hata oluştu');
       }
     }
 

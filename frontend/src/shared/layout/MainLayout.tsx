@@ -20,6 +20,7 @@ import { UIProvider, useUI } from '../../infrastructure/ui/UIContext';
 import ConsumptionModal from '../../features/consumption/components/ConsumptionModal';
 import SettingsModal from '../../features/profile/SettingsModal';
 import UnitConverterModal from '../components/UnitConverterModal';
+import RecipeModal from '../../features/recipes/RecipeModal';
 
 const formatTimeAgo = (date: Date, locale: string) => {
     const now = new Date();
@@ -441,6 +442,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <ConsumptionModal />
             <SettingsModal />
             <UnitConverterModal />
+            <RecipeModal />
         </div>
     );
 };

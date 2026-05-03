@@ -32,6 +32,11 @@ public class Recipe extends BaseEntity {
     private List<RecipeIngredient> recipeIngredients;
 
     /**
+     * Tarifin kategorisi (Örn: Çorba, Ana Yemek, Tatlı).
+     */
+    private String category;
+
+    /**
      * Adım adım hazırlama talimatları.
      */
     @Column(columnDefinition = "TEXT")
@@ -91,6 +96,25 @@ public class Recipe extends BaseEntity {
      * Tarifin görsel URL'si.
      */
     private String imageUrl;
+
+    /**
+     * Tarifin yayınlanma statüsü.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private RecipeStatus status = RecipeStatus.APPROVED;
+
+    /**
+     * Eğer bu tarif bir güncelleme ise (APPROVED bir tarifin yeni versiyonu), 
+     * orijinal tarifin ID'sini tutar.
+     */
+    private Long parentId;
+
+    /**
+     * Tarifi oluşturan kullanıcının ID'si.
+     */
+    private String createdBy;
 
     /**
      * Malzeme listesi veya miktarı değiştiğinde besin değerlerini yeniden hesaplamak için kullanılır.

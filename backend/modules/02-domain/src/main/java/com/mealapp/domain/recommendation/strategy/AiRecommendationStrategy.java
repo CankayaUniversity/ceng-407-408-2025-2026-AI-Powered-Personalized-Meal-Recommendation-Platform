@@ -94,6 +94,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
 
     private List<Recipe> getSafeRecipes(User user) {
         List<Recipe> recipes = recipeRepository.findTopRecipesSafeForUser(
+                user.getId(),
                 user.getDietType() != null ? user.getDietType().name() : "NONE",
                 user.getAllergies() != null ? user.getAllergies() : List.of(),
                 PageRequest.of(0, CANDIDATE_POOL_SIZE)

@@ -75,6 +75,14 @@ com:
           url: ${GENERIC_AI_URL:http://localhost:8080/v1/chat/completions}
           provider-name: ${GENERIC_AI_PROVIDER_NAME:GENERIC}
     infrastructure:
+      super-admin:
+        enabled: ${SUPER_ADMIN_ENABLED:true}
+        keycloak:
+          server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8080}
+          realm: ${KEYCLOAK_REALM:meal-app-realm}
+          admin-username: ${KEYCLOAK_ADMIN_USER:admin}
+          admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+          client-id: ${KEYCLOAK_ADMIN_CLIENT:admin-cli}
       storage:
         bucket:
           name: meal-app-bucket

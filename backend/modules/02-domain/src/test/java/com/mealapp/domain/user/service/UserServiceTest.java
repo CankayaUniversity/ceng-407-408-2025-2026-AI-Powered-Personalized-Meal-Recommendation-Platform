@@ -69,6 +69,23 @@ class UserServiceTest {
     }
 
     @Test
+    void whenSyncUser_andUserAlreadyAdminInDb_andNoAdminRoleInKeycloak_thenDowngradeToUser() {
+        // DB'de zaten ADMIN olan kullanıcı
+        testUser.setRole(User.UserRole.ADMIN);
+        // Keycloak'tan sadece "user" rolü geliyor
+        UserSyncRequest request = new UserSyncRequest("user123", "test@example.com", "Test User", List.of("user"));
+
+        when(userRepository.findById("user123")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User syncedUser = userService.syncUser(request);
+
+        // Keycloak artık tek kaynak olduğu için rolü USER'a düşmeli
+        assertEquals(User.UserRole.USER, syncedUser.getRole());
+        verify(userRepository).save(testUser);
+    }
+
+    @Test
     void whenDeleteUser_thenInvokeSoftDelete() {
         userService.delete(testUser);
         verify(userRepository).softDelete("user123");

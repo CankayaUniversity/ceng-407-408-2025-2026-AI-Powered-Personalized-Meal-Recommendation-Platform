@@ -49,7 +49,25 @@ public class RecipeRatingService {
         recipeRating.setRating(rating);
         recipeRating.setComment(comment);
 
-        return recipeRatingRepository.save(recipeRating);
+        RecipeRating savedRating = recipeRatingRepository.save(recipeRating);
+        
+        // Tarif istatistiklerini güncelle
+        updateRecipeRatingStats(recipe);
+        
+        return savedRating;
+    }
+
+    private void updateRecipeRatingStats(Recipe recipe) {
+        List<RecipeRating> ratings = recipeRatingRepository.findByRecipeId(recipe.getId());
+        int count = ratings.size();
+        double average = ratings.stream()
+                .mapToInt(RecipeRating::getRating)
+                .average()
+                .orElse(0.0);
+        
+        recipe.setRatingCount(count);
+        recipe.setAverageRating(average);
+        recipeService.save(recipe);
     }
 
     /**

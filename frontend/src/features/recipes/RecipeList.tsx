@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
-import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info, Camera, Loader2 } from 'lucide-react';
+import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info, Edit3, Users } from 'lucide-react';
 import { useRecipeService } from '../../services/recipeService';
 import type { RecipeListItem } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
-import { ApiError } from '../../services/errors';
+import { useUI } from '../../infrastructure/ui/UIContext';
 
 type RecipeArtworkProps = {
   imageUrl?: string | null;
@@ -86,6 +86,87 @@ const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
   );
 };
 
+const RecipeRating: React.FC<{ 
+  recipeId: number; 
+  initialRating?: number;
+  averageRating?: number;
+  ratingCount?: number;
+  onRate?: (rating: number) => void;
+  readOnly?: boolean;
+  size?: number;
+  showText?: boolean;
+}> = ({ recipeId, initialRating = 0, averageRating, ratingCount = 0, onRate, readOnly = false, size = 20, showText = true }) => {
+  const [hover, setHover] = useState<number | null>(null);
+  const [rating, setRating] = useState(initialRating);
+  const { user } = useAuth();
+  const recipeService = useRecipeService();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    setRating(initialRating);
+  }, [initialRating]);
+
+  const handleRate = async (value: number) => {
+    if (readOnly || !user) return;
+    
+    const oldRating = rating;
+    setRating(value);
+
+    try {
+      await recipeService.rateRecipe({
+        recipeId,
+        userId: user.id,
+        rating: value * 2,
+        comment: ''
+      });
+      if (onRate) onRate(value);
+      showToast('Puanınız kaydedildi.', 'success');
+    } catch (err: any) {
+      setRating(oldRating);
+      showToast(err.message || 'Puan kaydedilemedi.', 'error');
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            disabled={readOnly}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRate(star);
+            }}
+            onMouseEnter={() => !readOnly && setHover(star)}
+            onMouseLeave={() => !readOnly && setHover(null)}
+            className={`transition-all duration-200 ${readOnly ? 'cursor-default' : 'hover:scale-125 active:scale-95'}`}
+          >
+            <Star
+              size={size}
+              className={`${
+                star <= (hover || rating)
+                  ? 'text-terracotta fill-terracotta'
+                  : 'text-espresso-midnight/10 dark:text-white/10'
+              } transition-colors`}
+              strokeWidth={2}
+            />
+          </button>
+        ))}
+        {averageRating !== undefined && showText && (
+          <span className="ml-2 text-xs font-bold text-foreground-muted">
+            ({averageRating.toFixed(1)}) <span className="font-normal opacity-60 ml-0.5">• {ratingCount} oy</span>
+          </span>
+        )}
+      </div>
+      {rating > 0 && !readOnly && showText && (
+        <p className="text-[10px] font-black uppercase tracking-widest text-terracotta">Puanınız: {rating}/5</p>
+      )}
+    </div>
+  );
+};
+
 /**
  * MealAI Recipe Explorer - Custom Toast & Portal Integrated
  */
@@ -94,15 +175,15 @@ const RecipeList: React.FC = () => {
   const recipeService = useRecipeService();
   const { showToast } = useToast();
   const { user } = useAuth();
-  const isAdmin = user?.roles?.includes('admin');
+  const { openRecipeModal, isRecipeModalOpen } = useUI();
 
   // --- States ---
   const [searchTerm, setSearchTerm] = useState('');
   const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploadingId, setUploadingId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('all');
+
 
   // --- Modal States ---
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeListItem | null>(null);
@@ -114,13 +195,42 @@ const RecipeList: React.FC = () => {
   const debouncedSearch = useDebounce(searchTerm, 400);
   const lastQueryRef = useRef<string>('');
 
+  const handleToggleFavorite = async (recipeId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      showToast('Favorilere eklemek için giriş yapmalısınız.', 'info');
+      return;
+    }
+
+    try {
+      const isFav = await recipeService.toggleFavorite(recipeId);
+      
+      // Update local state
+      setRecipes(prev => prev.map(r => 
+        r.id === recipeId ? { ...r, isFavorite: isFav } : r
+      ));
+      
+      if (selectedRecipe?.id === recipeId) {
+        setSelectedRecipe({ ...selectedRecipe, isFavorite: isFav });
+      }
+      
+      if (recipeDetail?.id === recipeId) {
+        setRecipeDetail({ ...recipeDetail, isFavorite: isFav });
+      }
+
+      showToast(isFav ? 'Favorilere eklendi.' : 'Favorilerden çıkarıldı.', 'success');
+    } catch (err) {
+      showToast('İşlem başarısız oldu.', 'error');
+    }
+  };
+
   // Fetch List Data
   useEffect(() => {
     let mounted = true;
     const abortController = new AbortController();
 
     const fetchData = async () => {
-      const queryKey = `${debouncedSearch ?? ''}|${page}|${size}`;
+      const queryKey = `${debouncedSearch ?? ''}|${page}|${size}|${user?.id || 'anonymous'}`;
       if (lastQueryRef.current === queryKey) return;
 
       lastQueryRef.current = queryKey;
@@ -148,7 +258,17 @@ const RecipeList: React.FC = () => {
       mounted = false;
       abortController.abort();
     };
-  }, [debouncedSearch, page, recipeService, showToast]);
+  }, [debouncedSearch, page, recipeService, showToast, user?.id]);
+
+  useEffect(() => {
+    if (!isRecipeModalOpen && lastQueryRef.current) {
+        // Force refresh if modal closed (might have added/edited)
+        lastQueryRef.current = '';
+        // Bu useEffect bağımlılıkları değişince zaten yukarıdaki fetchData'yı tetikleyecek queryKey değiştiği için
+        // ama explicit çağırmak yerine lastQueryRef'i temizlemek yeterli.
+        setPage(0); // Veya mevcut sayfayı tetiklemek için state güncellemesi
+    }
+  }, [isRecipeModalOpen]);
 
   useEffect(() => {
     setPage(0);
@@ -162,45 +282,22 @@ const RecipeList: React.FC = () => {
     try {
       const details = await recipeService.getRecipeById(recipe.id);
       setRecipeDetail(details);
+      // Sync favorite state from details if it differs (though details should be most fresh)
+      if (details && details.isFavorite !== undefined) {
+        const isFav = details.isFavorite;
+        setRecipes(prev => prev.map(r => 
+          r.id === recipe.id ? { ...r, isFavorite: isFav } : r
+        ));
+        setSelectedRecipe(prev => {
+          if (!prev) return null;
+          return { ...prev, isFavorite: isFav, imageUrl: details.imageUrl, status: details.status };
+        });
+      }
     } catch (err: any) {
       showToast(err?.message || t('toasts.recipes.detailsError'), 'error');
       handleCloseModal();
     } finally {
       setModalLoading(false);
-    }
-  };
-
-  const handleRecipeImageUpload = async (recipeId: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      showToast('Lütfen geçerli bir görsel dosyası seçin.', 'error');
-      return;
-    }
-
-    try {
-      setUploadingId(recipeId);
-      const updatedRecipe = await recipeService.uploadRecipeImage(recipeId, file);
-      showToast('Tarif görseli başarıyla güncellendi.', 'success');
-      
-      // Refresh only the affected recipe in the list
-      setRecipes(prev => prev.map(r => {
-        if (r.id === recipeId && updatedRecipe.imageUrl) {
-          return { ...r, imageUrl: updatedRecipe.imageUrl };
-        }
-        return r;
-      }));
-
-      if (selectedRecipe?.id === recipeId) {
-        const newUrl = updatedRecipe.imageUrl;
-        setSelectedRecipe({ ...selectedRecipe, imageUrl: newUrl });
-        setRecipeDetail((prev: any) => prev ? { ...prev, imageUrl: newUrl } : null);
-      }
-    } catch (err) {
-      showToast(err instanceof ApiError ? err.message : 'Görsel yüklenirken bir hata oluştu.', 'error');
-    } finally {
-      setUploadingId(null);
     }
   };
 
@@ -238,8 +335,11 @@ const RecipeList: React.FC = () => {
             <button className="flex items-center gap-2 px-5 py-3 glass-card rounded-2xl text-sm font-bold border-card-border hover:text-terracotta transition-all">
               <Filter size={18} /> Filtrele
             </button>
-            <button className="flex items-center gap-2 px-6 py-3 bg-terracotta text-white rounded-2xl text-sm font-bold shadow-brand-hero hover:scale-105 transition-all">
-              <Plus size={18} /> Yeni Tarif
+            <button 
+              onClick={() => openRecipeModal()}
+              className="flex items-center gap-2 px-6 py-3 bg-terracotta text-white rounded-2xl text-sm font-bold shadow-brand-hero hover:scale-105 transition-all"
+            >
+              <Plus size={18} /> {t('recipes.newRecipe')}
             </button>
           </div>
         </header>
@@ -290,49 +390,60 @@ const RecipeList: React.FC = () => {
                     className="h-full w-full"
                     mediaClassName="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-[1.04]"
                   />
-                  <div className="absolute top-5 left-5 glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
-                    {recipe.category || 'Gurme'}
-                  </div>
-                  <button className="absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl text-primary transition-colors">
-                    <Star size={18} fill={(recipe.averageRating || 0) > 4.5 ? "currentColor" : "none"} />
-                  </button>
-                  {isAdmin && (
-                    <div 
-                      className="absolute bottom-5 right-5 z-20"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <label className="p-3 bg-terracotta text-white rounded-2xl shadow-xl cursor-pointer hover:scale-110 transition-transform duration-200 border-4 border-white/20 block">
-                        {uploadingId === recipe.id ? (
-                          <Loader2 size={18} className="animate-spin" />
-                        ) : (
-                          <Camera size={18} />
-                        )}
-                        <input 
-                          type="file" 
-                          className="hidden" 
-                          accept="image/*" 
-                          onChange={(e) => handleRecipeImageUpload(recipe.id, e)}
-                          disabled={uploadingId !== null}
-                        />
-                      </label>
+                  <div className="absolute top-5 left-5 flex flex-col gap-2">
+                    <div className="glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
+                      {recipe.category || 'Gurme'}
                     </div>
-                  )}
+                    {recipe.status && (
+                      <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border shadow-lg ${
+                        recipe.status === 'APPROVED' ? 'bg-moss-forest/20 text-moss-forest border-moss-forest/30' :
+                        recipe.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' :
+                        recipe.status === 'DRAFT' ? 'bg-blue-500/20 text-blue-500 border-blue-500/30' :
+                        'bg-red-500/20 text-red-500 border-red-500/30'
+                      }`}>
+                        {t(`recipes.status.${recipe.status.toLowerCase()}`)}
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    onClick={(e) => handleToggleFavorite(recipe.id, e)}
+                    className={`absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl transition-all hover:scale-110 active:scale-90 ${recipe.isFavorite ? 'text-terracotta' : 'text-white/70 hover:text-terracotta'}`}
+                  >
+                    <Star size={18} fill={recipe.isFavorite ? "currentColor" : "none"} />
+                  </button>
+                  <div className="absolute top-5 right-20 flex gap-2">
+                    {user && (
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                openRecipeModal(recipe);
+                            }}
+                            className="p-2.5 glass-card-dark rounded-xl text-white hover:text-terracotta transition-colors shadow-lg"
+                            title={t('common.edit')}
+                        >
+                            <Edit3 size={18} />
+                        </button>
+                    )}
+                  </div>
                 </div>
                 <div className="p-8 space-y-6">
                   <div className="flex justify-between items-start gap-4">
                     <h3 className="text-2xl font-serif font-bold text-espresso-midnight dark:text-white group-hover:text-terracotta transition-colors leading-tight line-clamp-2">
                       {recipe.title}
                     </h3>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-moss-sage/10 text-moss-forest dark:text-moss-sage rounded-lg shrink-0">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-moss-sage/10 text-moss-forest dark:text-moss-sage rounded-lg shrink-0" title={`${recipe.ratingCount || 0} oy`}>
                       <Star size={14} className="fill-current" />
                       <span className="text-xs font-black">{recipe.averageRating?.toFixed(1) ?? 'N/A'}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 text-foreground-muted">
+                    <div className="flex items-center gap-2 text-foreground-muted" title={t('recipes.modal.timeLabel')}>
                       <Clock size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{recipe.preparationTimeMinutes || 30} DK</span>
                     </div>
-                    <div className="flex items-center gap-2 text-foreground-muted">
+                    <div className="flex items-center gap-2 text-foreground-muted" title={t('recipes.modal.servingsLabel')}>
+                      <Plus size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{recipe.servings || 2} KİŞİ</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-foreground-muted" title={t('recipes.modal.caloriesLabel')}>
                       <Flame size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{Math.round(recipe.totalCalories || 0)} KCAL</span>
                     </div>
                   </div>
@@ -389,14 +500,49 @@ const RecipeList: React.FC = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight via-transparent to-transparent" />
                     <div className="absolute bottom-10 left-10 right-10">
-                      <h2 className="text-4xl md:text-5xl font-serif font-bold text-white drop-shadow-lg">{selectedRecipe.title}</h2>
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-4xl md:text-5xl font-serif font-bold text-white drop-shadow-lg">{selectedRecipe.title}</h2>
+                        <div className="flex gap-3">
+                          <button 
+                            onClick={(e) => handleToggleFavorite(selectedRecipe.id, e)}
+                            className={`p-4 rounded-2xl backdrop-blur-md border border-white/20 transition-all hover:scale-105 active:scale-95 ${selectedRecipe.isFavorite ? 'bg-terracotta text-white' : 'bg-white/10 text-white/70 hover:text-white'}`}
+                          >
+                            <Star size={24} fill={selectedRecipe.isFavorite ? "currentColor" : "none"} />
+                          </button>
+                          {user && (
+                            <button 
+                              onClick={() => {
+                                handleCloseModal();
+                                openRecipeModal(selectedRecipe);
+                              }}
+                              className="p-4 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl hover:bg-terracotta transition-all hover:scale-105"
+                              title={t('common.edit')}
+                            >
+                              <Edit3 size={24} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                       <div className="flex gap-4 mt-4">
-                        <div className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10" title={t('recipes.modal.timeLabel')}>
                           <Clock size={18} className="text-terracotta" /> {selectedRecipe.preparationTimeMinutes || 30} DK
                         </div>
-                        <div className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10" title={t('recipes.modal.servingsLabel')}>
+                          <Users size={18} className="text-terracotta" /> {selectedRecipe.servings || 2} KİŞİ
+                        </div>
+                        <div className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10" title={t('recipes.modal.caloriesLabel')}>
                           <Flame size={18} className="text-terracotta" /> {Math.round(selectedRecipe.totalCalories || 0)} KCAL
                         </div>
+                        {selectedRecipe.status && (
+                          <div className={`flex items-center gap-2 text-white/90 text-[10px] font-black uppercase bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 ${
+                            selectedRecipe.status === 'APPROVED' ? 'text-moss-sage' :
+                            selectedRecipe.status === 'PENDING' ? 'text-yellow-400' :
+                            selectedRecipe.status === 'DRAFT' ? 'text-blue-400' :
+                            'text-red-400'
+                          }`}>
+                            {t(`recipes.status.${selectedRecipe.status.toLowerCase()}`)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -408,36 +554,55 @@ const RecipeList: React.FC = () => {
                           {t('recipes.preparingDetails')}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                          <div className="lg:col-span-4 space-y-8">
-                            <h3 className="text-xl font-bold flex items-center gap-3 text-espresso-midnight dark:text-white">
-                              <ChefHat size={24} className="text-terracotta" /> Malzemeler
-                            </h3>
-                            <ul className="space-y-3">
-                              {(recipeDetail?.ingredients || []).map((ing: any, idx: number) => (
-                                  <li key={idx} className="flex justify-between items-center p-3 rounded-2xl hover:bg-terracotta/5 border-b border-card-border dark:border-white/5 transition-colors">
-                                    <span className="text-foreground-muted dark:text-white/80">{ing.name}</span>
-                                    <span className="font-bold text-terracotta bg-terracotta/10 px-3 py-1 rounded-lg text-xs">
-                              {ing.amount} {ing.unit || 'g'}
-                            </span>
-                                  </li>
-                              ))}
-                            </ul>
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-12">
+                          {/* Rating Section in Detail */}
+                          <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-terracotta/5 rounded-[2rem] border border-terracotta/10 gap-6">
+                            <div className="space-y-1 text-center md:text-left">
+                              <h4 className="text-lg font-bold text-espresso-midnight dark:text-white">Bu tarifi nasıl buldunuz?</h4>
+                              <p className="text-xs text-foreground-muted uppercase tracking-widest font-black">
+                                Genel Ortalanma: {selectedRecipe.averageRating?.toFixed(1) || '0.0'} / 10
+                              </p>
+                            </div>
+                            <RecipeRating 
+                              recipeId={selectedRecipe.id} 
+                              initialRating={recipeDetail?.userRating ? Math.round(recipeDetail.userRating / 2) : 0}
+                              averageRating={selectedRecipe.averageRating ? selectedRecipe.averageRating / 2 : 0}
+                              ratingCount={selectedRecipe.ratingCount || 0}
+                              size={32}
+                            />
                           </div>
 
-                          <div className="lg:col-span-8 space-y-8">
-                            <h3 className="text-xl font-bold flex items-center gap-3 text-espresso-midnight dark:text-white">
-                              <Info size={24} className="text-moss-forest" /> {t('recipes.instructions')}
-                            </h3>
-                            <div className="space-y-6 text-lg leading-relaxed text-foreground-muted dark:text-white/70 font-light">
-                              {recipeDetail?.instructions?.split('\n').filter((s:string)=>s.trim()).map((step: string, i: number) => (
-                                  <div key={i} className="flex gap-6 group">
-                                    <div className="flex-none w-10 h-10 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center font-bold text-sm group-hover:bg-terracotta group-hover:text-white transition-all shadow-sm">
-                                      {i + 1}
+                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+                            <div className="lg:col-span-4 space-y-8">
+                              <h3 className="text-xl font-bold flex items-center gap-3 text-espresso-midnight dark:text-white">
+                                <ChefHat size={24} className="text-terracotta" /> Malzemeler
+                              </h3>
+                              <ul className="space-y-3">
+                                {(recipeDetail?.ingredients || []).map((ing: any, idx: number) => (
+                                    <li key={idx} className="flex justify-between items-center p-3 rounded-2xl hover:bg-terracotta/5 border-b border-card-border dark:border-white/5 transition-colors">
+                                      <span className="text-foreground-muted dark:text-white/80">{ing.name}</span>
+                                      <span className="font-bold text-terracotta bg-terracotta/10 px-3 py-1 rounded-lg text-xs">
+                                        {ing.amount} {ing.unit || 'g'}
+                                      </span>
+                                    </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            <div className="lg:col-span-8 space-y-8">
+                              <h3 className="text-xl font-bold flex items-center gap-3 text-espresso-midnight dark:text-white">
+                                <Info size={24} className="text-moss-forest" /> {t('recipes.instructions')}
+                              </h3>
+                              <div className="space-y-6 text-lg leading-relaxed text-foreground-muted dark:text-white/70 font-light">
+                                {recipeDetail?.instructions?.split('\n').filter((s:string)=>s.trim()).map((step: string, i: number) => (
+                                    <div key={i} className="flex gap-6 group">
+                                      <div className="flex-none w-10 h-10 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center font-bold text-sm group-hover:bg-terracotta group-hover:text-white transition-all shadow-sm">
+                                        {i + 1}
+                                      </div>
+                                      <p className="pt-1">{step}</p>
                                     </div>
-                                    <p className="pt-1">{step}</p>
-                                  </div>
-                              )) || <p className="italic opacity-50">Tarif detayları henüz eklenmemiş.</p>}
+                                )) || <p className="italic opacity-50">Tarif detayları henüz eklenmemiş.</p>}
+                              </div>
                             </div>
                           </div>
                         </div>

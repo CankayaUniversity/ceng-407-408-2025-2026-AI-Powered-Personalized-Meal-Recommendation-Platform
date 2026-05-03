@@ -1,9 +1,12 @@
 package com.mealapp.domain.recipe.service;
 
+import com.mealapp.domain.notification.service.NotificationService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
+import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
+import com.mealapp.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -18,13 +21,14 @@ class RecipeServiceDietTest {
 
     @BeforeEach
     void setUp() {
-        // RecipeService artık üç bağımlılığa sahip (Repository, UnitConverterService ve FileStorageService)
-        // Mockito kullanarak bu bağımlılıkları sahte (mock) olarak oluşturuyoruz
         RecipeRepository recipeRepository = Mockito.mock(RecipeRepository.class);
+        IngredientRepository ingredientRepository = Mockito.mock(IngredientRepository.class);
         UnitConverterService unitConverterService = Mockito.mock(UnitConverterService.class);
         com.mealapp.domain.common.storage.FileStorageService fileStorageService = Mockito.mock(com.mealapp.domain.common.storage.FileStorageService.class);
+        NotificationService notificationService = Mockito.mock(NotificationService.class);
+        UserRepository userRepository = Mockito.mock(UserRepository.class);
 
-        recipeService = new RecipeService(recipeRepository, unitConverterService, fileStorageService);
+        recipeService = new RecipeService(recipeRepository, ingredientRepository, unitConverterService, fileStorageService, notificationService, userRepository);
     }
 
     @Test

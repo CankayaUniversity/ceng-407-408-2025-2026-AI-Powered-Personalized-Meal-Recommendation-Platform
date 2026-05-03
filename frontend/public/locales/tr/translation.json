@@ -395,6 +395,33 @@
       "salad": "Salata",
       "dessert": "Tatlı",
       "fit": "Fit & Sağlıklı"
+    },
+    "status": {
+      "draft": "Taslak",
+      "pending": "Onay Bekliyor",
+      "approved": "Yayında",
+      "rejected": "Reddedildi"
+    },
+    "modal": {
+      "addTitle": "Yeni Tarif Ekle",
+      "editTitle": "Tarifi Düzenle",
+      "basics": "Temel Bilgiler",
+      "titleLabel": "Tarif Başlığı",
+      "titlePlaceholder": "Örn: Anne Köftesi, Sebzeli Graten...",
+      "timeLabel": "Hazırlama Süresi (Dk)",
+      "servingsLabel": "Kaç Kişilik?",
+      "caloriesLabel": "Kalori (Kcal)",
+      "categoryLabel": "Kategori",
+      "ingredients": "Malzemeler",
+      "addIngredient": "Malzeme Ekle",
+      "grams": "Gram",
+      "instructionsLabel": "Hazırlanış Adımları",
+      "instructionsPlaceholder": "Tarifin hazırlanışını adım adım buraya yazabilirsiniz...",
+      "saveDraft": "TASLAK OLARAK KAYDET",
+      "submitForApproval": "ONAYA GÖNDER",
+      "saveChanges": "DEĞİŞİKLİKLERİ KAYDET",
+      "sending": "Gönderiliyor...",
+      "ingredientPlaceholder": "Malzeme seçin..."
     }
   },
   "inventory": {

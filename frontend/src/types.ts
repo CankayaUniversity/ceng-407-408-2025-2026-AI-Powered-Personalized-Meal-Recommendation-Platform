@@ -99,7 +99,7 @@ export interface Notification {
   id: number;
   title: string;
   message: string;
-  type: 'INVITATION' | 'SYSTEM' | 'REMINDER';
+  type: 'INVITATION' | 'SYSTEM' | 'REMINDER' | 'RECIPE_APPROVAL';
   targetId?: string;
   status: 'UNREAD' | 'READ';
   invitationStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
@@ -117,7 +117,13 @@ export interface RecipeListItem {
   preparationTimeMinutes?: number | null;
   servings?: number | null;
   averageRating?: number | null;
+  ratingCount?: number | null;
+  userRating?: number | null;
   imageUrl?: string | null;
+  status?: RecipeStatus;
+  createdBy?: string;
+  parentId?: number | null;
+  isFavorite?: boolean;
 }
 
 export interface Recipe extends RecipeListItem {
@@ -234,6 +240,8 @@ export interface RecommendedRecipe {
   preparationTimeMinutes?: number | null;
   servings?: number | null;
   averageRating?: number | null;
+  ratingCount?: number | null;
+  userRating?: number | null;
   imageUrl?: string | null;
 }
 
@@ -353,6 +361,29 @@ export interface RecipeRatingResponse {
   rating: number;
   comment?: string;
   createdAt: string;
+}
+
+export enum RecipeStatus {
+  DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
+export interface RecipeIngredientRequest {
+  ingredientId: number;
+  grams: number;
+}
+
+export interface RecipeRequest {
+  title: string;
+  category?: string;
+  instructions?: string;
+  preparationTimeMinutes?: number;
+  servings?: number;
+  difficulty?: Difficulty;
+  ingredients?: RecipeIngredientRequest[];
+  status?: RecipeStatus;
 }
 
 export interface ApiValidationErrorItem {

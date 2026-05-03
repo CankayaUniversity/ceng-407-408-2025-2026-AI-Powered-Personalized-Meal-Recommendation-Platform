@@ -10,10 +10,12 @@ import {
   CheckCircle2,
   Trash2,
   CheckSquare,
-  Square
+  Square,
+  BookOpen
 } from 'lucide-react';
 import { useNotificationService } from '../../services/notificationService';
 import { useInventoryService } from '../../services/inventoryService';
+import { useRecipeService } from '../../services/recipeService';
 import { Notification } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
 
@@ -24,6 +26,7 @@ const NotificationsPage: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const notificationService = useNotificationService();
   const inventoryService = useInventoryService();
+  const recipeService = useRecipeService();
   const { showToast } = useToast();
 
   const fetchNotifications = async () => {
@@ -151,6 +154,28 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
+  const handleApproveRecipe = async (recipeId: number, notificationId: number) => {
+    try {
+      await recipeService.approveRecipe(recipeId);
+      await notificationService.markAsRead(notificationId);
+      showToast(t('toasts.recipes.approveSuccess'), 'success');
+      fetchNotifications();
+    } catch (error) {
+      showToast(t('toasts.recipes.approveError'), 'error');
+    }
+  };
+
+  const handleRejectRecipe = async (recipeId: number, notificationId: number) => {
+    try {
+      await recipeService.rejectRecipe(recipeId);
+      await notificationService.markAsRead(notificationId);
+      showToast(t('toasts.recipes.rejectSuccess'), 'info');
+      fetchNotifications();
+    } catch (error) {
+      showToast(t('toasts.recipes.rejectError'), 'error');
+    }
+  };
+
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -264,10 +289,13 @@ const NotificationsPage: React.FC = () => {
                       ? (isRead(notification.status) ? 'bg-amber-50 text-amber-400' : 'bg-amber-100 text-amber-600')
                       : notification.type === 'SYSTEM' 
                         ? (isRead(notification.status) ? 'bg-blue-50 text-blue-400' : 'bg-blue-100 text-blue-600')
-                        : (isRead(notification.status) ? 'bg-gray-50 text-gray-400' : 'bg-gray-100 text-gray-600')
+                        : notification.type === 'RECIPE_APPROVAL'
+                          ? (isRead(notification.status) ? 'bg-emerald-50 text-emerald-400' : 'bg-emerald-100 text-emerald-600')
+                          : (isRead(notification.status) ? 'bg-gray-50 text-gray-400' : 'bg-gray-100 text-gray-600')
                   }`}>
                     {notification.type === 'INVITATION' ? <Mail size={24} /> :
                      notification.type === 'SYSTEM' ? <Info size={24} /> :
+                     notification.type === 'RECIPE_APPROVAL' ? <BookOpen size={24} /> :
                      <Bell size={24} />}
                   </div>
                 </div>
@@ -334,7 +362,32 @@ const NotificationsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {isUnread(notification.status) && notification.type !== 'INVITATION' && (
+                  {notification.type === 'RECIPE_APPROVAL' && (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleApproveRecipe(Number(notification.targetId), notification.id);
+                        }}
+                        className="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 active:scale-95"
+                      >
+                        <Check size={16} />
+                        {t('recipes.status.approved')}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRejectRecipe(Number(notification.targetId), notification.id);
+                        }}
+                        className="px-4 py-2 bg-white text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 active:scale-95"
+                      >
+                        <X size={16} />
+                        {t('recipes.status.rejected')}
+                      </button>
+                    </div>
+                  )}
+
+                  {isUnread(notification.status) && notification.type !== 'INVITATION' && notification.type !== 'RECIPE_APPROVAL' && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

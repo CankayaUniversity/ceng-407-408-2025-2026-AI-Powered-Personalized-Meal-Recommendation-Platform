@@ -131,16 +131,17 @@ public class UserService {
     public User syncUser(UserSyncRequest request) {
         log.info("Kullanıcı senkronize ediliyor: {}", request.email());
         
-        User.UserRole role = request.roles().stream()
-                .anyMatch(r -> r.equalsIgnoreCase("admin"))
-                ? User.UserRole.ADMIN
-                : User.UserRole.USER;
+        User.UserRole targetRole = request.roles().stream()
+                .filter(r -> r.equalsIgnoreCase("admin"))
+                .map(r -> User.UserRole.ADMIN)
+                .findFirst()
+                .orElse(User.UserRole.USER);
 
         return userRepository.findById(request.keycloakId())
                 .map(user -> {
                     user.setEmail(request.email());
                     user.setName(request.name());
-                    user.setRole(role);
+                    user.setRole(targetRole);
                     user.setActive(true);
                     return userRepository.save(user);
                 })
@@ -149,7 +150,7 @@ public class UserService {
                     newUser.setId(request.keycloakId());
                     newUser.setEmail(request.email());
                     newUser.setName(request.name());
-                    newUser.setRole(role);
+                    newUser.setRole(targetRole);
                     newUser.setActive(true);
                     return userRepository.save(newUser);
                 });

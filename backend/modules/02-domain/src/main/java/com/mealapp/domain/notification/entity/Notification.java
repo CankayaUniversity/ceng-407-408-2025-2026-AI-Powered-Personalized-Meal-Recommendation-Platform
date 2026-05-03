@@ -46,7 +46,8 @@ public class Notification {
     public enum NotificationType {
         INVITATION,
         SYSTEM,
-        REMINDER
+        REMINDER,
+        RECIPE_APPROVAL
     }
 
     public enum NotificationStatus {

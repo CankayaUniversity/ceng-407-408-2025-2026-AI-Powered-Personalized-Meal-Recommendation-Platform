@@ -1,8 +1,10 @@
 package com.mealapp.app.model.mapper.recipe;
-
 import com.mealapp.app.model.dto.recipe.RecipeIngredientDTO;
 import com.mealapp.app.model.dto.recipe.RecipeResponse;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeRating;
+import com.mealapp.domain.recipe.repository.RecipeFavoriteRepository;
+import com.mealapp.domain.recipe.repository.RecipeRatingRepository;
 import com.mealapp.domain.recipe.service.UnitConverterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,9 +17,29 @@ import java.util.stream.Collectors;
 public class RecipeMapper {
 
     private final UnitConverterService unitConverterService;
+    private final RecipeRatingRepository recipeRatingRepository;
+    private final RecipeFavoriteRepository recipeFavoriteRepository;
 
     public RecipeResponse toResponse(Recipe recipe) {
+        return toResponse(recipe, null);
+    }
+
+    public RecipeResponse toResponse(Recipe recipe, String currentUserId) {
         if (recipe == null) return null;
+
+        Integer userRating = null;
+        boolean isFavorite = false;
+        if (currentUserId != null && recipe.getId() != null) {
+            userRating = recipeRatingRepository.findByUserIdAndRecipeId(currentUserId, recipe.getId())
+                    .stream()
+                    .findFirst()
+                    .map(RecipeRating::getRating)
+                    .orElse(null);
+            
+            isFavorite = recipeFavoriteRepository.existsByUserIdAndRecipeId(currentUserId, recipe.getId());
+        } else if (recipe.getId() != null) {
+            // Eğer userId yoksa ama favorite verisi mappleme içine sızmışsa logla veya varsayılan false yap
+        }
 
         return RecipeResponse.builder()
             .id(recipe.getId())
@@ -30,16 +52,26 @@ public class RecipeMapper {
             .preparationTime(recipe.getPreparationTimeMinutes())
             .servings(recipe.getServings())
             .rating(recipe.getAverageRating())
+            .ratingCount(recipe.getRatingCount())
+            .userRating(userRating)
             .imageUrl(recipe.getImageUrl())
             .instructions(recipe.getInstructions())
+            .status(recipe.getStatus() != null ? recipe.getStatus().name() : null)
+            .createdBy(recipe.getCreatedBy())
+            .parentId(recipe.getParentId())
             .ingredients(mapIngredients(recipe))
+            .isFavorite(isFavorite)
             .build();
     }
 
     public List<RecipeResponse> toResponseList(List<Recipe> recipes) {
+        return toResponseList(recipes, null);
+    }
+
+    public List<RecipeResponse> toResponseList(List<Recipe> recipes, String currentUserId) {
         if (recipes == null) return List.of();
         return recipes.stream()
-            .map(this::toResponse)
+            .map(r -> toResponse(r, currentUserId))
             .toList();
     }
 

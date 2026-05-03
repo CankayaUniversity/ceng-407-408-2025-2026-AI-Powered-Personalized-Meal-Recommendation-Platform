@@ -45,6 +45,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT u FROM User u WHERE u.active = true")
     java.util.List<User> findAllActive();
 
+    @Query("SELECT u FROM User u WHERE u.active = true AND u.role = com.mealapp.domain.user.entity.User.UserRole.ADMIN")
+    java.util.List<User> findAllAdmins();
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE users SET id = :newId, updated_at = NOW() WHERE id = :oldId", nativeQuery = true)
     int relinkUserId(@Param("oldId") String oldId, @Param("newId") String newId);

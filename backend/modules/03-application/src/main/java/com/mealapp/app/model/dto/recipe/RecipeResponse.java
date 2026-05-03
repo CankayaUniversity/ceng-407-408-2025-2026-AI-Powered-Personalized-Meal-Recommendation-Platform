@@ -22,7 +22,13 @@ public class RecipeResponse {
     private Integer preparationTime;
     private Integer servings;
     private Double rating;
+    private Integer ratingCount;
+    private Integer userRating;
     private String imageUrl;
     private String instructions;
+    private String status;
+    private String createdBy;
+    private Long parentId;
     private List<RecipeIngredientDTO> ingredients;
+    private boolean isFavorite;
 }

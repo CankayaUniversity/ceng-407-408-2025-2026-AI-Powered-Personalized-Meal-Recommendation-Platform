@@ -35,6 +35,11 @@ dependencies {
     //TestDataSourceConfig - logları detaylandırma - Versiyon TOML üzerinden yönetiliyor
     implementation "com.googlecode.usc:jdbcdslog:${libs.versions.jdbcdslog.get()}"
 
+    // Keycloak Java SDK
+    implementation "org.keycloak:keycloak-admin-client:${libs.versions.keycloak.asProvider().get()}"
+    implementation 'org.jboss.resteasy:resteasy-client:6.2.11.Final'
+    implementation 'org.jboss.resteasy:resteasy-jackson2-provider:6.2.11.Final'
+
     // macOS / Docker özel fix - Versiyon TOML üzerinden yönetiliyor
     implementation "com.github.docker-java:docker-java-transport-zerodep:${libs.versions.docker.java.zerodep.get()}"
 }
