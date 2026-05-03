@@ -52,7 +52,7 @@ Proje ana motor olarak **Java 21 (Zulu)** kullanmaktadır. Python scriptlerinin 
 ## Scriptler ve Kullanım
 
 ### 🛠 V2 Sürümü (Güncel Mimari)
-V2 sürümü, uygulamanın yeni nesil birim dönüştürme (`UnitConverter`) motoruyla tam uyumlu çalışır.
+V2 sürümü, uygulamanın yeni nesil birim dönüştürme (`UnitConverter`) motoruyla tam uyumlu çalışır. Bu sürümde veritabanı şeması ve malzeme özellikleri (yoğunluk, fiziksel durum) daha akıllı hale getirilmiştir.
 
 #### 1. `scripts/v2/DataProcessorExcelV2.py`
 Bu script; yazım hatalarını düzeltir, malzemeleri kategorize eder ve otomatik **yoğunluk (density)** değerlerini atar.
@@ -64,11 +64,27 @@ Bu script; yazım hatalarını düzeltir, malzemeleri kategorize eder ve otomati
   *Çıktı:* `mealai_database_cleaned.xlsx`
 
 #### 2. `scripts/v2/DatabaseImporterV2.py`
-Temizlenmiş Excel verisini PostgreSQL'e aktarır.
-- **Özellik:** `amount`, `unit`, `density` ve `ingredient_units` tablosunu destekler. Atomik (Transaction) yapısı sayesinde hata anında işlemi geri alır ve ID dizilerini (sequence) otomatik günceller.
-- **Kullanım:**
+Temizlenmiş Excel verisini PostgreSQL'e aktarır. 
+
+**V2 Yenilikleri ve Akıllı Özellikler:**
+- **Akıllı Yoğunluk (Smart Density):** Malzemenin adı, kategorisi ve fiziksel durumuna göre bilimsel verilere dayalı yoğunluk ataması yapar.
+  - *Örn:* Süt: 1.03, Bal: 1.40, Un: 0.60, Yağ: 0.92, Bakliyat: 0.80.
+- **Fiziksel Durum Tahmini:** `physical_state` kolonu boşsa, malzemenin kategorisine göre otomatik (SOLID/LIQUID) atama yapar.
+- **Veri Temizliği:** Excel'deki virgüllü sayıları (örn: `1,5`) otomatik olarak veritabanı formatına (`1.5`) dönüştürür.
+- **Pre-flight Check:** Veritabanına yazmadan önce tüm ID ilişkilerini (Foreign Key) kontrol eder ve tutarsız verileri raporlar.
+- **Atomik İşlem (Transaction):** Veritabanına aktarım sırasında bir hata oluşursa tüm işlemleri geri alır (Rollback).
+- **Zorunlu Alan Doldurma:** Veritabanında `NOT NULL` olan ancak Excel'de bulunmayan teknik alanları (timestamps, active=true, status=APPROVED vb.) otomatik doldurur.
+
+**Kullanım:**
   ```bash
-  python scripts/v2/DatabaseImporterV2.py --db-url "postgresql://user:pass@localhost:5432/meal_app_db"
+  # Standart kullanım (varsayılan ayarlarla)
+  python scripts/v2/DatabaseImporterV2.py
+
+  # Özelleştirilmiş kullanım
+  python scripts/v2/DatabaseImporterV2.py --file "dosya_yolu.xlsx" --db-url "postgresql://user:pass@localhost:5432/meal_app_db"
+
+  # Sadece test amaçlı (veritabanına yazmadan kontrol eder)
+  python scripts/v2/DatabaseImporterV2.py --dry-run
   ```
 
 ---
@@ -82,14 +98,41 @@ Klasik gramaj odaklı sistem için kullanılan eski scriptlerdir.
 
 ---
 
-## Yeni Veri Ekleme İş Akışı (Önerilen)
+## Yeni Veri Ekleme İş Akışı (Rehber)
 
-Yeni bir tarif seti eklemek istediğinizde izlemeniz gereken rota:
+Yeni bir geliştirici olarak 0'dan veri import etmek veya mevcut veriyi güncellemek için şu adımları izleyin:
 
-1. Verileri `mealai_database.xlsx` dosyasına ilgili sekmelere (`recipes`, `ingredients`, `recipe_ingredients`, `ingredient_units`) ekleyin.
-2. `DataProcessorExcelV2.py` scriptini çalıştırarak veriyi valide edin ve temizleyin.
-3. Oluşan `cleaned` dosyasını `DatabaseImporterV2.py` ile veritabanına aktarın.
-4. Java uygulamasını başlatın; backend üzerindeki `UnitConverter` ve `@PrePersist` mantığı, aktarılan `amount/unit` ikililerini otomatik olarak gramaja çevirip `grams` sütununu güncelleyecektir.
+### 1. Hazırlık
+- `mealai_database.xlsx` dosyasını `modules/04-utilities/data-processor/python/` dizinine yerleştirin.
+- Excel sekmelerinin (`ingredients`, `recipes`, `recipe_ingredients`, `ingredient_units`, `ingredient_nutrition`) doğru isimlendirildiğinden emin olun.
+
+### 2. Veri Temizleme (Opsiyonel ama Önerilen)
+Excel'deki verileri standardize etmek için:
+```bash
+python scripts/v2/DataProcessorExcelV2.py
+```
+Bu adım `mealai_database_cleaned.xlsx` dosyasını oluşturacaktır.
+
+### 3. Veritabanına Import
+Veritabanına aktarmadan önce bir "dry-run" yaparak hataları kontrol edin:
+```bash
+python scripts/v2/DatabaseImporterV2.py --dry-run
+```
+Hata yoksa gerçek import işlemini başlatın:
+```bash
+python scripts/v2/DatabaseImporterV2.py
+```
+**Not:** Bu işlem veritabanındaki mevcut malzeme ve tarif tablolarını **TRUNCATE** (temizler) ve sıfırdan Excel'deki verilerle doldurur.
+
+### 4. Backend Senkronizasyonu
+Import bittikten sonra Java uygulamasını başlattığınızda:
+- `UnitConverterServiceImpl` sınıfı, Python tarafından atanan `density` değerlerini kullanarak `su bardağı`, `paket`, `demet` gibi birimleri otomatik olarak gramaja çevirir.
+- Malzeme bazlı özel birimler (`ingredient_units` tablosu) öncelikli olarak kullanılır.
+- Uygulama içindeki tüm kalori hesaplamaları bu yeni ve tutarlı veri seti üzerinden yapılır.
+
+---
+
+**Önemli Hatırlatma:** `DatabaseImporterV2.py` scripti, backend servisindeki `UnitConverter` mantığı ile senkronize edilmiştir. Python tarafında yapılan her "Akıllı Yoğunluk" güncellemesi, backend tarafında da karşılık bulmaktadır.
 
 ---
 

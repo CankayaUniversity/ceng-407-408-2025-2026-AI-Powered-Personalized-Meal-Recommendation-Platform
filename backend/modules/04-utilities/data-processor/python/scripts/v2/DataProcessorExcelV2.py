@@ -5,9 +5,9 @@ from thefuzz import fuzz, process
 
 # --- AYARLAR ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
-# Excel dosyanızın v2 klasöründe olduğunu varsayıyorum, eğer bir üstteyse '..' ekleyebilirsiniz
-INPUT_FILE = os.path.join(script_dir, 'mealai_database.xlsx')
-OUTPUT_FILE = os.path.join(script_dir, 'mealai_database_cleaned.xlsx')
+# Excel dosyasının bir üst dizinde olduğunu biliyoruz
+INPUT_FILE = os.path.join(script_dir, '..', '..', 'mealai_database.xlsx')
+OUTPUT_FILE = os.path.join(script_dir, '..', '..', 'mealai_database_cleaned.xlsx')
 
 # Sadece çok yüksek benzerlikleri (yazım hatası seviyesindekileri) birleştirir
 SAFE_THRESHOLD = 97
@@ -36,11 +36,19 @@ TYPO_FIXES = {
     'domates ': 'domates'
 }
 
-def clean_text(text):
+def clean_text(text, log_changes=False):
     if not isinstance(text, str): return text
+    original = text
     # Sadece küçük harfe çevir ve baş-son boşluğu al
     text = text.lower().strip()
-    return TYPO_FIXES.get(text, text)
+    fixed = TYPO_FIXES.get(text, text)
+    if log_changes:
+        # Sadece anlamlı değişiklikleri logla (sadece boşluk/case değil, typo fix ise)
+        if original.lower().strip() != fixed:
+            print(f"  [TYPO] '{original}' -> '{fixed}'")
+        elif original != text:
+            print(f"  [NORM] '{original}' -> '{text}'")
+    return fixed
 
 def process_database():
     if not os.path.exists(INPUT_FILE):
@@ -59,7 +67,7 @@ def process_database():
 
     # 2. Ingredients Temizliği ve Density Atama
     print("🧹 Malzemeler temizleniyor...")
-    df_ing['name'] = df_ing['name'].apply(clean_text)
+    df_ing['name'] = df_ing['name'].apply(lambda x: clean_text(x, log_changes=True))
 
     df_ing['density'] = df_ing.apply(
         lambda row: DENSITY_MAP.get(row['category'], 1.0) if pd.isnull(row['density']) or row['density'] == 0 else row['density'],
@@ -70,6 +78,7 @@ def process_database():
     print(f"🔍 Benzerlikler taranıyor (Eşik: %{SAFE_THRESHOLD})...")
     unique_names = df_ing['name'].unique().tolist()
     rename_map = {}
+    merge_log = []
 
     for i, name in enumerate(unique_names):
         candidates = unique_names[i+1:]
@@ -81,7 +90,12 @@ def process_database():
                 # 3 karakterden fazla fark varsa büyük ihtimalle farklı bir türevidir.
                 if abs(len(name) - len(match)) < 3:
                     rename_map[match] = name
+                    merge_log.append(f"  [MERGE] '{match}' -> '{name}' (Score: {score})")
 
+    if merge_log:
+        for log in merge_log:
+            print(log)
+    
     print(f"🔄 {len(rename_map)} adet yazım hatası/benzerlik düzeltilecek.")
     df_ing['name'] = df_ing['name'].replace(rename_map)
 

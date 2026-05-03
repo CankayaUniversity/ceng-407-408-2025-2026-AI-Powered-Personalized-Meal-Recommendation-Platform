@@ -19,8 +19,8 @@ public class UnitConverterServiceImpl implements UnitConverterService {
 
     private static final Map<String, Double> UNIT_TO_GRAMS = new HashMap<>();
     private static final List<String> VOLUME_UNITS = List.of(
-        "ml", "litre", "liter", "glass", "bardak", "tablespoon", "yemek kaşığı",
-        "teaspoon", "tatlı kaşığı", "çay kaşığı", "cup", "bowl", "kase"
+        "ml", "litre", "liter", "glass", "bardak", "su bardağı", "çay bardağı", "kahve fincanı",
+        "tablespoon", "yemek kaşığı", "teaspoon", "tatlı kaşığı", "çay kaşığı", "cup", "bowl", "kase"
     );
 
     static {
@@ -30,6 +30,7 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         UNIT_TO_GRAMS.put("kg", 1000.0);
         UNIT_TO_GRAMS.put("kilogram", 1000.0);
         UNIT_TO_GRAMS.put("slice", 30.0);
+        UNIT_TO_GRAMS.put("dilim", 30.0);
         UNIT_TO_GRAMS.put("cup", 240.0);
         UNIT_TO_GRAMS.put("bowl", 350.0);
         UNIT_TO_GRAMS.put("kase", 350.0);
@@ -39,6 +40,7 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         UNIT_TO_GRAMS.put("unit", 50.0);
         UNIT_TO_GRAMS.put("ml", 1.0);
         UNIT_TO_GRAMS.put("litre", 1000.0);
+        UNIT_TO_GRAMS.put("liter", 1000.0);
         UNIT_TO_GRAMS.put("tablespoon", 15.0);
         UNIT_TO_GRAMS.put("yemek kaşığı", 15.0);
         UNIT_TO_GRAMS.put("teaspoon", 5.0);
@@ -46,9 +48,19 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         UNIT_TO_GRAMS.put("çay kaşığı", 5.0);
         UNIT_TO_GRAMS.put("glass", 200.0);
         UNIT_TO_GRAMS.put("bardak", 200.0);
+        UNIT_TO_GRAMS.put("su bardağı", 200.0);
+        UNIT_TO_GRAMS.put("çay bardağı", 100.0);
+        UNIT_TO_GRAMS.put("kahve fincanı", 75.0);
         UNIT_TO_GRAMS.put("clove", 5.0);
+        UNIT_TO_GRAMS.put("diş", 5.0);
         UNIT_TO_GRAMS.put("handful", 30.0);
+        UNIT_TO_GRAMS.put("avuç", 30.0);
         UNIT_TO_GRAMS.put("pinch", 1.0);
+        UNIT_TO_GRAMS.put("tutam", 1.0);
+        UNIT_TO_GRAMS.put("paket", 100.0);
+        UNIT_TO_GRAMS.put("demet", 100.0);
+        UNIT_TO_GRAMS.put("kavanoz", 500.0);
+        UNIT_TO_GRAMS.put("şişe", 500.0);
     }
 
     @Override
