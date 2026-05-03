@@ -3,11 +3,10 @@ import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useInventoryService } from '../../services/inventoryService';
-import { useConsumptionService } from '../../services/consumptionService';
 import { useToast } from '../../shared/hooks/useToast';
 import { useIngredientService } from '../../services/ingredientService';
 import { matchesIngredientQuery, useIngredientLookup } from '../../shared/hooks/useIngredientLookup';
-import { User, MealType } from '../../types';
+import { User } from '../../types';
 
 // New Components & Hooks
 import { useInventory } from './hooks/useInventory';
@@ -27,7 +26,6 @@ const InventoryPage: React.FC = () => {
   const { authenticated } = useAuth();
   const { showToast } = useToast();
   const inventoryService = useInventoryService();
-  const consumptionService = useConsumptionService();
   const ingredientService = useIngredientService();
 
   const {
@@ -264,29 +262,29 @@ const InventoryPage: React.FC = () => {
   const handleConfirmConsumption = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedGroupId || !consumingItem) return;
+
+    const userAmounts = selectedUserIds.reduce<Record<string, number>>((acc, userId) => {
+      const parsedAmount = parseFloat(memberAmounts[userId]);
+      if (Number.isFinite(parsedAmount) && parsedAmount > 0) {
+        acc[userId] = parsedAmount;
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(userAmounts).length !== selectedUserIds.length) {
+      showToast('Her seçili kullanıcı için 0\'dan büyük bir miktar girin.', 'error');
+      return;
+    }
+
     setIsConsuming(true);
     try {
-      // Record consumption for each member
-      for (const userId of selectedUserIds) {
-        await consumptionService.logConsumption({
-          userId,
-          ingredientId: consumingItem.ingredient?.id,
-          inventoryGroupId: selectedGroupId,
-          portionMultiplier: parseFloat(memberAmounts[userId]),
-          mealType: MealType.SNACK, // Default to SNACK if OTHER is not available
-          isFromInventory: true
-        });
-      }
-      
-      // Also consume from inventory
-      const userAmounts: Record<string, number> = {};
-      selectedUserIds.forEach(id => {
-        userAmounts[id] = parseFloat(memberAmounts[id]);
-      });
       await inventoryService.consumeInventoryItem(selectedGroupId, consumingItem.id, userAmounts);
 
       showToast(t('toasts.inventory.consumptionSaved'), 'success');
       setConsumeModalOpen(false);
+      setSelectedUserIds([]);
+      setMemberAmounts({});
+      setConsumingItem(null);
       await loadGroups();
     } catch (error) {
       showToast(t('toasts.inventory.consumptionError'), 'error');

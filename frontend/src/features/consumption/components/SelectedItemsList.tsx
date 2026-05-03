@@ -21,7 +21,7 @@ interface SelectedItemsListProps {
   submitting: boolean;
   onRemoveItem: (key: string, userId?: string) => void;
   onRecipePortionChange: (key: string, portion: RecipePortionOption, userId?: string) => void;
-  getIngredientUnits: (id?: number) => { quickUnits: string[]; standardUnits: string[] };
+  getIngredientUnits: (ingredient?: Ingredient) => { quickUnits: string[]; standardUnits: string[] };
   unitWeights: Record<string, number>;
   ingredientSpecificWeights: Record<number, Record<string, number>>;
   onQuickUnitAdjust: (key: string, ingredient: Ingredient, unit: string, delta: number, userId?: string) => void;
@@ -67,7 +67,10 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
 
     if (data.list.length === 0) return null;
 
-    const physicalState = (item as SelectedIngredientItem).ingredient.physicalState;
+    const ingredient = (item as SelectedIngredientItem).ingredient;
+    const physicalState = ['BEVERAGE', 'OIL', 'SAUCE'].includes(String(ingredient.category))
+      ? 'LIQUID'
+      : ingredient.physicalState;
     const forbiddenUnits = physicalState === 'LIQUID' 
       ? ['GRAM', 'KG', 'ADET', 'PAKET', 'DILIM'] 
       : physicalState === 'SOLID'
@@ -165,7 +168,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                       <div className="space-y-3">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.quickSelect')}</p>
                         <div className="flex flex-wrap gap-2">
-                          {getIngredientUnits(item.ingredient.id).quickUnits.map((unit: string) => {
+                          {getIngredientUnits(item.ingredient).quickUnits.map((unit: string) => {
                             const weights = (item.ingredient.id && ingredientSpecificWeights[item.ingredient.id]) || unitWeights;
                             const weight = weights[unit.toLowerCase()];
                             const currentParts = item.portion.label.split(' ');
@@ -248,7 +251,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                                 onChange={(e) => onManualPortionUpdate(item.key, item.ingredient, item.portion.label.split(' ')[0], e.target.value, userId)}
                                 className="flex-1 rounded-xl border border-card-border bg-card px-3 py-2 text-xs font-bold text-foreground focus:border-terracotta/50 focus:ring-4 focus:ring-terracotta/5"
                               >
-                                {getIngredientUnits(item.ingredient.id).standardUnits.map(u => (
+                                {getIngredientUnits(item.ingredient).standardUnits.map(u => (
                                   <option key={u} value={u}>{u}</option>
                                 ))}
                               </select>

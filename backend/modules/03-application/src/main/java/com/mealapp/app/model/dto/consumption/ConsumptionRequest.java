@@ -53,6 +53,18 @@ public class ConsumptionRequest {
     private String portionLabel;
 
     /**
+     * Malzeme kayıtlarında kullanıcının girdiği miktar.
+     * Gram dönüşümü backend'de UnitConverterService ile yapılır.
+     */
+    @Positive(message = "Miktar sıfırdan büyük olmalıdır")
+    private Double portionAmount;
+
+    /**
+     * Malzeme kayıtlarında kullanıcının seçtiği birim (örn: ML, GRAM, BARDAK).
+     */
+    private String portionUnit;
+
+    /**
      * Tarif kayıtlarında uygulanacak porsiyon katsayısı.
      */
     @Positive(message = "Porsiyon katsayısı sıfırdan büyük olmalıdır")
@@ -78,6 +90,8 @@ public class ConsumptionRequest {
         private Double portionMultiplier;
         private Double portionGrams;
         private String portionLabel;
+        private Double portionAmount;
+        private String portionUnit;
         private Long recipeId;
         private Long ingredientId;
         private String foodName;

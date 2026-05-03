@@ -651,7 +651,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         DailyConsumption saved = DailyConsumption.builder().id(1L).foodName("sauce").build();
         when(dailyConsumptionService.logConsumption(any())).thenReturn(saved);
 
-        // Simulation: User consumes "10 ml"
+        // Simulation: User consumes 10 ml; frontend sends selected amount/unit, backend converts to grams.
         // 10 ml * 1.2 density = 12 grams
         mockMvc.perform(post("/api/v1/consumptions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -661,7 +661,8 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
                                   "mealType": "LUNCH",
                                   "ingredientId": 98,
                                   "foodName": "sauce",
-                                  "portionLabel": "10 ml"
+                                  "portionAmount": 10,
+                                  "portionUnit": "ml"
                                 }
                                 """))
                 .andExpect(status().isOk());

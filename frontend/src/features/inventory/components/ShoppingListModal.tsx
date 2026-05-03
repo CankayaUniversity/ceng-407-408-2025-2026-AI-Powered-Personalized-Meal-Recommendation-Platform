@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, ShoppingCart, AlertTriangle, Package, MapPin, Filter, Check } from 'lucide-react';
 import { InventoryGroup } from '../../../types';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
+import ModalPortal from '../../../shared/components/ModalPortal';
 
 interface ShoppingItem {
   ingredientId: number;
@@ -46,8 +47,9 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="w-full max-w-2xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-12 duration-500">
+    <ModalPortal>
+      <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="w-full max-w-2xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[85vh] animate-in slide-in-from-bottom-12 duration-500">
         {/* Header */}
         <div className="p-8 border-b border-card-border/50 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex items-center gap-5">
@@ -198,7 +200,8 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
             </button>
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 };

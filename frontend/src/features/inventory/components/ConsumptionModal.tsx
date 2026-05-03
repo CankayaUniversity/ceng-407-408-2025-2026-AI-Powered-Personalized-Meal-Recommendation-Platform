@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Users, Check, Plus, Loader2 } from 'lucide-react';
 import { Inventory } from '../../../types';
+import ModalPortal from '../../../shared/components/ModalPortal';
 
 interface ConsumptionModalProps {
   isOpen: boolean;
@@ -35,13 +36,18 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
     (sum, id) => sum + (parseFloat(memberAmounts[id]) || 0), 
     0
   );
+  const hasInvalidAmounts = selectedUserIds.some((id) => {
+    const parsedAmount = parseFloat(memberAmounts[id]);
+    return !Number.isFinite(parsedAmount) || parsedAmount <= 0;
+  });
   
   const isOverLimit = totalConsumed > consumingItem.quantity;
-  const canSubmit = !isConsuming && selectedUserIds.length > 0 && !isOverLimit;
+  const canSubmit = !isConsuming && selectedUserIds.length > 0 && !isOverLimit && !hasInvalidAmounts;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="w-full max-w-xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-12 duration-500">
+    <ModalPortal>
+      <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="w-full max-w-xl bg-card rounded-[3rem] shadow-brand-hero border border-card-border overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-12 duration-500">
         <div className="p-10 flex-1 overflow-y-auto custom-scrollbar">
           <div className="flex items-start justify-between mb-10">
             <div className="flex items-center gap-5">
@@ -134,6 +140,12 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
               </div>
             </div>
 
+            {selectedUserIds.length > 0 && hasInvalidAmounts && (
+              <div className="rounded-[1.5rem] border border-terracotta/20 bg-terracotta/5 px-4 py-3 text-sm font-medium text-terracotta">
+                Kaydetmeden önce seçili her kullanıcı için 0'dan büyük bir miktar girin.
+              </div>
+            )}
+
             {selectedUserIds.length > 0 && (
               <div className="bg-foreground/[0.03] p-5 rounded-[2rem] space-y-3">
                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-foreground/40">
@@ -171,7 +183,8 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
             </div>
           </form>
         </div>
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 };
