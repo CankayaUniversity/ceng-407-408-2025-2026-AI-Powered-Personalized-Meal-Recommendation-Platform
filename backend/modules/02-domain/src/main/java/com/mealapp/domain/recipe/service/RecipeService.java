@@ -1,15 +1,18 @@
 package com.mealapp.domain.recipe.service;
 
+import com.mealapp.domain.common.storage.FileStorageService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,10 +22,53 @@ import java.util.Optional;
  */
 @Service
 @RequiredArgsConstructor
+@Transactional
+@Slf4j
 public class RecipeService {
 
     private final RecipeRepository recipeRepository;
-    private final UnitConverterService unitConverterService; // Modül 03'teki implementasyonu kullanacak interface
+    private final UnitConverterService unitConverterService;
+    private final FileStorageService fileStorageService;
+
+    /**
+     * Tarif görselini yükler ve URL'ini günceller.
+     */
+    public String uploadRecipeImage(Long recipeId, InputStream inputStream, String originalFilename, String contentType) {
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + recipeId));
+
+        // Dosya adı formatı: recipes/{recipeId}/image_{timestamp}.{ext}
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String fileName = String.format("recipes/%d/image_%d%s", recipeId, System.currentTimeMillis(), extension);
+
+        // Eski görseli sil
+        if (recipe.getImageUrl() != null) {
+            try {
+                fileStorageService.deleteFile(recipe.getImageUrl());
+            } catch (Exception e) {
+                log.warn("Eski tarif görseli silinemedi: {}", recipe.getImageUrl(), e);
+            }
+        }
+
+        String uploadedFileName = fileStorageService.uploadFile(inputStream, fileName, contentType);
+        recipe.setImageUrl(uploadedFileName);
+        recipeRepository.save(recipe);
+
+        return uploadedFileName;
+    }
+
+    /**
+     * Tarif görseli için geçici URL üretir.
+     */
+    public String getRecipeImageUrl(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return null;
+        }
+        return fileStorageService.getFileUrl(fileName);
+    }
 
     /**
      * Tarifin toplam besin değerlerini hesaplar ve günceller.

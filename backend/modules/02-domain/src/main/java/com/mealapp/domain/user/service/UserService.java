@@ -25,6 +25,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
 
+    public String getFileStorageServiceUrl(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return null;
+        }
+        return fileStorageService.getFileUrl(fileName);
+    }
+
     /**
      * Kullanıcının profil fotoğrafını yükler ve URL'ini günceller.
      */
@@ -59,10 +66,7 @@ public class UserService {
      * Kullanıcı profil fotoğrafı için geçici URL üretir.
      */
     public String getProfileImageUrl(String fileName) {
-        if (fileName == null || fileName.isBlank()) {
-            return null;
-        }
-        return fileStorageService.getFileUrl(fileName);
+        return getFileStorageServiceUrl(fileName);
     }
 
     /**
