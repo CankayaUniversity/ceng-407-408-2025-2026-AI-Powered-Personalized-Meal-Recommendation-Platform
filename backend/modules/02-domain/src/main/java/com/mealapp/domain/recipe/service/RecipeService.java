@@ -102,6 +102,14 @@ public class RecipeService {
     }
 
     /**
+     * Tarifi soft delete ile pasif duruma getirir.
+     */
+    @Transactional
+    public void deleteById(Long id) {
+        recipeRepository.softDelete(id);
+    }
+
+    /**
      * Tüm tarifleri malzemeleriyle birlikte getirir ve eksik hesaplamaları tamamlar.
      */
     @Transactional
@@ -120,7 +128,7 @@ public class RecipeService {
      */
     @Transactional
     public Page<Recipe> findAll(Pageable pageable) {
-        Page<Recipe> recipes = recipeRepository.findAllWithIngredients(pageable);
+        Page<Recipe> recipes = recipeRepository.findAllActive(pageable);
         recipes.forEach(recipe -> {
             if (recipe.getTotalCalories() == null || recipe.getTotalCalories() == 0) {
                 calculateAndSetNutrition(recipe);

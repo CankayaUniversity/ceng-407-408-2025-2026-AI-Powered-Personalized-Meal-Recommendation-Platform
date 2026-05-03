@@ -42,6 +42,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("UPDATE User u SET u.active = false WHERE u.id = :id")
     void softDelete(@Param("id") String id);
 
+    @Query("SELECT u FROM User u WHERE u.active = true")
+    java.util.List<User> findAllActive();
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE users SET id = :newId, updated_at = NOW() WHERE id = :oldId", nativeQuery = true)
     int relinkUserId(@Param("oldId") String oldId, @Param("newId") String newId);

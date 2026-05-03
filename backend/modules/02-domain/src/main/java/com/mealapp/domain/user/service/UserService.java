@@ -48,7 +48,7 @@ public class UserService {
      */
     public java.util.List<User> searchUsers(String query) {
         if (query == null || query.length() < 2) {
-            return java.util.Collections.emptyList();
+            return userRepository.findAllActive();
         }
         return userRepository.searchByQuery(query);
     }
@@ -98,13 +98,12 @@ public class UserService {
                     return userRepository.save(user);
                 })
                 .orElseGet(() -> {
-                    User newUser = User.builder()
-                            .id(request.keycloakId())
-                            .email(request.email())
-                            .name(request.name())
-                            .role(role)
-                            .active(true)
-                            .build();
+                    User newUser = new User();
+                    newUser.setId(request.keycloakId());
+                    newUser.setEmail(request.email());
+                    newUser.setName(request.name());
+                    newUser.setRole(role);
+                    newUser.setActive(true);
                     return userRepository.save(newUser);
                 });
     }

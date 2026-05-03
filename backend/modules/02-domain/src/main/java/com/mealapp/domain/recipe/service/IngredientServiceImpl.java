@@ -34,7 +34,7 @@ public class IngredientServiceImpl implements IngredientService {
 
     @Override
     public void deleteById(Long id) {
-        ingredientRepository.deleteById(id);
+        ingredientRepository.softDelete(id);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class IngredientServiceImpl implements IngredientService {
             return ingredientRepository.findAll(pageRequest).getContent();
         }
 
-        return ingredientRepository.findByNameContainingIgnoreCase(query.trim(), pageRequest).getContent();
+        return ingredientRepository.findByNameContainingIgnoreCaseAndActiveTrue(query.trim(), pageRequest).getContent();
     }
 
     @Override

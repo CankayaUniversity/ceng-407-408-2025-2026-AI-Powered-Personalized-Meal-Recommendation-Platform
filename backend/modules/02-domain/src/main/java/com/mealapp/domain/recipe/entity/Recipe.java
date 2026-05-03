@@ -1,5 +1,6 @@
 package com.mealapp.domain.recipe.entity;
 
+import com.mealapp.domain.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Recipe {
+public class Recipe extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

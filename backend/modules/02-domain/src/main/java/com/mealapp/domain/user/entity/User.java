@@ -1,5 +1,6 @@
 package com.mealapp.domain.user.entity;
 
+import com.mealapp.domain.common.entity.BaseEntity;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @Column(length = 50)
@@ -33,10 +34,6 @@ public class User {
     @Column(nullable = false)
     @Builder.Default
     private UserRole role = UserRole.USER;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean active = true;
 
     @ManyToMany
     @JoinTable(
@@ -101,23 +98,6 @@ public class User {
      * Sistem tarafından boy, kilo, yaş ve hedefe göre otomatik hesaplanır.
      */
     private Integer dailyCalorieTarget;
-
-    /**
-     * Kayıt ve güncelleme tarihleri (Devamlılık takibi için).
-     */
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 
     public enum DietType {
         NONE, VEGAN, VEGETARIAN, KETO, PALEO, GLUTEN_FREE
