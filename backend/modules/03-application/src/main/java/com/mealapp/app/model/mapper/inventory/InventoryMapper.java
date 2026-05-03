@@ -9,12 +9,14 @@ import com.mealapp.app.model.mapper.user.UserMapper;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
 import com.mealapp.domain.inventory.entity.InventoryInvitation;
+import com.mealapp.domain.inventory.repository.InventoryInvitationRepository;
 import com.mealapp.domain.notification.entity.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class InventoryMapper {
 
     private final IngredientMapper ingredientMapper;
     private final UserMapper userMapper;
+    private final InventoryInvitationRepository invitationRepository;
 
     public InventoryGroupResponse toGroupResponse(InventoryGroup group, int lowStockCount) {
         List<InventoryItemResponse> itemResponses = group.getItems() == null
@@ -93,6 +96,17 @@ public class InventoryMapper {
 
     public NotificationResponse toNotificationResponse(Notification notification) {
         if (notification == null) return null;
+
+        InventoryInvitation.InvitationStatus invitationStatus = null;
+        if (notification.getType() == Notification.NotificationType.INVITATION && notification.getTargetId() != null) {
+            try {
+                Long invitationId = Long.parseLong(notification.getTargetId());
+                invitationStatus = invitationRepository.findById(invitationId)
+                        .map(InventoryInvitation::getStatus)
+                        .orElse(null);
+            } catch (NumberFormatException ignored) {}
+        }
+
         return NotificationResponse.builder()
                 .id(notification.getId())
                 .title(notification.getTitle())
@@ -100,6 +114,7 @@ public class InventoryMapper {
                 .type(notification.getType())
                 .targetId(notification.getTargetId())
                 .status(notification.getStatus())
+                .invitationStatus(invitationStatus)
                 .createdAt(notification.getCreatedAt())
                 .build();
     }

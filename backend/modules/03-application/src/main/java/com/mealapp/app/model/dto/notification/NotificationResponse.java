@@ -1,5 +1,6 @@
 package com.mealapp.app.model.dto.notification;
 
+import com.mealapp.domain.inventory.entity.InventoryInvitation;
 import com.mealapp.domain.notification.entity.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,5 +20,6 @@ public class NotificationResponse {
     private Notification.NotificationType type;
     private String targetId;
     private Notification.NotificationStatus status;
+    private InventoryInvitation.InvitationStatus invitationStatus;
     private LocalDateTime createdAt;
 }

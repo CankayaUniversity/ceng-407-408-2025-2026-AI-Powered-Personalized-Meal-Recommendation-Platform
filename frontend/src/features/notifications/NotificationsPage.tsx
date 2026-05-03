@@ -302,7 +302,7 @@ const NotificationsPage: React.FC = () => {
                     {notification.message}
                   </p>
 
-                  {notification.type === 'INVITATION' && isUnread(notification.status) && (
+                  {notification.type === 'INVITATION' && notification.invitationStatus === 'PENDING' && (
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={(e) => {
@@ -327,10 +327,10 @@ const NotificationsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {notification.type === 'INVITATION' && isRead(notification.status) && (
+                  {notification.type === 'INVITATION' && notification.invitationStatus !== 'PENDING' && (
                     <div className="flex items-center gap-2 text-xs font-medium text-gray-400 bg-gray-50 w-fit px-2 py-1 rounded-md">
                       <CheckCircle2 size={12} />
-                      {t('notifications.inviteAnswered')}
+                      {notification.invitationStatus === 'ACCEPTED' ? t('common.accept') : t('common.reject')}
                     </div>
                   )}
 

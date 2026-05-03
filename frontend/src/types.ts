@@ -102,6 +102,7 @@ export interface Notification {
   type: 'INVITATION' | 'SYSTEM' | 'REMINDER';
   targetId?: string;
   status: 'UNREAD' | 'READ';
+  invitationStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   createdAt: string;
 }
 
