@@ -21,6 +21,7 @@ const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
   className = '',
   mediaClassName = ''
 }) => {
+  const { t } = useTranslation();
   const normalizedImageUrl = imageUrl?.trim() || null;
   const [hasImageError, setHasImageError] = useState(normalizedImageUrl == null);
   const isHero = variant === 'hero';
