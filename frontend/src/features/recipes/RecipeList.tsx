@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
-import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info } from 'lucide-react';
+import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info, Camera, Loader2 } from 'lucide-react';
 import { useRecipeService } from '../../services/recipeService';
 import type { RecipeListItem } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
+import { useAuth } from '../../infrastructure/auth/AuthContext';
+import { ApiError } from '../../services/errors';
 
 type RecipeArtworkProps = {
   imageUrl?: string | null;
@@ -23,17 +25,18 @@ const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
 }) => {
   const { t } = useTranslation();
   const normalizedImageUrl = imageUrl?.trim() || null;
-  const [hasImageError, setHasImageError] = useState(normalizedImageUrl == null);
+  const [hasImageError, setHasImageError] = useState(false);
   const isHero = variant === 'hero';
 
   useEffect(() => {
-    setHasImageError(normalizedImageUrl == null);
+    setHasImageError(false);
   }, [normalizedImageUrl]);
 
   if (!hasImageError && normalizedImageUrl) {
     return (
       <div className={className}>
         <img
+          key={normalizedImageUrl}
           src={normalizedImageUrl}
           alt={title}
           className={mediaClassName}
@@ -90,11 +93,14 @@ const RecipeList: React.FC = () => {
   const { t } = useTranslation();
   const recipeService = useRecipeService();
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.roles?.includes('admin');
 
   // --- States ---
   const [searchTerm, setSearchTerm] = useState('');
   const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -161,6 +167,40 @@ const RecipeList: React.FC = () => {
       handleCloseModal();
     } finally {
       setModalLoading(false);
+    }
+  };
+
+  const handleRecipeImageUpload = async (recipeId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Lütfen geçerli bir görsel dosyası seçin.', 'error');
+      return;
+    }
+
+    try {
+      setUploadingId(recipeId);
+      const updatedRecipe = await recipeService.uploadRecipeImage(recipeId, file);
+      showToast('Tarif görseli başarıyla güncellendi.', 'success');
+      
+      // Refresh only the affected recipe in the list
+      setRecipes(prev => prev.map(r => {
+        if (r.id === recipeId && updatedRecipe.imageUrl) {
+          return { ...r, imageUrl: updatedRecipe.imageUrl };
+        }
+        return r;
+      }));
+
+      if (selectedRecipe?.id === recipeId) {
+        const newUrl = updatedRecipe.imageUrl;
+        setSelectedRecipe({ ...selectedRecipe, imageUrl: newUrl });
+        setRecipeDetail((prev: any) => prev ? { ...prev, imageUrl: newUrl } : null);
+      }
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : 'Görsel yüklenirken bir hata oluştu.', 'error');
+    } finally {
+      setUploadingId(null);
     }
   };
 
@@ -256,6 +296,27 @@ const RecipeList: React.FC = () => {
                   <button className="absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl text-primary transition-colors">
                     <Star size={18} fill={(recipe.averageRating || 0) > 4.5 ? "currentColor" : "none"} />
                   </button>
+                  {isAdmin && (
+                    <div 
+                      className="absolute bottom-5 right-5 z-20"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <label className="p-3 bg-terracotta text-white rounded-2xl shadow-xl cursor-pointer hover:scale-110 transition-transform duration-200 border-4 border-white/20 block">
+                        {uploadingId === recipe.id ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <Camera size={18} />
+                        )}
+                        <input 
+                          type="file" 
+                          className="hidden" 
+                          accept="image/*" 
+                          onChange={(e) => handleRecipeImageUpload(recipe.id, e)}
+                          disabled={uploadingId !== null}
+                        />
+                      </label>
+                    </div>
+                  )}
                 </div>
                 <div className="p-8 space-y-6">
                   <div className="flex justify-between items-start gap-4">

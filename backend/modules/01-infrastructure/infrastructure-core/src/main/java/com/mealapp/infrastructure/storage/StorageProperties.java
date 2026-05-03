@@ -10,6 +10,7 @@ public record StorageProperties(
 
     public record MinioProperties(
         String endpoint,
+        String externalEndpoint,
         String accessKey,
         String secretKey
     ) {

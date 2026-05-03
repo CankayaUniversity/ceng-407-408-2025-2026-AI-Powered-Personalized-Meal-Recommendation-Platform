@@ -143,7 +143,11 @@ public class UserController {
         User user = userService.findById(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
 
-        return userMapper.toDto(user);
+        UserDto dto = userMapper.toDto(user);
+        if (dto.getProfileImageUrl() != null) {
+            dto.setProfileImageUrl(userService.getProfileImageUrl(dto.getProfileImageUrl()));
+        }
+        return dto;
     }
 
     /**

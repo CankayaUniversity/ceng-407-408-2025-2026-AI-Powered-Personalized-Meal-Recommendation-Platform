@@ -59,10 +59,23 @@ public class MinioFileStorageService implements FileStorageService {
     @Override
     @SneakyThrows
     public String getFileUrl(String fileName) {
-        return minioClient.getPresignedObjectUrl(
+        String bucketName = storageProperties.bucket().name();
+        
+        String externalEndpoint = storageProperties.minio().externalEndpoint();
+        String effectiveEndpoint = (externalEndpoint != null && !externalEndpoint.isBlank()) 
+            ? externalEndpoint : storageProperties.minio().endpoint();
+
+        // Presigned URL generation with the EFFECTIVE endpoint (the one client uses)
+        // This ensures the signature matches when accessed from the browser.
+        MinioClient clientForSigning = MinioClient.builder()
+                .endpoint(effectiveEndpoint)
+                .credentials(storageProperties.minio().accessKey(), storageProperties.minio().secretKey())
+                .build();
+            
+        return clientForSigning.getPresignedObjectUrl(
             GetPresignedObjectUrlArgs.builder()
                 .method(Method.GET)
-                .bucket(storageProperties.bucket().name())
+                .bucket(bucketName)
                 .object(fileName)
                 .expiry(7, TimeUnit.DAYS)
                 .build()

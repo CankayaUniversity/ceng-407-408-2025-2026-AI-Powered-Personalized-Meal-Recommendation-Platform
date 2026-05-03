@@ -237,6 +237,32 @@ export const getRecipeService = (api: AxiosInstance) => {
     getRecipeById: async (id: number): Promise<Recipe> => {
       const response = await api.get<Recipe>(`/v1/recipes/${id}`);
       return response.data;
+    },
+
+    /**
+     * Tarif görselini yükler (Sadece ADMIN)
+     * @param id - Tarif ID'si
+     * @param file - Yüklenecek dosya
+     * @returns Güncellenen tarif verisi
+     */
+    uploadRecipeImage: async (id: number, file: File): Promise<Recipe> => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await api.post<Recipe>(`/v1/recipes/${id}/image`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          const message = error.response?.data?.message || 'Tarif görseli yüklenemedi';
+          throw new ApiError(message, 'UPLOAD_ERROR', error.response?.status);
+        }
+        throw new ApiError('Dosya yüklenirken beklenmeyen bir hata oluştu');
+      }
     }
 
 });

@@ -4,6 +4,7 @@ import com.mealapp.domain.common.entity.BaseEntity;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import java.util.List;
 import java.time.LocalDateTime;
 
@@ -13,11 +14,11 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "users")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
+@Getter
+@Setter
 public class User extends BaseEntity {
 
     @Id

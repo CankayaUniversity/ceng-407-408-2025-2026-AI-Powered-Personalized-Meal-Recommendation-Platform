@@ -18,12 +18,13 @@ class RecipeServiceDietTest {
 
     @BeforeEach
     void setUp() {
-        // RecipeService artık iki bağımlılığa sahip (Repository ve UnitConverterService)
+        // RecipeService artık üç bağımlılığa sahip (Repository, UnitConverterService ve FileStorageService)
         // Mockito kullanarak bu bağımlılıkları sahte (mock) olarak oluşturuyoruz
         RecipeRepository recipeRepository = Mockito.mock(RecipeRepository.class);
         UnitConverterService unitConverterService = Mockito.mock(UnitConverterService.class);
+        com.mealapp.domain.common.storage.FileStorageService fileStorageService = Mockito.mock(com.mealapp.domain.common.storage.FileStorageService.class);
 
-        recipeService = new RecipeService(recipeRepository, unitConverterService);
+        recipeService = new RecipeService(recipeRepository, unitConverterService, fileStorageService);
     }
 
     @Test

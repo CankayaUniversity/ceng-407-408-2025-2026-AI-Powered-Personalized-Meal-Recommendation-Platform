@@ -92,6 +92,7 @@ export interface User {
   bmi?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  profileImageUrl?: string | null;
 }
 
 export interface Notification {

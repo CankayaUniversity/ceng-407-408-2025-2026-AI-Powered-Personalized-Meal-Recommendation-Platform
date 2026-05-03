@@ -152,6 +152,32 @@ export const getUserService = (api: AxiosInstance) => ({
       params: { query }
     });
     return response.data;
+  },
+
+  /**
+   * Kullanıcı profil fotoğrafını yükler
+   * @param userId - Kullanıcı ID'si
+   * @param file - Yüklenecek dosya
+   * @returns Güncellenen kullanıcı verisi
+   */
+  uploadProfileImage: async (userId: string, file: File): Promise<User> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post<User>(`/v1/users/${userId}/profile-image`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message || 'Profil fotoğrafı yüklenemedi';
+        throw new ApiError(message, 'UPLOAD_ERROR', error.response?.status);
+      }
+      throw new ApiError('Dosya yüklenirken beklenmeyen bir hata oluştu');
+    }
   }
 });
 

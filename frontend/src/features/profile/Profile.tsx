@@ -8,7 +8,8 @@ import {
   Save,
   Shield,
   User as UserIcon,
-  X
+  X,
+  Camera
 } from 'lucide-react';
 import { useAuth, type AuthUser } from '../../infrastructure/auth/AuthContext';
 import { ApiError, NotFoundError, ValidationError } from '../../services/errors';
@@ -102,6 +103,8 @@ const Profile: React.FC = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const [serverSnapshot, setServerSnapshot] = useState(JSON.stringify(emptyForm()));
 
   const isDirty = JSON.stringify(form) !== serverSnapshot;
@@ -109,6 +112,7 @@ const Profile: React.FC = () => {
   const calorieTarget = profile?.dailyCalorieTarget ?? 0;
 
   const applyProfile = (p: User) => {
+    setImageError(false);
     const nextForm: ProfileFormState = {
       weight: p.weight != null ? String(p.weight) : '',
       height: p.height != null ? String(p.height) : '',
@@ -132,12 +136,13 @@ const Profile: React.FC = () => {
       if (!user?.id) { setLoading(false); return; }
       try {
         setLoading(true);
-        const data = await userService.getUserById(user.id).catch(err => {
+        let data = await userService.getUserById(user.id).catch(err => {
           if (err instanceof NotFoundError) {
             return userService.upsertUser({ id: user.id, name: displayName, email: user.email });
           }
           throw err;
         });
+
         if (active) applyProfile(data);
       } catch (err) {
         if (active) showToast(err instanceof ApiError ? err.message : t('toasts.profile.loadError'), 'error');
@@ -190,6 +195,39 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    // Basic validation
+    if (!file.type.startsWith('image/')) {
+      showToast('Lütfen geçerli bir görsel dosyası seçin.', 'error');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Görsel boyutu 10MB\'dan küçük olmalıdır. Lütfen daha küçük bir dosya seçin.', 'warning');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setImageError(false);
+      const updatedUser = await userService.uploadProfileImage(user.id, file);
+      setProfile(null);
+      setImageError(false); // Reset error state on new upload
+      setTimeout(() => {
+        setProfile(updatedUser);
+        applyProfile(updatedUser);
+        showToast('Profil fotoğrafı başarıyla güncellendi.', 'success');
+      }, 50);
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : 'Görsel yüklenirken bir hata oluştu.', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading && !profile) {
     return (
         <div className="max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
@@ -226,8 +264,48 @@ const Profile: React.FC = () => {
             <div className="meal-card meal-highlight-frame p-0 overflow-hidden shadow-brand-elevated">
               <div className="h-28 bg-primary/90" />
               <div className="px-6 pb-8 -mt-14 text-center">
-                <div className="w-28 h-28 mx-auto rounded-[2.5rem] border-8 border-background bg-card text-primary flex items-center justify-center text-4xl font-bold shadow-lg overflow-hidden">
-                  {getInitials(user)}
+                <div className="relative group mx-auto w-32 h-32">
+                  <div className="w-32 h-32 rounded-[2.5rem] border-8 border-background bg-card text-primary flex items-center justify-center text-4xl font-bold shadow-lg overflow-hidden relative group-hover:shadow-xl transition-shadow duration-300">
+                    {uploading ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm z-10 animate-in fade-in duration-200">
+                        <Loader2 size={32} className="animate-spin text-primary" />
+                      </div>
+                    ) : null}
+                    {profile?.profileImageUrl && !imageError ? (
+                      <div className="w-full h-full">
+                        <img 
+                          key={profile.profileImageUrl + (uploading ? '-uploading' : '')}
+                          src={profile.profileImageUrl} 
+                          alt={displayName} 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          onLoad={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            console.log('Image loaded successfully:', img.src);
+                            setImageError(false);
+                          }}
+                          onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            console.error('Image load error:', img.src);
+                            setImageError(true);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <span className="flex items-center justify-center w-full h-full bg-primary/5">
+                        {getInitials(user)}
+                      </span>
+                    )}
+                  </div>
+                  <label className="absolute -bottom-2 -right-2 p-2.5 bg-primary text-white rounded-2xl shadow-xl cursor-pointer hover:scale-110 hover:rotate-6 transition-all duration-300 border-4 border-background z-20">
+                    <Camera size={18} />
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                  </label>
                 </div>
                 <h2 className="meal-section-title mt-4 text-2xl tracking-tight">{displayName}</h2>
                 <p className="text-xs font-bold uppercase tracking-widest text-foreground/30 mt-1 mb-6">

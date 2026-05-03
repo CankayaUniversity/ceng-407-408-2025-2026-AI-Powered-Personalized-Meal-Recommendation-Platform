@@ -14,6 +14,11 @@ spring:
     deserialization:
       accept-empty-string-as-null-object: true
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   datasource:
     # Docker ortamı için DB_HOST ve DB_PORT değişkenleri kullanılır.
     # Varsayılan (localhost:5432) ayarlar yerel geliştirme içindir.
@@ -74,9 +79,10 @@ com:
         bucket:
           name: meal-app-bucket
         minio:
-          # Docker ortamı için: http://minio-server:9000
-          # Yerel ortam için: http://localhost:9000
+          # Sunucu tarafı erişim (örn Docker ağı içi): http://minio-server:9000
           endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+          # İstemci tarafı erişim (tarayıcıdan erişim): http://localhost:9000
+          external-endpoint: ${MINIO_EXTERNAL_ENDPOINT:http://localhost:9000}
           access-key: ${MINIO_ACCESS_KEY:minioadmin}
           secret-key: ${MINIO_SECRET_KEY:minioadmin}
 
