@@ -35,6 +35,9 @@ public class User extends BaseEntity {
     @Builder.Default
     private UserRole role = UserRole.USER;
 
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
     @ManyToMany
     @JoinTable(
             name = "user_inventory_groups",

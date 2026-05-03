@@ -19,6 +19,8 @@ public class UserDto {
     @Email(message = "Geçerli bir e-posta adresi giriniz")
     private String email;
 
+    private String profileImageUrl;
+
     private List<String> allergies;
     private List<String> dislikedIngredients;
     private User.DietType dietType;

@@ -10,11 +10,13 @@ import com.mealapp.domain.user.service.UserService;
 import com.mealapp.domain.user.util.CalorieCalculator;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Locale;
 
@@ -90,7 +92,11 @@ public class UserController {
         // Yeni kullanıcı için bekleyen davetleri bildirime dönüştür
         invitationService.createNotificationsForPendingInvitations(saved);
         
-        return userMapper.toDto(saved);
+        UserDto dto = userMapper.toDto(saved);
+        if (dto.getProfileImageUrl() != null) {
+            dto.setProfileImageUrl(userService.getProfileImageUrl(dto.getProfileImageUrl()));
+        }
+        return dto;
     }
 
     private void updateUserFields(User existing, UserDto request, String authenticatedEmail) {
@@ -113,6 +119,34 @@ public class UserController {
     }
 
     /**
+     * Kullanıcı profil fotoğrafını yükler.
+     */
+    @PostMapping("/{id}/profile-image")
+    @SneakyThrows
+    public UserDto uploadProfileImage(@PathVariable String id,
+                                      @RequestParam("file") MultipartFile file,
+                                      @AuthenticationPrincipal Jwt jwt) {
+        String authenticatedUserId = requireAuthenticatedUserId(jwt);
+        assertSameUser(authenticatedUserId, id);
+
+        if (file.isEmpty()) {
+            throw new MealAppDomainException("Yüklenecek dosya bulunamadı.");
+        }
+
+        String fileName = userService.uploadProfileImage(
+                authenticatedUserId,
+                file.getInputStream(),
+                file.getOriginalFilename(),
+                file.getContentType()
+        );
+
+        User user = userService.findById(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
+
+        return userMapper.toDto(user);
+    }
+
+    /**
      * Kullanıcı profili getirir.
      */
     @GetMapping("/{id}")
@@ -122,7 +156,12 @@ public class UserController {
 
         User user = userService.findById(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
-        return userMapper.toDto(user);
+        
+        UserDto dto = userMapper.toDto(user);
+        if (dto.getProfileImageUrl() != null) {
+            dto.setProfileImageUrl(userService.getProfileImageUrl(dto.getProfileImageUrl()));
+        }
+        return dto;
     }
 
     /**

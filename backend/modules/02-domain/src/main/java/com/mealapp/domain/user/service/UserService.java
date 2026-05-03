@@ -1,5 +1,6 @@
 package com.mealapp.domain.user.service;
 
+import com.mealapp.domain.common.storage.FileStorageService;
 import com.mealapp.domain.user.dto.UserSyncRequest;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.repository.UserRepository;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
+import java.io.InputStream;
 import java.util.Optional;
 
 /**
@@ -21,6 +23,47 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
+
+    /**
+     * Kullanıcının profil fotoğrafını yükler ve URL'ini günceller.
+     */
+    public String uploadProfileImage(String userId, InputStream inputStream, String originalFilename, String contentType) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + userId));
+
+        // Dosya adı formatı: users/{userId}/profile_{timestamp}.{ext}
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String fileName = String.format("users/%s/profile_%d%s", userId, System.currentTimeMillis(), extension);
+
+        // Eski fotoğrafı sil (opsiyonel ama temizlik için iyi olur)
+        if (user.getProfileImageUrl() != null) {
+            try {
+                fileStorageService.deleteFile(user.getProfileImageUrl());
+            } catch (Exception e) {
+                log.warn("Eski profil fotoğrafı silinemedi: {}", user.getProfileImageUrl(), e);
+            }
+        }
+
+        String uploadedFileName = fileStorageService.uploadFile(inputStream, fileName, contentType);
+        user.setProfileImageUrl(uploadedFileName);
+        userRepository.save(user);
+
+        return uploadedFileName;
+    }
+
+    /**
+     * Kullanıcı profil fotoğrafı için geçici URL üretir.
+     */
+    public String getProfileImageUrl(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return null;
+        }
+        return fileStorageService.getFileUrl(fileName);
+    }
 
     /**
      * Yeni bir kullanıcı kaydeder veya mevcut kullanıcıyı günceller.

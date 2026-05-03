@@ -28,6 +28,7 @@ public class UserMapper {
                 .age(dto.getAge())
                 .gender(dto.getGender())
                 .activityLevel(dto.getActivityLevel())
+                .profileImageUrl(dto.getProfileImageUrl())
                 .build();
         
         // Kayıt/Güncelleme anında kalori hedefini ve BMI değerini otomatik hesapla
@@ -54,6 +55,7 @@ public class UserMapper {
         dto.setGender(entity.getGender());
         dto.setActivityLevel(entity.getActivityLevel());
         dto.setDailyCalorieTarget(entity.getDailyCalorieTarget());
+        dto.setProfileImageUrl(entity.getProfileImageUrl());
         
         // Eğer veritabanında henüz BMI hesaplanmamışsa (eski kayıtlar için), çalışma zamanında hesapla
         Double bmi = entity.getBmi();

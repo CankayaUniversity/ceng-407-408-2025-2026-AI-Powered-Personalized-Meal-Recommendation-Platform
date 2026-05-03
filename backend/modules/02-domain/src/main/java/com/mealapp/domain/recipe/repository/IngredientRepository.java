@@ -21,6 +21,8 @@ public interface IngredientRepository extends JpaRepository<Ingredient, Long> {
 
     Optional<Ingredient> findByNameIgnoreCaseAndActiveTrue(String name);
 
+    Optional<Ingredient> findByNameIgnoreCase(String name);
+
     Page<Ingredient> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);
 
     @Query("SELECT i FROM Ingredient i LEFT JOIN FETCH i.ingredientUnits WHERE i.id = :id AND i.active = true")
