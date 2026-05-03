@@ -50,10 +50,17 @@
     "footer": {
       "about": "Hakkımızda",
       "rights": "© 2026 AI-Powered Personalized Meal Recommendation Platform"
+    },
+    "mockup": {
+      "tag": "Gurme & Sağlıklı",
+      "recommended": "Önerilen Menü"
     }
   },
   "about": {
     "title": "Hakkımızda",
+    "back": "Geri Dön",
+    "heroTitle": "MealAI Mutfakta Devrim",
+    "heroTitleItalic": "Mutfakta",
     "mission": {
       "title": "Misyonumuz",
       "content": "Geleneksel mutfak alışkanlıklarını modern teknolojiyle harmanlayarak, herkesin sağlıklı ve sürdürülebilir bir beslenme düzenine sahip olmasını sağlamak."
@@ -74,7 +81,8 @@
     "inventory": "Envanter",
     "analysis": "Analizler",
     "recommendations": "Öneriler",
-    "profile": "Profil"
+    "profile": "Profil",
+    "notifications": "Bildirimler"
   },
   "analysis": {
     "title": "Beslenme Analizi",
@@ -95,6 +103,7 @@
     "noDataSub": "Tüketim kaydı ekleyerek analizini başlatabilirsin.",
     "summaryTitle": "Dönem Özeti",
     "avgCalories": "Ortalama Kalori",
+    "kcalPerDay": "kcal/gün",
     "targetScore": "Hedef Uyum Skoru",
     "noteTitle": "Analiz Notu",
     "noteNoData": "Henüz yeterli veri toplanmadı. Birkaç günlük tüketim kaydı eklediğinde burada sana özel analizler belirecek.",
@@ -111,7 +120,10 @@
     "deleteConfirm": "Bu tüketim kaydını silmek istediğinize emin misiniz?",
     "deleteSuccess": "Kayıt başarıyla silindi.",
     "deleteError": "Kayıt silinirken bir hata oluştu.",
-    "loading": "Analiz raporu hazırlanıyor..."
+    "loading": "Analiz raporu hazırlanıyor...",
+    "over": "Fazla",
+    "under": "Eksik",
+    "pagination": "Toplam {{total}} kayıt arasından {{from}} - {{to}} arası gösteriliyor"
   },
   "dashboard": {
     "welcome": "Hoş geldin",
@@ -144,7 +156,43 @@
       "VEGAN": "Vegan",
       "KETO": "Keto",
       "PALEO": "Paleo"
-    }
+    },
+    "inventory": {
+      "title": "Envanter Sağlığı",
+      "safe": "Mutfak Stokları Güvende",
+      "warning": "Kritik seviyedeki malzemeler kırmızı ile işaretlenmiştir.",
+      "open": "Envanteri Aç",
+      "shoppingList": "Alışveriş Listesi",
+      "low": "Azalan",
+      "total": "Toplam Malzeme",
+      "categories": "Kategori"
+    },
+    "daily": {
+      "title": "Günlük Özet",
+      "fat": "Yağ",
+      "noProfile": "Profil tercihleri ayarlanmamış.",
+      "tracking": "Beslenme Takibi"
+    },
+    "recommendations": {
+      "subtitle": "Önerileriniz {{goal}} hedeflerinize göre filtreleniyor.",
+      "algorithm": "Algoritma Notu"
+    },
+    "ai": {
+      "badge": "Yapay Zeka Hazır",
+      "title": "Mevcut malzemelerinle ne pişirebilirsin?",
+      "subtitle": "Envanterindeki {{count}} malzemeyi analiz edip sana en uygun tarifleri saniyeler içinde getirebiliriz.",
+      "cta": "Önerileri Gör"
+    },
+    "actions": {
+      "addMeal": "Öğün Ekle",
+      "suggestRecipe": "Tarif Öner"
+    },
+    "hero2": {
+      "title": "Mutfağını Veriyle Yönetmeye Başla.",
+      "subtitle": "Envanterini takip et, günlük kalorini yönet ve sana özel üretilen yapay zeka tarifleriyle tanış.",
+      "cta": "Deneyimi Başlat"
+    },
+    "greeting": "Hoş geldin, {{name}}!"
   },
   "actions": {
     "login": "Giriş Yap",
@@ -153,5 +201,416 @@
   },
   "footer": {
     "rights": "Tüm hakları saklıdır."
+  },
+  "common": {
+    "cancel": "İPTAL",
+    "general": "Genel",
+    "unnamed": "İsimsiz",
+    "select": "Seçiniz",
+    "calculating": "Hesaplanıyor...",
+    "loading": "Yükleniyor...",
+    "category": "Kategori",
+    "accept": "Kabul Et",
+    "reject": "Reddet",
+    "close": "Kapat",
+    "error": "Hata oluştu"
+  },
+  "auth": {
+    "loginRequired": "Bu Sayfayı Görmek İçin Giriş Yapmalısınız",
+    "loginDescription": "Uygulamamızın tüm özelliklerinden faydalanmak için lütfen Keycloak hesabınızla oturum açın.",
+    "loginButton": "Hemen Giriş Yap",
+    "loading": "MealAI Hazırlanıyor",
+    "connectionFailed": "Bağlantı Kurulamadı",
+    "connectionHint": "Lütfen Keycloak servisinin (port 8080) çalıştığından emin olun veya Misafir Modu'na geçin.",
+    "retry": "Tekrar Dene",
+    "guestModeInfo": "Misafir Modu Hakkında Bilgi",
+    "guestModeAlert": "Misafir Modu'na geçmek için src/keycloak-config.json dosyasındaki 'enabled' değerini false yapın.",
+    "guestModeActive": "Şu an Misafir Modu aktif. Tüm özelliklere erişebilirsiniz."
+  },
+  "layout": {
+    "addMeal": "ÖĞÜN EKLE",
+    "unitConverter": "Birim Dönüştürücü",
+    "units": "Birimler",
+    "myProfile": "Profilim",
+    "settings": "Ayarlar"
+  },
+  "unitConverter": {
+    "title": "Birim Dönüştürücü",
+    "subtitle": "Akıllı Miktar Hesaplama",
+    "tabConverter": "Dönüştürücü",
+    "tabReference": "Referans Değerler",
+    "ingredientLabel": "Malzeme Bazlı Dönüşüm (Opsiyonel)",
+    "searchPlaceholder": "Malzeme adı (örn: Süt, Un...)",
+    "searching": "Malzemeler aranıyor...",
+    "noResults": "Bu aramayla eşleşen bir malzeme bulunamadı.",
+    "usingDensity": "{{name}} yoğunluğu baz alınıyor",
+    "resetToGeneral": "Genel Moda Dön",
+    "defaultDensityNote": "Herhangi bir malzeme seçilmezse standart su yoğunluğu (1.0) baz alınır.",
+    "amount": "Miktar",
+    "sourceUnit": "Kaynak Birim",
+    "conversionResults": "Dönüşüm Karşılıkları",
+    "calculating": "Hesaplanıyor...",
+    "enterAmountHint": "Dönüşümleri görmek için miktar girin.",
+    "referenceTitle": "Standart Ölçü Birimleri",
+    "referenceDesc": "Sistemimizde varsayılan olarak kabul edilen gramaj değerleri aşağıdadır. Malzeme seçildiğinde bu değerler yoğunluğa göre değişebilir.",
+    "referenceNote": "* Not: Sıvı malzemelerde (Süt, Yağ vb.) 1 ML su yoğunluğu olan 1 gramdan farklı olabilir. Birim dönüştürücü sekmesinden malzeme seçerek gerçek gramajı hesaplayabilirsiniz."
+  },
+  "notifications": {
+    "subtitle": "Tüm aktivitelerinizi buradan takip edebilirsiniz",
+    "loading": "Bildirimler yükleniyor...",
+    "empty": "Henüz bildiriminiz yok.",
+    "inviteAnswered": "Bu davet yanıtlandı veya okundu olarak işaretlendi",
+    "markRead": "Okundu olarak işaretle",
+    "title": "Bildirimler",
+    "markAllRead": "Hepsini Oku",
+    "accept": "Kabul Et",
+    "reject": "Reddet",
+    "answered": "Yanıtlandı",
+    "viewAll": "Tümünü Gör",
+    "time": {
+      "justNow": "Az önce",
+      "minutesAgo": "{{count}} dk önce",
+      "hoursAgo": "{{count}} saat önce"
+    },
+    "actions": {
+      "deselect": "Seçimi Kaldır",
+      "selectAll": "Tümünü Seç",
+      "deleteSelected": "Seçilenleri Sil",
+      "clearAll": "Tümünü Temizle",
+      "markAllRead": "Tümünü Okundu İşaretle"
+    }
+  },
+  "profile": {
+    "loading": "Profiliniz hazırlanıyor...",
+    "overline": "Kişiselleştirme",
+    "title": "Profil Ayarları",
+    "dailyEnergy": "Günlük Enerji",
+    "weight": "Ağırlık (kg)",
+    "height": "Boy (cm)",
+    "age": "Yaş",
+    "dirty": "Kaydedilmemiş Değişiklikler",
+    "clean": "Her Şey Güncel",
+    "physicalDetails": "Fiziksel Detaylar",
+    "biologicalSex": "Biyolojik Cinsiyet",
+    "notSpecified": "Belirtilmedi",
+    "activityLevel": "Aktivite Seviyesi",
+    "nutritionGoal": "Beslenme Hedefi",
+    "allergensLabel": "Alerjenler & Hassasiyetler",
+    "refresh": "Verileri Yenile",
+    "statusLabel": "Durum",
+    "revert": "Geri Al",
+    "save": "Kaydet",
+    "gender": {
+      "male": "Erkek",
+      "female": "Kadın",
+      "other": "Diğer"
+    },
+    "activity": {
+      "sedentary": "Sedanter",
+      "lightlyActive": "Hafif Aktif",
+      "moderatelyActive": "Orta Aktif",
+      "veryActive": "Çok Aktif",
+      "extraActive": "Ekstra Aktif"
+    },
+    "diet": {
+      "none": "Kısıtlama Yok",
+      "vegan": "Vegan",
+      "vegetarian": "Vejetaryen",
+      "keto": "Ketojenik",
+      "paleo": "Paleo",
+      "glutenFree": "Glutensiz",
+      "label": "Diyet Yaklaşımı"
+    },
+    "goal": {
+      "loseWeight": "Kilo Vermek",
+      "maintainWeight": "Kiloyu Korumak",
+      "gainWeight": "Kilo Almak",
+      "buildMuscle": "Kas Kazanmak"
+    },
+    "lifestyle": {
+      "title": "Beslenme & Yaşam Tarzı"
+    },
+    "allergens": {
+      "placeholder": "Örn: Yer Fıstığı"
+    },
+    "taste": {
+      "title": "Lezzet Tercihleri",
+      "listLabel": "Liste",
+      "subtitle": "Sevmediğin malzemeleri buraya ekle, MealAI sana özel tariflerde bunları geri plana atsın.",
+      "itemCount": "{{count}} Öge",
+      "placeholder": "Örn: Patlıcan, dereotu, bamya...",
+      "searching": "Kütüphane taranıyor...",
+      "noMatch": "Eşleşme bulunamadı, manuel olarak eklenecek.",
+      "empty": "Henüz sevmediğin bir malzeme eklemedin.",
+      "searchBusy": "Arama servisi şu an meşgul."
+    }
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "tabs": {
+      "general": "Genel Ayarlar",
+      "security": "Güvenlik",
+      "securityTitle": "Güvenlik & Şifre"
+    },
+    "emailLabel": "E-Posta Adresi",
+    "email": {
+      "managed": "E-posta adresiniz Keycloak üzerinden yönetilmektedir. Değişiklik yapmak için hesap yönetimi panelini kullanın."
+    },
+    "actions": {
+      "editAccount": "Hesap Bilgilerini Düzenle",
+      "allSecurity": "Tüm Güvenlik Ayarları",
+      "changePassword": "Şifremi Değiştir"
+    },
+    "keycloak": {
+      "hint": "Profil ve e-posta değişikliği için Keycloak yönetim sayfasını kullanabilirsiniz.",
+      "redirect": "Hesap yönetimi için Keycloak paneline yönlendiriliyorsunuz. Lütfen bekleyin..."
+    },
+    "security": {
+      "title": "Güvenli Yönetim",
+      "desc": "Hesap güvenliğiniz bizim için önemlidir. Şifre değiştirme ve iki faktörlü kimlik doğrulama gibi işlemler Keycloak güvenlik merkezi üzerinden gerçekleştirilmektedir."
+    },
+    "footer": "MealAI © 2024 - Tüm hakları saklıdır."
+  },
+  "recipes": {
+    "defaultImageAlt": "{{title}} için varsayılan tarif görseli",
+    "chefTouch": "Şef Dokunuşu",
+    "curatorPicks": "Küratör Seçimleri",
+    "libraryTitle": "Tarif Kütüphanesi",
+    "libraryTitlePart1": "Tarif",
+    "libraryTitlePart2": "Kütüphanesi",
+    "loading": "Lezzetler yükleniyor...",
+    "viewRecipe": "Tarifi İncele",
+    "preparingDetails": "Şef detayları hazırlıyor...",
+    "instructions": "Hazırlanışı",
+    "ingredientsLabel": "Malzemeler",
+    "noDetails": "Tarif detayları henüz eklenmemiş.",
+    "filter": "Filtrele",
+    "newRecipe": "Yeni Tarif",
+    "searchPlaceholder": "Tarif, malzeme veya mutfak tipi ara...",
+    "page": "SAYFA",
+    "categories": {
+      "all": "Hepsi",
+      "main": "Ana Yemek",
+      "breakfast": "Kahvaltı",
+      "salad": "Salata",
+      "dessert": "Tatlı",
+      "fit": "Fit & Sağlıklı"
+    }
+  },
+  "inventory": {
+    "loading": "Envanter Yükleniyor",
+    "header": {
+      "title": "Stoklarını lokasyon bazlı yönet.",
+      "subtitle": "Ev, ofis veya yazlık için ayrı envanterler oluştur; elindeki malzemeleri MealAI ile takip et.",
+      "locationsLabel": "Lokasyonlar",
+      "newLocation": "Yeni Lokasyon",
+      "invitations": "Davetler"
+    },
+    "groupList": {
+      "title": "Nerede olduğunu seç",
+      "itemCount": "{{count}} Ürün"
+    },
+    "itemList": {
+      "defaultGroupName": "Seçili Alan",
+      "edit": "Düzenle",
+      "addItem": "ÜRÜN EKLE",
+      "showing": "{{count}} ÜRÜN GÖSTERİLİYOR",
+      "colProduct": "Ürün / Malzeme",
+      "colQuantity": "Miktar",
+      "colActions": "İşlemler",
+      "empty": "Henüz burada bir şey yok.",
+      "consume": "TÜKETİM EKLE",
+      "totalItems": "Toplam Ürün",
+      "categories": "Kategori",
+      "criticalStock": "Kritik Stok",
+      "searchPlaceholder": "Malzeme veya kategori ara...",
+      "statusMissing": "BİTTİ",
+      "statusLow": "AZALDI"
+    },
+    "groupModal": {
+      "editTitle": "Lokasyonu Düzenle",
+      "addTitle": "Yeni Lokasyon Ekle",
+      "nameLabel": "Lokasyon Adı",
+      "namePlaceholder": "Örn: Mutfağım, Ofis Dolabı...",
+      "iconLabel": "İkon Seçimi",
+      "update": "GÜNCELLE",
+      "create": "OLUŞTUR"
+    },
+    "consumptionModal": {
+      "peopleLabel": "Tüketiciler & Miktarlar",
+      "totalConsumption": "Toplam Tüketim",
+      "processing": "İŞLENİYOR...",
+      "save": "TÜKETİMİ KAYDET",
+      "currentStock": "Mevcut Stok"
+    },
+    "conversionPreview": {
+      "title": "Birim Karşılıkları",
+      "calculating": "Hesaplanıyor..."
+    },
+    "members": {
+      "title": "Lokasyon Üyeleri",
+      "subtitle": "Bu envanteri kimlerle paylaşıyorsunuz?",
+      "inviteTitle": "Yeni Üye Davet Et",
+      "hint": "Üye ekleyerek envanteri birlikte yönetebilir ve tüketimi birlikte takip edebilirsiniz.",
+      "searchPlaceholder": "E-posta veya isim..."
+    },
+    "invitations": {
+      "modalTitle": "Envanter Davetleri",
+      "loading": "Davetler yükleniyor...",
+      "empty": "Şu an bekleyen davetiniz yok.",
+      "from": "Kimden: {{email}}"
+    },
+    "utils": {
+      "home": "Ev",
+      "office": "Ofis",
+      "city": "Şehir",
+      "pantry": "Kiler",
+      "summerhouse": "Yazlık"
+    },
+    "addNew": "Yeni Ürün Ekle",
+    "edit": "Ürünü Düzenle",
+    "searchIngredient": "Malzeme Ara",
+    "searchPlaceholder": "Örn: Domates, Süt, Tavuk...",
+    "selectedIngredient": "Seçilen Malzeme",
+    "quickAdd": "Hızlı Ekle",
+    "oneLitre": "1 Litre",
+    "oneKilo": "1 Kilo",
+    "oneUnit": "1 Adet / Paket",
+    "manualAmount": "MANUEL MİKTAR GİR",
+    "backToQuick": "HIZLI SEÇENEKLERE DÖN",
+    "modeAdd": "EKLE",
+    "modeSubtract": "ÇIKAR",
+    "modeSet": "AYARLA",
+    "saveChanges": "DEĞİŞİKLİKLERİ KAYDET",
+    "addToInventory": "ENVANTERE EKLE"
+  },
+  "consumption": {
+    "location": {
+      "title": "Nerede ve hangi öğünde yediniz?",
+      "outside": "Dışarıda"
+    },
+    "member": {
+      "title": "Kim için kayıt yapıyorsunuz?"
+    },
+    "summary": {
+      "colUser": "Kullanıcı",
+      "colFat": "Yağ",
+      "deductionTitle": "Envanterden Düşülecek Malzemeler",
+      "outsideNote": "Dışarıda / Diğer seçildi. Yalnızca günlük tüketim özeti güncellenecek.",
+      "locationNote": "{{location}} stoğundan otomatik düşüm yapılacak.",
+      "saving": "Kaydediliyor...",
+      "saveMultiple": "Tüketimleri Kaydet",
+      "saveSingle": "Tüketimi Kaydet"
+    },
+    "selectedItems": {
+      "defaultTitle": "Seçimleriniz",
+      "conversions": "Dönüşümler",
+      "quickSelect": "Hızlı Seçim",
+      "enterAmount": "Miktar Gir",
+      "portion": "Porsiyon"
+    },
+    "search": {
+      "recipePlaceholder": "Mercimek çorbası, menemen...",
+      "ingredientPlaceholder": "Yoğurt, muz, badem...",
+      "noResults": "Sonuç bulunamadı. Daha kısa veya farklı bir arama deneyin.",
+      "selectMode": "Tarif veya malzeme seçin",
+      "searchRecipe": "Tarif ara",
+      "searchIngredient": "Malzeme ara",
+      "updating": "Sonuçlar güncelleniyor...",
+      "selectFromBelow": "Aşağıdaki sonuçlardan bir veya birkaç tane seçin."
+    },
+    "panel": {
+      "title": "Ne yediğinizi hızlıca kaydedin, gerekirse stoktan otomatik düşün.",
+      "subtitle": "Ev veya Ofis seçerseniz tarif malzemeleri seçili lokasyondan otomatik düşülür. Dışarıda / Diğer için yalnızca kalori ve makrolar kaydedilir.",
+      "memberFallback": "Üye #{{id}}",
+      "awaitingSelection": "Seçiminiz bekleniyor",
+      "itemsSelected": "{{count}} ürün seçildi",
+      "multiMember": "{{count}} farklı kişi için tüketim kaydediliyor.",
+      "memberSelection": "{{name}} için seçim",
+      "memberSelected": "{{name}} için seçildi"
+    }
+  },
+  "toasts": {
+    "inventory": {
+      "loadError": "Envanter bilgileri alınamadı.",
+      "invitationsLoadError": "Bekleyen davetler yüklenemedi.",
+      "userSearchError": "Kullanıcı araması başarısız oldu.",
+      "alreadyExists": "{{name}} zaten envanterinizde var. Eklemek istediğiniz miktarı girin.",
+      "unitsLoadError": "Birim bilgileri alınamadı.",
+      "ingredientSearchError": "Malzeme araması başarısız oldu.",
+      "locationUpdated": "Lokasyon güncellendi.",
+      "locationCreated": "Yeni lokasyon oluşturuldu.",
+      "operationFailed": "İşlem başarısız oldu.",
+      "deleteError": "Silme işlemi başarısız.",
+      "itemUpdated": "Ürün güncellendi.",
+      "itemAdded": "Ürün eklendi.",
+      "itemSaveError": "Ürün kaydedilemedi.",
+      "itemRemoved": "Ürün çıkarıldı.",
+      "consumptionSaved": "Tüketim başarıyla kaydedildi.",
+      "consumptionError": "Tüketim kaydedilemedi.",
+      "inviteSent": "{{name}} kullanıcısına davet gönderildi.",
+      "inviteError": "Davet gönderilemedi.",
+      "memberRemoved": "Üye çıkarıldı.",
+      "shoppingListError": "Alışveriş listesi yüklenemedi.",
+      "invitationAccepted": "Davet kabul edildi",
+      "invitationAcceptError": "Davet kabul edilirken hata oluştu",
+      "invitationRejected": "Davet reddedildi",
+      "invitationRejectError": "Davet reddedilirken hata oluştu"
+    },
+    "consumption": {
+      "selectFirst": "Önce en az bir tarif veya malzeme seç.",
+      "locationLoadError": "Lokasyon bilgileri yüklenemedi.",
+      "searchError": "Arama sonuçları yüklenemedi.",
+      "saved": "Tüketim başarıyla kaydedildi.",
+      "unexpectedError": "Beklenmedik bir hata oluştu."
+    },
+    "notifications": {
+      "loadError": "Bildirimler yüklenemedi",
+      "markReadError": "Bildirim işaretlenemedi",
+      "markAllSuccess": "Tüm bildirimler okundu olarak işaretlendi",
+      "markAllError": "Hata oluştu",
+      "deleteSuccess": "Seçili bildirimler silindi",
+      "deleteError": "Silme işlemi sırasında hata oluştu",
+      "clearSuccess": "Tüm bildirimler silindi",
+      "clearError": "Hata oluştu",
+      "inviteAcceptError": "Davet kabul edilirken hata oluştu",
+      "inviteRejectError": "Davet reddedilirken hata oluştu",
+      "allRead": "Tüm bildirimler okundu olarak işaretlendi"
+    },
+    "profile": {
+      "loadError": "Yükleme başarısız.",
+      "saveSuccess": "Profil başarıyla güncellendi.",
+      "saveError": "Kaydedilirken bir hata oluştu."
+    },
+    "recipes": {
+      "loadError": "Tarifler yüklenemedi",
+      "detailsError": "Detaylar yüklenemedi"
+    },
+    "dashboard": {
+      "syncError": "Veriler senkronize edilemedi."
+    }
+  },
+  "confirms": {
+    "inventory": {
+      "deleteLocation": "Bu lokasyonu ve içindeki tüm ürünleri silmek istediğinize emin misiniz?",
+      "removeItem": "Bu ürünü envanterden çıkarmak istediğinize emin misiniz?",
+      "removeMember": "Bu üyeyi gruptan çıkarmak istediğinize emin misiniz?"
+    },
+    "notifications": {
+      "deleteSelected": "{{count}} adet bildirimi silmek istediğinize emin misiniz?",
+      "clearAll": "Tüm bildirimleri silmek istediğinize emin misiniz?"
+    }
+  },
+  "shopping": {
+    "subtitle": "Azalan ve biten malzemeleriniz",
+    "locationFilter": "Lokasyon Seçimi",
+    "loading": "Liste hazırlanıyor...",
+    "allGood": "Her şey yolunda!",
+    "selectLocation": "Lütfen en az bir lokasyon seçin.",
+    "noItems": "Seçili lokasyonlarda azalan bir malzeme bulunamadı.",
+    "statusMissing": "BİTTİ",
+    "statusLow": "AZALDI",
+    "close": "Kapat",
+    "print": "LİSTEYİ YAZDIR"
   }
 }

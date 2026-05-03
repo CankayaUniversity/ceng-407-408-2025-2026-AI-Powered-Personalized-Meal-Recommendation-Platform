@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { InventoryGroup } from '../../../types';
 import { LOCATION_ICONS } from '../utils/inventoryUtils';
 
@@ -13,12 +14,13 @@ export const InventoryGroupList: React.FC<InventoryGroupListProps> = ({
   selectedGroupId,
   onSelectGroup
 }) => {
+  const { t } = useTranslation();
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between px-2">
         <div>
           <p className="meal-overline text-foreground/40">Location Selector</p>
-          <h2 className="meal-section-title mt-1 text-2xl">Nerede olduğunu seç</h2>
+          <h2 className="meal-section-title mt-1 text-2xl">{t('inventory.groupList.title')}</h2>
         </div>
       </div>
       <div className="flex gap-4 overflow-x-auto pb-4 px-1 custom-scrollbar">
@@ -42,12 +44,12 @@ export const InventoryGroupList: React.FC<InventoryGroupListProps> = ({
                   <Icon size={20} />
                 </div>
                 <span className={`text-[10px] font-bold uppercase tracking-widest ${active ? 'text-white/60' : 'text-foreground/30'}`}>
-                  {group.itemCount} Ürün
+                  {t('inventory.groupList.itemCount', { count: group.itemCount })}
                 </span>
               </div>
               <p className="mt-6 font-serif text-2xl font-bold">{group.name}</p>
               <p className={`mt-1 text-xs font-medium ${active ? 'text-white/70' : 'text-foreground-muted'}`}>
-                {iconOption.label} envanteri
+                {iconOption.label}
               </p>
             </button>
           );

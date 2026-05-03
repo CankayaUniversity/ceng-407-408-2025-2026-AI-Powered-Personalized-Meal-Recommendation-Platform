@@ -14,8 +14,8 @@ import logoLight from '../../assets/meal_logo_light.png';
 
 /**
  * MealAI Landing Page - The "Digital Private Chef" Experience
- * Projenin ana vitrini. Tipografi ağırlıklı, premium ve samimi bir tasarım.
- * Tasarım Dili: Espresso Midnight (Derinlik), Terracotta (Enerji), Moss Sage (Doğallık)
+ * Main showcase of the project. Typography-first, premium and authentic design.
+ * Design Language: Espresso Midnight (Depth), Terracotta (Energy), Moss Sage (Nature)
  */
 
 const LandingPage: React.FC = () => {
@@ -163,7 +163,7 @@ const LandingPage: React.FC = () => {
                                     className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-[1.04]"
                                 />
                                 <div className="absolute top-5 left-5 glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
-                                    Gurme & Sağlıklı
+                                    {t('landing.mockup.tag')}
                                 </div>
                                 <div className="absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl text-primary">
                                     <Star size={18} fill="currentColor" className="text-terracotta" />
@@ -188,7 +188,7 @@ const LandingPage: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="pt-6 border-t border-card-border flex items-center justify-between">
-                                    <span className="text-[10px] font-black text-espresso-midnight/30 dark:text-white/30 uppercase tracking-[0.2em]">Önerilen Menü</span>
+                                    <span className="text-[10px] font-black text-espresso-midnight/30 dark:text-white/30 uppercase tracking-[0.2em]">{t('landing.mockup.recommended')}</span>
                                     <div className="w-10 h-10 rounded-2xl bg-terracotta text-white flex items-center justify-center">
                                         <ChevronRight size={20} strokeWidth={3} />
                                     </div>
@@ -196,22 +196,9 @@ const LandingPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Floating Tooltip */}
-                        <div className="absolute -right-8 -top-8 glass-card p-4 rounded-3xl shadow-xl animate-bounce duration-[4000ms] border-white/40 z-20">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-moss-sage rounded-xl flex items-center justify-center text-white shadow-lg">
-                                    <Activity size={20} />
-                                </div>
-                                <div className="pr-4">
-                                    <p className="text-[9px] uppercase font-black text-espresso-midnight/40 dark:text-white/40 tracking-widest">Analysis</p>
-                                    <p className="text-sm font-bold text-espresso-midnight dark:text-white">Ready to Cook</p>
-                                </div>
-                            </div>
-                        </div>
+                        {/* Decorative Elements */}
+                        <div className="absolute -z-10 -bottom-10 -right-10 w-64 h-64 bg-terracotta/20 rounded-full blur-3xl opacity-50" />
                     </div>
-
-                    {/* Decorative Elements */}
-                    <div className="absolute -z-10 -bottom-10 -right-10 w-64 h-64 bg-terracotta/20 rounded-full blur-3xl opacity-50" />
                 </div>
             </header>
 

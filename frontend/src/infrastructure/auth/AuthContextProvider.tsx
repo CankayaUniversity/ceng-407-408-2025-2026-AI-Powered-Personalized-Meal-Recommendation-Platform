@@ -39,10 +39,10 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ch
             })
             .catch(err => {
                 logger.error('Auth init error', err);
-                // err null veya undefined olabilir, ya da message alanı olmayabilir
-                const errorMessage = err?.message || (typeof err === 'string' ? err : 'Keycloak bağlantısı kurulamadı.');
+                // err may be null/undefined or lack a message field
+                const errorMessage = err?.message || (typeof err === 'string' ? err : 'Could not connect to Keycloak.');
                 setError(errorMessage);
-                // initialization bitti ama hata ile bitti
+                // initialization finished but with an error
                 setInitialized(true);
             });
 
@@ -75,7 +75,7 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ch
         logout,
         error,
         authService,
-        keycloak: authService.keycloak // Keycloak instance'ına erişim sağlıyoruz
+        keycloak: authService.keycloak // expose Keycloak instance
     }), [initialized, authenticated, user, login, register, logout, error, authService]);
 
     return (

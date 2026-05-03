@@ -21,7 +21,7 @@ const AboutPage: React.FC = () => {
                     className="flex items-center gap-2 text-sm font-bold text-black/40 dark:text-alabaster/40 hover:text-terracotta transition-colors uppercase tracking-widest"
                 >
                     <ChevronLeft size={16} />
-                    Geri Dön
+                    {t('about.back')}
                 </button>
                 <div className="flex items-center gap-2 px-4 py-1.5 bg-terracotta/10 text-terracotta rounded-full text-[10px] font-black uppercase tracking-widest">
                     <Info size={12} />
@@ -48,7 +48,7 @@ const AboutPage: React.FC = () => {
                     </div>
                     <div className="space-y-6 text-center md:text-left">
                         <h1 className="text-4xl md:text-6xl font-serif font-bold text-espresso-midnight dark:text-white leading-tight">
-                            MealAI <span className="text-terracotta italic font-normal">Mutfakta</span> Devrim
+                            {t('about.heroTitle')}
                         </h1>
                         <p className="text-xl text-foreground-muted italic leading-relaxed font-medium border-l-4 border-terracotta/20 pl-6 hidden md:block">
                             "{t('about.story.content')}"

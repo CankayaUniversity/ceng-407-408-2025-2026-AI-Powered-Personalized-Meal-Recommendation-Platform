@@ -68,7 +68,7 @@ const Dashboard: React.FC = () => {
       setShoppingListItems(data.items || []);
       return data.items || [];
     } catch (error) {
-      showToast('Alışveriş listesi yüklenemedi.', 'error');
+      showToast(t('toasts.inventory.shoppingListError'), 'error');
       return [];
     } finally {
       setLoadingShoppingList(false);
@@ -118,7 +118,7 @@ const Dashboard: React.FC = () => {
         setShoppingListItems(shoppingList.items || []);
       });
     } catch (error) {
-      const msg = error instanceof ApiError ? error.message : 'Veriler senkronize edilemedi.';
+      const msg = error instanceof ApiError ? error.message : t('toasts.dashboard.syncError');
       showToast(msg, 'error');
     } finally {
       setRefreshing(false);
@@ -163,9 +163,9 @@ const Dashboard: React.FC = () => {
     const signals: string[] = [];
     if (profile?.dietType && profile.dietType !== 'NONE') signals.push(t(`dashboard.dietType.${profile.dietType}`));
     if (profile?.dietaryGoal) signals.push(t(`dashboard.dietaryGoal.${profile.dietaryGoal}`));
-    profile?.allergies?.slice(0, 2).forEach((a) => signals.push(`${a} Hassasiyeti`));
+    profile?.allergies?.slice(0, 2).forEach((a) => signals.push(`${a}`));
     return signals.slice(0, 4);
-  }, [profile]);
+  }, [profile, t]);
 
   if (!authenticated) {
     return (
@@ -274,40 +274,40 @@ const Dashboard: React.FC = () => {
           <section className="lg:col-span-8 meal-card meal-highlight-frame flex flex-col justify-between group">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="space-y-2">
-                <span className="meal-overline">Envanter Sağlığı</span>
+                <span className="meal-overline">{t('dashboard.inventory.title')}</span>
                 <h2 className="meal-section-title">
                   {inventoryMetrics.totalLowItems > 0
-                      ? `${inventoryMetrics.totalLowItems} Malzeme Kritik Seviyede`
-                      : 'Mutfak Stokları Güvende'}
+                      ? `${inventoryMetrics.totalLowItems} ${t('dashboard.stats.criticalStock')}`
+                      : t('dashboard.inventory.safe')}
                 </h2>
                 <p className="text-foreground-muted text-sm max-w-lg font-medium italic">
-                  Kritik seviyedeki malzemeler kırmızı ile işaretlenmiştir.
+                  {t('dashboard.inventory.warning')}
                 </p>
               </div>
               <div className="meal-action-group">
                 <button onClick={() => navigate('/inventory')} className="btn-responsive btn-secondary py-3 px-6">
-                  Envanteri Aç <ArrowRight size={16} />
+                  {t('dashboard.inventory.open')} <ArrowRight size={16} />
                 </button>
                 <button 
                   onClick={handleOpenShoppingList} 
                   className="btn-responsive btn-primary py-3 px-6 bg-terracotta text-white shadow-lg shadow-terracotta/20 hover:scale-[1.02]"
                 >
-                  <ShoppingCart size={18} /> Alışveriş Listesi
+                  <ShoppingCart size={18} /> {t('dashboard.inventory.shoppingList')}
                 </button>
               </div>
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="meal-metric-card border-terracotta/20 bg-terracotta/[0.03] dark:bg-terracotta/5">
-                <span className="text-[10px] font-bold uppercase text-terracotta/70">Azalan</span>
+                <span className="text-[10px] font-bold uppercase text-terracotta/70">{t('dashboard.inventory.low')}</span>
                 <p className="text-4xl font-serif font-bold text-terracotta">{inventoryMetrics.totalLowItems}</p>
               </div>
               <div className="meal-metric-card">
-                <span className="text-[10px] font-bold uppercase text-foreground-muted">Toplam Malzeme</span>
+                <span className="text-[10px] font-bold uppercase text-foreground-muted">{t('dashboard.inventory.total')}</span>
                 <p className="text-4xl font-serif font-bold text-foreground">{inventoryMetrics.totalItems}</p>
               </div>
               <div className="meal-metric-card border-sage/20 bg-sage/[0.03] dark:bg-sage/5">
-                <span className="text-[10px] font-bold uppercase text-sage">Kategori</span>
+                <span className="text-[10px] font-bold uppercase text-sage">{t('dashboard.inventory.categories')}</span>
                 <p className="text-4xl font-serif font-bold text-moss-forest dark:text-sage">{inventoryMetrics.totalCategories}</p>
               </div>
             </div>
@@ -329,8 +329,8 @@ const Dashboard: React.FC = () => {
           <section className="lg:col-span-4 meal-card space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <span className="meal-overline">Beslenme Takibi</span>
-                <h3 className="meal-section-title">Günlük Özet</h3>
+                <span className="meal-overline">{t('dashboard.daily.tracking')}</span>
+                <h3 className="meal-section-title">{t('dashboard.daily.title')}</h3>
               </div>
               <button 
                 onClick={() => navigate('/history')}
@@ -361,8 +361,8 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Protein', val: dailySummary?.totalProtein || 0, color: 'text-terracotta' },
-                { label: 'Karb.', val: dailySummary?.totalCarbs || 0, color: 'text-foreground dark:text-white' },
-                { label: 'Yağ', val: dailySummary?.totalFat || 0, color: 'text-sage' }
+                { label: t('dashboard.daily.carbs'), val: dailySummary?.totalCarbs || 0, color: 'text-foreground dark:text-white' },
+                { label: t('dashboard.daily.fat'), val: dailySummary?.totalFat || 0, color: 'text-sage' }
               ].map((macro, i) => (
                   <div key={i} className="meal-metric-card p-3 text-center border-card-border">
                     <p className="text-[9px] uppercase font-bold text-foreground-muted mb-1">{macro.label}</p>
@@ -384,16 +384,16 @@ const Dashboard: React.FC = () => {
               {profileSignals.length > 0 ? profileSignals.map((s, i) => (
                   <span key={i} className="medical-badge">{s}</span>
               )) : (
-                  <p className="text-sm italic text-foreground-muted">Profil tercihleri ayarlanmamış.</p>
+                  <p className="text-sm italic text-foreground-muted">{t('dashboard.daily.noProfile')}</p>
               )}
             </div>
             <div className="p-4 rounded-2xl bg-sage/5 border border-sage/10">
               <div className="flex items-center gap-2 text-sage mb-2">
                 <Info size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Algoritma Notu</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t('dashboard.recommendations.algorithm')}</span>
               </div>
               <p className="text-xs text-foreground-muted leading-relaxed font-medium">
-                Önerileriniz {profile?.dietaryGoal ? t(`dashboard.dietaryGoal.${profile.dietaryGoal}`).toLowerCase() : 'genel'} hedeflerinize göre filtreleniyor.
+                {t('dashboard.recommendations.subtitle', { goal: profile?.dietaryGoal ? t(`dashboard.dietaryGoal.${profile.dietaryGoal}`).toLowerCase() : t('common.general') })}
               </p>
             </div>
           </section>
@@ -404,19 +404,19 @@ const Dashboard: React.FC = () => {
               <ChefHat size={200} />
             </div>
             <div className="relative z-10 space-y-4">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Yapay Zeka Hazır</span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">{t('dashboard.ai.badge')}</span>
               <h2 className="text-3xl md:text-4xl font-serif font-bold leading-tight max-w-md">
-                Mevcut malzemelerinle ne pişirebilirsin?
+                {t('dashboard.ai.title')}
               </h2>
               <p className="text-white/70 text-sm max-w-sm font-medium">
-                Envanterindeki {inventoryMetrics.totalItems} malzemeyi analiz edip sana en uygun tarifleri saniyeler içinde getirebiliriz.
+                {t('dashboard.ai.subtitle', { count: inventoryMetrics.totalItems })}
               </p>
             </div>
             <button
                 onClick={() => navigate('/recommendations')}
                 className="relative z-10 bg-white text-sage px-8 py-5 rounded-3xl font-bold shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
             >
-              Önerileri Gör <Sparkles size={20} />
+              {t('dashboard.ai.cta')} <Sparkles size={20} />
             </button>
           </section>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Minus, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { 
   type SelectedConsumptionItem, 
@@ -46,8 +47,9 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
   onManualPortionUpdate,
   conversions,
   userId,
-  title = "Sizin Seçimleriniz"
+  title
 }) => {
+  const { t } = useTranslation();
   if (selectedItems.length === 0) return null;
 
   const ConversionPreview: React.FC<{ itemKey: string; item: SelectedConsumptionItem }> = ({ itemKey, item }) => {
@@ -58,7 +60,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
       return (
         <div className="mt-2 flex items-center gap-2 text-[10px] text-foreground/40 animate-pulse">
           <div className="h-3 w-3 rounded-full border border-terracotta border-t-transparent animate-spin" />
-          Hesaplanıyor...
+          {t('common.calculating')}
         </div>
       );
     }
@@ -81,7 +83,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
 
     return (
       <div className="mt-2 flex flex-col gap-1.5">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Dönüşümler</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.conversions')}</p>
         <div className="flex flex-wrap gap-1.5">
           {filteredConversions.slice(0, 5).map((conv: any) => (
             <div
@@ -104,7 +106,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
 
   return (
     <div className="space-y-4">
-      <p className="meal-overline tracking-[0.18em]">{title}</p>
+      <p className="meal-overline tracking-[0.18em]">{title || t('consumption.selectedItems.defaultTitle')}</p>
       {selectedItems.map((item) => {
         const nutrition = getSelectedItemNutrition(item);
         const isManual = manualInputs.has(item.key);
@@ -139,7 +141,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
               <div className="space-y-4">
                 {item.kind === 'RECIPE' && (
                   <div className="mt-4 space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Porsiyon</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.portion')}</p>
                     <div className="flex flex-wrap gap-2">
                       {RECIPE_PORTION_OPTIONS.map((option) => (
                         <button
@@ -164,7 +166,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                   <div className="mt-4 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-3">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Hızlı Seçim</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.quickSelect')}</p>
                         <div className="flex flex-wrap gap-2">
                           {getIngredientUnits(item.ingredient).quickUnits.map((unit: string) => {
                             const weights = (item.ingredient.id && ingredientSpecificWeights[item.ingredient.id]) || unitWeights;
@@ -231,7 +233,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                           onClick={() => toggleManualInput(item.key)}
                           className="flex w-full items-center justify-between rounded-xl bg-foreground/5 px-3 py-2 text-left transition-all hover:bg-foreground/10"
                         >
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">Miktar Gir</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.enterAmount')}</span>
                           {isManual ? <ChevronUp size={14} className="text-terracotta" /> : <ChevronDown size={14} className="text-foreground" />}
                         </button>
                         {isManual && (

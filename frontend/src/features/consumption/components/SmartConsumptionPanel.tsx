@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useMemo } from 'react';
 import { Sparkles, CheckCircle2 } from 'lucide-react';
 import { useSmartConsumption } from '../hooks/useSmartConsumption';
@@ -48,6 +49,7 @@ const VOLUME_UNIT_ML: Record<string, number> = {
 const LIQUID_CATEGORIES = new Set(['BEVERAGE', 'OIL', 'SAUCE']);
 
 const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsumptionLogged }) => {
+  const { t } = useTranslation();
   const {
     user,
     inventoryGroups,
@@ -203,7 +205,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
       const member = selectedGroup?.users.find((u: any) => String(u.id) === userId);
       const nutrition = sumNutrition(items.map(getSelectedItemNutrition));
       rows.push({ 
-        name: member?.firstName || member?.name || `Üye #${userId}`, 
+        name: member?.firstName || member?.name || t('consumption.panel.memberFallback', { id: userId }), 
         calories: nutrition.calories || 0, 
         protein: nutrition.protein || 0,
         carbs: nutrition.carbs || 0,
@@ -215,11 +217,11 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
   const summaryTitle = useMemo(() => {
     const totalCount = selectedItems.length + Object.values(memberSelections).reduce((acc, items) => acc + items.length, 0);
-    return totalCount === 0 ? 'Secimini bekliyorum' : `${totalCount} öğe seçildi`;
+    return totalCount === 0 ? t('consumption.panel.awaitingSelection') : t('consumption.panel.itemsSelected', { count: totalCount });
   }, [selectedItems, memberSelections]);
 
   const summarySubtitle = useMemo(() => 
-    memberSummaryRows.length > 1 ? `${memberSummaryRows.length} farklı kişi için tüketim girişi yapılıyor.` : null
+    memberSummaryRows.length > 1 ? t('consumption.panel.multiMember', { count: memberSummaryRows.length }) : null
   , [memberSummaryRows]);
 
   const activeEntryModeLabel = ENTRY_MODE_OPTIONS.find((option) => option.value === entryMode)?.label ?? entryMode;
@@ -241,9 +243,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               <Sparkles size={14} />
               Smart Consumption
             </div>
-            <h2 className="meal-section-title mt-4 text-4xl lg:text-5xl text-foreground">Ne yediğini hızlıca kaydet, gerekiyorsa stoğu otomatik düş.</h2>
+            <h2 className="meal-section-title mt-4 text-4xl lg:text-5xl text-foreground">{t('consumption.panel.title')}</h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-foreground-muted">
-              Home veya Office seçersen tarifin içindeki malzemeler seçili lokasyondan otomatik düşülür. Outside / Other seçeneğinde ise yalnızca kalori ve makrolar loglanır.
+              {t('consumption.panel.subtitle')}
             </p>
           </div>
 
@@ -352,7 +354,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-foreground">
-                        {member?.firstName || member?.name} için Seçim
+                        {t('consumption.panel.memberSelection', { name: member?.firstName || member?.name })}
                       </h3>
                     </div>
                   </div>
@@ -400,7 +402,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                     
                     <SelectedItemsList 
                       userId={userId}
-                      title={`${member?.firstName || member?.name} için Seçilenler`}
+                      title={t('consumption.panel.memberSelected', { name: member?.firstName || member?.name })}
                       selectedItems={mSelections}
                       submitting={submitting}
                       onRemoveItem={(key) => handleRemoveMemberItem(userId, key)}

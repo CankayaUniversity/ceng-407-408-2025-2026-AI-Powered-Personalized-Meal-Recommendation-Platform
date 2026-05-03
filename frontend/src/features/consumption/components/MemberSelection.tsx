@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Plus } from 'lucide-react';
 import { type InventoryGroup } from '../types/SmartConsumption.types';
 
@@ -17,6 +18,7 @@ export const MemberSelection: React.FC<MemberSelectionProps> = ({
   onToggleMember,
   loggedInUserId
 }) => {
+  const { t } = useTranslation();
   if (!selectedGroup || selectedGroup.users.length === 0) return null;
 
   return (
@@ -24,7 +26,7 @@ export const MemberSelection: React.FC<MemberSelectionProps> = ({
       <div className="flex items-center justify-between mb-6">
         <div>
           <p className="meal-overline tracking-[0.18em] text-terracotta">Group Members</p>
-          <h3 className="text-xl font-bold text-foreground">Kimin için kayıt yapıyorsun?</h3>
+          <h3 className="text-xl font-bold text-foreground">{t('consumption.member.title')}</h3>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

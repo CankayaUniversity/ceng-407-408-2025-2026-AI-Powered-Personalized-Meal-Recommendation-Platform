@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useInventoryService } from '../../services/inventoryService';
 import { useToast } from '../../shared/hooks/useToast';
@@ -21,6 +22,7 @@ import { MemberManagement } from './components/MemberManagement';
 import { createGroupDraft } from './utils/inventoryUtils';
 
 const InventoryPage: React.FC = () => {
+  const { t } = useTranslation();
   const { authenticated } = useAuth();
   const { showToast } = useToast();
   const inventoryService = useInventoryService();
@@ -193,30 +195,30 @@ const InventoryPage: React.FC = () => {
     try {
       if (editingGroupId) {
         await inventoryService.updateInventoryGroup(editingGroupId, groupDraft);
-        showToast('Lokasyon güncellendi.', 'success');
+        showToast(t('toasts.inventory.locationUpdated'), 'success');
       } else {
         const newGroup = await inventoryService.createInventoryGroup(groupDraft);
-        showToast('Yeni lokasyon oluşturuldu.', 'success');
+        showToast(t('toasts.inventory.locationCreated'), 'success');
         setSelectedGroupId(newGroup.id);
       }
       await loadGroups({ preferredGroupId: editingGroupId });
       setLocationModalOpen(false);
     } catch (error) {
-      showToast('İşlem başarısız oldu.', 'error');
+      showToast(t('toasts.inventory.operationFailed'), 'error');
     } finally {
       setSavingGroup(false);
     }
   };
 
   const handleDeleteGroup = async (id: number) => {
-    if (!window.confirm('Bu lokasyonu ve içindeki tüm ürünleri silmek istediğinize emin misiniz?')) return;
+    if (!window.confirm(t('confirms.inventory.deleteLocation'))) return;
     try {
       await inventoryService.deleteInventoryGroup(id);
-      showToast('Lokasyon silindi.', 'success');
+      showToast(t('toasts.inventory.locationUpdated'), 'success');
       await loadGroups();
       setLocationModalOpen(false);
     } catch (error) {
-      showToast('Silme işlemi başarısız.', 'error');
+      showToast(t('toasts.inventory.deleteError'), 'error');
     }
   };
 
@@ -236,24 +238,24 @@ const InventoryPage: React.FC = () => {
       } else {
         await inventoryService.createInventoryItem(selectedGroupId, request);
       }
-      showToast(editingItemId ? 'Ürün güncellendi.' : 'Ürün eklendi.', 'success');
+      showToast(editingItemId ? t('toasts.inventory.itemUpdated') : t('toasts.inventory.itemAdded'), 'success');
       await loadGroups();
       resetItemForm();
     } catch (error) {
-      showToast('Ürün kaydedilemedi.', 'error');
+      showToast(t('toasts.inventory.itemSaveError'), 'error');
     } finally {
       setSavingItem(false);
     }
   };
 
   const handleDeleteItem = async (itemId: number) => {
-    if (!selectedGroupId || !window.confirm('Bu ürünü envanterden çıkarmak istediğinize emin misiniz?')) return;
+    if (!selectedGroupId || !window.confirm(t('confirms.inventory.removeItem'))) return;
     try {
       await inventoryService.deleteInventoryItem(selectedGroupId, itemId);
-      showToast('Ürün çıkarıldı.', 'success');
+      showToast(t('toasts.inventory.itemRemoved'), 'success');
       await loadGroups();
     } catch (error) {
-      showToast('İşlem başarısız.', 'error');
+      showToast(t('toasts.inventory.operationFailed'), 'error');
     }
   };
 
@@ -278,14 +280,14 @@ const InventoryPage: React.FC = () => {
     try {
       await inventoryService.consumeInventoryItem(selectedGroupId, consumingItem.id, userAmounts);
 
-      showToast('Tüketim başarıyla kaydedildi.', 'success');
+      showToast(t('toasts.inventory.consumptionSaved'), 'success');
       setConsumeModalOpen(false);
       setSelectedUserIds([]);
       setMemberAmounts({});
       setConsumingItem(null);
       await loadGroups();
     } catch (error) {
-      showToast('Tüketim kaydedilemedi.', 'error');
+      showToast(t('toasts.inventory.consumptionError'), 'error');
     } finally {
       setIsConsuming(false);
     }
@@ -296,36 +298,36 @@ const InventoryPage: React.FC = () => {
     setIsAddingMember(true);
     try {
       await inventoryService.inviteUser(selectedGroupId, user.email || '');
-      showToast(`${user.name} kullanıcısına davet gönderildi.`, 'success');
+      showToast(t('toasts.inventory.inviteSent', { name: user.name }), 'success');
       setNewMemberEmail('');
       setUserSearchResults([]);
     } catch (error) {
-      showToast('Davet gönderilemedi.', 'error');
+      showToast(t('toasts.inventory.inviteError'), 'error');
     } finally {
       setIsAddingMember(false);
     }
   };
 
   const handleRemoveMember = async (userId: string) => {
-    if (!selectedGroupId || !window.confirm('Bu üyeyi gruptan çıkarmak istediğinize emin misiniz?')) return;
+    if (!selectedGroupId || !window.confirm(t('confirms.inventory.removeMember'))) return;
     try {
       await inventoryService.removeUserFromGroup(selectedGroupId, userId);
-      showToast('Üye çıkarıldı.', 'success');
+      showToast(t('toasts.inventory.memberRemoved'), 'success');
       await loadGroups();
     } catch (error) {
-      showToast('İşlem başarısız.', 'error');
+      showToast(t('toasts.inventory.operationFailed'), 'error');
     }
   };
 
   const handleAcceptInvitation = async (invitationId: number) => {
     try {
       await inventoryService.acceptInvitation(invitationId);
-      showToast('Davet kabul edildi.', 'success');
+      showToast(t('common.accept'), 'success');
       await loadInvitations();
       await loadGroups();
       setInvitationsModalOpen(false);
     } catch (error) {
-      showToast('Davet kabul edilemedi.', 'error');
+      showToast(t('toasts.notifications.inviteAcceptError'), 'error');
     }
   };
 
@@ -337,8 +339,8 @@ const InventoryPage: React.FC = () => {
         <div className="meal-card flex items-center gap-4 px-8 py-7 shadow-brand-hero">
           <Loader2 size={24} className="animate-spin text-terracotta" />
           <div>
-            <p className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Envanter Yükleniyor</p>
-            <p className="text-sm text-foreground-muted">Dolaplar kontrol ediliyor...</p>
+            <p className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{t('inventory.loading')}</p>
+            <p className="text-sm text-foreground-muted">{t('common.loading')}</p>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Loader2, Clock3 } from 'lucide-react';
 import { 
   type EntryMode, 
@@ -44,6 +45,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
   onIngredientSelect,
   userId
 }) => {
+  const { t } = useTranslation();
   const mQuery = entryMode === 'RECIPE' ? (searchQuery || '') : (ingredientSearchQuery || '');
   const resultCards = entryMode === 'RECIPE' ? recipeResults : ingredientResults;
 
@@ -52,7 +54,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="meal-overline text-foreground/40 tracking-[0.18em]">Entry Type</p>
-          <h3 className="meal-section-title mt-2 text-2xl text-foreground">Tarif ya da malzeme sec</h3>
+          <h3 className="meal-section-title mt-2 text-2xl text-foreground">{t('consumption.search.selectMode')}</h3>
         </div>
         <div className="inline-flex rounded-full border border-card-border bg-card p-1">
           {ENTRY_MODE_OPTIONS.map((option) => {
@@ -77,7 +79,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
 
       <label className="mt-5 block space-y-2">
         <span className="text-sm font-semibold text-foreground/80 px-2">
-          {entryMode === 'RECIPE' ? 'Tarif ara' : 'Malzeme ara'}
+          {entryMode === 'RECIPE' ? t('consumption.search.searchRecipe') : t('consumption.search.searchIngredient')}
         </span>
         <div className="relative">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30" />
@@ -92,7 +94,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
                 onIngredientSearchQueryChange(val);
               }
             }}
-            placeholder={entryMode === 'RECIPE' ? 'Mercimek çorbası, menemen...' : 'Yoğurt, muz, badem...'}
+            placeholder={entryMode === 'RECIPE' ? t('consumption.search.recipePlaceholder') : t('consumption.search.ingredientPlaceholder')}
             className="base-input py-4 pl-12 pr-4 text-foreground"
           />
         </div>
@@ -100,13 +102,13 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
 
       <div className="mt-4 flex items-center gap-2 text-xs text-foreground/40">
         {searching || isSearchStale ? <Loader2 size={14} className="animate-spin text-terracotta" /> : <Clock3 size={14} className="text-moss-sage" />}
-        <span>{searching || isSearchStale ? 'Arama guncelleniyor...' : 'Asagidaki sonuclardan bir veya daha fazla sec.'}</span>
+        <span>{searching || isSearchStale ? t('consumption.search.updating') : t('consumption.search.selectFromBelow')}</span>
       </div>
 
       <div className="mt-4 grid gap-3">
         {(resultCards || []).length === 0 && mQuery.trim().length >= 2 && !searching ? (
           <div className="meal-metric-card rounded-[1.5rem] border-dashed border-card-border px-4 py-6 text-sm text-foreground/50 bg-transparent">
-            Sonuç bulunamadı. Daha kısa veya farklı bir arama dene.
+            {t('consumption.search.noResults')}
           </div>
         ) : null}
 

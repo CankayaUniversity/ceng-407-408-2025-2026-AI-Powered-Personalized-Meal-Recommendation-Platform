@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Search, Loader2, Plus, Mail } from 'lucide-react';
 import { User } from '../../../types';
 
@@ -23,6 +24,7 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
   onAddMember,
   onRemoveMember
 }) => {
+  const { t } = useTranslation();
   if (!activeGroup) return null;
 
   return (
@@ -31,8 +33,8 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
         <div className="flex-1 space-y-8">
           <div>
             <p className="meal-overline">Group Members</p>
-            <h3 className="meal-section-title mt-1 text-3xl">Lokasyon Üyeleri</h3>
-            <p className="mt-2 text-sm text-foreground-muted">Bu envanteri kimlerle paylaşıyorsun?</p>
+            <h3 className="meal-section-title mt-1 text-3xl">{t('inventory.members.title')}</h3>
+            <p className="mt-2 text-sm text-foreground-muted">{t('inventory.members.subtitle')}</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -43,7 +45,7 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
                     {member.name?.charAt(0) || member.email.charAt(0)}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-foreground">{member.name || 'İsimsiz'}</span>
+                    <span className="text-sm font-bold text-foreground">{member.name || t('common.unnamed')}</span>
                     <span className="text-[10px] text-foreground-muted">{member.email}</span>
                   </div>
                 </div>
@@ -63,7 +65,7 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
         <div className="lg:w-1/3 p-8 rounded-[2.5rem] bg-foreground/[0.02] border border-card-border/50 space-y-6">
           <div className="flex items-center gap-3 text-terracotta">
             <Mail size={20} />
-            <h4 className="font-serif font-bold">Yeni Üye Davet Et</h4>
+            <h4 className="font-serif font-bold">{t('inventory.members.inviteTitle')}</h4>
           </div>
           <div className="relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20">
@@ -71,7 +73,7 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
             </div>
             <input
               type="text"
-              placeholder="E-posta veya isim..."
+              placeholder={t("inventory.members.searchPlaceholder")}
               value={newMemberEmail}
               disabled={isAddingMember}
               onChange={(e) => onSearchUsers(e.target.value)}
@@ -102,7 +104,7 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
             )}
           </div>
           <p className="text-[10px] text-foreground-muted leading-relaxed">
-            Üye ekleyerek envanterinizi ortak yönetebilir ve tüketimleri birlikte takip edebilirsiniz.
+            {t('inventory.members.hint')}
           </p>
         </div>
       </div>

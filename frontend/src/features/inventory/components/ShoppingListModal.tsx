@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, ShoppingCart, AlertTriangle, Package, MapPin, Filter, Check } from 'lucide-react';
 import { InventoryGroup } from '../../../types';
 import { LoadingSpinner } from '../../../shared/components/LoadingSpinner';
@@ -32,6 +33,7 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
   selectedGroupIds,
   onGroupChange
 }) => {
+  const { t } = useTranslation();
   const [showFilters, setShowFilters] = useState(true);
 
   if (!isOpen) return null;
@@ -55,8 +57,8 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
               <ShoppingCart size={24} />
             </div>
             <div>
-              <h3 className="meal-section-title text-2xl font-serif text-foreground">Alışveriş Listesi</h3>
-              <p className="text-xs font-medium text-foreground-muted mt-0.5">Azalan ve biten malzemeleriniz</p>
+              <h3 className="meal-section-title text-2xl font-serif text-foreground">{t('dashboard.inventory.shoppingList')}</h3>
+              <p className="text-xs font-medium text-foreground-muted mt-0.5">{t('shopping.subtitle')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -80,21 +82,21 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
         {showFilters && (
           <div className="px-8 py-6 border-b border-card-border/30 bg-foreground/[0.02] animate-in slide-in-from-top-4 duration-300">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Lokasyon Seçimi</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">{t('shopping.locationFilter')}</span>
               <div className="flex gap-4">
                 <button 
                   onClick={() => onGroupChange(groups.map(g => g.id))}
                   className="text-[10px] font-bold text-terracotta hover:underline focus:outline-none"
                   type="button"
                 >
-                  Tümünü Seç
+                  {t('notifications.actions.selectAll')}
                 </button>
                 <button 
                   onClick={() => onGroupChange([])}
                   className="text-[10px] font-bold text-foreground/40 hover:underline focus:outline-none"
                   type="button"
                 >
-                  Temizle
+                  {t('notifications.actions.clearAll')}
                 </button>
               </div>
             </div>
@@ -121,18 +123,18 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-foreground/[0.01]">
           {isLoading ? (
-            <LoadingSpinner size="md" message="Liste hazırlanıyor..." />
+            <LoadingSpinner size="md" message={t("shopping.loading")} />
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
               <div className="w-24 h-24 rounded-[2.5rem] bg-moss-sage/5 flex items-center justify-center text-moss-sage/40">
                 <Package size={40} />
               </div>
               <div className="space-y-2">
-                <h4 className="text-xl font-serif text-foreground">Her şey yolunda!</h4>
+                <h4 className="text-xl font-serif text-foreground">{t('shopping.allGood')}</h4>
                 <p className="text-sm text-foreground-muted max-w-[280px]">
                   {selectedGroupIds.length === 0 
-                    ? 'Lütfen en az bir lokasyon seçin.' 
-                    : 'Seçili lokasyonlarda alışveriş listesine eklenecek azalan bir malzeme bulunamadı.'}
+                    ? t('shopping.selectLocation') 
+                    : t('shopping.noItems')}
                 </p>
               </div>
             </div>
@@ -153,7 +155,7 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
                       </div>
                       <div className="flex flex-col min-w-0">
                         <span className="text-[10px] font-black uppercase tracking-widest text-foreground/30 mb-0.5">
-                          {item.status === 'MISSING' ? 'BİTTİ' : 'AZALDI'}
+                          {item.status === 'MISSING' ? t('shopping.statusMissing') : t('shopping.statusLow')}
                         </span>
                         <h4 className="text-lg font-bold text-foreground truncate group-hover:text-terracotta transition-colors">{item.ingredientName}</h4>
                         <div className="flex items-center gap-3 mt-1 text-[11px] font-medium text-foreground-muted">
@@ -165,7 +167,7 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
                     </div>
 
                     <div className="text-right flex flex-col items-end gap-1">
-                      <span className="text-[10px] font-black text-foreground/20 uppercase tracking-tighter">MEVCUT STOK</span>
+                      <span className="text-[10px] font-black text-foreground/20 uppercase tracking-tighter">{t('inventory.consumptionModal.currentStock')}</span>
                       <div className={`px-4 py-2 rounded-xl font-black text-sm shadow-inner transition-all ${
                         item.status === 'MISSING' 
                           ? 'bg-terracotta/5 text-terracotta' 
@@ -187,14 +189,14 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
             onClick={onClose}
             className="flex-1 py-4 px-6 rounded-2xl border border-card-border font-bold text-xs hover:bg-foreground/5 text-foreground transition-all uppercase tracking-widest"
           >
-            Kapat
+            {t('shopping.close')}
           </button>
           {items.length > 0 && (
             <button 
               onClick={() => window.print()}
               className="flex-[2] py-4 px-6 rounded-2xl bg-terracotta text-white font-bold text-xs shadow-lg shadow-terracotta/20 hover:scale-[1.02] transition-all uppercase tracking-widest flex items-center justify-center gap-2"
             >
-              LİSTEYİ YAZDIR
+              {t('shopping.print')}
             </button>
           )}
         </div>

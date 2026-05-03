@@ -39,11 +39,11 @@ const formatTimeAgo = (date: Date, locale: string) => {
     return date.toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US');
 };
 
-// İçerik kısmını ayrı bir bileşene alıyoruz ki useUI hook'unu Layout içinde kullanabilelim
+// Separate content component so useUI hook can be used inside Layout
 const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { authenticated, user, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
-    const { openConsumption, openSettings, openUnitConverter } = useUI(); // UIContext'ten açma fonksiyonunu aldık
+    const { openConsumption, openSettings, openUnitConverter } = useUI();
     const location = useLocation();
     const { t, i18n } = useTranslation();
     const notificationService = useNotificationService();
@@ -73,7 +73,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     useEffect(() => {
         if (authenticated) {
             fetchNotifications();
-            const interval = setInterval(fetchNotifications, 30000); // 30 saniyede bir kontrol
+            const interval = setInterval(fetchNotifications, 30000);
             return () => clearInterval(interval);
         }
     }, [authenticated]);
@@ -104,10 +104,10 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             await notificationService.markAllAsRead();
             setNotifications(notifications.map(n => ({ ...n, status: 'READ' })));
             setUnreadCount(0);
-            showToast('Tüm bildirimler okundu olarak işaretlendi', 'success');
+            showToast(t('toasts.notifications.allRead'), 'success');
         } catch (error) {
             console.error("Could not mark all as read", error);
-            showToast('Hata oluştu', 'error');
+            showToast(t('common.error'), 'error');
         }
     };
 
@@ -115,10 +115,10 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         try {
             await inventoryService.acceptInvitation(invitationId);
             await notificationService.markAsRead(notificationId);
-            showToast('Davet kabul edildi', 'success');
+            showToast(t('toasts.inventory.invitationAccepted'), 'success');
             fetchNotifications();
         } catch (error) {
-            showToast('Davet kabul edilirken hata oluştu', 'error');
+            showToast(t('toasts.inventory.invitationAcceptError'), 'error');
         }
     };
 
@@ -126,10 +126,10 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         try {
             await inventoryService.rejectInvitation(invitationId);
             await notificationService.markAsRead(notificationId);
-            showToast('Davet reddedildi', 'info');
+            showToast(t('toasts.inventory.invitationRejected'), 'info');
             fetchNotifications();
         } catch (error) {
-            showToast('Davet reddedilirken hata oluştu', 'error');
+            showToast(t('toasts.inventory.invitationRejectError'), 'error');
         }
     };
 
@@ -227,13 +227,13 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </aside>
             )}
 
-            {/* --- ANA İÇERİK ALANI --- */}
+            {/* --- MAIN CONTENT AREA --- */}
             <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden bg-background dark:bg-espresso-midnight transition-colors duration-500">
 
                 {/* HEADER */}
                 <header className="h-20 z-40 flex items-center justify-end px-8 gap-6 bg-header dark:bg-black/20 backdrop-blur-xl border-b border-black/5 dark:border-white/5">
 
-                    {/* --- YENİ: ÖĞÜN EKLE BUTONU (Global Trigger) --- */}
+                    {/* ADD MEAL BUTTON (Global Trigger) */}
                     {authenticated && (
                         <div className="mr-auto flex items-center gap-2">
                             <button
@@ -241,15 +241,15 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                 className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-terracotta/20 bg-terracotta/5 hover:bg-terracotta hover:text-white transition-all text-terracotta font-bold text-xs shadow-sm hover:shadow-terracotta/20 active:scale-95"
                             >
                                 <Plus size={16} strokeWidth={3} />
-                                <span className="hidden md:block tracking-wide">ÖĞÜN EKLE</span>
+                                <span className="hidden md:block tracking-wide">{t('layout.addMeal')}</span>
                             </button>
                             <button
                                 onClick={openUnitConverter}
                                 className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-espresso-midnight/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-espresso-midnight dark:hover:bg-white hover:text-white dark:hover:text-espresso-midnight transition-all text-espresso-midnight dark:text-white font-bold text-xs shadow-sm active:scale-95"
-                                title="Birim Dönüştürücü"
+                                title={t('layout.unitConverter')}
                             >
                                 <Calculator size={16} />
-                                <span className="hidden lg:block tracking-wide uppercase">Birimler</span>
+                                <span className="hidden lg:block tracking-wide uppercase">{t('layout.units')}</span>
                             </button>
                         </div>
                     )}
@@ -286,19 +286,19 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             {showNotifications && (
                                 <div className="absolute right-0 mt-4 w-80 bg-white dark:bg-black/80 backdrop-blur-2xl rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden animate-in fade-in slide-in-from-top-2 z-[100]">
                                     <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
-                                        <h3 className="text-sm font-bold tracking-tight">Bildirimler</h3>
+                                        <h3 className="text-sm font-bold tracking-tight">{t('notifications.title')}</h3>
                                         <button
                                             onClick={handleMarkAllAsRead}
                                             className="text-[10px] font-black text-terracotta hover:underline uppercase tracking-widest"
                                         >
-                                            Hepsini Oku
+                                            {t('notifications.markAllRead')}
                                         </button>
                                     </div>
                                     <div className="max-h-[400px] overflow-y-auto">
                                         {notifications.length === 0 ? (
                                             <div className="p-8 text-center">
                                                 <Bell className="mx-auto mb-3 text-black/10 dark:text-white/10" size={32} />
-                                                <p className="text-xs text-black/40 dark:text-alabaster/40">Henüz bildiriminiz yok.</p>
+                                                <p className="text-xs text-black/40 dark:text-alabaster/40">{t('notifications.empty')}</p>
                                             </div>
                                         ) : (
                                             notifications.map((n) => (
@@ -328,7 +328,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                                                 className="flex-1 py-1.5 bg-terracotta text-white text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 hover:bg-terracotta/90 transition-all"
                                                             >
                                                                 <Check size={12} />
-                                                                Kabul Et
+                                                                {t('notifications.accept')}
                                                             </button>
                                                             <button
                                                                 onClick={(e) => {
@@ -338,14 +338,14 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                                                 className="flex-1 py-1.5 bg-black/5 dark:bg-white/5 text-black/60 dark:text-alabaster/60 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 hover:bg-black/10 dark:hover:bg-white/10 transition-all"
                                                             >
                                                                 <X size={12} />
-                                                                Reddet
+                                                                {t('notifications.reject')}
                                                             </button>
                                                         </div>
                                                     )}
                                                     {n.type === 'INVITATION' && isRead(n.status) && (
                                                         <div className="mt-2 flex items-center gap-1 text-[9px] font-medium text-black/30 dark:text-white/30">
                                                             <Check size={10} />
-                                                            Yanıtlandı
+                                                            {t('notifications.answered')}
                                                         </div>
                                                     )}
                                                 </div>
@@ -358,7 +358,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                             className="text-[10px] font-bold text-black/40 dark:text-alabaster/40 hover:text-terracotta uppercase tracking-wider"
                                             onClick={() => setShowNotifications(false)}
                                         >
-                                            Tümünü Gör
+                                            {t('notifications.viewAll')}
                                         </Link>
                                     </div>
                                 </div>
@@ -397,7 +397,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                             onClick={() => setShowProfileMenu(false)}
                                         >
                                             <UserIcon size={16} />
-                                            Profilim
+                                            {t('layout.myProfile')}
                                         </Link>
                                         <button
                                             onClick={() => {
@@ -407,7 +407,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-black/60 dark:text-alabaster/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-terracotta transition-all"
                                         >
                                             <Settings size={16} />
-                                            Ayarlar
+                                            {t('layout.settings')}
                                         </button>
                                     </div>
                                     <div className="p-2 border-t border-black/5 dark:border-white/5">
@@ -419,7 +419,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium text-red-500 hover:bg-red-500/5 transition-all"
                                         >
                                             <LogOut size={16} />
-                                            Çıkış Yap
+                                            {t('actions.logout')}
                                         </button>
                                     </div>
                                 </div>
@@ -437,7 +437,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 </main>
             </div>
 
-            {/* PANEL BURADA GİZLİ BEKLİYOR */}
+            {/* MODALS */}
             <ConsumptionModal />
             <SettingsModal />
             <UnitConverterModal />
@@ -445,7 +445,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     );
 };
 
-// Ana Layout: Provider sarmalamasını burada yapıyoruz
+// Main Layout: UIProvider wrapping here
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return (
         <UIProvider>
