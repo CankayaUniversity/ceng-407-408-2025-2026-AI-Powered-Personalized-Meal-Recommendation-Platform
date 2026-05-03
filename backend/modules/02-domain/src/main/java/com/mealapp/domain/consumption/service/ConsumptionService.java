@@ -1,5 +1,6 @@
 package com.mealapp.domain.consumption.service;
 
+import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.repository.InventoryRepository;
@@ -10,7 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Ortak tüketim senaryolarını yöneten servis.
@@ -31,17 +33,27 @@ public class ConsumptionService {
      */
     @Transactional
     public void consume(Long itemId, java.util.Map<String, Double> userAmounts) {
-        Inventory inventory = inventoryRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Envanter öğesi bulunamadı: " + itemId));
+        if (userAmounts == null || userAmounts.isEmpty()) {
+            throw new MealAppDomainException("Tüketim için en az bir kullanıcı ve miktar gönderilmelidir.");
+        }
 
-        double totalAmount = userAmounts.values().stream().mapToDouble(Double::doubleValue).sum();
+        Inventory inventory = inventoryRepository.findById(itemId)
+                .orElseThrow(() -> new MealAppDomainException("Envanter öğesi bulunamadı: " + itemId));
+
+        for (Map.Entry<String, Double> entry : userAmounts.entrySet()) {
+            Double amount = entry.getValue();
+            if (amount == null || !Double.isFinite(amount) || amount <= 0) {
+                throw new MealAppDomainException("Her kullanıcı için 0'dan büyük geçerli bir tüketim miktarı girilmelidir.");
+            }
+        }
+
+        double totalAmount = userAmounts.values().stream()
+                .filter(Objects::nonNull)
+                .mapToDouble(Double::doubleValue)
+                .sum();
 
         if (inventory.getQuantity() < totalAmount) {
-            // Miktar 0'a düşebilir ancak yetersiz stok hatası verilmeli mi? 
-            // Issue description'a göre kullanıcı 0 malzeme girebilmeli.
-            // Ama tüketim yaparken stok yetersizse uyarı vermeli.
-            // Mevcut mantığı koruyorum ancak silme işlemini yapmıyorum.
-            throw new RuntimeException("Yetersiz stok!");
+            throw new MealAppDomainException("Yetersiz stok!");
         }
 
         // 1. Stoktan düş (Miktar 0 olsa bile silme)
@@ -55,16 +67,22 @@ public class ConsumptionService {
             String userId = entry.getKey();
             Double userAmount = entry.getValue();
 
-            if (userAmount == null || userAmount <= 0) continue;
-
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + userId));
+                    .orElseThrow(() -> new MealAppDomainException("Kullanıcı bulunamadı: " + userId));
+
+            double portionGrams = userAmount;
+            if (ingredient != null
+                    && ingredient.getPhysicalState() == Ingredient.PhysicalState.LIQUID
+                    && ingredient.getDensity() != null
+                    && ingredient.getDensity() > 0) {
+                portionGrams = userAmount * ingredient.getDensity();
+            }
 
             DailyConsumption consumption = DailyConsumption.builder()
                     .user(user)
                     .foodName(ingredient.getName())
                     .ingredient(ingredient)
-                    .portionGrams(userAmount)
+                    .portionGrams(portionGrams)
                     .inventoryGroup(inventory.getInventoryGroup())
                     .isFromInventory(true)
                     .isCustomEntry(false)
