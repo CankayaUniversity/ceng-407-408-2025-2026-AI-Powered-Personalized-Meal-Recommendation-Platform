@@ -15,6 +15,7 @@ public class IngredientDTO {
     private String category;
     private Double density;
     private String physicalState;
+    private String preferredUnit;
     private Double caloriesPer100g;
     private Double proteinPer100g;
     private Double carbsPer100g;

@@ -19,8 +19,9 @@ public class UnitConverterServiceImpl implements UnitConverterService {
 
     private static final Map<String, Double> UNIT_TO_GRAMS = new HashMap<>();
     private static final List<String> VOLUME_UNITS = List.of(
-        "ml", "litre", "liter", "glass", "bardak", "su bardağı", "çay bardağı", "kahve fincanı",
-        "tablespoon", "yemek kaşığı", "teaspoon", "tatlı kaşığı", "çay kaşığı", "cup", "bowl", "kase"
+        "ml", "litre", "liter", "l", "lt", "glass", "bardak", "su bardağı", "çay bardağı", "kahve fincanı",
+        "tablespoon", "yemek kaşığı", "teaspoon", "tatlı kaşığı", "çay kaşığı", "cup", "bowl", "kase",
+        "fincan", "kepçe", "kaşık"
     );
 
     static {
@@ -39,18 +40,22 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         UNIT_TO_GRAMS.put("tane", 50.0);
         UNIT_TO_GRAMS.put("unit", 50.0);
         UNIT_TO_GRAMS.put("ml", 1.0);
+        UNIT_TO_GRAMS.put("l", 1000.0);
+        UNIT_TO_GRAMS.put("lt", 1000.0);
         UNIT_TO_GRAMS.put("litre", 1000.0);
         UNIT_TO_GRAMS.put("liter", 1000.0);
         UNIT_TO_GRAMS.put("tablespoon", 15.0);
         UNIT_TO_GRAMS.put("yemek kaşığı", 15.0);
-        UNIT_TO_GRAMS.put("teaspoon", 5.0);
-        UNIT_TO_GRAMS.put("tatlı kaşığı", 10.0);
-        UNIT_TO_GRAMS.put("çay kaşığı", 5.0);
+        UNIT_TO_GRAMS.put("teaspoon", 2.0);
+        UNIT_TO_GRAMS.put("tatlı kaşığı", 6.0);
+        UNIT_TO_GRAMS.put("çay kaşığı", 2.0);
         UNIT_TO_GRAMS.put("glass", 200.0);
         UNIT_TO_GRAMS.put("bardak", 200.0);
         UNIT_TO_GRAMS.put("su bardağı", 200.0);
         UNIT_TO_GRAMS.put("çay bardağı", 100.0);
         UNIT_TO_GRAMS.put("kahve fincanı", 75.0);
+        UNIT_TO_GRAMS.put("fincan", 75.0);
+        UNIT_TO_GRAMS.put("kepçe", 150.0);
         UNIT_TO_GRAMS.put("clove", 5.0);
         UNIT_TO_GRAMS.put("diş", 5.0);
         UNIT_TO_GRAMS.put("handful", 30.0);
@@ -61,6 +66,7 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         UNIT_TO_GRAMS.put("demet", 100.0);
         UNIT_TO_GRAMS.put("kavanoz", 500.0);
         UNIT_TO_GRAMS.put("şişe", 500.0);
+        UNIT_TO_GRAMS.put("dal", 5.0);
     }
 
     @Override
@@ -116,8 +122,12 @@ public class UnitConverterServiceImpl implements UnitConverterService {
     // Yardımcı Metot 2: Yoğunluk Kontrolü
     private Double applyDensityIfNecessary(String unit, Double weight, Ingredient ingredient) {
         if (ingredient != null && isVolumeUnit(unit)) {
+            // "ml" ve "L" birimleri saf hacimdir ve her zaman yoğunlukla çarpılmalıdır (yoğunluk != 1 ise)
+            // Diğer hacim birimleri (kaşık, bardak vb.) de yoğunluktan etkilenir.
             Double density = ingredient.getDensity();
-            return weight * (density != null ? density : 1.0);
+            if (density != null && density != 1.0) {
+                return weight * density;
+            }
         }
         return weight;
     }
@@ -139,6 +149,19 @@ public class UnitConverterServiceImpl implements UnitConverterService {
             }
         }
         return allWeights;
+    }
+
+    @Override
+    public Double convertUnits(Ingredient ingredient, Double amount, String fromUnit, String toUnit) {
+        if (amount == null || amount == 0) return 0.0;
+        if (fromUnit == null || toUnit == null || fromUnit.equalsIgnoreCase(toUnit)) return amount;
+
+        Double fromWeight = getUnitGramWeight(fromUnit, ingredient);
+        Double toWeight = getUnitGramWeight(toUnit, ingredient);
+
+        if (toWeight == null || toWeight == 0) return amount; // Güvenlik önlemi
+
+        return (amount * fromWeight) / toWeight;
     }
 
     private boolean isVolumeUnit(String unit) {

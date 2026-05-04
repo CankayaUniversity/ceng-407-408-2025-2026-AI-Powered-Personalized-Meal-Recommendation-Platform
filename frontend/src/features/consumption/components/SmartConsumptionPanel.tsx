@@ -34,16 +34,23 @@ const VOLUME_UNIT_ML: Record<string, number> = {
   litre: 1000,
   liter: 1000,
   l: 1000,
+  lt: 1000,
   bardak: 200,
+  'su bardağı': 200,
   glass: 200,
   'yemek kaşığı': 15,
   tablespoon: 15,
   'tatlı kaşığı': 10,
-  teaspoon: 5,
   'çay kaşığı': 5,
+  teaspoon: 5,
   cup: 240,
   kase: 350,
-  bowl: 350
+  bowl: 350,
+  fincan: 70,
+  'kahve fincanı': 70,
+  kepçe: 150,
+  avuç: 30,
+  handful: 30
 };
 
 const LIQUID_CATEGORIES = new Set(['BEVERAGE', 'OIL', 'SAUCE']);
@@ -139,16 +146,18 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
     const currentParts = item.portion.label.split(' ');
     const currentQty = parseFloat(currentParts[0]) || 0;
-    const currentUnit = currentParts.length > 1 ? currentParts[1] : '';
+    const currentUnit = currentParts.slice(1).join(' '); // Birim ismindeki boşlukları korumak için
 
     let nextQty: number;
-    if (currentUnit.toLowerCase() === unit.toLowerCase()) {
+    if (currentUnit.trim().toLowerCase() === unit.trim().toLowerCase()) {
+      // Aynı birimse miktar ekle/çıkar ve 0'ın altına düşürme
       nextQty = Math.max(0, currentQty + delta);
     } else {
-      nextQty = delta > 0 ? delta : 0;
+      // Farklı birimse ve artışsa 1'den başla, azalışsa 0 yap
+      nextQty = delta > 0 ? 1 : 0;
     }
 
-    if (nextQty <= 0) nextQty = 0.1;
+    // Seçilen birimi (unit) parametre olarak geçiyoruz
     handleManualPortionUpdate(itemKey, ingredient, nextQty.toString(), unit, userId);
   };
 

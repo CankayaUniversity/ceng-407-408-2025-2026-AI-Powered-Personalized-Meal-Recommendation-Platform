@@ -25,26 +25,41 @@ export const ConversionPreview: React.FC<ConversionPreviewProps> = ({
     );
   }
 
-  if (conversions.length === 0 || !itemDraft.selectedIngredient) return null;
+  if (!itemDraft.selectedIngredient) return null;
 
-  const physicalState = itemDraft.selectedIngredient.physicalState;
+  const filteredConversions = conversions.filter(c => c.unit.toLowerCase() !== itemDraft.unit.toLowerCase());
   
-  const forbiddenUnits = physicalState === 'LIQUID' 
-    ? ['GRAM', 'KG', 'ADET', 'PAKET', 'DILIM'] 
-    : ['ML', 'LITRE', 'L'];
+  // Eğer miktar 0 ise sadece 1 birimlik karşılıkları "1 [Birim] = [Karşılık]" şeklinde göstermek daha bilgilendirici olabilir.
+  // Ancak mevcut yapıda backend'den gelen datayı kullanıyoruz.
 
-  const filteredConversions = conversions.filter(conv => !forbiddenUnits.includes(conv.unit.toUpperCase()));
+  const preferredUnit = itemDraft.selectedIngredient.preferredUnit;
 
-  if (filteredConversions.length === 0) return null;
+  const sortedConversions = [...filteredConversions].sort((a, b) => {
+    if (preferredUnit) {
+      if (a.unit.toLowerCase() === preferredUnit.toLowerCase()) return -1;
+      if (b.unit.toLowerCase() === preferredUnit.toLowerCase()) return 1;
+    }
+    // Maintain existing priority from backend if possible, 
+    // but since we don't have priority field in UnitConversion interface,
+    // we just keep the order (which is already sorted by backend)
+    return 0;
+  });
+
+  if (sortedConversions.length === 0) return null;
+  
+  const rawQty = parseFloat(itemDraft.quantity) || 0;
+  const isOneUnitPreview = rawQty <= 0;
+
+  const displayCount = 8;
 
   return (
     <div className="mt-3 p-3 rounded-2xl bg-terracotta/5 border border-terracotta/10 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
       <p className="text-[10px] font-black uppercase tracking-widest text-terracotta/40 flex items-center gap-1.5">
         <Repeat size={10} />
-        {t('inventory.conversionPreview.title')}
+        {isOneUnitPreview ? `1 ${itemDraft.unit} için karşılıklar` : t('inventory.conversionPreview.title')}
       </p>
       <div className="flex flex-wrap gap-1.5">
-        {filteredConversions.slice(0, 5).map((conv) => (
+        {sortedConversions.slice(0, displayCount).map((conv) => (
           <div
             key={conv.unit}
             className="px-2.5 py-1 bg-card dark:bg-foreground/5 border border-terracotta/15 rounded-lg text-[10px] font-medium text-terracotta/90 flex items-center gap-1.5 shadow-sm"
@@ -53,9 +68,9 @@ export const ConversionPreview: React.FC<ConversionPreviewProps> = ({
             <span className="font-black">{conv.amount}</span>
           </div>
         ))}
-        {filteredConversions.length > 5 && (
+        {sortedConversions.length > displayCount && (
           <div className="px-2 py-1 text-[9px] text-foreground/30 flex items-center">
-            +{filteredConversions.length - 5}
+            +{sortedConversions.length - displayCount}
           </div>
         )}
       </div>

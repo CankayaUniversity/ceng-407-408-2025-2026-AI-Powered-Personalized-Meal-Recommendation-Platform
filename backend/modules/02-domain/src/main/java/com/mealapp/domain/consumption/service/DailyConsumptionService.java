@@ -79,13 +79,25 @@ public class DailyConsumptionService {
             double portionMultiplier = resolvePortionMultiplier(consumption);
 
             for (RecipeIngredient recipeIngredient : consumption.getRecipe().getRecipeIngredients()) {
-                if (recipeIngredient.getIngredient() != null && recipeIngredient.getGrams() != null) {
-                    inventoryService.consumeFromInventoryGroup(
-                            userId,
-                            inventoryGroupId,
-                            recipeIngredient.getIngredient().getId(),
-                            recipeIngredient.getGrams() * portionMultiplier
-                    );
+                if (recipeIngredient.getIngredient() != null) {
+                    // Eğer gramaj varsa gramaj üzerinden düş, yoksa amount/unit üzerinden
+                    if (recipeIngredient.getGrams() != null) {
+                        inventoryService.consumeFromInventoryGroup(
+                                userId,
+                                inventoryGroupId,
+                                recipeIngredient.getIngredient().getId(),
+                                recipeIngredient.getGrams() * portionMultiplier,
+                                "g"
+                        );
+                    } else if (recipeIngredient.getAmount() != null) {
+                        inventoryService.consumeFromInventoryGroup(
+                                userId,
+                                inventoryGroupId,
+                                recipeIngredient.getIngredient().getId(),
+                                recipeIngredient.getAmount() * portionMultiplier,
+                                recipeIngredient.getUnit()
+                        );
+                    }
                 }
             }
         }
@@ -95,7 +107,8 @@ public class DailyConsumptionService {
                     userId,
                     inventoryGroupId,
                     consumption.getIngredient().getId(),
-                    consumption.getPortionGrams()
+                    consumption.getPortionGrams(),
+                    "g"
             );
         }
     }

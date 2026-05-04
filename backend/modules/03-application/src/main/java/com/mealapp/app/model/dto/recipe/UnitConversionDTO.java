@@ -13,4 +13,5 @@ public class UnitConversionDTO {
     private String unit;
     private Double amount;
     private String displayName;
+    private boolean highPriority;
 }

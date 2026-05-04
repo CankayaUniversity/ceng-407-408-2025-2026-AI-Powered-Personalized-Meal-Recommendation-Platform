@@ -33,7 +33,8 @@ public class Ingredient extends BaseEntity {
     private IngredientNutrition nutrition;
 
     @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private java.util.List<IngredientUnit> ingredientUnits;
+    @Builder.Default
+    private java.util.List<IngredientUnit> ingredientUnits = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "ingredient")
     private java.util.List<RecipeIngredient> recipeIngredients;
@@ -54,6 +55,13 @@ public class Ingredient extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "physical_state")
     private PhysicalState physicalState = PhysicalState.SOLID;
+
+    /**
+     * Malzeme için öncelikli / tercih edilen birim (Örn: sarımsak için "diş").
+     * UI'da hızlı seçim kısmında en başta gösterilir.
+     */
+    @Column(name = "preferred_unit")
+    private String preferredUnit;
 
     public enum PhysicalState {
         SOLID,      // Katı (g, kg, adet, dilim vb.)

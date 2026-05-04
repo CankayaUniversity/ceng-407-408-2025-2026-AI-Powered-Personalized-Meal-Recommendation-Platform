@@ -470,6 +470,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const fetchConversions = useCallback(async (itemKey: string, ingredientId: number, amount: number, unit: string) => {
     if (!ingredientId || !amount || !unit) return;
 
+    // Loading durumuna alırken listeyi sıfırlama (mevcut butonları koru)
     setConversions(prev => ({
         ...prev,
         [itemKey]: { list: prev[itemKey]?.list || [], loading: true }
@@ -477,15 +478,41 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
 
     try {
         const results = await ingredientService.getUnitConversions(ingredientId, amount, unit);
-        setConversions(prev => ({
-            ...prev,
-            [itemKey]: { list: results.filter((c: any) => c.unit.toLowerCase() !== unit.toLowerCase()), loading: false }
-        }));
+        
+        setConversions(prev => {
+            // Eğer yeni bir miktar için geliyorsa ve mevcut bir liste varsa, 
+            // sadece miktarları (amounts) güncelle, yüksek öncelikli butonların listesini değiştirme.
+            const existingList = prev[itemKey]?.list || [];
+            
+            let mergedList = results;
+            if (existingList.length > 0 && results.length > 0) {
+                // Mevcut listedeki birimlerin sırasını koru, sadece değerlerini güncelle
+                mergedList = existingList.map((existing: any) => {
+                    const fresh = results.find((r: any) => r.unit.toLowerCase() === existing.unit.toLowerCase());
+                    if (fresh) {
+                        return { ...existing, amount: fresh.amount };
+                    }
+                    return existing;
+                });
+                
+                // Mevcut listede olmayan ama yeni sonuçlarda olanları (eğer varsa) sona ekle
+                results.forEach((fresh: any) => {
+                    if (!mergedList.find((m: any) => m.unit.toLowerCase() === fresh.unit.toLowerCase())) {
+                        mergedList.push(fresh);
+                    }
+                });
+            }
+
+            return {
+                ...prev,
+                [itemKey]: { list: mergedList, loading: false }
+            };
+        });
     } catch (error) {
         console.error('Dönüşümler alınamadı:', error);
         setConversions(prev => ({
             ...prev,
-            [itemKey]: { list: [], loading: false }
+            [itemKey]: { list: prev[itemKey]?.list || [], loading: false }
         }));
     }
   }, [ingredientService]);
@@ -624,60 +651,57 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     }
   };
 
-  const getIngredientUnits = useCallback((selectedIngredient?: Ingredient) => {
+  const getIngredientUnits = useCallback((selectedIngredient?: Ingredient, itemKey?: string) => {
     const ingredientId = selectedIngredient?.id;
     const ingredient = ingredientId ? (ingredientResults.find(i => i.id === ingredientId) || stockedIngredients.find((i: any) => i.id === ingredientId) || selectedIngredient) : null;
-    const physicalState = getEffectivePhysicalState(ingredient);
-
-    const solidBase = ['GRAM', 'KG'];
-    const liquidBase = ['ML', 'LITRE', 'L'];
-    const commonBase = ['GRAM', 'ML', 'KG', 'LITRE', 'L'];
-
-    let base = commonBase;
-    const allowedQuickUnits: string[] = [];
-    const forbiddenUnits: string[] = [];
     
-    if (physicalState === 'LIQUID') {
-      base = liquidBase;
-      allowedQuickUnits.push('BARDAK', 'YEMEK KAŞIĞI', 'TATLI KAŞIĞI', 'ÇAY KAŞIĞI', 'ML');
-      forbiddenUnits.push('GRAM', 'KG', 'ADET', 'PAKET', 'DILIM');
-    } else if (physicalState === 'SEMI_SOLID') {
-      base = commonBase;
-      allowedQuickUnits.push('GRAM', 'ML', 'BARDAK', 'KASE', 'YEMEK KAŞIĞI', 'TATLI KAŞIĞI', 'ÇAY KAŞIĞI', 'CUP');
-    } else {
-      // SOLID veya null (varsayılan SOLID gibi davran)
-      base = solidBase;
-      allowedQuickUnits.push('ADET', 'PAKET', 'DILIM', 'CUP', 'GRAM');
-      forbiddenUnits.push('ML', 'LITRE', 'L');
+    // Eğer elimizde backend'den gelen taze dönüşüm verileri varsa onları kullanalım (en akıllısı budur)
+    const backendConversions = itemKey ? conversions[itemKey]?.list : null;
+
+    if (backendConversions && backendConversions.length > 0) {
+      const quick = backendConversions
+        .filter((c: any) => c.highPriority)
+        .map((c: any) => c.unit.toUpperCase());
+      
+      const standard = backendConversions
+        .map((c: any) => c.unit.toUpperCase());
+
+      return {
+        quickUnits: quick,
+        standardUnits: standard
+      };
     }
 
+    // Fallback logic (eskisi gibi, ama biraz daha temiz)
+    const base = ['GRAM', 'KG', 'ML', 'L', 'ADET'];
     const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
     const extra = Object.keys(weights).map((u: any) => u.toUpperCase());
-    const allUnits = Array.from(new Set([...base, ...extra])).filter(u => !forbiddenUnits.includes(u));
+    const allUnits = Array.from(new Set([...base, ...extra]));
+
+    const preferredQuickUnits = [
+      (ingredient?.preferredUnit || '').toUpperCase(),
+      'ADET', 'BARDAK', 'YEMEK KAŞIĞI', 'TATLI KAŞIĞI', 'ÇAY KAŞIĞI', 'DAL', 'DEMET', 'TUTAM', 'DILIM', 'PAKET'
+    ].filter(Boolean);
 
     const quick = allUnits
-      .filter(u => allowedQuickUnits.includes(u))
+      .filter(u => preferredQuickUnits.includes(u))
       .sort((a, b) => {
-          const idxA = allowedQuickUnits.indexOf(a);
-          const idxB = allowedQuickUnits.indexOf(b);
-          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-          return a.localeCompare(b);
+          if (ingredient?.preferredUnit && a === ingredient.preferredUnit.toUpperCase()) return -1;
+          if (ingredient?.preferredUnit && b === ingredient.preferredUnit.toUpperCase()) return 1;
+          return preferredQuickUnits.indexOf(a) - preferredQuickUnits.indexOf(b);
       });
 
-    const manualBaseUnits = ['GRAM', 'ML'];
-    const standard = allUnits.filter(u => !allowedQuickUnits.includes(u) || manualBaseUnits.includes(u));
+    const standard = allUnits.filter(u => !quick.includes(u) || ['GRAM', 'ML'].includes(u));
 
     return {
-      quickUnits: quick,
+      quickUnits: quick.slice(0, 6), // En fazla 6 tane göster
       standardUnits: standard.sort((a, b) => {
           if (a === 'GRAM') return -1;
           if (b === 'GRAM') return 1;
-          if (a === 'ML') return -1;
-          if (b === 'ML') return 1;
           return a.localeCompare(b);
       })
     };
-  }, [ingredientResults, stockedIngredients, ingredientSpecificWeights, unitWeights]);
+  }, [ingredientResults, stockedIngredients, ingredientSpecificWeights, unitWeights, conversions]);
 
   return {
     user,

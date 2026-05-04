@@ -20,7 +20,7 @@ const RecipeModal: React.FC = () => {
     const [prepTime, setPrepTime] = useState<number>(30);
     const [servings, setServings] = useState<number>(2);
     const [instructions, setInstructions] = useState('');
-    const [ingredients, setIngredients] = useState<{ ingredientId: number, name: string, grams: number }[]>([]);
+    const [ingredients, setIngredients] = useState<{ ingredientId: number, name: string, amount: number, unit: string, grams: number }[]>([]);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [status, setStatus] = useState<string | null>(null);
@@ -62,7 +62,9 @@ const RecipeModal: React.FC = () => {
                             setIngredients(fullRecipe.ingredients.map((ing: any) => ({
                                 ingredientId: ing.ingredientId || ing.id,
                                 name: ing.name || ing.ingredient?.name,
-                                grams: ing.grams || ing.amount || 100
+                                amount: ing.amount || ing.grams || 100,
+                                unit: ing.unit || 'GRAM',
+                                grams: ing.grams || 100
                             })));
                         } else {
                             setIngredients([]);
@@ -79,7 +81,9 @@ const RecipeModal: React.FC = () => {
                     setIngredients(recipeToEdit.ingredients.map((ing: any) => ({
                         ingredientId: ing.ingredientId || ing.id,
                         name: ing.name || ing.ingredient?.name,
-                        grams: ing.grams || ing.amount || 100
+                        amount: ing.amount || ing.grams || 100,
+                        unit: ing.unit || 'GRAM',
+                        grams: ing.grams || 100
                     })));
                 }
             } else if (!isRecipeModalOpen) {
@@ -123,7 +127,14 @@ const RecipeModal: React.FC = () => {
             showToast('Bu malzeme zaten listede var.', 'info');
             return;
         }
-        setIngredients([...ingredients, { ingredientId: ing.id, name: ing.name, grams: 100 }]);
+        const unit = ing.preferredUnit || (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
+        setIngredients([...ingredients, { 
+            ingredientId: ing.id, 
+            name: ing.name, 
+            amount: unit === 'GRAM' || unit === 'ML' ? 100 : 1, 
+            unit: unit.toUpperCase(),
+            grams: 100 
+        }]);
         setSearchQuery('');
         setIsSearchFocused(false);
     };
@@ -132,8 +143,12 @@ const RecipeModal: React.FC = () => {
         setIngredients(ingredients.filter(i => i.ingredientId !== id));
     };
 
-    const handleGramsChange = (id: number, grams: number) => {
-        setIngredients(ingredients.map(i => i.ingredientId === id ? { ...i, grams } : i));
+    const handleAmountChange = (id: number, amount: number) => {
+        setIngredients(ingredients.map(i => i.ingredientId === id ? { ...i, amount, grams: amount } : i));
+    };
+
+    const handleUnitChange = (id: number, unit: string) => {
+        setIngredients(ingredients.map(i => i.ingredientId === id ? { ...i, unit: unit.toUpperCase() } : i));
     };
 
     const handleSubmit = async (isPublishing: boolean) => {
@@ -148,7 +163,12 @@ const RecipeModal: React.FC = () => {
             preparationTimeMinutes: prepTime,
             servings,
             instructions,
-            ingredients: ingredients.map(i => ({ ingredientId: i.ingredientId, grams: i.grams })),
+            ingredients: ingredients.map(i => ({ 
+                ingredientId: i.ingredientId, 
+                amount: i.amount, 
+                unit: i.unit,
+                grams: i.grams 
+            })),
             status: isPublishing ? 'PENDING' : 'DRAFT'
         } as RecipeRequest;
 
@@ -387,25 +407,42 @@ const RecipeModal: React.FC = () => {
                                     {/* Ingredient List */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {ingredients.map(ing => (
-                                            <div key={ing.ingredientId} className="flex items-center gap-3 p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-transparent hover:border-terracotta/20 transition-all group">
-                                                <div className="flex-1">
-                                                    <p className="text-xs font-bold uppercase tracking-tight">{ing.name}</p>
+                                            <div key={ing.ingredientId} className="flex flex-col gap-3 p-5 bg-black/5 dark:bg-white/5 rounded-[2rem] border border-transparent hover:border-terracotta/20 transition-all group shadow-sm">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-sm font-bold text-foreground">{ing.name}</p>
+                                                    <button 
+                                                        onClick={() => handleRemoveIngredient(ing.ingredientId)}
+                                                        className="p-2 text-foreground/20 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <input
                                                         type="number"
-                                                        value={ing.grams}
-                                                        onChange={(e) => handleGramsChange(ing.ingredientId, parseInt(e.target.value) || 0)}
-                                                        className="w-20 py-1 bg-white dark:bg-black/20 border border-black/10 rounded-lg text-center font-bold text-xs focus:border-terracotta outline-none"
+                                                        value={ing.amount}
+                                                        onChange={(e) => handleAmountChange(ing.ingredientId, parseFloat(e.target.value) || 0)}
+                                                        className="flex-1 py-2 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-sm focus:border-terracotta outline-none"
+                                                        placeholder="0"
                                                     />
-                                                    <span className="text-[10px] font-black text-foreground/30">G</span>
+                                                    <select
+                                                        value={ing.unit}
+                                                        onChange={(e) => handleUnitChange(ing.ingredientId, e.target.value)}
+                                                        className="w-28 py-2 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-[10px] focus:border-terracotta outline-none uppercase"
+                                                    >
+                                                        <option value="GRAM">Gram</option>
+                                                        <option value="KG">Kg</option>
+                                                        <option value="ML">Ml</option>
+                                                        <option value="L">Litre</option>
+                                                        <option value="ADET">Adet</option>
+                                                        <option value="DİŞ">Diş</option>
+                                                        <option value="DEMET">Demet</option>
+                                                        <option value="DAL">Dal</option>
+                                                        <option value="TUTAM">Tutam</option>
+                                                        <option value="BARDAK">Bardak</option>
+                                                        <option value="KAŞIK">Kaşık</option>
+                                                    </select>
                                                 </div>
-                                                <button 
-                                                    onClick={() => handleRemoveIngredient(ing.ingredientId)}
-                                                    className="p-2 text-foreground/20 hover:text-red-500 transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
                                             </div>
                                         ))}
                                     </div>

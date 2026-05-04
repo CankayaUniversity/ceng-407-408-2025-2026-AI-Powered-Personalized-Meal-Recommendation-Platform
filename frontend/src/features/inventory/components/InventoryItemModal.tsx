@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
-import { X, Utensils, Search, Loader2, Plus } from 'lucide-react';
+import { X, Utensils, Search, Loader2, Plus, Minus } from 'lucide-react';
 import { ItemDraft } from '../types/inventory.types';
 import { Ingredient } from '../../../types';
 import { ConversionPreview } from './ConversionPreview';
@@ -256,33 +256,90 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                 </div>
 
                 {!expandedManualInput && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <button 
-                      type="button" 
-                      onClick={() => onQuickUnitAdjust(itemDraft.selectedIngredient?.physicalState === 'LIQUID' ? 'L' : 'KG', 1)}
-                      className="group p-5 rounded-[2rem] border border-card-border bg-card hover:border-terracotta hover:bg-terracotta/[0.02] transition-all text-left shadow-sm hover:shadow-md"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="p-2.5 rounded-xl bg-terracotta/10 text-terracotta group-hover:bg-terracotta group-hover:text-white transition-colors">
-                          <Plus size={16} />
+                  <div className="flex flex-wrap gap-3">
+                    {conversions && conversions.filter(c => c.highPriority).slice(0, 6).map((conv) => {
+                      const isSelected = itemDraft.unit.toLowerCase() === conv.unit.toLowerCase() && parseFloat(itemDraft.quantity) > 0;
+                      return (
+                        <div
+                          key={conv.unit}
+                          className={`group flex-1 min-w-[130px] flex items-center overflow-hidden rounded-[1.5rem] border transition-all ${
+                            isSelected
+                              ? 'bg-foreground text-background border-transparent shadow-lg'
+                              : 'border-card-border bg-card text-foreground/80 hover:border-terracotta/40 shadow-sm'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            disabled={savingItem}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onQuickUnitAdjust(conv.unit, -1);
+                            }}
+                            className={`flex h-full items-center justify-center border-r px-3 py-4 transition-colors ${
+                              isSelected ? 'border-background/10 hover:bg-background/10' : 'border-foreground/5 hover:bg-terracotta/10 hover:text-terracotta'
+                            }`}
+                          >
+                            <Minus size={14} />
+                          </button>
+                          
+                          <button
+                            type="button"
+                            disabled={savingItem}
+                            onClick={() => onQuickUnitAdjust(conv.unit, 1)}
+                            className="flex-1 px-3 py-4 text-left min-w-0"
+                          >
+                            <span className="text-xs font-bold block truncate">
+                              {isSelected ? `${parseFloat(itemDraft.quantity)} ` : ''}
+                              {conv.displayName.toLowerCase() === 'su bardağı' ? 'S.Bardağı' : 
+                               conv.displayName.toLowerCase() === 'yemek kaşığı' ? 'Y.Kaşık' : 
+                               conv.displayName.toLowerCase() === 'tatlı kaşığı' ? 'T.Kaşık' : 
+                               conv.displayName.toLowerCase() === 'çay kaşığı' ? 'Ç.Kaşık' : 
+                               conv.displayName.toLowerCase() === 'kahve fincanı' ? 'K.Fincanı' :
+                               conv.displayName}
+                            </span>
+                            <span className={`block text-[8px] mt-0.5 font-black uppercase tracking-widest ${isSelected ? 'text-background/40' : 'text-foreground/20'}`}>
+                              {isSelected ? t('inventory.quickAdjust') : t('inventory.quickAdd')}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={savingItem}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onQuickUnitAdjust(conv.unit, 1);
+                            }}
+                            className={`flex h-full items-center justify-center border-l px-3 py-4 transition-colors ${
+                              isSelected ? 'border-background/10 hover:bg-background/10' : 'border-foreground/5 hover:bg-emerald-500/10 hover:text-emerald-500'
+                            }`}
+                          >
+                            <Plus size={14} />
+                          </button>
                         </div>
-                        <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest">{t('inventory.quickAdd')}</span>
-                      </div>
-                      <p className="text-sm font-bold text-foreground">{itemDraft.selectedIngredient?.physicalState === 'LIQUID' ? t('inventory.oneLitre') : t('inventory.oneKilo')}</p>
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => onQuickUnitAdjust('ADET', 1)}
-                      className="group p-5 rounded-[2rem] border border-card-border bg-card hover:border-terracotta hover:bg-terracotta/[0.02] transition-all text-left shadow-sm hover:shadow-md"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="p-2.5 rounded-xl bg-terracotta/10 text-terracotta group-hover:bg-terracotta group-hover:text-white transition-colors">
-                          <Plus size={16} />
+                      );
+                    })}
+                    {(!conversions || conversions.filter(c => c.highPriority).length === 0) && (
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const unit = itemDraft.selectedIngredient?.preferredUnit || (itemDraft.selectedIngredient?.physicalState === 'LIQUID' ? 'L' : 'KG');
+                          onQuickUnitAdjust(unit, 1);
+                        }}
+                        className="group flex-1 p-5 rounded-[2rem] border border-card-border bg-card hover:border-terracotta hover:bg-terracotta/[0.02] transition-all text-left shadow-sm hover:shadow-md"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="p-2.5 rounded-xl bg-terracotta/10 text-terracotta group-hover:bg-terracotta group-hover:text-white transition-colors">
+                            <Plus size={16} />
+                          </div>
+                          <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest">{t('inventory.quickAdd')}</span>
                         </div>
-                        <span className="text-[10px] font-black text-foreground/20 uppercase tracking-widest">{t('inventory.quickAdd')}</span>
-                      </div>
-                      <p className="text-sm font-bold text-foreground">{t('inventory.oneUnit')}</p>
-                    </button>
+                        <p className="text-sm font-bold text-foreground">
+                          {itemDraft.selectedIngredient?.preferredUnit 
+                            ? `1 ${itemDraft.selectedIngredient.preferredUnit.charAt(0).toUpperCase() + itemDraft.selectedIngredient.preferredUnit.slice(1)}` 
+                            : (itemDraft.selectedIngredient?.physicalState === 'LIQUID' ? t('inventory.oneLitre') : t('inventory.oneKilo'))}
+                        </p>
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -327,17 +384,25 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                         />
                       </div>
                       <select
-                        value={itemDraft.unit}
+                        value={itemDraft.unit.toUpperCase()}
                         onChange={(e) => setItemDraft({ ...itemDraft, unit: e.target.value })}
-                        className="w-32 rounded-2xl border border-card-border bg-card px-4 py-4 font-bold text-foreground focus:border-terracotta transition-all outline-none shadow-sm"
+                        className="w-40 rounded-2xl border border-card-border bg-card px-4 py-4 font-bold text-foreground focus:border-terracotta transition-all outline-none shadow-sm"
                       >
-                        <option value="GRAM">Gr</option>
-                        <option value="KG">Kg</option>
-                        <option value="ML">Ml</option>
-                        <option value="LITRE">L</option>
-                        <option value="ADET">Adet</option>
-                        <option value="PAKET">Paket</option>
-                        <option value="DILIM">Dilim</option>
+                        {conversions && conversions.length > 0 ? (
+                          conversions.map(conv => (
+                            <option key={conv.unit} value={conv.unit.toUpperCase()}>
+                              {conv.displayName}
+                            </option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="G">Gr</option>
+                            <option value="KG">Kg</option>
+                            <option value="ML">Ml</option>
+                            <option value="L">L</option>
+                            <option value="ADET">Adet</option>
+                          </>
+                        )}
                       </select>
                     </div>
                   )}

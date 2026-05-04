@@ -18,6 +18,7 @@ public class IngredientMapper {
                 .name(ingredient.getName())
                 .category(ingredient.getCategory() != null ? ingredient.getCategory().name() : null)
                 .physicalState(ingredient.getPhysicalState() != null ? ingredient.getPhysicalState().name() : null)
+                .preferredUnit(ingredient.getPreferredUnit())
                 .density(ingredient.getDensity());
 
         if (ingredient.getNutrition() != null) {
@@ -37,7 +38,10 @@ public class IngredientMapper {
         return Ingredient.builder()
                 .id(dto.getId())
                 .name(dto.getName())
+                .preferredUnit(dto.getPreferredUnit())
                 .category(dto.getCategory() != null ? Ingredient.Category.valueOf(dto.getCategory()) : null)
+                .physicalState(dto.getPhysicalState() != null ? Ingredient.PhysicalState.valueOf(dto.getPhysicalState()) : null)
+                .density(dto.getDensity() != null ? dto.getDensity() : 1.0)
                 .build();
     }
 }

@@ -9,4 +9,9 @@ public interface UnitConverterService {
     Double getUnitGramWeight(String unit, Ingredient ingredient);
 
     Map<String, Double> getAllUnitWeights(Ingredient ingredient);
+
+    /**
+     * Bir malzemeyi bir birimden diğerine dönüştürür.
+     */
+    Double convertUnits(Ingredient ingredient, Double amount, String fromUnit, String toUnit);
 }

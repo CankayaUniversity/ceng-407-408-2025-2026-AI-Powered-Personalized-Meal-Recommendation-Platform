@@ -83,7 +83,7 @@ class DailyConsumptionServiceTest {
 
         DailyConsumption saved = dailyConsumptionService.logConsumption(consumption);
 
-        verify(inventoryService).consumeFromInventoryGroup("user-123", 10L, 1L, 150.0);
+        verify(inventoryService).consumeFromInventoryGroup("user-123", 10L, 1L, 150.0, "g");
         verify(dailyConsumptionRepository).save(consumption);
         assertEquals(480, saved.getEstimatedCalories());
         assertEquals(18.0, saved.getEstimatedProtein());
@@ -114,7 +114,7 @@ class DailyConsumptionServiceTest {
 
         dailyConsumptionService.logConsumption(consumption);
 
-        verify(inventoryService, never()).consumeFromInventoryGroup(any(), any(), any(), any());
+        verify(inventoryService, never()).consumeFromInventoryGroup(any(), any(), any(), any(), any());
         verify(dailyConsumptionRepository).save(consumption);
     }
 
@@ -140,12 +140,12 @@ class DailyConsumptionServiceTest {
                 .mealType(DailyConsumption.MealType.SNACK)
                 .build();
 
-        when(ingredientRepository.findById(2L)).thenReturn(Optional.of(ingredient));
+        when(ingredientRepository.findByIdWithUnits(2L)).thenReturn(Optional.of(ingredient));
         when(dailyConsumptionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         DailyConsumption saved = dailyConsumptionService.logConsumption(consumption);
 
-        verify(inventoryService).consumeFromInventoryGroup("user-123", 11L, 2L, 150.0);
+        verify(inventoryService).consumeFromInventoryGroup("user-123", 11L, 2L, 150.0, "g");
         assertEquals(78, saved.getEstimatedCalories());
         assertEquals(0.5, saved.getEstimatedProtein());
         assertEquals(21.0, saved.getEstimatedCarbs());

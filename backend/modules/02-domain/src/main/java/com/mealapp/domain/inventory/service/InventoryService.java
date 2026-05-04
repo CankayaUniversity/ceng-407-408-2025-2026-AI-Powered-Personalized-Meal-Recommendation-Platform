@@ -10,6 +10,7 @@ import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.repository.UserRepository;
+import com.mealapp.domain.recipe.service.UnitConverterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ public class InventoryService {
     private final InventoryGroupRepository inventoryGroupRepository;
     private final UserRepository userRepository;
     private final IngredientRepository ingredientRepository;
+    private final UnitConverterService unitConverterService;
 
     public enum UpdateMode {
         ADD, SUBTRACT, SET
@@ -163,15 +165,19 @@ public class InventoryService {
                     double finalQuantity;
 
                     if (updateMode == UpdateMode.ADD) {
-                        finalQuantity = currentQuantity + quantity;
+                        // Yeni eklenen miktarı envanterdeki birime dönüştür
+                        double quantityInInventoryUnit = unitConverterService.convertUnits(ingredient, quantity, unit, existing.getUnit());
+                        finalQuantity = currentQuantity + quantityInInventoryUnit;
                     } else if (updateMode == UpdateMode.SUBTRACT) {
-                        finalQuantity = Math.max(0, currentQuantity - quantity);
+                        // Çıkarılan miktarı envanterdeki birime dönüştür
+                        double quantityInInventoryUnit = unitConverterService.convertUnits(ingredient, quantity, unit, existing.getUnit());
+                        finalQuantity = Math.max(0, currentQuantity - quantityInInventoryUnit);
                     } else {
                         finalQuantity = quantity;
+                        existing.setUnit(normalizeUnit(unit)); // SET modunda birimi de güncelle
                     }
 
                     existing.setQuantity(finalQuantity);
-                    existing.setUnit(normalizeUnit(unit));
                     return inventoryRepository.save(existing);
                 })
                 .orElseGet(() -> inventoryRepository.save(Inventory.builder()
@@ -212,15 +218,17 @@ public class InventoryService {
         double currentQuantity = item.getQuantity() != null ? item.getQuantity() : 0.0;
 
         if (updateMode == UpdateMode.ADD) {
-            finalQuantity = currentQuantity + quantity;
+            double quantityInInventoryUnit = unitConverterService.convertUnits(item.getIngredient(), quantity, unit, item.getUnit());
+            finalQuantity = currentQuantity + quantityInInventoryUnit;
         } else if (updateMode == UpdateMode.SUBTRACT) {
-            finalQuantity = Math.max(0, currentQuantity - quantity);
+            double quantityInInventoryUnit = unitConverterService.convertUnits(item.getIngredient(), quantity, unit, item.getUnit());
+            finalQuantity = Math.max(0, currentQuantity - quantityInInventoryUnit);
         } else {
             finalQuantity = quantity;
+            item.setUnit(normalizeUnit(unit)); // SET modunda birimi güncelle
         }
 
         item.setQuantity(finalQuantity);
-        item.setUnit(normalizeUnit(unit));
         return inventoryRepository.save(item);
     }
 
@@ -265,47 +273,63 @@ public class InventoryService {
     /**
      * Verilen malzemeleri kullanıcının lokasyonlar arası stoklarından düşer.
      */
-    public void consumeFromInventory(String userId, Long ingredientId, Double quantityToDeduct) {
+    public void consumeFromInventory(String userId, Long ingredientId, Double quantityToDeduct, String unit) {
         if (quantityToDeduct == null || quantityToDeduct <= 0) {
             return;
         }
 
+        Ingredient ingredient = getRequiredIngredient(ingredientId);
         List<Inventory> items = inventoryRepository.findByInventoryGroupUsersIdAndIngredientIdOrderByInventoryGroupIdAsc(userId, ingredientId);
-        double totalAvailable = items.stream().mapToDouble(i -> i.getQuantity() != null ? i.getQuantity() : 0.0).sum();
         
-        if (totalAvailable < quantityToDeduct) {
+        // Önce toplam stoğu aynı birime dönüştürüp kontrol etmeliyiz
+        double totalAvailableInTargetUnit = 0;
+        for (Inventory item : items) {
+            totalAvailableInTargetUnit += unitConverterService.convertUnits(ingredient, item.getQuantity(), item.getUnit(), unit);
+        }
+        
+        if (totalAvailableInTargetUnit < quantityToDeduct) {
             throw new com.mealapp.domain.common.exception.InsufficientStockException(
-                    String.format("Envanterinizde '%s' malzemesi için yeterli stok yok. Mevcut: %.2f, Gerekli: %.2f",
-                            getRequiredIngredient(ingredientId).getName(), totalAvailable, quantityToDeduct));
+                    String.format("Envanterinizde '%s' malzemesi için yeterli stok yok. Mevcut: %.2f %s, Gerekli: %.2f %s",
+                            ingredient.getName(), totalAvailableInTargetUnit, unit, quantityToDeduct, unit));
         }
 
-        double remaining = quantityToDeduct;
+        double remainingToDeduct = quantityToDeduct;
 
         for (Inventory existing : items) {
+            if (remainingToDeduct <= 0) break;
+            
             double currentQuantity = existing.getQuantity() != null ? existing.getQuantity() : 0.0;
-
             if (currentQuantity <= 0) {
                 inventoryRepository.delete(existing);
                 continue;
             }
 
-            if (currentQuantity <= remaining) {
-                remaining -= currentQuantity;
+            // Envanterdeki miktarı, düşülecek birime dönüştür
+            double existingInDeductUnit = unitConverterService.convertUnits(ingredient, currentQuantity, existing.getUnit(), unit);
+
+            if (existingInDeductUnit <= remainingToDeduct) {
+                remainingToDeduct -= existingInDeductUnit;
                 existing.setQuantity(0.0);
                 inventoryRepository.save(existing);
             } else {
-                existing.setQuantity(currentQuantity - remaining);
+                // Kalanı envanter birimine geri dönüştürerek düş
+                double deductInInventoryUnit = unitConverterService.convertUnits(ingredient, remainingToDeduct, unit, existing.getUnit());
+                existing.setQuantity(currentQuantity - deductInInventoryUnit);
                 inventoryRepository.save(existing);
-                break;
+                remainingToDeduct = 0;
             }
         }
+    }
+
+    public void consumeFromInventory(String userId, Long ingredientId, Double quantityToDeduct) {
+        consumeFromInventory(userId, ingredientId, quantityToDeduct, "g");
     }
 
     /**
      * Verilen malzemeyi seçili lokasyondaki stoktan düşer.
      * Eğer malzeme lokasyonda yoksa veya stok yetersizse istisna fırlatır.
      */
-    public void consumeFromInventoryGroup(String userId, Long inventoryGroupId, Long ingredientId, Double quantityToDeduct) {
+    public void consumeFromInventoryGroup(String userId, Long inventoryGroupId, Long ingredientId, Double quantityToDeduct, String unit) {
         if (quantityToDeduct == null || quantityToDeduct <= 0) {
             return;
         }
@@ -319,15 +343,24 @@ public class InventoryService {
                                 group.getName(), ingredient.getName())));
 
         double currentQuantity = inventory.getQuantity() != null ? inventory.getQuantity() : 0.0;
+        
+        // Envanterdeki miktarı, talep edilen birime dönüştürerek kontrol et
+        double currentInRequestedUnit = unitConverterService.convertUnits(ingredient, currentQuantity, inventory.getUnit(), unit);
 
-        if (currentQuantity < quantityToDeduct) {
+        if (currentInRequestedUnit < quantityToDeduct) {
             throw new com.mealapp.domain.common.exception.InsufficientStockException(
                     String.format("STOK YETERSİZ: '%s' lokasyonunda '%s' malzemesinden sadece %.2f %s var, ancak %.2f %s tüketilmeye çalışılıyor.",
-                            group.getName(), ingredient.getName(), currentQuantity, inventory.getUnit(), quantityToDeduct, inventory.getUnit()));
+                            group.getName(), ingredient.getName(), currentInRequestedUnit, unit, quantityToDeduct, unit));
         }
 
-        inventory.setQuantity(Math.max(0, currentQuantity - quantityToDeduct));
+        // Düşülecek miktarı envanter birimine dönüştür
+        double deductInInventoryUnit = unitConverterService.convertUnits(ingredient, quantityToDeduct, unit, inventory.getUnit());
+        inventory.setQuantity(Math.max(0, currentQuantity - deductInInventoryUnit));
         inventoryRepository.save(inventory);
+    }
+
+    public void consumeFromInventoryGroup(String userId, Long inventoryGroupId, Long ingredientId, Double quantityToDeduct) {
+        consumeFromInventoryGroup(userId, inventoryGroupId, ingredientId, quantityToDeduct, "g");
     }
 
     @Transactional

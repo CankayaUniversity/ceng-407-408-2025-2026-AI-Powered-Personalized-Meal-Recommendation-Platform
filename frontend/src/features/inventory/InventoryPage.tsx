@@ -150,24 +150,42 @@ const InventoryPage: React.FC = () => {
   const handleQuickUnitAdjust = (unit: string, delta: number) => {
     setItemDraft(prev => {
       const currentQty = parseFloat(prev.quantity) || 0;
-      const currentUnit = prev.unit;
-      let nextQty = currentUnit.toLowerCase() === unit.toLowerCase() ? Math.max(0, currentQty + delta) : (delta > 0 ? delta : 0);
-      return { ...prev, quantity: nextQty > 0 ? nextQty.toString() : "0", unit: unit.toUpperCase() };
+      const currentUnit = prev.unit.trim().toUpperCase();
+      const targetUnit = unit.trim().toUpperCase();
+      
+      let nextQty: number;
+      if (currentUnit === targetUnit) {
+        nextQty = Math.max(0, currentQty + delta);
+      } else {
+        // Birim değiştiğinde eğer miktar 0 ise 1 yap, değilse mevcut miktarı koru
+        nextQty = currentQty === 0 ? Math.max(0, delta) : currentQty;
+      }
+      
+      return { 
+        ...prev, 
+        quantity: nextQty.toString(), 
+        unit: targetUnit
+      };
     });
   };
 
-  // Logic for Unit Conversions Preview
   useEffect(() => {
     const fetchConversions = async () => {
-      if (!itemDraft.selectedIngredient || !itemDraft.quantity || parseFloat(itemDraft.quantity) <= 0) {
+      if (!itemDraft.selectedIngredient) {
         setConversions([]);
         return;
       }
+      // Miktar boş veya <= 0 olsa bile 1 birimlik karşılıkları görmek isteyebiliriz, 
+      // ancak miktar 0 ise sadece birimlerin isimlerini ve 1 birimlik karşılıklarını döndürebiliriz.
+      // Şimdilik sadece miktar geçerli olduğunda çekelim ama miktar 0 ise de 1 kabul edip çekelim ki preview dolsun.
+      const rawQty = parseFloat(itemDraft.quantity);
+      const qty = (rawQty > 0) ? rawQty : 1;
+      
       setLoadingConversions(true);
       try {
         const data = await ingredientService.getUnitConversions(
           itemDraft.selectedIngredient.id,
-          parseFloat(itemDraft.quantity),
+          qty,
           itemDraft.unit
         );
         setConversions(data);

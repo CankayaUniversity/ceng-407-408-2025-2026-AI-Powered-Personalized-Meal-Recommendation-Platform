@@ -181,10 +181,14 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
             conn.execute(text("TRUNCATE TABLE recipe_ingredients, ingredient_nutrition, ingredient_units, recipes, ingredients RESTART IDENTITY CASCADE"))
             print("       🧹 Mevcut veriler temizlendi (Truncate).")
 
-            # 1. Ingredients (density ve physical_state akıllı atama)
+            # 1. Ingredients (density ve physical_state ve preferred_unit akıllı atama)
             if 'physical_state' not in df_ing.columns: 
                 df_ing['physical_state'] = 'SOLID'
             
+            # preferred_unit kolonu yoksa ekle
+            if 'preferred_unit' not in df_ing.columns:
+                df_ing['preferred_unit'] = None
+
             # Excel'deki physical_state verisini koru, sadece boşsa kategori bazlı tahmin et
             def predict_state(row):
                 if pd.notna(row.get('physical_state')):
@@ -193,7 +197,31 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
                     return 'LIQUID'
                 return 'SOLID'
 
+            def predict_preferred_unit(row):
+                if pd.notna(row.get('preferred_unit')):
+                    return str(row['preferred_unit'])
+                
+                name = str(row['name']).lower()
+                category = str(row['category']).upper()
+                state = str(row.get('physical_state', 'SOLID')).upper()
+
+                if 'sarımsak' in name: return 'diş'
+                if any(word in name for word in ['yumurta', 'egg']): return 'adet'
+                if any(word in name for word in ['domates', 'biber', 'salatalık', 'patlıcan', 'kabak']): return 'adet'
+                if any(word in name for word in ['maydanoz', 'dereotu', 'nane', 'taze']): return 'dal'
+                if any(word in name for word in ['tuz', 'karabiber', 'pul biber']): return 'tutam'
+                
+                if category == 'BEVERAGE' or (category == 'DAIRY' and state == 'LIQUID') or category == 'SAUCE':
+                    return 'su bardağı'
+                
+                if state == 'LIQUID' or category == 'SAUCE':
+                    if any(word in name for word in ['su', 'süt', 'meyve suyu']): return 'L'
+                    return 'ml'
+                
+                return 'g'
+
             df_ing['physical_state'] = df_ing.apply(predict_state, axis=1)
+            df_ing['preferred_unit'] = df_ing.apply(predict_preferred_unit, axis=1)
 
             # Akıllı density hesaplama
             df_ing['density'] = df_ing.apply(calculate_density, axis=1)
@@ -204,7 +232,7 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
             df_ing['created_at'] = now
             df_ing['updated_at'] = now
 
-            df_ing[['id', 'name', 'category', 'density', 'physical_state', 'active', 'created_at', 'updated_at']].to_sql(
+            df_ing[['id', 'name', 'category', 'density', 'physical_state', 'preferred_unit', 'active', 'created_at', 'updated_at']].to_sql(
                 'ingredients', conn, if_exists='append', index=False)
             conn.execute(text("SELECT setval('ingredients_id_seq', (SELECT COALESCE(MAX(id), 1) FROM ingredients))"))
             print(f"       ✅ ingredients")

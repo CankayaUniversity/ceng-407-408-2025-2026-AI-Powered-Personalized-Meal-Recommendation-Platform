@@ -141,6 +141,7 @@ export interface Ingredient {
   nutrition?: IngredientNutrition;
   density?: number;
   physicalState?: PhysicalState;
+  preferredUnit?: string;
   caloriesPer100g?: number;
   proteinPer100g?: number;
   carbsPer100g?: number;
@@ -403,4 +404,5 @@ export interface UnitConversion {
   unit: string;
   amount: number;
   displayName: string;
+  highPriority: boolean;
 }

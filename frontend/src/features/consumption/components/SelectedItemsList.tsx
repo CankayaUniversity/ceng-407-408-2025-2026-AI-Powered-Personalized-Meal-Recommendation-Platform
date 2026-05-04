@@ -21,7 +21,7 @@ interface SelectedItemsListProps {
   submitting: boolean;
   onRemoveItem: (key: string, userId?: string) => void;
   onRecipePortionChange: (key: string, portion: RecipePortionOption, userId?: string) => void;
-  getIngredientUnits: (ingredient?: Ingredient) => { quickUnits: string[]; standardUnits: string[] };
+  getIngredientUnits: (ingredient?: Ingredient, itemKey?: string) => { quickUnits: string[]; standardUnits: string[] };
   unitWeights: Record<string, number>;
   ingredientSpecificWeights: Record<number, Record<string, number>>;
   onQuickUnitAdjust: (key: string, ingredient: Ingredient, unit: string, delta: number, userId?: string) => void;
@@ -65,27 +65,28 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
       );
     }
 
-    if (data.list.length === 0) return null;
+    const currentUnit = (item as SelectedIngredientItem).unit || (item.portion.label.split(' ').length > 1 ? item.portion.label.split(' ').slice(1).join(' ') : '');
 
-    const ingredient = (item as SelectedIngredientItem).ingredient;
-    const physicalState = ['BEVERAGE', 'OIL', 'SAUCE'].includes(String(ingredient.category))
-      ? 'LIQUID'
-      : ingredient.physicalState;
-    const forbiddenUnits = physicalState === 'LIQUID' 
-      ? ['GRAM', 'KG', 'ADET', 'PAKET', 'DILIM'] 
-      : physicalState === 'SOLID'
-        ? ['ML', 'LITRE', 'L']
-        : [];
-
-    const filteredConversions = data.list.filter((conv: any) => !forbiddenUnits.includes(conv.unit.toUpperCase()));
-
+    const filteredConversions = data.list.filter((c: any) => c.unit.toLowerCase() !== currentUnit.toLowerCase());
     if (filteredConversions.length === 0) return null;
+
+    const preferredUnit = (item as SelectedIngredientItem).ingredient?.preferredUnit;
+
+    const sortedConversions = [...filteredConversions].sort((a: any, b: any) => {
+      if (preferredUnit) {
+        if (a.unit.toLowerCase() === preferredUnit.toLowerCase()) return -1;
+        if (b.unit.toLowerCase() === preferredUnit.toLowerCase()) return 1;
+      }
+      return 0;
+    });
+
+    const displayCount = 8;
 
     return (
       <div className="mt-2 flex flex-col gap-1.5">
         <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.conversions')}</p>
         <div className="flex flex-wrap gap-1.5">
-          {filteredConversions.slice(0, 5).map((conv: any) => (
+          {sortedConversions.slice(0, displayCount).map((conv: any) => (
             <div
               key={conv.unit}
               className="px-2.5 py-1 bg-terracotta/5 border border-terracotta/15 rounded-lg text-[10px] font-medium text-terracotta/90 flex items-center gap-1.5"
@@ -94,9 +95,9 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
               <span className="font-black">{conv.amount}</span>
             </div>
           ))}
-          {filteredConversions.length > 5 && (
+          {sortedConversions.length > displayCount && (
             <div className="px-2 py-1 text-[9px] text-foreground/30 flex items-center">
-              +{filteredConversions.length - 5}
+              +{sortedConversions.length - displayCount}
             </div>
           )}
         </div>
@@ -168,12 +169,12 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                       <div className="space-y-3">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.quickSelect')}</p>
                         <div className="flex flex-wrap gap-2">
-                          {getIngredientUnits(item.ingredient).quickUnits.map((unit: string) => {
+                          {getIngredientUnits(item.ingredient, item.key).quickUnits.map((unit: string) => {
                             const weights = (item.ingredient.id && ingredientSpecificWeights[item.ingredient.id]) || unitWeights;
                             const weight = weights[unit.toLowerCase()];
                             const currentParts = item.portion.label.split(' ');
                             const currentQty = parseFloat(currentParts[0]) || 0;
-                            const currentUnit = currentParts.length > 1 ? currentParts[1] : '';
+                            const currentUnit = currentParts.slice(1).join(' ');
                             const isSelected = currentUnit.toLowerCase() === unit.toLowerCase() && currentQty > 0;
 
                             return (
@@ -181,31 +182,41 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                                 key={unit}
                                 className={`group relative flex items-center overflow-hidden rounded-xl border transition-all ${
                                   isSelected
-                                    ? 'bg-foreground text-background border-transparent'
+                                    ? 'bg-foreground text-background border-transparent shadow-lg'
                                     : 'border-card-border bg-foreground/5 text-foreground/80 hover:border-terracotta/40'
                                 }`}
+                                style={{ minWidth: '130px', flex: '1 1 0px' }}
                               >
                                 <button
                                   type="button"
                                   disabled={submitting}
-                                  onClick={() => onQuickUnitAdjust(item.key, item.ingredient, unit, -1, userId)}
-                                  className={`flex h-full items-center justify-center border-r px-2 py-2 transition-colors ${
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onQuickUnitAdjust(item.key, item.ingredient, unit, -1, userId);
+                                  }}
+                                  className={`flex h-full items-center justify-center border-r px-2 py-2.5 transition-colors ${
                                     isSelected ? 'border-background/10 hover:bg-background/10' : 'border-foreground/5 hover:bg-terracotta/10 hover:text-terracotta'
                                   }`}
                                 >
-                                  <Minus size={12} />
+                                  <Minus size={14} />
                                 </button>
                                 <button
                                   type="button"
                                   disabled={submitting}
                                   onClick={() => onQuickUnitAdjust(item.key, item.ingredient, unit, 1, userId)}
-                                  className="px-3 py-2 text-left"
+                                  className="px-2.5 py-2 text-left flex-1 min-w-0"
                                 >
-                                  <span className="text-xs font-bold leading-none">
-                                    {isSelected ? `${currentQty} ` : ''}{unit.toLowerCase() === 'yemek kaşığı' ? 'Y.Kaşık' : unit.toLowerCase() === 'tatlı kaşığı' ? 'T.Kaşık' : unit.toLowerCase() === 'çay kaşığı' ? 'Ç.Kaşık' : unit}
+                                  <span className="text-[11px] font-bold leading-tight block truncate">
+                                    {isSelected ? `${currentQty} ` : ''}
+                                    {unit.toLowerCase() === 'su bardağı' ? 'S.Bardağı' : 
+                                     unit.toLowerCase() === 'yemek kaşığı' ? 'Y.Kaşık' : 
+                                     unit.toLowerCase() === 'tatlı kaşığı' ? 'T.Kaşık' : 
+                                     unit.toLowerCase() === 'çay kaşığı' ? 'Ç.Kaşık' : 
+                                     unit.toLowerCase() === 'kahve fincanı' ? 'K.Fincanı' :
+                                     unit}
                                   </span>
                                   {weight && (
-                                    <span className={`block text-[8px] mt-0.5 leading-none ${isSelected ? 'text-background/60' : 'text-foreground/30'}`}>
+                                    <span className={`block text-[8px] mt-0.5 font-black uppercase tracking-widest leading-none ${isSelected ? 'text-background/40' : 'text-foreground/20'}`}>
                                       ~{(weight * (isSelected ? currentQty : 1)).toFixed(0)}g
                                     </span>
                                   )}
@@ -213,12 +224,15 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                                 <button
                                   type="button"
                                   disabled={submitting}
-                                  onClick={() => onQuickUnitAdjust(item.key, item.ingredient, unit, 1, userId)}
-                                  className={`flex h-full items-center justify-center border-l px-2 py-2 transition-colors ${
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onQuickUnitAdjust(item.key, item.ingredient, unit, 1, userId);
+                                  }}
+                                  className={`flex h-full items-center justify-center border-l px-2 py-2.5 transition-colors ${
                                     isSelected ? 'border-background/10 hover:bg-background/10' : 'border-foreground/5 hover:bg-emerald-500/10 hover:text-emerald-500'
                                   }`}
                                 >
-                                  <Plus size={12} />
+                                  <Plus size={14} />
                                 </button>
                               </div>
                             );
@@ -242,16 +256,16 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                               <input
                                 type="number"
                                 defaultValue={parseFloat(item.portion.label.split(' ')[0]) || ''}
-                                onBlur={(e) => onManualPortionUpdate(item.key, item.ingredient, e.target.value, item.portion.label.split(' ')[1] || 'GRAM', userId)}
+                                onBlur={(e) => onManualPortionUpdate(item.key, item.ingredient, e.target.value, item.portion.label.split(' ').slice(1).join(' ') || 'GRAM', userId)}
                                 className="w-20 rounded-xl border border-card-border bg-card px-3 py-2 text-xs font-bold text-foreground focus:border-terracotta/50 focus:ring-4 focus:ring-terracotta/5"
                                 placeholder="0"
                               />
                               <select
-                                value={item.portion.label.split(' ')[1]?.toUpperCase() || 'GRAM'}
+                                value={item.portion.label.split(' ').slice(1).join(' ').toUpperCase() || 'GRAM'}
                                 onChange={(e) => onManualPortionUpdate(item.key, item.ingredient, item.portion.label.split(' ')[0], e.target.value, userId)}
                                 className="flex-1 rounded-xl border border-card-border bg-card px-3 py-2 text-xs font-bold text-foreground focus:border-terracotta/50 focus:ring-4 focus:ring-terracotta/5"
                               >
-                                {getIngredientUnits(item.ingredient).standardUnits.map(u => (
+                                {getIngredientUnits(item.ingredient, item.key).standardUnits.map(u => (
                                   <option key={u} value={u}>{u}</option>
                                 ))}
                               </select>
