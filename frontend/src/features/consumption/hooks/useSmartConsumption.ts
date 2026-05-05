@@ -79,6 +79,8 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const [memberResults, setMemberResults] = useState<Record<string, { recipeResults: RecipeListItem[]; ingredientResults: Ingredient[]; searching: boolean }>>({});
   const [selectedItems, setSelectedItems] = useState<SelectedConsumptionItem[]>([]);
   const [memberSelections, setMemberSelections] = useState<Record<string, SelectedConsumptionItem[]>>({});
+  const [nutritionPreview, setNutritionPreview] = useState<{ calories: number; protein: number; carbs: number; fat: number } | null>(null);
+  const [individualPreviews, setIndividualPreviews] = useState<Record<string, { calories: number; protein: number; carbs: number; fat: number }>>({});
   const [searching, setSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitSummary, setSubmitSummary] = useState<SubmitSummary | null>(null);
@@ -339,6 +341,52 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   ]);
 
   // --- Handlers ---
+  // --- Nutrition Preview Sync ---
+  useEffect(() => {
+    const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
+    if (allItems.length === 0) {
+      setNutritionPreview(null);
+      setIndividualPreviews({});
+      return;
+    }
+
+    const updatePreview = async () => {
+      try {
+        const itemPreviews: Record<string, { calories: number; protein: number; carbs: number; fat: number }> = {};
+        
+        const previews = await Promise.all(allItems.map(async item => {
+          const portionInput = item.kind === 'INGREDIENT' ? parsePortionLabel(item.portion.label) : {};
+          const payload = {
+            recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
+            ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
+            portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
+            portionAmount: item.kind === 'INGREDIENT' ? (item.portion.amount || portionInput.amount) : undefined,
+            portionUnit: item.kind === 'INGREDIENT' ? (item.portion.unit || portionInput.unit || item.unit) : undefined,
+            portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined
+          };
+          const nutrition = await consumptionService.getNutritionPreview(payload as any);
+          itemPreviews[item.key] = nutrition;
+          return nutrition;
+        }));
+
+        const total = previews.reduce((acc, curr) => ({
+          calories: acc.calories + curr.calories,
+          protein: acc.protein + curr.protein,
+          carbs: acc.carbs + curr.carbs,
+          fat: acc.fat + curr.fat
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+        setNutritionPreview(total);
+        setIndividualPreviews(itemPreviews);
+      } catch (error) {
+        console.error('Besin degeri tahmini guncellenemedi:', error);
+      }
+    };
+
+    const timeout = setTimeout(updatePreview, 300);
+    return () => clearTimeout(timeout);
+  }, [selectedItems, memberSelections, consumptionService]);
+
   const handleRecipeSelect = (recipe: RecipeListItem, targetUserId?: string) => {
     const key = getItemKey('RECIPE', recipe.id);
     const item: SelectedRecipeItem = {
@@ -724,7 +772,8 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     setMemberResults,
     selectedItems,
     memberSelections,
-    setMemberSelections,
+    nutritionPreview,
+    individualPreviews,
     searching,
     isSearchStale,
     errorMessage,

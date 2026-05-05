@@ -261,6 +261,7 @@
     "empty": "Henüz bildiriminiz yok.",
     "inviteAnswered": "Bu davet yanıtlandı veya okundu olarak işaretlendi",
     "markRead": "Okundu olarak işaretle",
+    "viewDetails": "Detayları Gör",
     "title": "Bildirimler",
     "markAllRead": "Hepsini Oku",
     "accept": "Kabul Et",
@@ -400,7 +401,8 @@
       "draft": "Taslak",
       "pending": "Onay Bekliyor",
       "approved": "Yayında",
-      "rejected": "Reddedildi"
+      "rejected": "Reddedildi",
+      "updated_version": "Güncellenmiş Versiyon"
     },
     "modal": {
       "addTitle": "Yeni Tarif Ekle",

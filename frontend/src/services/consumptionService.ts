@@ -104,6 +104,15 @@ export const getConsumptionService = (api: AxiosInstance) => ({
     } catch (error) {
       return mapAxiosError(error, 'Tüketim kaydı silinemedi');
     }
+  },
+
+  getNutritionPreview: async (payload: ConsumptionRequest): Promise<{ calories: number; protein: number; carbs: number; fat: number }> => {
+    try {
+      const response = await api.post('/v1/consumptions/preview', payload);
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Besin değeri tahmini alınamadı');
+    }
   }
 });
 

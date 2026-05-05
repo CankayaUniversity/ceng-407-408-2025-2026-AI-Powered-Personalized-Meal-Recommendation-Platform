@@ -245,6 +245,14 @@ export const getRecipeService = (api: AxiosInstance) => {
     },
 
     /**
+     * Tarifin tüm versiyonlarını getirir.
+     */
+    getRecipeVersions: async (id: number): Promise<Recipe[]> => {
+      const response = await api.get<Recipe[]>(`/v1/recipes/${id}/versions`);
+      return response.data;
+    },
+
+    /**
      * Tarif görselini yükler (Sadece ADMIN)
      * @param id - Tarif ID'si
      * @param file - Yüklenecek dosya

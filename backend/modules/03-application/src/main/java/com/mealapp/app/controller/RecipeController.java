@@ -78,6 +78,17 @@ public class RecipeController {
         return response;
     }
 
+    @GetMapping("/{id}/versions")
+    public List<RecipeResponse> getRecipeVersions(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        String userId = jwt.getSubject();
+        boolean isAdmin = jwt.getClaimAsStringList("roles") != null && jwt.getClaimAsStringList("roles").contains("ROLE_ADMIN");
+        
+        return recipeService.findAllVersions(id, userId, isAdmin).stream()
+            .map(recipeMapper::toResponse)
+            .peek(this::enrichImageUrl)
+            .collect(java.util.stream.Collectors.toList());
+    }
+
     @PostMapping
     public RecipeResponse createRecipe(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody RecipeRequest request) {
         Recipe recipe = Recipe.builder()

@@ -11,16 +11,19 @@ import {
   Trash2,
   CheckSquare,
   Square,
-  BookOpen
+  BookOpen,
+  Eye
 } from 'lucide-react';
 import { useNotificationService } from '../../services/notificationService';
 import { useInventoryService } from '../../services/inventoryService';
 import { useRecipeService } from '../../services/recipeService';
 import { Notification } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
+import { useNavigate } from 'react-router-dom';
 
 const NotificationsPage: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -364,6 +367,16 @@ const NotificationsPage: React.FC = () => {
 
                   {notification.type === 'RECIPE_APPROVAL' && (
                     <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/recipes?recipeId=${notification.targetId}`);
+                        }}
+                        className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 active:scale-95"
+                      >
+                        <Eye size={16} />
+                        {t('notifications.viewDetails')}
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

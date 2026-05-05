@@ -168,17 +168,26 @@ public class RecipeService {
         // Bu ayrımı updatedData.getStatus() üzerinden alabiliriz.
         if (updatedData.getStatus() != null) {
             existing.setStatus(updatedData.getStatus());
+        } else if (existing.getStatus() == RecipeStatus.REJECTED) {
+            existing.setStatus(RecipeStatus.DRAFT);
         }
 
         if (ingredients != null) {
             if (existing.getRecipeIngredients() != null) {
                 existing.getRecipeIngredients().clear();
+                recipeRepository.saveAndFlush(existing);
             }
             setupIngredients(existing, ingredients);
         }
 
         calculateAndSetNutrition(existing);
-        return recipeRepository.save(existing);
+        Recipe saved = recipeRepository.save(existing);
+        
+        if (saved.getStatus() == RecipeStatus.PENDING) {
+            notifyAdminsForApproval(saved);
+        }
+        
+        return saved;
     }
 
     /**
@@ -249,11 +258,24 @@ public class RecipeService {
             ri.setIngredient(ingredient);
             
             // Onaylı bir tarif veya bekleyen bir güncelleme ise Malzeme zorunlu olmalı (DB kısıtı için)
-            if (ingredient == null && (recipe.getStatus() == RecipeStatus.APPROVED || recipe.getStatus() == RecipeStatus.PENDING)) {
+            if (ingredient == null && recipe.getStatus() == RecipeStatus.APPROVED) {
                  // Eğer malzeme yoksa, bu ingredient kaydını DB'ye eklemeyebiliriz veya hata verebiliriz.
                  // Mevcut tabloda ingredient_id nullable=false olduğu için bir dummy veya hata şart.
-                 // Şimdilik hata vermeye devam edelim ama sadece APPROVED/PENDING için.
-                 throw new RuntimeException("Onay bekleyen veya onaylı tarifler için geçerli malzeme veritabanında kayıtlı olmalıdır.");
+                 // Şimdilik hata vermeye devam edelim ama sadece APPROVED için.
+                 throw new RuntimeException("Onaylı tarifler için geçerli malzeme veritabanında kayıtlı olmalıdır.");
+            }
+            
+            // PENDING (Onay Bekleyen) tariflerde malzeme yoksa, isminden bulmaya çalışıyoruz. 
+            // Eğer isimle de bulunamazsa (yeni malzeme), DB kısıtı (nullable=false) nedeniyle
+            // bir şekilde halledilmesi lazım. Ancak mevcut durumda UI'dan gelen malzeme listede yoksa hata veriyor.
+            // Taslak ve Onay Bekleyenlerde malzeme null olabilirse DB şeması değişmeli.
+            // Şimdilik PENDING için de hata vermeyi kaldırıyoruz (veya daha esnek yapıyoruz).
+            if (ingredient == null && recipe.getStatus() == RecipeStatus.PENDING) {
+                log.warn("Onay bekleyen tarifte malzeme bulunamadı. Malzeme adı: {}", 
+                    ri.getIngredient() != null ? ri.getIngredient().getName() : "Bilinmiyor");
+                // Not: Eğer DB'de ingredient_id NOT NULL ise bu yine de hata verecektir.
+                // Ama RuntimeException fırlatmak yerine Hibernate'in hata vermesine izin veriyoruz 
+                // veya ileride buraya otomatik malzeme ekleme mantığı gelebilir.
             }
             
             // Zorunlu alanları kontrol et (NULL ise varsayılan ata)
@@ -261,13 +283,17 @@ public class RecipeService {
             if (ri.getUnit() == null) ri.setUnit("adet");
             
             // Eğer grams doğrudan verilmişse (frontend'den), hesaplamaya gerek yok veya sadece grams'ı set et
-            if (ri.getGrams() == null) {
+            if (ri.getGrams() == null || ri.getGrams() == 0.0) {
                 if (ingredient != null) {
                     Double grams = unitConverterService.convertToGrams(ri.getAmount(), ri.getUnit(), ingredient);
                     ri.setGrams(grams);
                 } else {
                     ri.setGrams(0.0);
                 }
+            } else if (ingredient != null && (ri.getGrams().equals(ri.getAmount()) && !"gram".equalsIgnoreCase(ri.getUnit()) && !"g".equalsIgnoreCase(ri.getUnit()))) {
+                // Eğer amount ve grams eşitse ama birim gram değilse, muhtemelen hatalı veridir, yeniden hesapla
+                Double grams = unitConverterService.convertToGrams(ri.getAmount(), ri.getUnit(), ingredient);
+                ri.setGrams(grams);
             }
         }
         recipe.setRecipeIngredients(ingredients);
@@ -497,6 +523,16 @@ public class RecipeService {
      * Tarifi soft delete ile pasif duruma getirir.
      */
     @Transactional
+    public List<Recipe> findAllVersions(Long id, String userId, boolean isAdmin) {
+        Recipe recipe = recipeRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Tarif bulunamadı"));
+        
+        // Eğer parentId varsa o bir versiyondur, root tarifin id'sini bulmalıyız
+        Long rootId = recipe.getParentId() != null ? recipe.getParentId() : recipe.getId();
+        
+        return recipeRepository.findAllVersions(rootId, userId, isAdmin);
+    }
+
     public void deleteById(Long id) {
         recipeRepository.deleteById(id);
     }

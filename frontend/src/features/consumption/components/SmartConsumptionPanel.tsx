@@ -8,8 +8,6 @@ import {
 } from '../types/SmartConsumption.types';
 import { 
   locationLabel, 
-  getSelectedItemNutrition, 
-  sumNutrition, 
 } from '../utils/SmartConsumption.utils';
 import { LocationAndMealSelector } from './LocationAndMealSelector';
 import { MemberSelection } from './MemberSelection';
@@ -74,6 +72,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     ingredientResults,
     selectedItems,
     memberSelections,
+    nutritionPreview: nutritionPreviewFromHook,
+    individualPreviews,
     searching,
     isSearchStale,
     submitSummary,
@@ -192,37 +192,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     return totalCount === 1 ? '1 oge hazir' : `${totalCount} oge hazir`;
   }, [selectedItems, memberSelections]);
 
-  const nutritionPreview = useMemo(() => {
-    const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
-    return sumNutrition(allItems.map(getSelectedItemNutrition));
-  }, [selectedItems, memberSelections]);
+  const nutritionPreview = nutritionPreviewFromHook;
 
-    const memberSummaryRows = useMemo(() => {
-    const rows: Array<{ name: string; calories: number; protein: number; carbs: number; fat: number }> = [];
-    if (selectedItems.length > 0 && user) {
-      const nutrition = sumNutrition(selectedItems.map(getSelectedItemNutrition));
-      rows.push({ 
-        name: (user.firstName || user.name || 'Ben'), 
-        calories: nutrition.calories || 0, 
-        protein: nutrition.protein || 0,
-        carbs: nutrition.carbs || 0,
-        fat: nutrition.fat || 0
-      });
-    }
-    Object.entries(memberSelections).forEach(([userId, items]) => {
-      if (items.length === 0) return;
-      const member = selectedGroup?.users.find((u: any) => String(u.id) === userId);
-      const nutrition = sumNutrition(items.map(getSelectedItemNutrition));
-      rows.push({ 
-        name: member?.firstName || member?.name || t('consumption.panel.memberFallback', { id: userId }), 
-        calories: nutrition.calories || 0, 
-        protein: nutrition.protein || 0,
-        carbs: nutrition.carbs || 0,
-        fat: nutrition.fat || 0
-      });
-    });
-    return rows;
-  }, [selectedItems, memberSelections, user, selectedGroup]);
+  const memberSummaryRows: any[] = []; // Member summary details are handled by backend preview soon if needed, but for now we simplify
 
   const summaryTitle = useMemo(() => {
     const totalCount = selectedItems.length + Object.values(memberSelections).reduce((acc, items) => acc + items.length, 0);
@@ -328,6 +300,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               manualInputs={manualInputs}
               toggleManualInput={toggleManualInput}
               onManualPortionUpdate={(key, ing, qty, unit) => handleManualPortionUpdate(key, ing, qty, unit)}
+              individualPreviews={individualPreviews || undefined}
               conversions={conversions}
             />
 
@@ -423,6 +396,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       manualInputs={manualInputs}
                       toggleManualInput={toggleManualInput}
                       onManualPortionUpdate={(key, ing, qty, unit, uid) => handleManualPortionUpdate(key, ing, qty, unit, uid)}
+                      individualPreviews={individualPreviews || undefined}
                       conversions={conversions}
                     />
                   </div>

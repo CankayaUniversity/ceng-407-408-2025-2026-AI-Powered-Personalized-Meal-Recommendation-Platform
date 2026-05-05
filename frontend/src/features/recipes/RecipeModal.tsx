@@ -62,9 +62,9 @@ const RecipeModal: React.FC = () => {
                             setIngredients(fullRecipe.ingredients.map((ing: any) => ({
                                 ingredientId: ing.ingredientId || ing.id,
                                 name: ing.name || ing.ingredient?.name,
-                                amount: ing.amount || ing.grams || 100,
-                                unit: ing.unit || 'GRAM',
-                                grams: ing.grams || 100
+                                amount: ing.amount,
+                                unit: ing.unit,
+                                grams: ing.grams
                             })));
                         } else {
                             setIngredients([]);
@@ -81,9 +81,9 @@ const RecipeModal: React.FC = () => {
                     setIngredients(recipeToEdit.ingredients.map((ing: any) => ({
                         ingredientId: ing.ingredientId || ing.id,
                         name: ing.name || ing.ingredient?.name,
-                        amount: ing.amount || ing.grams || 100,
-                        unit: ing.unit || 'GRAM',
-                        grams: ing.grams || 100
+                        amount: ing.amount,
+                        unit: ing.unit,
+                        grams: ing.grams
                     })));
                 }
             } else if (!isRecipeModalOpen) {
@@ -123,32 +123,78 @@ const RecipeModal: React.FC = () => {
     };
 
     const handleAddIngredient = (ing: any) => {
-        if (ingredients.some(i => i.ingredientId === ing.id)) {
-            showToast('Bu malzeme zaten listede var.', 'info');
-            return;
+        const unit = (ing.preferredUnit || (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM')).toUpperCase();
+        const defaultAmount = unit === 'GRAM' || unit === 'ML' ? 100 : 1;
+
+        // Aynı malzeme ve aynı birim kontrolü
+        const existingIndex = ingredients.findIndex(i => i.ingredientId === ing.id && i.unit.toUpperCase() === unit);
+
+        if (existingIndex !== -1) {
+            // Malzeme zaten aynı birimle listede var, miktarı topla
+            const updatedIngredients = [...ingredients];
+            const oldAmount = updatedIngredients[existingIndex].amount;
+            const newAmount = oldAmount + defaultAmount;
+            updatedIngredients[existingIndex] = {
+                ...updatedIngredients[existingIndex],
+                amount: newAmount
+            };
+            setIngredients(updatedIngredients);
+            showToast(`${ing.name} zaten listedeydi, miktarı ${newAmount} ${unit} olarak güncellendi.`, 'success');
+        } else {
+            // Malzeme yok veya farklı birimle var, yeni satır ekle
+            setIngredients([...ingredients, { 
+                ingredientId: ing.id, 
+                name: ing.name, 
+                amount: defaultAmount, 
+                unit: unit,
+                grams: 100 
+            }]);
         }
-        const unit = ing.preferredUnit || (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
-        setIngredients([...ingredients, { 
-            ingredientId: ing.id, 
-            name: ing.name, 
-            amount: unit === 'GRAM' || unit === 'ML' ? 100 : 1, 
-            unit: unit.toUpperCase(),
-            grams: 100 
-        }]);
+        
         setSearchQuery('');
         setIsSearchFocused(false);
     };
 
-    const handleRemoveIngredient = (id: number) => {
-        setIngredients(ingredients.filter(i => i.ingredientId !== id));
+    const handleRemoveIngredient = (index: number) => {
+        setIngredients(ingredients.filter((_, i) => i !== index));
     };
 
-    const handleAmountChange = (id: number, amount: number) => {
-        setIngredients(ingredients.map(i => i.ingredientId === id ? { ...i, amount, grams: amount } : i));
+    const handleAmountChange = (index: number, amount: number) => {
+        setIngredients(ingredients.map((ing, i) => i === index ? { ...ing, amount } : ing));
     };
 
-    const handleUnitChange = (id: number, unit: string) => {
-        setIngredients(ingredients.map(i => i.ingredientId === id ? { ...i, unit: unit.toUpperCase() } : i));
+    const handleUnitChange = (index: number, unit: string) => {
+        const normalizedUnit = unit.toUpperCase();
+        const currentIng = ingredients[index];
+
+        // Aynı malzeme için başka bir satırda bu yeni birim zaten var mı?
+        const duplicateIndex = ingredients.findIndex((ing, i) =>
+            i !== index &&
+            ing.ingredientId === currentIng.ingredientId &&
+            ing.unit.toUpperCase() === normalizedUnit
+        );
+
+        if (duplicateIndex !== -1) {
+            // Birim değiştirildiğinde aynı malzemenin aynı birimli başka bir satırı varsa birleştir
+            const newAmount = ingredients[duplicateIndex].amount + currentIng.amount;
+            const updatedIngredients = ingredients.filter((_, i) => i !== index);
+            
+            // Filter sonrası index değişmiş olabilir, ingredientId ve unit ile tekrar bul
+            const targetIndex = updatedIngredients.findIndex(ing => 
+                ing.ingredientId === currentIng.ingredientId && 
+                ing.unit.toUpperCase() === normalizedUnit
+            );
+            
+            updatedIngredients[targetIndex] = {
+                ...updatedIngredients[targetIndex],
+                amount: newAmount
+            };
+
+            setIngredients(updatedIngredients);
+            showToast(`${currentIng.name} miktarları birleştirildi: ${newAmount} ${normalizedUnit}`, 'success');
+        } else {
+            setIngredients(ingredients.map((ing, i) => i === index ? { ...ing, unit: normalizedUnit } : ing));
+        }
     };
 
     const handleSubmit = async (isPublishing: boolean) => {
@@ -164,10 +210,11 @@ const RecipeModal: React.FC = () => {
             servings,
             instructions,
             ingredients: ingredients.map(i => ({ 
-                ingredientId: i.ingredientId, 
+                ingredientId: i.ingredientId,
+                ingredientName: i.name,
                 amount: i.amount, 
                 unit: i.unit,
-                grams: i.grams 
+                grams: i.grams
             })),
             status: isPublishing ? 'PENDING' : 'DRAFT'
         } as RecipeRequest;
@@ -406,12 +453,12 @@ const RecipeModal: React.FC = () => {
 
                                     {/* Ingredient List */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        {ingredients.map(ing => (
-                                            <div key={ing.ingredientId} className="flex flex-col gap-3 p-5 bg-black/5 dark:bg-white/5 rounded-[2rem] border border-transparent hover:border-terracotta/20 transition-all group shadow-sm">
+                                        {ingredients.map((ing, index) => (
+                                            <div key={`${ing.ingredientId}-${index}`} className="flex flex-col gap-3 p-5 bg-black/5 dark:bg-white/5 rounded-[2rem] border border-transparent hover:border-terracotta/20 transition-all group shadow-sm">
                                                 <div className="flex items-center justify-between">
                                                     <p className="text-sm font-bold text-foreground">{ing.name}</p>
                                                     <button 
-                                                        onClick={() => handleRemoveIngredient(ing.ingredientId)}
+                                                        onClick={() => handleRemoveIngredient(index)}
                                                         className="p-2 text-foreground/20 hover:text-red-500 transition-colors"
                                                     >
                                                         <Trash2 size={16} />
@@ -421,13 +468,13 @@ const RecipeModal: React.FC = () => {
                                                     <input
                                                         type="number"
                                                         value={ing.amount}
-                                                        onChange={(e) => handleAmountChange(ing.ingredientId, parseFloat(e.target.value) || 0)}
+                                                        onChange={(e) => handleAmountChange(index, parseFloat(e.target.value) || 0)}
                                                         className="flex-1 py-2 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-sm focus:border-terracotta outline-none"
                                                         placeholder="0"
                                                     />
                                                     <select
                                                         value={ing.unit}
-                                                        onChange={(e) => handleUnitChange(ing.ingredientId, e.target.value)}
+                                                        onChange={(e) => handleUnitChange(index, e.target.value)}
                                                         className="w-28 py-2 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-[10px] focus:border-terracotta outline-none uppercase"
                                                     >
                                                         <option value="GRAM">Gram</option>

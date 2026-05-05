@@ -23,20 +23,40 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     @Query("SELECT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient i LEFT JOIN FETCH i.nutrition WHERE r.id = :id AND r.active = true")
     Optional<Recipe> findByIdWithIngredients(Long id);
 
-    @Query("SELECT r FROM Recipe r WHERE r.active = true AND r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)")
+    @Query("SELECT r FROM Recipe r WHERE r.active = true AND " +
+           "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId))")
     Page<Recipe> findAllActive(@Param("userId") String userId, Pageable pageable);
 
-    @Query("SELECT r FROM Recipe r WHERE r.active = true AND r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)")
+    @Query("SELECT r FROM Recipe r " +
+           "LEFT JOIN FETCH r.recipeIngredients ri " +
+           "LEFT JOIN FETCH ri.ingredient i " +
+           "LEFT JOIN FETCH i.nutrition " +
+           "WHERE r.active = true AND " +
+           "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId))")
     Page<Recipe> findAllWithIngredients(@Param("userId") String userId, Pageable pageable);
 
-    @Query("SELECT DISTINCT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient i LEFT JOIN FETCH i.nutrition WHERE r.active = true AND r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)")
+    @Query("SELECT DISTINCT r FROM Recipe r " +
+           "LEFT JOIN FETCH r.recipeIngredients ri " +
+           "LEFT JOIN FETCH ri.ingredient i " +
+           "LEFT JOIN FETCH i.nutrition " +
+           "WHERE r.active = true AND " +
+           "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId))")
     List<Recipe> findAllWithIngredients(@Param("userId") String userId);
 
     /**
      * Başlığa göre tarif araması yapar.
      */
-    @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) AND LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))",
-           countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) AND LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+    @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
+                   "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                   "(r.parentId IS NOT NULL AND r.createdBy = :userId)) AND " +
+                   "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))",
+           countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
+                        "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                        "(r.parentId IS NOT NULL AND r.createdBy = :userId)) AND " +
+                        "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     Page<Recipe> findByTitleContainingIgnoreCase(@Param("title") String title, @Param("userId") String userId, Pageable pageable);
 
     List<Recipe> findByTitleContainingIgnoreCaseAndActiveTrueAndStatus(String title, RecipeStatus status);
@@ -61,13 +81,21 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     @Query("SELECT DISTINCT r FROM Recipe r " +
            "JOIN r.recipeIngredients ri " +
            "JOIN ri.ingredient i " +
-           "WHERE r.active = true AND r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
+           "WHERE r.active = true AND " +
+           "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId)) " +
            "AND (:dietType = 'NONE' OR r.title LIKE %:dietType%) " + 
            "AND NOT EXISTS (SELECT 1 FROM RecipeIngredient ri2 " +
            "                JOIN ri2.ingredient i2 " +
            "                WHERE ri2.recipe = r AND i2.name IN :allergies) " +
            "ORDER BY r.averageRating DESC")
     List<Recipe> findTopRecipesSafeForUser(@Param("userId") String userId, @Param("dietType") String dietType, @Param("allergies") List<String> allergies, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT r FROM Recipe r WHERE r.active = true AND " +
+           "(r.id = :rootId OR r.parentId = :rootId) AND " +
+           "(r.status = 'APPROVED' OR r.createdBy = :userId OR :isAdmin = true) " +
+           "ORDER BY r.createdAt DESC")
+    List<Recipe> findAllVersions(@Param("rootId") Long rootId, @Param("userId") String userId, @Param("isAdmin") boolean isAdmin);
 
     @Modifying
     @Query("UPDATE Recipe r SET r.active = false WHERE r.id = :id")

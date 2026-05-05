@@ -9,10 +9,7 @@ import {
 } from '../types/SmartConsumption.types';
 import { 
   getSelectedItemName, 
-  getSelectedItemCategory, 
-  getSelectedItemNutrition, 
-  formatCalories, 
-  formatMacro 
+  getSelectedItemCategory,
 } from '../utils/SmartConsumption.utils';
 import { type Ingredient } from '../../../types';
 
@@ -28,6 +25,7 @@ interface SelectedItemsListProps {
   manualInputs: Set<string>;
   toggleManualInput: (key: string) => void;
   onManualPortionUpdate: (key: string, ingredient: Ingredient, qty: string, unit: string, userId?: string) => void;
+  individualPreviews?: Record<string, { calories: number; protein: number; carbs: number; fat: number }>;
   conversions?: Record<string, { list: any[]; loading: boolean }>;
   userId?: string;
   title?: string;
@@ -45,6 +43,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
   manualInputs,
   toggleManualInput,
   onManualPortionUpdate,
+  individualPreviews,
   conversions,
   userId,
   title
@@ -109,7 +108,6 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
     <div className="space-y-4">
       <p className="meal-overline tracking-[0.18em]">{title || t('consumption.selectedItems.defaultTitle')}</p>
       {selectedItems.map((item) => {
-        const nutrition = getSelectedItemNutrition(item);
         const isManual = manualInputs.has(item.key);
 
         return (
@@ -122,9 +120,6 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className="rounded-full bg-terracotta/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-terracotta">
                     {getSelectedItemCategory(item)}
-                  </span>
-                  <span className="rounded-full bg-moss-sage/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-moss-forest dark:text-moss-sage">
-                    {formatCalories(nutrition.calories)} · {formatMacro(nutrition.protein)} P
                   </span>
                 </div>
               </div>
@@ -242,14 +237,38 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                       </div>
 
                       <div className="space-y-3">
-                        <button
-                          type="button"
-                          onClick={() => toggleManualInput(item.key)}
-                          className="flex w-full items-center justify-between rounded-xl bg-foreground/5 px-3 py-2 text-left transition-all hover:bg-foreground/10"
-                        >
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.enterAmount')}</span>
-                          {isManual ? <ChevronUp size={14} className="text-terracotta" /> : <ChevronDown size={14} className="text-foreground" />}
-                        </button>
+                        <div className="flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => toggleManualInput(item.key)}
+                            className="flex flex-1 items-center justify-between rounded-xl bg-foreground/5 px-3 py-2 text-left transition-all hover:bg-foreground/10"
+                          >
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{t('consumption.selectedItems.enterAmount')}</span>
+                            {isManual ? <ChevronUp size={14} className="text-terracotta" /> : <ChevronDown size={14} className="text-foreground" />}
+                          </button>
+                        </div>
+                        
+                        {individualPreviews?.[item.key] && (
+                          <div className="flex items-center gap-3 px-1">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-black text-terracotta uppercase tracking-tighter leading-none">
+                                {Math.round(individualPreviews[item.key].calories)} kcal
+                              </span>
+                            </div>
+                            <div className="h-4 w-[1px] bg-foreground/10" />
+                            <div className="flex gap-2">
+                              {['protein', 'carbs', 'fat'].map((macro) => (
+                                <div key={macro} className="flex flex-col">
+                                  <span className="text-[8px] font-bold text-foreground/30 uppercase tracking-widest leading-none mb-0.5">{t(`common.${macro}`).slice(0, 3)}</span>
+                                  <span className="text-[10px] font-black text-foreground/70 leading-none">
+                                    {(individualPreviews![item.key] as any)[macro].toFixed(1)}g
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {isManual && (
                           <>
                             <div className="flex gap-2 animate-in slide-in-from-top-2 duration-200">

@@ -121,12 +121,14 @@ export interface RecipeListItem {
   userRating?: number | null;
   imageUrl?: string | null;
   status?: RecipeStatus;
+  difficulty?: string | null;
   createdBy?: string;
+  createdAt?: string;
   parentId?: number | null;
   isFavorite?: boolean;
 }
 
-export interface Recipe extends RecipeListItem {
+export interface Recipe extends Omit<RecipeListItem, 'difficulty'> {
   difficulty?: Difficulty | null;
   servings?: number | null;
   instructions?: string | null;
@@ -372,8 +374,11 @@ export enum RecipeStatus {
 }
 
 export interface RecipeIngredientRequest {
-  ingredientId: number;
-  grams: number;
+  ingredientId?: number;
+  ingredientName?: string;
+  amount: number;
+  unit: string;
+  grams?: number;
 }
 
 export interface RecipeRequest {

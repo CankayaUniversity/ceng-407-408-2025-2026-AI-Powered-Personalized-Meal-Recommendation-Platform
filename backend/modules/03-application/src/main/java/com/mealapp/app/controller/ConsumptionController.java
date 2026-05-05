@@ -4,6 +4,7 @@ import com.mealapp.app.model.dto.consumption.ConsumptionAnalysisResponse;
 import com.mealapp.app.model.dto.consumption.ConsumptionRequest;
 import com.mealapp.app.model.dto.consumption.ConsumptionResponse;
 import com.mealapp.app.model.dto.consumption.ConsumptionSummaryResponse;
+import com.mealapp.app.model.dto.consumption.NutritionPreviewResponse;
 
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
@@ -191,6 +192,49 @@ public class ConsumptionController {
             ingredient = ingredientService.findByIdWithUnits(ingredientId).orElse(null);
         }
         return unitConverterService.convertToGrams(amount, unit, ingredient);
+    }
+
+    @PostMapping("/preview")
+    public NutritionPreviewResponse getNutritionPreview(@RequestBody ConsumptionRequest request) {
+        DailyConsumption consumption = new DailyConsumption();
+        
+        if (request.getRecipeId() != null) {
+            Recipe recipe = recipeService.findById(request.getRecipeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı"));
+            consumption.setRecipe(recipe);
+            consumption.setPortionMultiplier(request.getPortionMultiplier());
+            consumption.setPortionSize(request.getPortionSize());
+        } else if (request.getIngredientId() != null) {
+            Ingredient ingredient = ingredientService.findById(request.getIngredientId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Malzeme bulunamadı"));
+            consumption.setIngredient(ingredient);
+            // portionAmount ve portionUnit doğrudan entity'de yok, 
+            // ama enrichConsumption sırasında portionGrams hesaplanırken gerekebilir.
+            // Bu alanları ConsumptionRequest'ten manuel hesaplayıp set etmeliyiz.
+            if (request.getPortionGrams() != null) {
+                consumption.setPortionGrams(request.getPortionGrams());
+            } else if (request.getPortionAmount() != null && request.getPortionUnit() != null) {
+                Double grams = unitConverterService.convertToGrams(
+                    request.getPortionAmount(), 
+                    request.getPortionUnit(), 
+                    ingredient
+                );
+                consumption.setPortionGrams(grams);
+            }
+            consumption.setPortionLabel(request.getPortionLabel());
+            consumption.setPortionSize(request.getPortionSize());
+        } else if (Boolean.TRUE.equals(request.getIsCustomEntry())) {
+            consumption.setEstimatedCalories(0);
+        }
+
+        dailyConsumptionService.calculateNutritionPreview(consumption);
+
+        return NutritionPreviewResponse.builder()
+                .calories(consumption.getEstimatedCalories() != null ? consumption.getEstimatedCalories().doubleValue() : 0.0)
+                .protein(consumption.getEstimatedProtein() != null ? consumption.getEstimatedProtein() : 0.0)
+                .carbs(consumption.getEstimatedCarbs() != null ? consumption.getEstimatedCarbs() : 0.0)
+                .fat(consumption.getEstimatedFat() != null ? consumption.getEstimatedFat() : 0.0)
+                .build();
     }
 
     /**

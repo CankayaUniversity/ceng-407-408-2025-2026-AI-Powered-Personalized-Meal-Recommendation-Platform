@@ -56,6 +56,7 @@ public class RecipeMapper {
             .userRating(userRating)
             .imageUrl(recipe.getImageUrl())
             .instructions(recipe.getInstructions())
+            .difficulty(recipe.getDifficulty() != null ? recipe.getDifficulty().name() : null)
             .status(recipe.getStatus() != null ? recipe.getStatus().name() : null)
             .createdBy(recipe.getCreatedBy())
             .parentId(recipe.getParentId())
@@ -90,8 +91,8 @@ public class RecipeMapper {
 
                     var builder = RecipeIngredientDTO.builder()
                         .name(ri.getIngredient().getName())
-                        .amount(ri.getAmount() != null ? ri.getAmount() : gramsValue)
-                        .unit(ri.getUnit() != null ? ri.getUnit() : "g")
+                        .amount(ri.getAmount())
+                        .unit(ri.getUnit())
                         .grams(gramsValue)
                         .unitGramWeight(unitConverterService.getUnitGramWeight(ri.getUnit(), ri.getIngredient()));
 

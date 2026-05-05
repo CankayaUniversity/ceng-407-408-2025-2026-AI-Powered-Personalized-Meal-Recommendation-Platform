@@ -8,7 +8,7 @@ import lombok.*;
  * amount ve unit değerleri Python/Excel'den gelir, grams ise Service katmanında hesaplanır.
  */
 @Entity
-@Table(name = "recipe_ingredients", uniqueConstraints = @UniqueConstraint(name = "unique_recipe_ingredient", columnNames = {"recipe_id", "ingredient_id"}))
+@Table(name = "recipe_ingredients")
 @Getter
 @Setter
 @NoArgsConstructor

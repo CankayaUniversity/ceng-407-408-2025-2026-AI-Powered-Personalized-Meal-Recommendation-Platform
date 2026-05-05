@@ -16,7 +16,7 @@ interface QuickSummaryProps {
   summaryTitle: string;
   summarySubtitle: string | null;
   entryMode: EntryMode;
-  nutritionPreview: NutritionPreview;
+  nutritionPreview: NutritionPreview | null;
   memberSummaryRows: Array<{ name: string; calories: number; protein: number; carbs: number; fat: number }>;
   inventoryDeductions: Array<{ name: string; grams: number }>;
   isOutside: boolean;
@@ -60,19 +60,19 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
           <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Calories</p>
-          <p className="mt-2 font-serif text-3xl font-bold">{formatCalories(nutritionPreview.calories)}</p>
+          <p className="mt-2 font-serif text-3xl font-bold">{formatCalories(nutritionPreview?.calories)}</p>
         </div>
         <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
           <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Protein</p>
-          <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.protein)}</p>
+          <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.protein)}</p>
         </div>
         <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
           <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Carbs</p>
-          <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.carbs)}</p>
+          <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.carbs)}</p>
         </div>
         <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
           <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Fat</p>
-          <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview.fat)}</p>
+          <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.fat)}</p>
         </div>
       </div>
 

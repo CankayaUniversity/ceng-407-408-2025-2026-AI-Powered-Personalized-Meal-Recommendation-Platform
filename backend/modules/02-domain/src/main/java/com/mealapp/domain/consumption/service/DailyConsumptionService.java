@@ -263,6 +263,13 @@ public class DailyConsumptionService {
         return 100.0 * multiplier;
     }
 
+    /**
+     * Tüketim kaydı oluşturmadan önce besin değerlerini hesaplayıp döner.
+     */
+    public void calculateNutritionPreview(DailyConsumption consumption) {
+        enrichConsumption(consumption);
+    }
+
     private double roundDouble(double value) {
         return Math.round(value * 10.0) / 10.0;
     }

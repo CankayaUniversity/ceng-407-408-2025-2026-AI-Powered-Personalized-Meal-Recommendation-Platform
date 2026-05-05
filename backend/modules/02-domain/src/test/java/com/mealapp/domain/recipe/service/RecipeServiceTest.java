@@ -18,11 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeServiceTest {
@@ -179,5 +177,95 @@ class RecipeServiceTest {
         assertEquals(10, result.getRatingCount());
         assertEquals(userId, result.getCreatedBy());
         assertEquals(true, result.isActive());
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenIngredientNotFoundForPendingRecipe() {
+        Long recipeId = 1L;
+        String userId = "user123";
+        Recipe existingRecipe = Recipe.builder()
+            .id(recipeId)
+            .title("Draft Title")
+            .createdBy(userId)
+            .status(RecipeStatus.DRAFT)
+            .build();
+
+        Recipe updatedData = Recipe.builder()
+            .title("Update to Pending")
+            .status(RecipeStatus.PENDING)
+            .build();
+
+        // Veritabanında olmayan bir malzeme gönderiyoruz
+        RecipeIngredient ri = RecipeIngredient.builder()
+            .ingredient(Ingredient.builder().name("Non Existent Ingredient").build())
+            .amount(100.0)
+            .unit("gram")
+            .build();
+
+        when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(existingRecipe));
+        when(ingredientRepository.findByNameIgnoreCaseAndActiveTrue("Non Existent Ingredient")).thenReturn(Optional.empty());
+        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Hata fırlatmaması lazım (önceden RuntimeException fırlatıyordu)
+        Recipe result = recipeService.updateRecipe(recipeId, updatedData, List.of(ri), userId);
+
+        assertNotNull(result);
+        assertEquals(RecipeStatus.PENDING, result.getStatus());
+        assertEquals(1, result.getRecipeIngredients().size());
+        org.junit.jupiter.api.Assertions.assertNull(result.getRecipeIngredients().get(0).getIngredient());
+    }
+
+    @Test
+    void shouldAllowDuplicateIngredientsInRecipe() {
+        Long recipeId = 1L;
+        String userId = "user123";
+        Recipe existingRecipe = Recipe.builder()
+            .id(recipeId)
+            .title("Draft Title")
+            .createdBy(userId)
+            .status(RecipeStatus.DRAFT)
+            .recipeIngredients(new java.util.ArrayList<>())
+            .build();
+
+        Ingredient apple = Ingredient.builder().id(10L).name("Apple").build();
+
+        // Aynı malzemeyi iki kez ekliyoruz
+        RecipeIngredient ri1 = RecipeIngredient.builder()
+            .ingredient(apple)
+            .amount(1.0)
+            .unit("piece")
+            .build();
+        RecipeIngredient ri2 = RecipeIngredient.builder()
+            .ingredient(apple)
+            .amount(200.0)
+            .unit("gram")
+            .build();
+
+        when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(existingRecipe));
+        when(ingredientRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(apple));
+        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Recipe result = recipeService.updateRecipe(recipeId, existingRecipe, List.of(ri1, ri2), userId);
+
+        assertNotNull(result);
+        assertEquals(2, result.getRecipeIngredients().size());
+        assertEquals(10L, result.getRecipeIngredients().get(0).getIngredient().getId());
+        assertEquals(10L, result.getRecipeIngredients().get(1).getIngredient().getId());
+    }
+
+    @Test
+    void shouldFindAllVersions() {
+        Long rootId = 1L;
+        String userId = "user1";
+        Recipe root = Recipe.builder().id(rootId).build();
+        
+        when(recipeRepository.findById(rootId)).thenReturn(Optional.of(root));
+        when(recipeRepository.findAllVersions(eq(rootId), eq(userId), anyBoolean())).thenReturn(List.of(root));
+
+        List<Recipe> versions = recipeService.findAllVersions(rootId, userId, false);
+
+        assertNotNull(versions);
+        assertFalse(versions.isEmpty());
+        verify(recipeRepository).findAllVersions(eq(rootId), eq(userId), eq(false));
     }
 }

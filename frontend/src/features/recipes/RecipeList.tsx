@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
-import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info, Edit3, Users } from 'lucide-react';
+import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info, Edit3, Users, History, CheckCircle2, Clock3, AlertCircle } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useRecipeService } from '../../services/recipeService';
-import type { RecipeListItem } from '../../types';
+import type { RecipeListItem, Recipe } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useUI } from '../../infrastructure/ui/UIContext';
@@ -176,6 +177,8 @@ const RecipeList: React.FC = () => {
   const { showToast } = useToast();
   const { user } = useAuth();
   const { openRecipeModal, isRecipeModalOpen } = useUI();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // --- States ---
   const [searchTerm, setSearchTerm] = useState('');
@@ -188,6 +191,7 @@ const RecipeList: React.FC = () => {
   // --- Modal States ---
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeListItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [recipeVersions, setRecipeVersions] = useState<Recipe[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [recipeDetail, setRecipeDetail] = useState<any>(null);
 
@@ -274,15 +278,71 @@ const RecipeList: React.FC = () => {
     setPage(0);
   }, [debouncedSearch]);
 
+  // Handle direct recipe link from notifications
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const recipeIdFromUrl = params.get('recipeId');
+    
+    if (recipeIdFromUrl && !isModalOpen && !loading) {
+      const rid = parseInt(recipeIdFromUrl);
+      // If the recipe is already in the list, open it
+      const recipeInList = recipes.find(r => r.id === rid);
+      if (recipeInList) {
+        handleOpenDetail(recipeInList);
+        // Clear the query parameter so it doesn't reopen if modal is closed and navigated back
+        const newParams = new URLSearchParams(location.search);
+        newParams.delete('recipeId');
+        const newSearch = newParams.toString();
+        navigate({ search: newSearch ? `?${newSearch}` : '' }, { replace: true });
+      } else if (!loading && recipes.length > 0) {
+          // If not in current page, we might need to fetch it explicitly or just show an error
+          // For now, let's try to fetch it if it's not in the list
+          const fetchAndOpen = async () => {
+              try {
+                  const details = await recipeService.getRecipeById(rid);
+                  if (details) {
+                      // We need to convert Recipe to RecipeListItem minimally
+                      const listItem: RecipeListItem = {
+                          id: details.id,
+                          title: details.title,
+                          imageUrl: details.imageUrl,
+                          preparationTimeMinutes: details.preparationTimeMinutes,
+                          totalCalories: details.totalCalories,
+                          averageRating: details.averageRating,
+                          ratingCount: details.ratingCount,
+                          isFavorite: details.isFavorite,
+                          status: details.status,
+                          category: details.category
+                      };
+                      handleOpenDetail(listItem);
+                      const newParams = new URLSearchParams(location.search);
+                      newParams.delete('recipeId');
+                      const newSearch = newParams.toString();
+                      navigate({ search: newSearch ? `?${newSearch}` : '' }, { replace: true });
+                  }
+              } catch (err) {
+                  console.error("Failed to fetch recipe from URL", err);
+              }
+          };
+          fetchAndOpen();
+      }
+    }
+  }, [location.search, recipes, loading, isModalOpen]);
+
   // --- Modal Handlers ---
   const handleOpenDetail = async (recipe: RecipeListItem) => {
     setSelectedRecipe(recipe);
     setIsModalOpen(true);
     setModalLoading(true);
     try {
-      const details = await recipeService.getRecipeById(recipe.id);
+      const [details, versions] = await Promise.all([
+        recipeService.getRecipeById(recipe.id),
+        recipeService.getRecipeVersions(recipe.id)
+      ]);
       setRecipeDetail(details);
-      // Sync favorite state from details if it differs (though details should be most fresh)
+      setRecipeVersions(versions);
+      
+      // Sync favorite state from details
       if (details && details.isFavorite !== undefined) {
         const isFav = details.isFavorite;
         setRecipes(prev => prev.map(r => 
@@ -296,6 +356,32 @@ const RecipeList: React.FC = () => {
     } catch (err: any) {
       showToast(err?.message || t('toasts.recipes.detailsError'), 'error');
       handleCloseModal();
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const handleVersionChange = async (versionId: number) => {
+    setModalLoading(true);
+    try {
+      const details = await recipeService.getRecipeById(versionId);
+      setRecipeDetail(details);
+      setSelectedRecipe(prev => {
+        if (!prev) return null;
+        return { 
+          ...prev, 
+          id: details.id, 
+          title: details.title, 
+          imageUrl: details.imageUrl, 
+          status: details.status,
+          totalCalories: details.totalCalories,
+          preparationTimeMinutes: details.preparationTimeMinutes,
+          servings: details.servings,
+          category: details.category
+        };
+      });
+    } catch (err: any) {
+      showToast(err?.message || t('toasts.recipes.detailsError'), 'error');
     } finally {
       setModalLoading(false);
     }
@@ -394,6 +480,11 @@ const RecipeList: React.FC = () => {
                     <div className="glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
                       {recipe.category || 'Gurme'}
                     </div>
+                    {recipe.parentId && (
+                        <div className="bg-terracotta text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-lg animate-pulse">
+                          {t('recipes.status.updated_version')}
+                        </div>
+                    )}
                     {recipe.status && (
                       <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border shadow-lg ${
                         recipe.status === 'APPROVED' ? 'bg-moss-forest/20 text-moss-forest border-moss-forest/30' :
@@ -541,6 +632,45 @@ const RecipeList: React.FC = () => {
                             'text-red-400'
                           }`}>
                             {t(`recipes.status.${selectedRecipe.status.toLowerCase()}`)}
+                          </div>
+                        )}
+                        {recipeVersions.length > 1 && (
+                          <div className="relative group/versions">
+                            <button className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all">
+                              <History size={16} className="text-terracotta" />
+                              VERSİYON {recipeVersions.findIndex(v => v.id === selectedRecipe.id) + 1}
+                            </button>
+                            <div className="absolute top-full right-0 mt-2 w-64 glass-card-dark rounded-2xl border border-white/10 shadow-2xl opacity-0 invisible group-hover/versions:opacity-100 group-hover/versions:visible transition-all z-50 overflow-hidden">
+                              <div className="p-4 border-b border-white/5 bg-white/5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Tüm Versiyonlar</p>
+                              </div>
+                              <div className="max-h-64 overflow-y-auto">
+                                {recipeVersions.map((v, idx) => (
+                                  <button
+                                    key={v.id}
+                                    onClick={() => handleVersionChange(v.id)}
+                                    className={`w-full flex items-center gap-3 p-4 hover:bg-white/10 transition-all text-left border-b border-white/5 last:border-0 ${v.id === selectedRecipe.id ? 'bg-terracotta/20' : ''}`}
+                                  >
+                                    <div className="flex-none w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-white/60">
+                                      V{idx + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm font-bold text-white truncate">
+                                          {v.status === 'APPROVED' ? 'Orijinal Tarif' : `Revizyon ${idx + 1}`}
+                                        </p>
+                                        {v.status === 'APPROVED' && <CheckCircle2 size={12} className="text-moss-sage" />}
+                                        {v.status === 'PENDING' && <Clock3 size={12} className="text-yellow-400" />}
+                                        {v.status === 'REJECTED' && <AlertCircle size={12} className="text-red-400" />}
+                                      </div>
+                                      <p className="text-[10px] text-white/40 font-medium">
+                                        {v.createdAt ? new Date(v.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tarih Belirtilmemiş'}
+                                      </p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>

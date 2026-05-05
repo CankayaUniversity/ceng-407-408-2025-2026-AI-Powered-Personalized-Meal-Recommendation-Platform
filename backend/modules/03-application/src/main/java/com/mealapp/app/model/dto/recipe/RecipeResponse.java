@@ -27,8 +27,10 @@ public class RecipeResponse {
     private String imageUrl;
     private String instructions;
     private String status;
+    private String difficulty;
     private String createdBy;
     private Long parentId;
+    private java.time.LocalDateTime createdAt;
     private List<RecipeIngredientDTO> ingredients;
     private boolean isFavorite;
 }
