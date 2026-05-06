@@ -40,11 +40,13 @@ public class RecipeService {
     private final UserRepository userRepository;
 
     /**
-     * Yeni bir tarif oluşturur. Kullanıcı oluşturuyorsa statüsü DRAFT olur.
+     * Yeni bir tarif oluşturur. Kullanıcı oluşturuyorsa statüsü DRAFT veya PENDING olabilir.
      */
     @Transactional
     public Recipe createRecipe(Recipe recipe, List<RecipeIngredient> ingredients) {
-        recipe.setStatus(RecipeStatus.DRAFT);
+        if (recipe.getStatus() == null) {
+            recipe.setStatus(RecipeStatus.DRAFT);
+        }
         recipe.setActive(true);
         Recipe savedRecipe = recipeRepository.save(recipe);
 
@@ -53,6 +55,11 @@ public class RecipeService {
         }
 
         calculateAndSetNutrition(savedRecipe);
+
+        if (savedRecipe.getStatus() == RecipeStatus.PENDING) {
+            notifyAdminsForApproval(savedRecipe);
+        }
+
         return savedRecipe;
     }
 
@@ -211,17 +218,24 @@ public class RecipeService {
 
     private void notifyAdminsForApproval(Recipe recipe) {
         List<User> admins = userRepository.findAllAdmins();
+        log.info("Tarif onayı için adminler bilgilendiriliyor. Bulunan admin sayısı: {}", admins.size());
+        
         String title = "Yeni Tarif Onay Bekliyor";
         String message = recipe.getTitle() + " başlıklı tarif onayınızı bekliyor.";
         
         for (User admin : admins) {
-            notificationService.createNotification(
+            Notification n = notificationService.createNotification(
                 admin, 
                 title, 
                 message, 
                 Notification.NotificationType.RECIPE_APPROVAL, 
                 recipe.getId().toString()
             );
+            if (n != null) {
+                log.debug("Admin {} için bildirim oluşturuldu: {}", admin.getEmail(), n.getId());
+            } else {
+                log.debug("Admin {} için zaten okunmamış onay bildirimi var, yeni bildirim oluşturulmadı.", admin.getEmail());
+            }
         }
     }
 
@@ -347,10 +361,33 @@ public class RecipeService {
             }
             
             recipeRepository.save(original);
-            recipeRepository.delete(recipe); // Geçici güncellemeyi sil
+            
+            // Geçici güncellemeyi silmek yerine pasife çekiyoruz (soft-delete)
+            // Böylece bildirimlerden gelen linkler kırılmaz
+            recipe.setActive(false);
+            recipe.setStatus(RecipeStatus.APPROVED); // Onaylandığını belirtmek için
+            recipeRepository.save(recipe);
+            
+            // Bildirimleri güncelle
+            notificationService.updateNotificationsForTarget(
+                recipeId.toString(), 
+                Notification.NotificationType.RECIPE_APPROVAL,
+                "Tarif Güncellemesi Onaylandı",
+                original.getTitle() + " için gönderdiğiniz güncelleme isteği onaylandı ve yayınlandı.",
+                original.getId().toString()
+            );
         } else {
             recipe.setStatus(RecipeStatus.APPROVED);
             recipeRepository.save(recipe);
+            
+            // Bildirimleri güncelle
+            notificationService.updateNotificationsForTarget(
+                recipeId.toString(), 
+                Notification.NotificationType.RECIPE_APPROVAL,
+                "Tarif Onaylandı",
+                recipe.getTitle() + " başlıklı tarif onaylandı ve yayınlandı.",
+                null
+            );
         }
     }
 
@@ -370,6 +407,15 @@ public class RecipeService {
             recipe.setStatus(RecipeStatus.REJECTED);
         }
         recipeRepository.save(recipe);
+
+        // Bildirimleri güncelle
+        notificationService.updateNotificationsForTarget(
+            recipeId.toString(), 
+            Notification.NotificationType.RECIPE_APPROVAL,
+            "Tarif Reddedildi",
+            recipe.getTitle() + " başlıklı tarif isteği reddedildi.",
+            null
+        );
     }
 
     /**
@@ -454,21 +500,25 @@ public class RecipeService {
 
         if (recipe.getRecipeIngredients() != null) {
             for (RecipeIngredient ri : recipe.getRecipeIngredients()) {
+                // İlişki kopukluğunu önlemek için set et
+                if (ri.getRecipe() == null) {
+                    ri.setRecipe(recipe);
+                }
 
                 // 1. ADIM: Gramaj Senkronizasyonu (JIT Calculation)
-                // Python'dan gelen veya manuel girilen 0 değerlerini gerçek gramaja çevirir
-                if ((ri.getGrams() == null || ri.getGrams() == 0) && ri.getAmount() != null) {
+                if ((ri.getGrams() == null || ri.getGrams() <= 0) && ri.getAmount() != null) {
                     Double calculatedGrams = unitConverterService.convertToGrams(
                         ri.getAmount(),
                         ri.getUnit(),
                         ri.getIngredient()
                     );
-                    ri.setGrams(calculatedGrams);
-                    // Not: @Transactional sayesinde döngü sonunda bu bilgi DB'ye yansır.
+                    ri.setGrams(calculatedGrams != null ? calculatedGrams : 0.0);
+                } else if (ri.getGrams() == null) {
+                    ri.setGrams(0.0);
                 }
 
                 // 2. ADIM: Güncel gramaj üzerinden besin değerlerini hesapla
-                if (ri.getIngredient() != null && ri.getIngredient().getNutrition() != null) {
+                if (ri.getIngredient() != null && ri.getIngredient().getNutrition() != null && ri.getGrams() > 0) {
                     double grams = ri.getGrams();
                     var nutrition = ri.getIngredient().getNutrition();
 
@@ -485,7 +535,8 @@ public class RecipeService {
         recipe.setTotalCarbs(totalCarb);
         recipe.setTotalFat(totalFat);
 
-        recipeRepository.save(recipe);
+        // Not: @Transactional olduğu için manuel save'e gerek yok, 
+        // ancak metodun çağrıldığı yerlere bağlı olarak flush garantiye alınabilir.
     }
 
     /**
@@ -504,11 +555,21 @@ public class RecipeService {
     @Transactional
     public Optional<Recipe> findById(Long id) {
         return recipeRepository.findByIdWithIngredients(id).map(recipe -> {
+            // Eğer aktif değilse ve admin değilse veya sahibi değilse erişimi kısıtlayabiliriz
+            // Ancak şimdilik bildirimlerden gelen erişim için izin veriyoruz
             if (recipe.getTotalCalories() == null || recipe.getTotalCalories() == 0) {
                 calculateAndSetNutrition(recipe);
             }
             return recipe;
         });
+    }
+
+    /**
+     * Sadece aktif tarifleri ID'ye göre getirir.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Recipe> findActiveById(Long id) {
+        return recipeRepository.findActiveByIdWithIngredients(id);
     }
 
     /**

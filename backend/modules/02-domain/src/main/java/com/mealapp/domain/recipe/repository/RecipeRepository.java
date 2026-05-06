@@ -20,8 +20,11 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     
     Optional<Recipe> findByIdAndActiveTrue(Long id);
 
+    @Query("SELECT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient i LEFT JOIN FETCH i.nutrition WHERE r.id = :id")
+    Optional<Recipe> findByIdWithIngredients(@Param("id") Long id);
+
     @Query("SELECT r FROM Recipe r LEFT JOIN FETCH r.recipeIngredients ri LEFT JOIN FETCH ri.ingredient i LEFT JOIN FETCH i.nutrition WHERE r.id = :id AND r.active = true")
-    Optional<Recipe> findByIdWithIngredients(Long id);
+    Optional<Recipe> findActiveByIdWithIngredients(@Param("id") Long id);
 
     @Query("SELECT r FROM Recipe r WHERE r.active = true AND " +
            "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +

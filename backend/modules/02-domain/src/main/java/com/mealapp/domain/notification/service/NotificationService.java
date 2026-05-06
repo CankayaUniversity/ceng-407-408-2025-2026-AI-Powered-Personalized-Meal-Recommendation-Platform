@@ -17,8 +17,10 @@ public class NotificationService {
 
     @Transactional
     public Notification createNotification(User user, String title, String message, Notification.NotificationType type, String targetId) {
-        if (targetId != null && notificationRepository.existsByUserIdAndTargetIdAndType(user.getId(), targetId, type)) {
-            return null; // Zaten bildirim var
+        // Eğer aynı targetId ve tipte OKUNMAMIŞ bir bildirim varsa mükerrer oluşturma
+        if (targetId != null && notificationRepository.existsByUserIdAndTargetIdAndTypeAndStatus(
+                user.getId(), targetId, type, Notification.NotificationStatus.UNREAD)) {
+            return null; 
         }
         Notification notification = Notification.builder()
                 .user(user)
@@ -91,5 +93,19 @@ public class NotificationService {
     public void deleteAllNotifications(String userId) {
         List<Notification> all = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
         notificationRepository.deleteAll(all);
+    }
+
+    @Transactional
+    public void updateNotificationsForTarget(String targetId, Notification.NotificationType type, String newTitle, String newMessage, String newTargetId) {
+        List<Notification> notifications = notificationRepository.findByTargetIdAndType(targetId, type);
+        for (Notification notification : notifications) {
+            notification.setTitle(newTitle);
+            notification.setMessage(newMessage);
+            notification.setStatus(Notification.NotificationStatus.READ);
+            if (newTargetId != null) {
+                notification.setTargetId(newTargetId);
+            }
+        }
+        notificationRepository.saveAll(notifications);
     }
 }

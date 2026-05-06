@@ -34,6 +34,6 @@ public class RecipeIngredient {
     @Column(nullable = false, length = 50)
     private String unit; // Örn: "yemek kaşığı"
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Double grams; // Servis katmanı tarafından doldurulur
 }

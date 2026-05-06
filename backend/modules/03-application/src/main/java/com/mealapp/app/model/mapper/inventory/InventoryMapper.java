@@ -11,6 +11,8 @@ import com.mealapp.domain.inventory.entity.InventoryGroup;
 import com.mealapp.domain.inventory.entity.InventoryInvitation;
 import com.mealapp.domain.inventory.repository.InventoryInvitationRepository;
 import com.mealapp.domain.notification.entity.Notification;
+import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.repository.RecipeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +27,7 @@ public class InventoryMapper {
     private final IngredientMapper ingredientMapper;
     private final UserMapper userMapper;
     private final InventoryInvitationRepository invitationRepository;
+    private final RecipeRepository recipeRepository;
 
     public InventoryGroupResponse toGroupResponse(InventoryGroup group, int lowStockCount) {
         List<InventoryItemResponse> itemResponses = group.getItems() == null
@@ -107,6 +110,16 @@ public class InventoryMapper {
             } catch (NumberFormatException ignored) {}
         }
 
+        com.mealapp.domain.recipe.entity.RecipeStatus recipeStatus = null;
+        if (notification.getType() == Notification.NotificationType.RECIPE_APPROVAL && notification.getTargetId() != null) {
+            try {
+                Long recipeId = Long.parseLong(notification.getTargetId());
+                recipeStatus = recipeRepository.findById(recipeId)
+                        .map(Recipe::getStatus)
+                        .orElse(com.mealapp.domain.recipe.entity.RecipeStatus.APPROVED);
+            } catch (NumberFormatException ignored) {}
+        }
+
         return NotificationResponse.builder()
                 .id(notification.getId())
                 .title(notification.getTitle())
@@ -115,6 +128,7 @@ public class InventoryMapper {
                 .targetId(notification.getTargetId())
                 .status(notification.getStatus())
                 .invitationStatus(invitationStatus)
+                .recipeStatus(recipeStatus)
                 .createdAt(notification.getCreatedAt())
                 .build();
     }

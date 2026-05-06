@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Utensils, User as UserIcon,
     LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
-    Bell, Settings, Check, X, Calculator, BarChart2, Info
+    Bell, Settings, Check, X, Calculator, BarChart2, Info, Eye
 } from 'lucide-react';
 import amblem from '../../assets/meal_amblem.png';
 import logoDark from '../../assets/meal_logo_dark.png';
@@ -12,6 +12,7 @@ import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useTheme } from '../../infrastructure/theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useNotificationService } from '../../services/notificationService';
+import { useRecipeService } from '../../services/recipeService';
 import { useInventoryService } from '../../services/inventoryService';
 import { Notification } from '../../types';
 import { useToast } from '../hooks/useToast';
@@ -44,10 +45,12 @@ const formatTimeAgo = (date: Date, locale: string) => {
 const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { authenticated, user, logout } = useAuth();
     const { isDark, toggleTheme } = useTheme();
-    const { openConsumption, openSettings, openUnitConverter } = useUI();
+    const { openConsumption, openSettings, openUnitConverter, viewRecipe } = useUI();
     const location = useLocation();
+    const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const notificationService = useNotificationService();
+    const recipeService = useRecipeService();
     const inventoryService = useInventoryService();
     const { showToast } = useToast();
 
@@ -60,6 +63,25 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotifications, setShowNotifications] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+    const notificationRef = useRef<HTMLDivElement>(null);
+    const profileRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+                setShowNotifications(false);
+            }
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setShowProfileMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const isUnread = (status: string | any) => {
         if (!status) return false;
@@ -131,6 +153,29 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             fetchNotifications();
         } catch (error) {
             showToast(t('toasts.inventory.invitationRejectError'), 'error');
+        }
+    };
+
+    const handleNotificationClick = async (notification: Notification) => {
+        if (notification.status === 'UNREAD') {
+            await handleMarkAsRead(notification.id);
+        }
+
+        setShowNotifications(false);
+
+        if (notification.type === 'RECIPE_APPROVAL' && notification.targetId) {
+            try {
+                const recipe = await recipeService.getRecipeById(Number(notification.targetId));
+                navigate('/recipes');
+                setTimeout(() => viewRecipe(recipe), 100);
+            } catch (error) {
+                console.error("Recipe could not be loaded", error);
+                showToast(t('common.error'), 'error');
+            }
+        } else if (notification.type === 'INVITATION') {
+            navigate('/inventory');
+        } else if (notification.type === 'LOW_STOCK') {
+            navigate('/inventory');
         }
     };
 
@@ -268,7 +313,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     </button>
 
                     {authenticated && (
-                        <div className="relative">
+                        <div className="relative" ref={notificationRef}>
                             <button
                                 onClick={() => {
                                     setShowNotifications(!showNotifications);
@@ -305,7 +350,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                             notifications.map((n) => (
                                                 <div
                                                     key={n.id}
-                                                    onClick={() => handleMarkAsRead(n.id)}
+                                                    onClick={() => handleNotificationClick(n)}
                                                     className={`p-4 border-b border-black/5 dark:border-white/5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors cursor-pointer group ${n.status === 'UNREAD' ? 'bg-terracotta/[0.02]' : ''}`}
                                                 >
                                                     <div className="flex justify-between items-start mb-1">
@@ -349,6 +394,20 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                                                             {t('notifications.answered')}
                                                         </div>
                                                     )}
+                                                    {n.type === 'RECIPE_APPROVAL' && (
+                                                        <div className="mt-3 flex gap-2">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleNotificationClick(n);
+                                                                }}
+                                                                className="flex-1 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 hover:bg-emerald-700 transition-all shadow-sm"
+                                                            >
+                                                                <Eye size={12} />
+                                                                {t('notifications.viewDetails')}
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))
                                         )}
@@ -368,7 +427,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     )}
 
                     {authenticated && (
-                        <div className="relative">
+                        <div className="relative" ref={profileRef}>
                             <button
                                 onClick={() => {
                                     setShowProfileMenu(!showProfileMenu);

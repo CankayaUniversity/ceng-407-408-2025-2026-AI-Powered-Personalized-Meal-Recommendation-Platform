@@ -60,6 +60,9 @@ public class RecipeController {
     @Transactional(readOnly = true)
     public RecipeResponse getRecipeById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         String userId = jwt != null ? jwt.getSubject() : null;
+        
+        // Önce aktif veya pasif fark etmeksizin tarifi bulalım
+        // (Soft-delete yapılmış bir tarif bildirimden açılmak istenmiş olabilir)
         Recipe recipe = recipeService.findById(id)
             .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
 

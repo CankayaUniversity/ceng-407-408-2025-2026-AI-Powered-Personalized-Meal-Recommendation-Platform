@@ -14,6 +14,10 @@ type UIContextType = {
     recipeToEdit: any | null;
     openRecipeModal: (recipe?: any) => void;
     closeRecipeModal: () => void;
+    isRecipeViewOpen: boolean;
+    recipeToView: any | null;
+    viewRecipe: (recipe: any) => void;
+    closeRecipeView: () => void;
 };
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -42,12 +46,24 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
         setRecipeToEdit(null);
     };
 
+    const [isRecipeViewOpen, setIsRecipeViewOpen] = useState(false);
+    const [recipeToView, setRecipeToView] = useState<any | null>(null);
+    const viewRecipe = (recipe: any) => {
+        setRecipeToView(recipe);
+        setIsRecipeViewOpen(true);
+    };
+    const closeRecipeView = () => {
+        setIsRecipeViewOpen(false);
+        setRecipeToView(null);
+    };
+
     return (
         <UIContext.Provider value={{ 
             isConsumptionOpen, openConsumption, closeConsumption,
             isSettingsOpen, openSettings, closeSettings,
             isUnitConverterOpen, openUnitConverter, closeUnitConverter,
-            isRecipeModalOpen, recipeToEdit, openRecipeModal, closeRecipeModal
+            isRecipeModalOpen, recipeToEdit, openRecipeModal, closeRecipeModal,
+            isRecipeViewOpen, recipeToView, viewRecipe, closeRecipeView
         }}>
             {children}
         </UIContext.Provider>

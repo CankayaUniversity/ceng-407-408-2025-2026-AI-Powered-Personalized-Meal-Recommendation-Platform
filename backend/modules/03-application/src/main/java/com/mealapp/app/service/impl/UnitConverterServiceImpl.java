@@ -98,7 +98,9 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         String normalizedUnit = normalizeUnit(unit);
         Double weight = getUnitGramWeight(normalizedUnit, ingredient);
 
-        return amount * weight;
+        if (weight == null) return amount;
+        Double result = amount * weight;
+        return result != null ? result : 0.0;
     }
 
     @Override

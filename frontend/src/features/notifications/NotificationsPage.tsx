@@ -20,9 +20,11 @@ import { useRecipeService } from '../../services/recipeService';
 import { Notification } from '../../types';
 import { useToast } from '../../shared/hooks/useToast';
 import { useNavigate } from 'react-router-dom';
+import { useUI } from '../../infrastructure/ui/UIContext';
 
 const NotificationsPage: React.FC = () => {
   const { t } = useTranslation();
+  const { viewRecipe } = useUI();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,26 @@ const NotificationsPage: React.FC = () => {
       ));
     } catch (error) {
       showToast(t('toasts.notifications.markReadError'), 'error');
+    }
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    if (isUnread(notification.status)) {
+      await handleMarkAsRead(notification.id);
+    }
+
+    if (notification.type === 'RECIPE_APPROVAL' && notification.targetId) {
+      try {
+        const recipe = await recipeService.getRecipeById(Number(notification.targetId));
+        navigate('/recipes');
+        // Give a small delay for navigation and component mount
+        setTimeout(() => viewRecipe(recipe), 100);
+      } catch (error) {
+        console.error("Recipe could not be loaded", error);
+        showToast(t('common.error'), 'error');
+      }
+    } else if (notification.type === 'INVITATION' || notification.type === 'LOW_STOCK') {
+      navigate('/inventory');
     }
   };
 
@@ -266,10 +288,10 @@ const NotificationsPage: React.FC = () => {
           {notifications.map((notification) => (
             <div
               key={notification.id}
-              onClick={() => isUnread(notification.status) && handleMarkAsRead(notification.id)}
-              className={`relative bg-white rounded-2xl border transition-all duration-200 group ${
+              onClick={() => handleNotificationClick(notification)}
+              className={`relative bg-white rounded-2xl border transition-all duration-200 group cursor-pointer ${
                 isUnread(notification.status)
-                  ? 'border-indigo-100 bg-indigo-50/30 cursor-pointer hover:bg-indigo-50/50' 
+                  ? 'border-indigo-100 bg-indigo-50/30 hover:bg-indigo-50/50' 
                   : 'border-gray-100 opacity-80'
               } ${selectedIds.includes(notification.id) ? 'ring-2 ring-indigo-500 ring-inset' : ''}`}
             >
@@ -377,26 +399,38 @@ const NotificationsPage: React.FC = () => {
                         <Eye size={16} />
                         {t('notifications.viewDetails')}
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleApproveRecipe(Number(notification.targetId), notification.id);
-                        }}
-                        className="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 active:scale-95"
-                      >
-                        <Check size={16} />
-                        {t('recipes.status.approved')}
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRejectRecipe(Number(notification.targetId), notification.id);
-                        }}
-                        className="px-4 py-2 bg-white text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 active:scale-95"
-                      >
-                        <X size={16} />
-                        {t('recipes.status.rejected')}
-                      </button>
+                      
+                      {notification.recipeStatus === 'PENDING' && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApproveRecipe(Number(notification.targetId), notification.id);
+                            }}
+                            className="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md flex items-center gap-2 active:scale-95"
+                          >
+                            <Check size={16} />
+                            {t('recipes.status.approved')}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRejectRecipe(Number(notification.targetId), notification.id);
+                            }}
+                            className="px-4 py-2 bg-white text-gray-700 border border-gray-200 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 active:scale-95"
+                          >
+                            <X size={16} />
+                            {t('recipes.status.rejected')}
+                          </button>
+                        </>
+                      )}
+
+                      {notification.recipeStatus !== 'PENDING' && notification.recipeStatus && (
+                        <div className="flex items-center gap-2 text-xs font-medium text-gray-400 bg-gray-50 w-fit px-2 py-1 rounded-md">
+                          <CheckCircle2 size={12} />
+                          {notification.recipeStatus === 'APPROVED' ? t('recipes.status.approved') : t('recipes.status.rejected')}
+                        </div>
+                      )}
                     </div>
                   )}
 

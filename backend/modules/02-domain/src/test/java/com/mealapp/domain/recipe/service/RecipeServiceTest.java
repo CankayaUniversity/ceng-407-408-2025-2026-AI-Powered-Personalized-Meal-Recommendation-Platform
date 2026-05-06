@@ -268,4 +268,34 @@ class RecipeServiceTest {
         assertFalse(versions.isEmpty());
         verify(recipeRepository).findAllVersions(eq(rootId), eq(userId), eq(false));
     }
+
+    @Test
+    void shouldNotifyAdminsWhenCreatingPendingRecipe() {
+        Recipe recipe = Recipe.builder()
+            .title("New Pending Recipe")
+            .status(RecipeStatus.PENDING)
+            .build();
+        
+        com.mealapp.domain.user.entity.User admin = new com.mealapp.domain.user.entity.User();
+        admin.setEmail("admin@test.com");
+        
+        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> {
+            Recipe r = invocation.getArgument(0);
+            r.setId(100L);
+            return r;
+        });
+        when(userRepository.findAllAdmins()).thenReturn(List.of(admin));
+
+        Recipe result = recipeService.createRecipe(recipe, null);
+
+        assertNotNull(result);
+        assertEquals(RecipeStatus.PENDING, result.getStatus());
+        verify(notificationService).createNotification(
+            eq(admin), 
+            anyString(), 
+            anyString(), 
+            eq(com.mealapp.domain.notification.entity.Notification.NotificationType.RECIPE_APPROVAL), 
+            eq("100")
+        );
+    }
 }

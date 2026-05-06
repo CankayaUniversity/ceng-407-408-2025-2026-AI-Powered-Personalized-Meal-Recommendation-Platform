@@ -38,7 +38,6 @@ const RecipeModal: React.FC = () => {
         results: searchResults,
         searching: isSearching,
         getIngredientUnits,
-        fetchIngredientIntelligence,
         hasCompletedSearch
     } = useIngredientLookup({
         query: searchQuery,
@@ -128,9 +127,6 @@ const RecipeModal: React.FC = () => {
     };
 
     const handleAddIngredient = (ing: Ingredient) => {
-        // Backend'den gelen zekayı çek (birimler, katsayılar vb.)
-        fetchIngredientIntelligence(ing.id);
-        
         const units = getIngredientUnits(ing);
         const unit = (ing.preferredUnit || units.quickUnits[0] || (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM')).toUpperCase();
         const defaultAmount = unit === 'GRAM' || unit === 'ML' ? 100 : 1;
@@ -145,7 +141,8 @@ const RecipeModal: React.FC = () => {
             const newAmount = oldAmount + defaultAmount;
             updatedIngredients[existingIndex] = {
                 ...updatedIngredients[existingIndex],
-                amount: newAmount
+                amount: newAmount,
+                grams: updatedIngredients[existingIndex].grams // Gramaj backend'de hesaplanacak
             };
             setIngredients(updatedIngredients);
             showToast(`${ing.name} zaten listedeydi, miktarı ${newAmount} ${unit} olarak güncellendi.`, 'success');
@@ -156,7 +153,7 @@ const RecipeModal: React.FC = () => {
                 name: ing.name, 
                 amount: defaultAmount, 
                 unit: unit,
-                grams: 100 
+                grams: 0 // Yeni eklenen için 0, backend hesaplayacak
             }]);
         }
         
@@ -169,7 +166,7 @@ const RecipeModal: React.FC = () => {
     };
 
     const handleAmountChange = (index: number, amount: number) => {
-        setIngredients(ingredients.map((ing, i) => i === index ? { ...ing, amount } : ing));
+        setIngredients(ingredients.map((ing, i) => i === index ? { ...ing, amount, grams: 0 } : ing));
     };
 
     const handleUnitChange = (index: number, unit: string) => {
@@ -196,13 +193,14 @@ const RecipeModal: React.FC = () => {
             
             updatedIngredients[targetIndex] = {
                 ...updatedIngredients[targetIndex],
-                amount: newAmount
+                amount: newAmount,
+                grams: 0 // Backend yeniden hesaplayacak
             };
 
             setIngredients(updatedIngredients);
             showToast(`${currentIng.name} miktarları birleştirildi: ${newAmount} ${normalizedUnit}`, 'success');
         } else {
-            setIngredients(ingredients.map((ing, i) => i === index ? { ...ing, unit: normalizedUnit } : ing));
+            setIngredients(ingredients.map((ing, i) => i === index ? { ...ing, unit: normalizedUnit, grams: 0 } : ing));
         }
     };
 
@@ -469,11 +467,14 @@ const RecipeModal: React.FC = () => {
                                                         onChange={(e) => handleUnitChange(index, e.target.value)}
                                                         className="w-32 py-3 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-[10px] focus:border-terracotta outline-none uppercase cursor-pointer shadow-sm"
                                                     >
+                                                        <option value={ing.unit}>{ing.unit}</option>
                                                         {(() => {
                                                             const units = getIngredientUnits({ id: ing.ingredientId } as any);
-                                                            return units.standardUnits.map(u => (
-                                                                <option key={u} value={u}>{u}</option>
-                                                            ));
+                                                            return units.standardUnits
+                                                                .filter(u => u !== ing.unit.toUpperCase())
+                                                                .map(u => (
+                                                                    <option key={u} value={u}>{u}</option>
+                                                                ));
                                                         })()}
                                                     </select>
                                                 </div>

@@ -176,7 +176,7 @@ const RecipeList: React.FC = () => {
   const recipeService = useRecipeService();
   const { showToast } = useToast();
   const { user } = useAuth();
-  const { openRecipeModal, isRecipeModalOpen } = useUI();
+  const { openRecipeModal, isRecipeModalOpen, isRecipeViewOpen, recipeToView, closeRecipeView } = useUI();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -279,6 +279,13 @@ const RecipeList: React.FC = () => {
   }, [debouncedSearch]);
 
   // Handle direct recipe link from notifications
+  useEffect(() => {
+    if (isRecipeViewOpen && recipeToView) {
+      handleOpenDetail(recipeToView);
+      closeRecipeView();
+    }
+  }, [isRecipeViewOpen, recipeToView]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const recipeIdFromUrl = params.get('recipeId');

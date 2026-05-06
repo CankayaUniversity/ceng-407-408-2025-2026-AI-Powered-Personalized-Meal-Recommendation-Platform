@@ -99,10 +99,11 @@ export interface Notification {
   id: number;
   title: string;
   message: string;
-  type: 'INVITATION' | 'SYSTEM' | 'REMINDER' | 'RECIPE_APPROVAL';
+  type: 'INVITATION' | 'SYSTEM' | 'REMINDER' | 'RECIPE_APPROVAL' | 'LOW_STOCK';
   targetId?: string;
   status: 'UNREAD' | 'READ';
   invitationStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  recipeStatus?: RecipeStatus;
   createdAt: string;
 }
 

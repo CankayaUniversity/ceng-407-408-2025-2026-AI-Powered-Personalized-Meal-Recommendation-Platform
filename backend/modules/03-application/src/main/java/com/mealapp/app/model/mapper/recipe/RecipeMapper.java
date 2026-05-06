@@ -90,6 +90,7 @@ public class RecipeMapper {
                     Double gramsValue = (ri.getGrams() != null) ? ri.getGrams() : 0.0;
 
                     var builder = RecipeIngredientDTO.builder()
+                        .ingredientId(ri.getIngredient().getId())
                         .name(ri.getIngredient().getName())
                         .amount(ri.getAmount())
                         .unit(ri.getUnit())

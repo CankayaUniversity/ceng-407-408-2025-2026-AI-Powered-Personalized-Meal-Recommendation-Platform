@@ -21,5 +21,6 @@ public class NotificationResponse {
     private String targetId;
     private Notification.NotificationStatus status;
     private InventoryInvitation.InvitationStatus invitationStatus;
+    private com.mealapp.domain.recipe.entity.RecipeStatus recipeStatus;
     private LocalDateTime createdAt;
 }
