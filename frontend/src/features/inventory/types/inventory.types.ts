@@ -1,4 +1,6 @@
-import { Ingredient, Inventory, InventoryGroup, User } from '../../../types';
+import { type Ingredient, type Inventory, type InventoryGroup, type User } from '../../../types';
+
+export type { Ingredient, Inventory, InventoryGroup, User };
 
 export type GroupDraft = { 
   name: string; 

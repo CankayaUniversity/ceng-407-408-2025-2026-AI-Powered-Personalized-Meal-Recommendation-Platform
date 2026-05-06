@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, ArrowRightLeft, Calculator, Search, Info, ChevronDown, Loader2 } from 'lucide-react';
+import { X, ArrowRightLeft, Calculator, Info, ChevronDown } from 'lucide-react';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useIngredientService } from '../../services/ingredientService';
 import { IngredientSelector } from './IngredientSelector';
@@ -15,6 +15,7 @@ const getEffectivePhysicalState = (ingredient?: Pick<Ingredient, 'category' | 'p
     return ingredient.physicalState;
 };
 import { useTranslation } from 'react-i18next';
+import { useIngredientLookup } from '../hooks/useIngredientLookup';
 
 const UnitConverterModal: React.FC = () => {
     const { isUnitConverterOpen, closeUnitConverter } = useUI();
@@ -29,7 +30,6 @@ const UnitConverterModal: React.FC = () => {
     const [unitWeights, setUnitWeights] = useState<Record<string, number>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<'converter' | 'reference'>('converter');
-    const [isSearchFocused, setIsSearchFocused] = useState(false);
     const {
         results: searchResults,
         searching: isSearching,
@@ -40,7 +40,6 @@ const UnitConverterModal: React.FC = () => {
         enabled: isUnitConverterOpen && !selectedIngredient
     });
 
-    // Fetch unit weights for reference or source unit selection
     useEffect(() => {
         const fetchWeights = async () => {
             try {
@@ -57,24 +56,6 @@ const UnitConverterModal: React.FC = () => {
         };
         fetchWeights();
     }, [selectedIngredient, ingredientService]);
-
-    useEffect(() => {
-        if (!isUnitConverterOpen) {
-            setIsSearchFocused(false);
-        }
-    }, [isUnitConverterOpen]);
-
-    useEffect(() => {
-        const handlePointerDown = (event: MouseEvent) => {
-            const target = event.target as HTMLElement | null;
-            if (!target?.closest('[data-ingredient-search="unit-converter"]')) {
-                setIsSearchFocused(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handlePointerDown);
-        return () => document.removeEventListener('mousedown', handlePointerDown);
-    }, []);
 
     const fetchConversions = useCallback(async () => {
         if (!amount || isNaN(parseFloat(amount))) {

@@ -50,8 +50,6 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
   hasCompletedIngredientSearch = false
 }) => {
   const { t } = useTranslation();
-  const mQuery = entryMode === 'RECIPE' ? (searchQuery || '') : (ingredientSearchQuery || '');
-  const resultCards = entryMode === 'RECIPE' ? recipeResults : ingredientResults;
 
   return (
     <div className="meal-card rounded-[2rem] bg-foreground/[0.02] p-5 shadow-sm">

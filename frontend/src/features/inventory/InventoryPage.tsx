@@ -102,7 +102,6 @@ const InventoryPage: React.FC = () => {
     searching: searchingIngredients,
     searchError: ingredientSearchError,
     hasCompletedSearch: hasCompletedIngredientSearch,
-    canSearch: canSearchIngredients,
     resetSearch: resetIngredientSearch
   } = useIngredientLookup({
     query: itemDraft.ingredientQuery,
@@ -449,7 +448,6 @@ const InventoryPage: React.FC = () => {
         ingredientResults={ingredientResults}
         ingredientSearchError={ingredientSearchError}
         hasCompletedIngredientSearch={hasCompletedIngredientSearch}
-        canSearchIngredients={canSearchIngredients}
         expandedManualInput={expandedManualInput}
         setExpandedManualInput={setExpandedManualInput}
         conversions={conversions}

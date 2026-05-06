@@ -32,7 +32,6 @@ const RecipeModal: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
 
     const {
