@@ -386,7 +386,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                       <select
                         value={itemDraft.unit.toUpperCase()}
                         onChange={(e) => setItemDraft({ ...itemDraft, unit: e.target.value })}
-                        className="w-40 rounded-2xl border border-card-border bg-card px-4 py-4 font-bold text-foreground focus:border-terracotta transition-all outline-none shadow-sm"
+                        className="w-40 rounded-2xl border border-card-border bg-card px-4 py-4 font-bold text-foreground focus:border-terracotta transition-all outline-none shadow-sm uppercase"
                       >
                         {conversions && conversions.length > 0 ? (
                           conversions.map(conv => (
@@ -396,7 +396,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                           ))
                         ) : (
                           <>
-                            <option value="G">Gr</option>
+                            <option value="GRAM">Gram</option>
                             <option value="KG">Kg</option>
                             <option value="ML">Ml</option>
                             <option value="L">L</option>

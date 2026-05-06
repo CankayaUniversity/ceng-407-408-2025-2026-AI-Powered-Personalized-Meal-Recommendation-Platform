@@ -28,17 +28,9 @@ import {
   type Recipe,
   type RecipeListItem,
   type Ingredient,
-  type PhysicalState,
   MealType
 } from '../../../types';
 
-const LIQUID_CATEGORIES = new Set(['BEVERAGE', 'OIL', 'SAUCE']);
-
-const getEffectivePhysicalState = (ingredient?: Pick<Ingredient, 'category' | 'physicalState'> | null): PhysicalState | undefined => {
-  if (!ingredient) return undefined;
-  if (LIQUID_CATEGORIES.has(String(ingredient.category))) return 'LIQUID' as PhysicalState;
-  return ingredient.physicalState;
-};
 
 const parsePortionLabel = (label: string): { amount?: number; unit?: string } => {
   const trimmed = label.trim();
@@ -438,7 +430,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       kind: 'INGREDIENT',
       ingredient,
       portion: INGREDIENT_PORTION_OPTIONS[1],
-      unit: getEffectivePhysicalState(ingredient) === 'LIQUID' ? 'ML' : 'GRAM'
+      unit: ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM'
     };
 
     if (targetUserId) {
@@ -576,7 +568,10 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
                 const amount = typeof nextPortion === 'string'
                     ? parseFloat(nextPortion)
                     : (nextPortion.amount || labelParts.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[nextUnit.toLowerCase()] || unitWeights[nextUnit.toLowerCase()] || 1)));
+                
+                // Debounced conversion fetch is not needed here as we use callback
                 fetchConversions(itemKey, item.ingredient.id, amount, nextUnit);
+                
                 return { ...item, portion: nextPortion, unit: nextUnit };
             }
             return item;
@@ -592,7 +587,10 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
                 const amount = typeof nextPortion === 'string'
                     ? parseFloat(nextPortion)
                     : (nextPortion.amount || labelParts.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[nextUnit.toLowerCase()] || unitWeights[nextUnit.toLowerCase()] || 1)));
+                
+                // Debounced conversion fetch
                 fetchConversions(itemKey, item.ingredient.id, amount, nextUnit);
+                
                 return { ...item, portion: nextPortion, unit: nextUnit };
             }
             return item;
@@ -701,7 +699,6 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
 
   const getIngredientUnits = useCallback((selectedIngredient?: Ingredient, itemKey?: string) => {
     const ingredientId = selectedIngredient?.id;
-    const ingredient = ingredientId ? (ingredientResults.find(i => i.id === ingredientId) || stockedIngredients.find((i: any) => i.id === ingredientId) || selectedIngredient) : null;
     
     // Eğer elimizde backend'den gelen taze dönüşüm verileri varsa onları kullanalım (en akıllısı budur)
     const backendConversions = itemKey ? conversions[itemKey]?.list : null;
@@ -715,41 +712,28 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
         .map((c: any) => c.unit.toUpperCase());
 
       return {
-        quickUnits: quick,
+        quickUnits: quick.slice(0, 6),
         standardUnits: standard
       };
     }
 
-    // Fallback logic (eskisi gibi, ama biraz daha temiz)
+    // Fallback logic
     const base = ['GRAM', 'KG', 'ML', 'L', 'ADET'];
     const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
     const extra = Object.keys(weights).map((u: any) => u.toUpperCase());
     const allUnits = Array.from(new Set([...base, ...extra]));
 
-    const preferredQuickUnits = [
-      (ingredient?.preferredUnit || '').toUpperCase(),
-      'ADET', 'BARDAK', 'YEMEK KAŞIĞI', 'TATLI KAŞIĞI', 'ÇAY KAŞIĞI', 'DAL', 'DEMET', 'TUTAM', 'DILIM', 'PAKET'
-    ].filter(Boolean);
-
-    const quick = allUnits
-      .filter(u => preferredQuickUnits.includes(u))
-      .sort((a, b) => {
-          if (ingredient?.preferredUnit && a === ingredient.preferredUnit.toUpperCase()) return -1;
-          if (ingredient?.preferredUnit && b === ingredient.preferredUnit.toUpperCase()) return 1;
-          return preferredQuickUnits.indexOf(a) - preferredQuickUnits.indexOf(b);
-      });
-
-    const standard = allUnits.filter(u => !quick.includes(u) || ['GRAM', 'ML'].includes(u));
+    const standard = allUnits.sort((a, b) => {
+        if (a === 'GRAM') return -1;
+        if (b === 'GRAM') return 1;
+        return a.localeCompare(b);
+    });
 
     return {
-      quickUnits: quick.slice(0, 6), // En fazla 6 tane göster
-      standardUnits: standard.sort((a, b) => {
-          if (a === 'GRAM') return -1;
-          if (b === 'GRAM') return 1;
-          return a.localeCompare(b);
-      })
+      quickUnits: [],
+      standardUnits: standard
     };
-  }, [ingredientResults, stockedIngredients, ingredientSpecificWeights, unitWeights, conversions]);
+  }, [ingredientSpecificWeights, unitWeights, conversions]);
 
   return {
     user,

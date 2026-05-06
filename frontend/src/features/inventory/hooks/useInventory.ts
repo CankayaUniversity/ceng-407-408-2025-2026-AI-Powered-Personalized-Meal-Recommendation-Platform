@@ -12,6 +12,7 @@ import {
   User, 
   UnitConversion 
 } from '../../../types';
+import { useIngredientService } from '../../../services/ingredientService';
 import { 
   GroupDraft, 
   ItemDraft, 
@@ -24,6 +25,7 @@ export const useInventory = () => {
   const { showToast } = useToast();
   const inventoryService = useInventoryService();
   const consumptionService = useConsumptionService();
+  const ingredientService = useIngredientService();
   const userService = useUserService();
 
   const [unitWeights, setUnitWeights] = useState<Record<string, number>>({});
@@ -218,13 +220,30 @@ export const useInventory = () => {
       showToast(t('toasts.inventory.alreadyExists', { name: ing.name }), 'info');
     }
 
-    if (!ingredientSpecificWeights[ing.id]) {
-      try {
-        const weights = await consumptionService.getUnitWeights(ing.id);
-        setIngredientSpecificWeights(prev => ({ ...prev, [ing.id]: weights }));
-      } catch (error) {
-        showToast(t('toasts.inventory.unitsLoadError'), 'error');
-      }
+    // Backend'den zeka verilerini çek
+    try {
+      setLoadingConversions(true);
+      const [weights, convs] = await Promise.all([
+        ingredientService.getAllUnitWeights(ing.id),
+        ingredientService.getUnitConversions(ing.id, 1, 'GRAM')
+      ]);
+      
+      setIngredientSpecificWeights(prev => ({ ...prev, [ing.id]: weights }));
+      setConversions(convs);
+      
+      // Akıllı varsayılan birim seçimi
+      const quickUnit = convs.find((c: any) => c.highPriority)?.unit || 
+                        (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
+      
+      setItemDraft(prev => ({
+        ...prev,
+        unit: quickUnit.toUpperCase()
+      }));
+
+    } catch (error) {
+      showToast(t('toasts.inventory.unitsLoadError'), 'error');
+    } finally {
+      setLoadingConversions(false);
     }
   };
 

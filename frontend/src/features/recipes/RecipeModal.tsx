@@ -34,7 +34,9 @@ const RecipeModal: React.FC = () => {
 
     const {
         results: searchResults,
-        searching: isSearching
+        searching: isSearching,
+        getIngredientUnits,
+        fetchIngredientIntelligence
     } = useIngredientLookup({
         query: searchQuery,
         enabled: isRecipeModalOpen && isSearchFocused
@@ -123,7 +125,11 @@ const RecipeModal: React.FC = () => {
     };
 
     const handleAddIngredient = (ing: any) => {
-        const unit = (ing.preferredUnit || (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM')).toUpperCase();
+        // Backend'den gelen zekayı çek (birimler, katsayılar vb.)
+        fetchIngredientIntelligence(ing.id);
+        
+        const units = getIngredientUnits(ing);
+        const unit = (ing.preferredUnit || units.quickUnits[0] || (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM')).toUpperCase();
         const defaultAmount = unit === 'GRAM' || unit === 'ML' ? 100 : 1;
 
         // Aynı malzeme ve aynı birim kontrolü
@@ -477,17 +483,12 @@ const RecipeModal: React.FC = () => {
                                                         onChange={(e) => handleUnitChange(index, e.target.value)}
                                                         className="w-28 py-2 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-[10px] focus:border-terracotta outline-none uppercase"
                                                     >
-                                                        <option value="GRAM">Gram</option>
-                                                        <option value="KG">Kg</option>
-                                                        <option value="ML">Ml</option>
-                                                        <option value="L">Litre</option>
-                                                        <option value="ADET">Adet</option>
-                                                        <option value="DİŞ">Diş</option>
-                                                        <option value="DEMET">Demet</option>
-                                                        <option value="DAL">Dal</option>
-                                                        <option value="TUTAM">Tutam</option>
-                                                        <option value="BARDAK">Bardak</option>
-                                                        <option value="KAŞIK">Kaşık</option>
+                                                        {(() => {
+                                                            const units = getIngredientUnits({ id: ing.ingredientId } as any);
+                                                            return units.standardUnits.map(u => (
+                                                                <option key={u} value={u}>{u}</option>
+                                                            ));
+                                                        })()}
                                                     </select>
                                                 </div>
                                             </div>

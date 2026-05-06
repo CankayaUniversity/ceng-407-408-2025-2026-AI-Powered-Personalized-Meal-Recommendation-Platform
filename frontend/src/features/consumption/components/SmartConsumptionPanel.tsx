@@ -27,31 +27,6 @@ const formatNameList = (names: string[]) => {
   return `${names.slice(0, -1).join(', ')} ve ${names[names.length - 1]}`;
 };
 
-const VOLUME_UNIT_ML: Record<string, number> = {
-  ml: 1,
-  litre: 1000,
-  liter: 1000,
-  l: 1000,
-  lt: 1000,
-  bardak: 200,
-  'su bardağı': 200,
-  glass: 200,
-  'yemek kaşığı': 15,
-  tablespoon: 15,
-  'tatlı kaşığı': 10,
-  'çay kaşığı': 5,
-  teaspoon: 5,
-  cup: 240,
-  kase: 350,
-  bowl: 350,
-  fincan: 70,
-  'kahve fincanı': 70,
-  kepçe: 150,
-  avuç: 30,
-  handful: 30
-};
-
-const LIQUID_CATEGORIES = new Set(['BEVERAGE', 'OIL', 'SAUCE']);
 
 const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsumptionLogged }) => {
   const { t } = useTranslation();
@@ -122,11 +97,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   };
 
   const handleManualPortionUpdate = (itemKey: string, ingredient: any, qty: string, unit: string, userId?: string) => {
-    const normalizedUnit = unit.toLowerCase();
     const amount = parseFloat(qty) || 0;
-    const usesVolumeDensity = ingredient.physicalState === 'LIQUID' || ingredient.physicalState === 'SEMI_SOLID' || LIQUID_CATEGORIES.has(String(ingredient.category));
-    const fallbackVolumeWeight = usesVolumeDensity && VOLUME_UNIT_ML[normalizedUnit] ? VOLUME_UNIT_ML[normalizedUnit] * (ingredient.density || 1) : undefined;
-    const grams = (ingredientSpecificWeights[ingredient.id]?.[normalizedUnit] || fallbackVolumeWeight || unitWeights[normalizedUnit] || 1) * amount;
+    const grams = (ingredientSpecificWeights[ingredient.id]?.[unit.toLowerCase()] || unitWeights[unit.toLowerCase()] || 1) * amount;
     const nextPortion = {
       id: `manual-${unit}-${qty}`,
       label: `${qty} ${unit}`,

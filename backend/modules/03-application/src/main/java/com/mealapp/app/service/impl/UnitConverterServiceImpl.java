@@ -18,14 +18,15 @@ public class UnitConverterServiceImpl implements UnitConverterService {
     private final IngredientRepository ingredientRepository;
 
     private static final Map<String, Double> UNIT_TO_GRAMS = new HashMap<>();
+    private static final Map<String, String> UNIT_ALIASES = new HashMap<>();
     private static final List<String> VOLUME_UNITS = List.of(
-        "ml", "litre", "liter", "l", "lt", "glass", "bardak", "su bardağı", "çay bardağı", "kahve fincanı",
-        "tablespoon", "yemek kaşığı", "teaspoon", "tatlı kaşığı", "çay kaşığı", "cup", "bowl", "kase",
-        "fincan", "kepçe", "kaşık"
+        "ml", "litre", "liter", "l", "lt", "glass", "bardak", "su bardagi", "cay bardagi", "kahve fincani",
+        "tablespoon", "yemek kasigi", "teaspoon", "tatli kasigi", "cay kasigi", "cup", "bowl", "kase",
+        "fincan", "kepce", "kasik", "kavanoz", "sise"
     );
 
     static {
-        // Fallback değerlerin (Map içeriği aynı kalarak aktarıldı)
+        // Fallback değerler (Normalize edilmiş anahtarlar)
         UNIT_TO_GRAMS.put("g", 1.0);
         UNIT_TO_GRAMS.put("gram", 1.0);
         UNIT_TO_GRAMS.put("kg", 1000.0);
@@ -45,28 +46,48 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         UNIT_TO_GRAMS.put("litre", 1000.0);
         UNIT_TO_GRAMS.put("liter", 1000.0);
         UNIT_TO_GRAMS.put("tablespoon", 15.0);
-        UNIT_TO_GRAMS.put("yemek kaşığı", 15.0);
-        UNIT_TO_GRAMS.put("teaspoon", 2.0);
-        UNIT_TO_GRAMS.put("tatlı kaşığı", 6.0);
-        UNIT_TO_GRAMS.put("çay kaşığı", 2.0);
+        UNIT_TO_GRAMS.put("yemek kasigi", 15.0);
+    UNIT_TO_GRAMS.put("teaspoon", 5.0);
+    UNIT_TO_GRAMS.put("tatli kasigi", 10.0);
+    UNIT_TO_GRAMS.put("cay kasigi", 5.0);
         UNIT_TO_GRAMS.put("glass", 200.0);
         UNIT_TO_GRAMS.put("bardak", 200.0);
-        UNIT_TO_GRAMS.put("su bardağı", 200.0);
-        UNIT_TO_GRAMS.put("çay bardağı", 100.0);
-        UNIT_TO_GRAMS.put("kahve fincanı", 75.0);
+        UNIT_TO_GRAMS.put("su bardagi", 200.0);
+        UNIT_TO_GRAMS.put("cay bardagi", 100.0);
+        UNIT_TO_GRAMS.put("kahve fincani", 75.0);
         UNIT_TO_GRAMS.put("fincan", 75.0);
-        UNIT_TO_GRAMS.put("kepçe", 150.0);
+        UNIT_TO_GRAMS.put("kepce", 150.0);
         UNIT_TO_GRAMS.put("clove", 5.0);
-        UNIT_TO_GRAMS.put("diş", 5.0);
+        UNIT_TO_GRAMS.put("dis", 5.0);
         UNIT_TO_GRAMS.put("handful", 30.0);
-        UNIT_TO_GRAMS.put("avuç", 30.0);
+        UNIT_TO_GRAMS.put("avuc", 30.0);
         UNIT_TO_GRAMS.put("pinch", 1.0);
         UNIT_TO_GRAMS.put("tutam", 1.0);
         UNIT_TO_GRAMS.put("paket", 100.0);
         UNIT_TO_GRAMS.put("demet", 100.0);
         UNIT_TO_GRAMS.put("kavanoz", 500.0);
-        UNIT_TO_GRAMS.put("şişe", 500.0);
+        UNIT_TO_GRAMS.put("sise", 500.0);
         UNIT_TO_GRAMS.put("dal", 5.0);
+
+        // Alias tanımları (Normalize edilmiş hali -> UNIT_TO_GRAMS anahtarı)
+        UNIT_ALIASES.put("yk", "yemek kasigi");
+        UNIT_ALIASES.put("y kasigi", "yemek kasigi");
+        UNIT_ALIASES.put("yemekkasigi", "yemek kasigi");
+        UNIT_ALIASES.put("tk", "tatli kasigi");
+        UNIT_ALIASES.put("t kasigi", "tatli kasigi");
+        UNIT_ALIASES.put("tatlikasigi", "tatli kasigi");
+        UNIT_ALIASES.put("ck", "cay kasigi");
+        UNIT_ALIASES.put("c kasigi", "cay kasigi");
+        UNIT_ALIASES.put("caykasigi", "cay kasigi");
+        UNIT_ALIASES.put("sb", "su bardagi");
+        UNIT_ALIASES.put("s bardagi", "su bardagi");
+        UNIT_ALIASES.put("subardagi", "su bardagi");
+        UNIT_ALIASES.put("cb", "cay bardagi");
+        UNIT_ALIASES.put("c bardagi", "cay bardagi");
+        UNIT_ALIASES.put("caybardagi", "cay bardagi");
+        UNIT_ALIASES.put("kf", "kahve fincani");
+        UNIT_ALIASES.put("k fincani", "kahve fincani");
+        UNIT_ALIASES.put("kahvefincani", "kahve fincani");
     }
 
     @Override
@@ -74,7 +95,7 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         if (amount == null) return 0.0;
         if (unit == null || unit.isEmpty()) return amount;
 
-        String normalizedUnit = unit.toLowerCase().trim();
+        String normalizedUnit = normalizeUnit(unit);
         Double weight = getUnitGramWeight(normalizedUnit, ingredient);
 
         return amount * weight;
@@ -84,26 +105,44 @@ public class UnitConverterServiceImpl implements UnitConverterService {
     public Double getUnitGramWeight(String unit, Ingredient ingredient) {
         if (unit == null) return 0.0;
 
-        String normalizedUnit = unit.toLowerCase().trim();
+        String normalizedUnit = normalizeUnit(unit);
 
         // 1. ADIM: Veritabanı / Malzemeye özel birim kontrolü
         Double dbWeight = getWeightFromDatabase(normalizedUnit, ingredient);
         if (dbWeight != null) return dbWeight;
 
-        // 2. ADIM: Standart birim kontrolü
-        Double weight = UNIT_TO_GRAMS.get(normalizedUnit);
+        // 2. ADIM: Alias kontrolü
+        String actualUnit = UNIT_ALIASES.getOrDefault(normalizedUnit, normalizedUnit);
 
-        // 3. ADIM: Yoğunluk uygulaması
+        // 3. ADIM: Standart birim kontrolü
+        Double weight = UNIT_TO_GRAMS.get(actualUnit);
+
+        // 4. ADIM: Yoğunluk uygulaması
         if (weight != null) {
-            return applyDensityIfNecessary(normalizedUnit, weight, ingredient);
+            return applyDensityIfNecessary(actualUnit, weight, ingredient);
         }
 
-        // 4. ADIM: Çoğul eki (s) fallback - Rekürsif çağrı yerine kontrollü geçiş
+        // 5. ADIM: Çoğul eki (s) fallback
         if (normalizedUnit.endsWith("s")) {
             return getUnitGramWeight(normalizedUnit.substring(0, normalizedUnit.length() - 1), ingredient);
         }
 
         return 1.0; // Varsayılan
+    }
+
+    @Override
+    public String normalizeUnit(String unit) {
+        if (unit == null) return "";
+        String normalized = unit.toLowerCase().trim()
+            .replace("ç", "c")
+            .replace("ğ", "g")
+            .replace("ı", "i")
+            .replace("ö", "o")
+            .replace("ş", "s")
+            .replace("ü", "u")
+            .replaceAll("[^a-z0-9\\s]", "") // Noktalama işaretlerini kaldır
+            .replaceAll("\\s+", " "); // Fazla boşlukları tek boşluğa indir
+        return normalized.trim();
     }
 
     // Yardımcı Metot 1: DB Kontrolü
@@ -113,7 +152,7 @@ public class UnitConverterServiceImpl implements UnitConverterService {
         return ingredientRepository.findByIdWithUnits(ingredient.getId())
             .map(Ingredient::getIngredientUnits)
             .flatMap(units -> units.stream()
-                .filter(iu -> iu.getUnitName().equalsIgnoreCase(unit))
+                .filter(iu -> normalizeUnit(iu.getUnitName()).equals(unit))
                 .map(IngredientUnit::getGrams)
                 .findFirst())
             .orElse(null);
@@ -141,11 +180,23 @@ public class UnitConverterServiceImpl implements UnitConverterService {
             // Özel birimleri ekle/ez
             if (detailed.getIngredientUnits() != null) {
                 detailed.getIngredientUnits().forEach(iu ->
-                    allWeights.put(iu.getUnitName().toLowerCase().trim(), iu.getGrams()));
+                    allWeights.put(normalizeUnit(iu.getUnitName()), iu.getGrams()));
             }
+            // Aliasları ekle (eğer ana birim varsa)
+            UNIT_ALIASES.forEach((alias, actual) -> {
+                if (allWeights.containsKey(actual)) {
+                    allWeights.put(alias, allWeights.get(actual));
+                }
+            });
             // Yoğunluğu uygula
             if (detailed.getDensity() != null && detailed.getDensity() != 1.0) {
                 VOLUME_UNITS.forEach(v -> allWeights.computeIfPresent(v, (k, val) -> val * detailed.getDensity()));
+                // Aliaslar için de yoğunluğu uygula (eğer hacim birimi ise)
+                UNIT_ALIASES.forEach((alias, actual) -> {
+                    if (VOLUME_UNITS.contains(actual)) {
+                        allWeights.computeIfPresent(alias, (k, val) -> val * detailed.getDensity());
+                    }
+                });
             }
         }
         return allWeights;

@@ -92,10 +92,10 @@ class UnitConverterServiceTest {
 
         Map<String, Double> weights = unitConverterService.getAllUnitWeights(garlic);
 
-        assertTrue(weights.containsKey("diş"));
-        assertTrue(weights.containsKey("baş"));
-        assertEquals(5.0, weights.get("diş"));
-        assertEquals(50.0, weights.get("baş"));
+        assertTrue(weights.containsKey("dis"), "Normalleştirilmiş 'diş' anahtarı bulunmalı");
+        assertTrue(weights.containsKey("bas"), "Normalleştirilmiş 'baş' anahtarı bulunmalı");
+        assertEquals(5.0, weights.get("dis"));
+        assertEquals(50.0, weights.get("bas"));
     }
     @Test
     void testConvertUnits() {
@@ -138,6 +138,29 @@ class UnitConverterServiceTest {
     }
 
     @Test
+    void testTurkishCharacterAndAliasNormalization() {
+        // "çay kaşığı", "Çay Kaşiği", "Cay Kasigi" hepsi aynı sonucu vermeli
+        assertEquals(5.0, unitConverterService.convertToGrams(1.0, "çay kaşığı", null));
+        assertEquals(5.0, unitConverterService.convertToGrams(1.0, "Çay Kaşiği", null));
+        assertEquals(5.0, unitConverterService.convertToGrams(1.0, "Cay Kasigi", null));
+        assertEquals(5.0, unitConverterService.convertToGrams(1.0, "cay kasigi", null));
+        
+        // Aliaslar (ck, yk, sb vb.)
+        assertEquals(5.0, unitConverterService.convertToGrams(1.0, "ck", null));
+        assertEquals(15.0, unitConverterService.convertToGrams(1.0, "yk", null));
+        assertEquals(200.0, unitConverterService.convertToGrams(1.0, "sb", null));
+        assertEquals(75.0, unitConverterService.convertToGrams(1.0, "kf", null));
+        
+        // Birleşik yazım aliasları
+        assertEquals(5.0, unitConverterService.convertToGrams(1.0, "caykasigi", null));
+        assertEquals(200.0, unitConverterService.convertToGrams(1.0, "subardagi", null));
+
+        // Noktalama ve boşluk varyasyonları
+        assertEquals(15.0, unitConverterService.convertToGrams(1.0, "y.k.", null));
+        assertEquals(15.0, unitConverterService.convertToGrams(1.0, " yemek   kasigi ", null));
+    }
+
+    @Test
     void testReproductionTeaspoonMismatch() {
         // Karabiber (density 0.8) için 5 çay kaşığı girişi
         Ingredient blackPepper = Ingredient.builder()
@@ -151,15 +174,15 @@ class UnitConverterServiceTest {
         Double result = unitConverterService.convertUnits(blackPepper, 5.0, "çay kaşığı", "çay kaşığı");
         assertEquals(5.0, result, "Aynı birim dönüşümü miktarı değiştirmemeli");
 
-        // 2. Gram ağırlığı testi: 5 * 2g * 0.8 density = 8.0g olmalı
+        // 2. Gram ağırlığı testi: 5 * 5g * 0.8 density = 20.0g olmalı
         Double grams = unitConverterService.convertToGrams(5.0, "çay kaşığı", blackPepper);
-        assertEquals(8.0, grams, "5 çay kaşığı karabiber 8 gram etmeli (5 * 2 * 0.8)");
+        assertEquals(20.0, grams, "5 çay kaşığı karabiber 20 gram etmeli (5 * 5 * 0.8)");
 
-        // 3. getAllUnitWeights testi: çay kaşığı ağırlığı 2 * 0.8 = 1.6 olmalı
+        // 3. getAllUnitWeights testi: çay kaşığı ağırlığı 5 * 0.8 = 4.0 olmalı
         // Mock repo because getAllUnitWeights calls it
         when(ingredientRepository.findByIdWithUnits(3L)).thenReturn(Optional.of(blackPepper));
         Map<String, Double> weights = unitConverterService.getAllUnitWeights(blackPepper);
-        assertEquals(1.6, weights.get("çay kaşığı"), 0.001);
+        assertEquals(4.0, weights.get("cay kasigi"), 0.001);
     }
 
     @Test
