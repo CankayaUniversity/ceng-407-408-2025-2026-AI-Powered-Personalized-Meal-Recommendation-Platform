@@ -151,4 +151,47 @@ class DailyConsumptionServiceTest {
         assertEquals(21.0, saved.getEstimatedCarbs());
         assertEquals(0.3, saved.getEstimatedFat());
     }
+
+    @Test
+    void logConsumption_WhenRecipeHasServings_ShouldScaleByServingsAndMultiplier() {
+        Ingredient ingredient = Ingredient.builder().id(1L).name("Tomato").build();
+        RecipeIngredient recipeIngredient = RecipeIngredient.builder()
+                .ingredient(ingredient)
+                .grams(400.0) // 4 kişilik tarifte toplam 400g tomato
+                .build();
+
+        Recipe recipe = Recipe.builder()
+                .id(1L)
+                .servings(4) // 4 Kişilik tarif
+                .totalCalories(1000.0) // Toplam 1000 kcal
+                .totalProtein(40.0)
+                .totalCarbs(100.0)
+                .totalFat(20.0)
+                .recipeIngredients(List.of(recipeIngredient))
+                .build();
+
+        // Kullanıcı 1.0 multiplier (yani "1 porsiyon") seçiyor. 
+        // 4 kişilik tarifin 1 porsiyonu = 1/4 = 0.25 çarpanı olmalı.
+        DailyConsumption consumption = DailyConsumption.builder()
+                .user(user)
+                .recipe(Recipe.builder().id(1L).build())
+                .inventoryGroup(InventoryGroup.builder().id(10L).build())
+                .portionMultiplier(1.0)
+                .isFromInventory(true)
+                .build();
+
+        when(recipeRepository.findByIdWithIngredients(1L)).thenReturn(Optional.of(recipe));
+        when(dailyConsumptionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        DailyConsumption saved = dailyConsumptionService.logConsumption(consumption);
+
+        // Envanterden 400 * (1.0 / 4) = 100g düşmeli
+        verify(inventoryService).consumeFromInventoryGroup("user-123", 10L, 1L, 100.0, "g");
+        
+        // Besin değerleri 1000 * (1.0 / 4) = 250 kcal olmalı
+        assertEquals(250, saved.getEstimatedCalories());
+        assertEquals(10.0, saved.getEstimatedProtein());
+        assertEquals(25.0, saved.getEstimatedCarbs());
+        assertEquals(5.0, saved.getEstimatedFat());
+    }
 }

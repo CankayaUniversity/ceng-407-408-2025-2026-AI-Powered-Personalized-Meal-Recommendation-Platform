@@ -32,19 +32,6 @@ import {
 } from '../../../types';
 
 
-const parsePortionLabel = (label: string): { amount?: number; unit?: string } => {
-  const trimmed = label.trim();
-  const firstSpaceIndex = trimmed.indexOf(' ');
-  if (firstSpaceIndex < 0) return {};
-
-  const amount = parseFloat(trimmed.slice(0, firstSpaceIndex));
-  const unit = trimmed.slice(firstSpaceIndex + 1).trim();
-  return {
-    amount: Number.isFinite(amount) ? amount : undefined,
-    unit: unit || undefined
-  };
-};
-
 export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
   const { t } = useTranslation();
   const { authenticated, user } = useAuth();
@@ -347,13 +334,12 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
         const itemPreviews: Record<string, { calories: number; protein: number; carbs: number; fat: number }> = {};
         
         const previews = await Promise.all(allItems.map(async item => {
-          const portionInput = item.kind === 'INGREDIENT' ? parsePortionLabel(item.portion.label) : {};
           const payload = {
             recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
             ingredientId: item.kind === 'INGREDIENT' ? item.ingredient.id : undefined,
             portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
-            portionAmount: item.kind === 'INGREDIENT' ? (item.portion.amount || portionInput.amount) : undefined,
-            portionUnit: item.kind === 'INGREDIENT' ? (item.portion.unit || portionInput.unit || item.unit) : undefined,
+            portionAmount: item.kind === 'INGREDIENT' ? item.portion.amount : undefined,
+            portionUnit: item.kind === 'INGREDIENT' ? (item.portion.unit || item.unit) : undefined,
             portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined
           };
           const nutrition = await consumptionService.getNutritionPreview(payload as any);
@@ -563,13 +549,11 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
         const userItems = prev[userId] || [];
         const updatedItems = userItems.map((item: any) => {
             if (item.key === itemKey && item.kind === 'INGREDIENT') {
-                const labelParts = typeof nextPortion === 'string' ? {} : parsePortionLabel(nextPortion.label);
-                const nextUnit = typeof nextPortion === 'string' ? item.unit : (nextPortion.unit || labelParts.unit || item.unit);
+                const nextUnit = typeof nextPortion === 'string' ? item.unit : (nextPortion.unit || item.unit);
                 const amount = typeof nextPortion === 'string'
                     ? parseFloat(nextPortion)
-                    : (nextPortion.amount || labelParts.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[nextUnit.toLowerCase()] || unitWeights[nextUnit.toLowerCase()] || 1)));
+                    : (nextPortion.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[nextUnit.toLowerCase()] || unitWeights[nextUnit.toLowerCase()] || 1)));
                 
-                // Debounced conversion fetch is not needed here as we use callback
                 fetchConversions(itemKey, item.ingredient.id, amount, nextUnit);
                 
                 return { ...item, portion: nextPortion, unit: nextUnit };
@@ -582,13 +566,11 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
       setSelectedItems((current) =>
         current.map((item) => {
             if (item.key === itemKey && item.kind === 'INGREDIENT') {
-                const labelParts = typeof nextPortion === 'string' ? {} : parsePortionLabel(nextPortion.label);
-                const nextUnit = typeof nextPortion === 'string' ? item.unit : (nextPortion.unit || labelParts.unit || item.unit);
+                const nextUnit = typeof nextPortion === 'string' ? item.unit : (nextPortion.unit || item.unit);
                 const amount = typeof nextPortion === 'string'
                     ? parseFloat(nextPortion)
-                    : (nextPortion.amount || labelParts.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[nextUnit.toLowerCase()] || unitWeights[nextUnit.toLowerCase()] || 1)));
+                    : (nextPortion.amount || (nextPortion.grams / (ingredientSpecificWeights[item.ingredient.id]?.[nextUnit.toLowerCase()] || unitWeights[nextUnit.toLowerCase()] || 1)));
                 
-                // Debounced conversion fetch
                 fetchConversions(itemKey, item.ingredient.id, amount, nextUnit);
                 
                 return { ...item, portion: nextPortion, unit: nextUnit };
@@ -666,7 +648,6 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
           inventoryGroupId: currentGroup?.id,
           mealType,
           members: membersToLog.flatMap(m => m.items.map((item: any) => {
-              const portionInput = item.kind === 'INGREDIENT' ? parsePortionLabel(item.portion.label) : {};
               return {
                   userId: m.userId,
                   recipeId: item.kind === 'RECIPE' ? item.recipe.id : undefined,
@@ -674,8 +655,8 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
                   foodName: getSelectedItemName(item),
                   portionLabel: item.portion.label,
                   portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
-                  portionAmount: item.kind === 'INGREDIENT' ? (item.portion.amount || portionInput.amount) : undefined,
-                  portionUnit: item.kind === 'INGREDIENT' ? (item.portion.unit || portionInput.unit || item.unit) : undefined,
+                  portionAmount: item.kind === 'INGREDIENT' ? item.portion.amount : undefined,
+                  portionUnit: item.kind === 'INGREDIENT' ? (item.portion.unit || item.unit) : undefined,
               };
           }))
       };

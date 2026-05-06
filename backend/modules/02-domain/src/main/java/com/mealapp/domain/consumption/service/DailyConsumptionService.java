@@ -76,7 +76,12 @@ public class DailyConsumptionService {
         Long inventoryGroupId = consumption.getInventoryGroup().getId();
 
         if (consumption.getRecipe() != null && consumption.getRecipe().getRecipeIngredients() != null) {
-            double portionMultiplier = resolvePortionMultiplier(consumption);
+            double multiplier = resolvePortionMultiplier(consumption);
+            double servingFactor = (consumption.getRecipe().getServings() != null && consumption.getRecipe().getServings() > 0)
+                    ? 1.0 / consumption.getRecipe().getServings()
+                    : 1.0;
+            
+            double finalMultiplier = multiplier * servingFactor;
 
             for (RecipeIngredient recipeIngredient : consumption.getRecipe().getRecipeIngredients()) {
                 if (recipeIngredient.getIngredient() != null) {
@@ -86,7 +91,7 @@ public class DailyConsumptionService {
                                 userId,
                                 inventoryGroupId,
                                 recipeIngredient.getIngredient().getId(),
-                                recipeIngredient.getGrams() * portionMultiplier,
+                                recipeIngredient.getGrams() * finalMultiplier,
                                 "g"
                         );
                     } else if (recipeIngredient.getAmount() != null) {
@@ -94,7 +99,7 @@ public class DailyConsumptionService {
                                 userId,
                                 inventoryGroupId,
                                 recipeIngredient.getIngredient().getId(),
-                                recipeIngredient.getAmount() * portionMultiplier,
+                                recipeIngredient.getAmount() * finalMultiplier,
                                 recipeIngredient.getUnit()
                         );
                     }
@@ -142,11 +147,19 @@ public class DailyConsumptionService {
         NutritionTotals nutritionTotals = calculateRecipeNutrition(recipe);
         double multiplier = resolvePortionMultiplier(consumption);
 
+        // Eğer tarifin servings (porsiyon/kişi sayısı) bilgisi varsa, 
+        // besin değerlerini porsiyon başına indirgeyelim.
+        double servingFactor = (recipe.getServings() != null && recipe.getServings() > 0) 
+                ? 1.0 / recipe.getServings() 
+                : 1.0;
+
+        double finalMultiplier = multiplier * servingFactor;
+
         consumption.setPortionMultiplier(multiplier);
-        consumption.setEstimatedCalories((int) Math.round(nutritionTotals.calories() * multiplier));
-        consumption.setEstimatedProtein(roundDouble(nutritionTotals.protein() * multiplier));
-        consumption.setEstimatedCarbs(roundDouble(nutritionTotals.carbs() * multiplier));
-        consumption.setEstimatedFat(roundDouble(nutritionTotals.fat() * multiplier));
+        consumption.setEstimatedCalories((int) Math.round(nutritionTotals.calories() * finalMultiplier));
+        consumption.setEstimatedProtein(roundDouble(nutritionTotals.protein() * finalMultiplier));
+        consumption.setEstimatedCarbs(roundDouble(nutritionTotals.carbs() * finalMultiplier));
+        consumption.setEstimatedFat(roundDouble(nutritionTotals.fat() * finalMultiplier));
     }
 
     private void applyIngredientNutrition(DailyConsumption consumption, Ingredient ingredient) {

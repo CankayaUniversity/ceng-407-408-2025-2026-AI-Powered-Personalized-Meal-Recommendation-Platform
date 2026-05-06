@@ -130,7 +130,7 @@ export const useIngredientLookup = ({
     }
 
     // Fallback logic
-    const base = ['GRAM', 'KG', 'ML', 'L', 'ADET'];
+    const base = ['GRAM', 'ML', 'ADET'];
     const weights = (ingredientId && ingredientSpecificWeights[ingredientId]) || unitWeights;
     const extra = Object.keys(weights).map((u: any) => u.toUpperCase());
     const allUnits = Array.from(new Set([...base, ...extra]));

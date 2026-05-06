@@ -231,9 +231,8 @@ export const useInventory = () => {
       setIngredientSpecificWeights(prev => ({ ...prev, [ing.id]: weights }));
       setConversions(convs);
       
-      // Akıllı varsayılan birim seçimi
-      const quickUnit = convs.find((c: any) => c.highPriority)?.unit || 
-                        (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
+      // Akıllı varsayılan birim seçimi - Backend'den gelen veriye güven
+      const quickUnit = convs.find((c: any) => c.highPriority)?.unit || ing.preferredUnit || (ing.physicalState === 'LIQUID' ? 'ML' : 'GRAM');
       
       setItemDraft(prev => ({
         ...prev,

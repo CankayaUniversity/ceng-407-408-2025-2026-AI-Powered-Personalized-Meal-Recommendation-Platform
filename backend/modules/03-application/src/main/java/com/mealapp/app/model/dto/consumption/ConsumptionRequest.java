@@ -72,8 +72,8 @@ public class ConsumptionRequest {
 
     /**
      * Malzeme kayıtlarında household unit'in yaklaşık gram karşılığı.
+     * Artık backend'de hesaplandığı için istemci göndermek zorunda değildir.
      */
-    @Positive(message = "Gram karşılığı sıfırdan büyük olmalıdır")
     private Double portionGrams;
 
     /**
@@ -88,7 +88,7 @@ public class ConsumptionRequest {
     public static class MemberConsumption {
         private String userId;
         private Double portionMultiplier;
-        private Double portionGrams;
+        private Double portionGrams; // Backend tarafından hesaplanır
         private String portionLabel;
         private Double portionAmount;
         private String portionUnit;

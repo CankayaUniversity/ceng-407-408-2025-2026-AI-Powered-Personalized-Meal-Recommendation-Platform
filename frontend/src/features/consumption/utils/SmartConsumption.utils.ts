@@ -22,9 +22,9 @@ export const formatCalories = (value?: number | null) =>
   value == null ? '--' : `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 }).format(value)} kcal`;
 
 export const scaleValue = (value: number | null | undefined, factor: number) =>
-  value == null ? null : Math.round(value * factor * 10) / 10;
+  value == null ? null : value * factor;
 
-export const roundValue = (value: number) => Math.round(value * 10) / 10;
+export const roundValue = (value: number) => value;
 
 export const formatCategoryLabel = (value?: string | null) => value?.replace(/_/g, ' ') ?? 'Genel';
 

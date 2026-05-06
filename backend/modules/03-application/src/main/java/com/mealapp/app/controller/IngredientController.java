@@ -95,7 +95,9 @@ public class IngredientController {
 
                 // Giriş birimi ile aynı olan birimi dönüşümlerde gösterme
                 if (normalizedTarget.equals(normalizedInputUnit)) {
-                    return;
+                    // İpucu: Kendi birimini de listede (priority: false olarak) bulunduralım 
+                    // veya frontend tarafında mevcut birimi her zaman "öncelikli" görelim.
+                    // Şimdilik listeye ekleyelim ki UI tüm seçenekleri görsün.
                 }
 
                 Double targetAmount = grams / weight;
