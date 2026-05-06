@@ -762,6 +762,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     unitWeights,
     ingredientSpecificWeights,
     recipeDetailsMap,
-    conversions
+    conversions,
+    hasCompletedIngredientSearch: !!deferredIngredientQuery.trim() && !searching
   };
 };

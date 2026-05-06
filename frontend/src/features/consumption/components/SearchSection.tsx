@@ -14,6 +14,8 @@ import {
   type Ingredient 
 } from '../../../types';
 
+import { IngredientSelector } from '../../../shared/components/IngredientSelector';
+
 interface SearchSectionProps {
   entryMode: EntryMode;
   onEntryModeChange: (mode: EntryMode) => void;
@@ -28,6 +30,7 @@ interface SearchSectionProps {
   onRecipeSelect: (recipe: RecipeListItem, userId?: string) => void;
   onIngredientSelect: (ingredient: Ingredient, userId?: string) => void;
   userId?: string;
+  hasCompletedIngredientSearch?: boolean;
 }
 
 export const SearchSection: React.FC<SearchSectionProps> = ({
@@ -43,7 +46,8 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
   ingredientResults,
   onRecipeSelect,
   onIngredientSelect,
-  userId
+  userId,
+  hasCompletedIngredientSearch = false
 }) => {
   const { t } = useTranslation();
   const mQuery = entryMode === 'RECIPE' ? (searchQuery || '') : (ingredientSearchQuery || '');
@@ -77,83 +81,74 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
         </div>
       </div>
 
-      <label className="mt-5 block space-y-2">
-        <span className="text-sm font-semibold text-foreground/80 px-2">
-          {entryMode === 'RECIPE' ? t('consumption.search.searchRecipe') : t('consumption.search.searchIngredient')}
-        </span>
-        <div className="relative">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30" />
-          <input
-            type="text"
-            value={mQuery}
-            onChange={(event) => {
-              const val = event.target.value;
-              if (entryMode === 'RECIPE') {
-                onSearchQueryChange(val);
-              } else {
-                onIngredientSearchQueryChange(val);
-              }
-            }}
-            placeholder={entryMode === 'RECIPE' ? t('consumption.search.recipePlaceholder') : t('consumption.search.ingredientPlaceholder')}
-            className="base-input py-4 pl-12 pr-4 text-foreground"
+      {entryMode === 'RECIPE' ? (
+        <>
+          <label className="mt-5 block space-y-2">
+            <span className="text-sm font-semibold text-foreground/80 px-2">
+              {t('consumption.search.searchRecipe')}
+            </span>
+            <div className="relative">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => onSearchQueryChange(event.target.value)}
+                placeholder={t('consumption.search.recipePlaceholder')}
+                className="base-input py-4 pl-12 pr-4 text-foreground"
+              />
+            </div>
+          </label>
+
+          <div className="mt-4 flex items-center gap-2 text-xs text-foreground/40">
+            {searching || isSearchStale ? <Loader2 size={14} className="animate-spin text-terracotta" /> : <Clock3 size={14} className="text-moss-sage" />}
+            <span>{searching || isSearchStale ? t('consumption.search.updating') : t('consumption.search.selectFromBelow')}</span>
+          </div>
+
+          <div className="mt-4 grid gap-3">
+            {recipeResults.length === 0 && searchQuery.trim().length >= 2 && !searching ? (
+              <div className="meal-metric-card rounded-[1.5rem] border-dashed border-card-border px-4 py-6 text-sm text-foreground/50 bg-transparent">
+                {t('consumption.search.noResults')}
+              </div>
+            ) : null}
+
+            {recipeResults.map((recipe) => (
+              <button
+                key={recipe.id}
+                type="button"
+                onClick={() => onRecipeSelect(recipe, userId)}
+                className="rounded-[1.7rem] border border-card-border bg-card px-4 py-4 text-left transition-all hover:border-terracotta/30 text-foreground"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-serif text-xl font-bold">{recipe.title}</p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-foreground/40">
+                      {formatCategoryLabel(recipe.category)}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-sage">
+                    {formatCalories(recipe.totalCalories)}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="mt-6">
+          <IngredientSelector
+            query={ingredientSearchQuery}
+            onQueryChange={onIngredientSearchQueryChange}
+            onSelect={(ing) => onIngredientSelect(ing, userId)}
+            selectedIngredient={null}
+            searching={searching}
+            results={ingredientResults}
+            hasCompletedSearch={hasCompletedIngredientSearch}
+            placeholder={t('consumption.search.ingredientPlaceholder')}
+            label={t('consumption.search.searchIngredient')}
+            showSelectedDetails={false}
           />
         </div>
-      </label>
-
-      <div className="mt-4 flex items-center gap-2 text-xs text-foreground/40">
-        {searching || isSearchStale ? <Loader2 size={14} className="animate-spin text-terracotta" /> : <Clock3 size={14} className="text-moss-sage" />}
-        <span>{searching || isSearchStale ? t('consumption.search.updating') : t('consumption.search.selectFromBelow')}</span>
-      </div>
-
-      <div className="mt-4 grid gap-3">
-        {(resultCards || []).length === 0 && mQuery.trim().length >= 2 && !searching ? (
-          <div className="meal-metric-card rounded-[1.5rem] border-dashed border-card-border px-4 py-6 text-sm text-foreground/50 bg-transparent">
-            {t('consumption.search.noResults')}
-          </div>
-        ) : null}
-
-        {entryMode === 'RECIPE' && recipeResults.map((recipe) => (
-          <button
-            key={recipe.id}
-            type="button"
-            onClick={() => onRecipeSelect(recipe, userId)}
-            className="rounded-[1.7rem] border border-card-border bg-card px-4 py-4 text-left transition-all hover:border-terracotta/30 text-foreground"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-serif text-xl font-bold">{recipe.title}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-foreground/40">
-                  {formatCategoryLabel(recipe.category)}
-                </p>
-              </div>
-              <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-sage">
-                {formatCalories(recipe.totalCalories)}
-              </div>
-            </div>
-          </button>
-        ))}
-
-        {entryMode === 'INGREDIENT' && ingredientResults.map((ingredient) => (
-          <button
-            key={ingredient.id}
-            type="button"
-            onClick={() => onIngredientSelect(ingredient, userId)}
-            className="rounded-[1.7rem] border border-card-border bg-card px-4 py-4 text-left transition-all hover:border-terracotta/30 text-foreground"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-serif text-xl font-bold">{ingredient.name}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.18em] text-foreground/40">
-                  {formatCategoryLabel(ingredient.category)}
-                </p>
-              </div>
-              <div className="rounded-full bg-moss-sage/10 px-3 py-1 text-xs font-bold text-moss-sage">
-                {formatCalories(ingredient.caloriesPer100g ?? ingredient.nutrition?.caloriesPer100g)}
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
+      )}
     </div>
   );
 };

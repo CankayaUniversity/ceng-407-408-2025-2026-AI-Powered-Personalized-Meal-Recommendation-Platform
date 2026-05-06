@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, ArrowRightLeft, Calculator, Search, Info, ChevronDown, Loader2 } from 'lucide-react';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useIngredientService } from '../../services/ingredientService';
-import { matchesIngredientQuery, useIngredientLookup } from '../hooks/useIngredientLookup';
+import { IngredientSelector } from './IngredientSelector';
 import { Ingredient, type PhysicalState, UnitConversion } from '../../types';
 import { LoadingSpinner } from './LoadingSpinner';
 import ModalPortal from './ModalPortal';
@@ -34,9 +34,7 @@ const UnitConverterModal: React.FC = () => {
         results: searchResults,
         searching: isSearching,
         searchError,
-        hasCompletedSearch,
-        canSearch,
-        resetSearch
+        hasCompletedSearch
     } = useIngredientLookup({
         query: searchQuery,
         enabled: isUnitConverterOpen && !selectedIngredient
@@ -63,9 +61,8 @@ const UnitConverterModal: React.FC = () => {
     useEffect(() => {
         if (!isUnitConverterOpen) {
             setIsSearchFocused(false);
-            resetSearch();
         }
-    }, [isUnitConverterOpen, resetSearch]);
+    }, [isUnitConverterOpen]);
 
     useEffect(() => {
         const handlePointerDown = (event: MouseEvent) => {
@@ -144,12 +141,6 @@ const UnitConverterModal: React.FC = () => {
 
     if (!isUnitConverterOpen) return null;
 
-    const shouldShowDropdown =
-        isSearchFocused &&
-        !selectedIngredient &&
-        canSearch &&
-        (isSearching || searchResults.length > 0 || !!searchError || hasCompletedSearch);
-
     return (
         <ModalPortal>
         <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -196,102 +187,34 @@ const UnitConverterModal: React.FC = () => {
                     {activeTab === 'converter' ? (
                         <div className="p-8 space-y-8">
                             {/* Ingredient Selection */}
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1 flex items-center gap-2">
-                                    <Info size={10} />
-                                    {t('unitConverter.ingredientLabel')}
-                                </label>
-                                <div className="relative" data-ingredient-search="unit-converter">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30">
-                                        <Search size={18} />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        value={searchQuery}
-                                        onChange={(e) => {
-                                            const nextQuery = e.target.value;
-                                            const shouldClearSelection = selectedIngredient
-                                                ? !matchesIngredientQuery(nextQuery, selectedIngredient.name)
-                                                : false;
-
-                                            setSearchQuery(nextQuery);
-
-                                            if (shouldClearSelection) {
-                                                setSelectedIngredient(null);
-                                                setConversions([]);
-                                            }
-                                        }}
-                                        onFocus={() => setIsSearchFocused(true)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Escape') {
-                                                setIsSearchFocused(false);
-                                            }
-                                        }}
-                                        placeholder={t('unitConverter.searchPlaceholder')}
-                                        className="base-input w-full pl-12 py-4 bg-black/5 dark:bg-white/5 border-transparent focus:border-terracotta/50"
-                                    />
-                                    {isSearching && (
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                            <Loader2 size={18} className="animate-spin text-terracotta" />
-                                        </div>
-                                    )}
-
-                                    {/* Search Results Dropdown */}
-                                    {shouldShowDropdown && (
-                                        <div className="absolute z-40 top-full left-0 right-0 mt-2 bg-white dark:bg-espresso-midnight rounded-2xl shadow-xl border border-black/5 dark:border-white/10 overflow-hidden max-h-60 overflow-y-auto">
-                                            {isSearching ? (
-                                                <div className="px-6 py-5 text-sm text-foreground/50 flex items-center gap-3">
-                                                    <Loader2 size={18} className="animate-spin text-terracotta" />
-                                                    {t('unitConverter.searching')}
-                                                </div>
-                                            ) : searchError ? (
-                                                <div className="px-6 py-5 text-sm font-semibold text-red-500 bg-red-500/5">
-                                                    {searchError}
-                                                </div>
-                                            ) : searchResults.length > 0 ? (
-                                                searchResults.map((ing) => (
-                                                    <button
-                                                        key={ing.id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setSelectedIngredient(ing);
-                                                            setSearchQuery(ing.name);
-                                                            setIsSearchFocused(false);
-                                                        }}
-                                                        className="w-full text-left px-6 py-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-b border-black/5 dark:border-white/5 last:border-0"
-                                                    >
-                                                        <p className="font-bold text-sm">{ing.name}</p>
-                                                        <p className="text-[10px] text-foreground/40 uppercase tracking-tighter">{ing.category}</p>
-                                                    </button>
-                                                ))
-                                            ) : (
-                                                <div className="px-6 py-5 text-sm text-foreground/45">
-                                                    {t('unitConverter.noResults')}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                {selectedIngredient ? (
+                            <IngredientSelector
+                                label={t('unitConverter.ingredientLabel')}
+                                query={searchQuery}
+                                onQueryChange={setSearchQuery}
+                                onSelect={(ing) => {
+                                    setSelectedIngredient(ing);
+                                    setSearchQuery(ing.name);
+                                }}
+                                selectedIngredient={selectedIngredient}
+                                searching={isSearching}
+                                results={searchResults}
+                                error={searchError}
+                                hasCompletedSearch={hasCompletedSearch}
+                                onClearSelection={() => {
+                                    setSelectedIngredient(null);
+                                    setSearchQuery('');
+                                    setConversions([]);
+                                }}
+                                renderExtraDetails={(ing) => (
                                     <div className="flex items-center justify-between px-4 py-2 bg-terracotta/5 border border-terracotta/20 rounded-xl">
-                                        <span className="text-xs font-bold text-terracotta">{t('unitConverter.usingDensity', { name: selectedIngredient.name })}</span>
-                                        <button 
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedIngredient(null);
-                                                setSearchQuery('');
-                                                setConversions([]);
-                                                setIsSearchFocused(false);
-                                            }}
-                                            className="text-[10px] font-black text-terracotta hover:underline uppercase"
-                                        >
-                                            {t('unitConverter.resetToGeneral')}
-                                        </button>
+                                        <span className="text-xs font-bold text-terracotta">{t('unitConverter.usingDensity', { name: ing.name })}</span>
                                     </div>
-                                ) : (
-                                    <p className="text-[9px] text-foreground/30 px-1 italic">{t('unitConverter.defaultDensityNote')}</p>
                                 )}
-                            </div>
+                                showSelectedDetails={!!selectedIngredient}
+                            />
+                            {!selectedIngredient && (
+                                <p className="text-[9px] text-foreground/30 px-1 italic">{t('unitConverter.defaultDensityNote')}</p>
+                            )}
 
                             {/* Amount & Unit Input */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">

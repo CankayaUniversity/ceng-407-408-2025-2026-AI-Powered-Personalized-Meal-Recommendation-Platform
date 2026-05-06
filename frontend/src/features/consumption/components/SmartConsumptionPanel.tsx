@@ -72,7 +72,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     memberQueries,
     setMemberQueries,
     memberResults,
-    conversions
+    conversions,
+    hasCompletedIngredientSearch
   } = useSmartConsumption(onConsumptionLogged);
 
   const activeMembers = useMemo(() => {
@@ -257,6 +258,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
             ingredientResults={ingredientResults}
             onRecipeSelect={handleRecipeSelect}
             onIngredientSelect={handleIngredientSelect}
+            hasCompletedIngredientSearch={hasCompletedIngredientSearch}
           />
 
           <div className="space-y-6">

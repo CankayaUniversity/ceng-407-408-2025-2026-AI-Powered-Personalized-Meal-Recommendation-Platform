@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChefHat, Clock, Users, Plus, Trash2, Save, Send, Loader2, Camera, Image as ImageIcon } from 'lucide-react';
+import { IngredientSelector } from '../../shared/components/IngredientSelector';
+import { Ingredient } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useRecipeService } from '../../services/recipeService';
@@ -31,15 +33,17 @@ const RecipeModal: React.FC = () => {
     const [isSending, setIsSending] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
 
     const {
         results: searchResults,
         searching: isSearching,
         getIngredientUnits,
-        fetchIngredientIntelligence
+        fetchIngredientIntelligence,
+        hasCompletedSearch
     } = useIngredientLookup({
         query: searchQuery,
-        enabled: isRecipeModalOpen && isSearchFocused
+        enabled: isRecipeModalOpen
     });
 
     useEffect(() => {
@@ -124,7 +128,7 @@ const RecipeModal: React.FC = () => {
         }
     };
 
-    const handleAddIngredient = (ing: any) => {
+    const handleAddIngredient = (ing: Ingredient) => {
         // Backend'den gelen zekayı çek (birimler, katsayılar vb.)
         fetchIngredientIntelligence(ing.id);
         
@@ -158,7 +162,7 @@ const RecipeModal: React.FC = () => {
         }
         
         setSearchQuery('');
-        setIsSearchFocused(false);
+        setSelectedIngredient(null);
     };
 
     const handleRemoveIngredient = (index: number) => {
@@ -419,46 +423,29 @@ const RecipeModal: React.FC = () => {
                                     {t('recipes.modal.ingredients')}
                                 </h3>
 
-                                <div className="space-y-4">
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            onFocus={() => setIsSearchFocused(true)}
-                                            placeholder={t('recipes.modal.ingredientPlaceholder')}
-                                            className="base-input w-full py-4 pl-12 bg-black/5 dark:bg-white/5 border-transparent focus:border-terracotta/50"
-                                        />
-                                        <Plus size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-terracotta" />
-                                        
-                                        {/* Dropdown Results */}
-                                        {isSearchFocused && (searchQuery || isSearching) && (
-                                            <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white dark:bg-espresso-midnight rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 overflow-hidden max-h-60 overflow-y-auto">
-                                                {isSearching ? (
-                                                    <div className="p-4 flex items-center gap-3 text-sm text-foreground/40 italic">
-                                                        <Loader2 size={16} className="animate-spin text-terracotta" />
-                                                        {t('common.loading')}
-                                                    </div>
-                                                ) : searchResults.length > 0 ? (
-                                                    searchResults.map(ing => (
-                                                        <button
-                                                            key={ing.id}
-                                                            onClick={() => handleAddIngredient(ing)}
-                                                            className="w-full text-left p-4 hover:bg-terracotta/5 flex justify-between items-center group transition-colors border-b border-black/5 last:border-0"
-                                                        >
-                                                            <span className="font-bold">{ing.name}</span>
-                                                            <Plus size={16} className="text-terracotta opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                        </button>
-                                                    ))
-                                                ) : (
-                                                    <div className="p-4 text-sm text-foreground/40 italic">Sonuç bulunamadı</div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
+                                <div className="space-y-6">
+                                    <IngredientSelector
+                                        query={searchQuery}
+                                        onQueryChange={setSearchQuery}
+                                        onSelect={handleAddIngredient}
+                                        selectedIngredient={selectedIngredient}
+                                        searching={isSearching}
+                                        results={searchResults}
+                                        hasCompletedSearch={hasCompletedSearch}
+                                        placeholder={t('recipes.modal.ingredientPlaceholder')}
+                                        showSelectedDetails={false}
+                                    />
 
                                     {/* Ingredient List */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-black/5 dark:border-white/5">
+                                        {ingredients.length === 0 && (
+                                            <div className="sm:col-span-2 py-12 text-center space-y-3 bg-black/[0.02] dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-card-border">
+                                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center mx-auto text-foreground/20">
+                                                    <Plus size={24} />
+                                                </div>
+                                                <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest">Henüz malzeme eklenmedi</p>
+                                            </div>
+                                        )}
                                         {ingredients.map((ing, index) => (
                                             <div key={`${ing.ingredientId}-${index}`} className="flex flex-col gap-3 p-5 bg-black/5 dark:bg-white/5 rounded-[2rem] border border-transparent hover:border-terracotta/20 transition-all group shadow-sm">
                                                 <div className="flex items-center justify-between">
@@ -475,13 +462,13 @@ const RecipeModal: React.FC = () => {
                                                         type="number"
                                                         value={ing.amount}
                                                         onChange={(e) => handleAmountChange(index, parseFloat(e.target.value) || 0)}
-                                                        className="flex-1 py-2 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-sm focus:border-terracotta outline-none"
+                                                        className="flex-1 py-3 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-sm focus:border-terracotta outline-none shadow-sm"
                                                         placeholder="0"
                                                     />
                                                     <select
                                                         value={ing.unit}
                                                         onChange={(e) => handleUnitChange(index, e.target.value)}
-                                                        className="w-28 py-2 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-[10px] focus:border-terracotta outline-none uppercase"
+                                                        className="w-32 py-3 bg-white dark:bg-black/20 border border-card-border rounded-xl text-center font-bold text-[10px] focus:border-terracotta outline-none uppercase cursor-pointer shadow-sm"
                                                     >
                                                         {(() => {
                                                             const units = getIngredientUnits({ id: ing.ingredientId } as any);
