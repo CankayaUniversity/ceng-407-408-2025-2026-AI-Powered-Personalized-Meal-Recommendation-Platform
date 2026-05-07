@@ -158,6 +158,89 @@ export const getRecipeService = (api: AxiosInstance) => {
   },
 
   /**
+   * Kullanıcının geçmiş önerilerini getirir.
+   */
+  getRecommendationHistory: async (userId: string): Promise<RecommendationResponse[]> => {
+    try {
+      const response = await api.get<RecommendationResponse[]>(`/v1/recommendations/history/${userId}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Geçmiş öneriler alınamadı';
+
+        switch (status) {
+          case 401:
+            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          case 404:
+            throw new NotFoundError(message);
+          default:
+            throw new ApiError(message, 'API_ERROR', status);
+        }
+      }
+
+      throw new ApiError('Beklenmeyen bir hata oluştu');
+    }
+  },
+  
+  /**
+   * Önerilen bir tarife puan ve yorum verir.
+   */
+  rateRecommendation: async (request: { 
+    userId: string;
+    recommendedRecipeId: number; 
+    rating: number; 
+    comment?: string; 
+  }): Promise<void> => {
+    try {
+      await api.post('/v1/recommendations/rate', request);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Önerilen tarif puanlanamadı';
+        throw new ApiError(message, 'API_ERROR', status);
+      }
+      throw new ApiError('Beklenmeyen bir hata oluştu');
+    }
+  },
+
+  /**
+   * Önerilen bir tarifi "pişirildi/yapıldı" olarak işaretler.
+   */
+  markAsCooked: async (recommendedRecipeId: number): Promise<void> => {
+    try {
+      await api.post(`/v1/recommendations/cook/${recommendedRecipeId}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Tarif pişirildi olarak işaretlenemedi';
+
+        switch (status) {
+          case 401:
+            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          case 404:
+            throw new NotFoundError(message);
+          default:
+            throw new ApiError(message, 'API_ERROR', status);
+        }
+      }
+
+      throw new ApiError('Beklenmeyen bir hata oluştu');
+    }
+  },
+
+  /**
    * Tarif listesini backend'den getirir.
    * Response doğrudan backend liste DTO'suna hizalanır.
    */

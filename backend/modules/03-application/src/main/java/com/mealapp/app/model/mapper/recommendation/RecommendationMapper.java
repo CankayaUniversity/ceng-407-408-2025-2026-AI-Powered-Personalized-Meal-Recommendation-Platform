@@ -1,6 +1,7 @@
 package com.mealapp.app.model.mapper.recommendation;
 
 import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
+import com.mealapp.domain.recommendation.entity.Recommendation;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import org.springframework.stereotype.Component;
@@ -12,29 +13,36 @@ import java.util.Set;
 
 /**
  * Domain Entity nesneleri ile API DTO nesneleri arasındaki dönüşümleri yönetir.
- * Bu sayede Domain katmanındaki değişiklikler API katmanını doğrudan etkilemez.
  */
 @Component
 public class RecommendationMapper {
 
     /**
-     * Domain'den gelen Recipe listesini, dış dünyaya dönülecek olan DTO formatına çevirir.
+     * Domain'den gelen Recommendation nesnesini, dış dünyaya dönülecek olan DTO formatına çevirir.
      */
-    public RecommendationResponse toResponse(List<Recipe> recipes, List<String> prioritizedIngredients) {
+    public RecommendationResponse toResponse(Recommendation recommendation, List<String> inventoryIngredients) {
         RecommendationResponse response = new RecommendationResponse();
+        response.setId(recommendation.getId());
+        response.setCreatedAt(recommendation.getCreatedAt());
+        response.setCravings(recommendation.getCravings());
+        response.setAiGenerated(recommendation.isAiGenerated());
 
-        Set<String> inventoryKeys = prioritizedIngredients == null
+        Set<String> inventoryKeys = inventoryIngredients == null
                 ? Set.of()
-                : prioritizedIngredients.stream()
+                : inventoryIngredients.stream()
                 .map(this::normalizeKey)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
 
-        List<RecommendationResponse.RecipeRecommendationDto> dtos = recipes.stream()
-                .map(recipe -> {
+        List<RecommendationResponse.RecipeRecommendationDto> dtos = recommendation.getRecommendedRecipes().stream()
+                .map(rr -> {
+                    Recipe recipe = rr.getRecipe();
                     RecommendationResponse.RecipeRecommendationDto dto = new RecommendationResponse.RecipeRecommendationDto();
+                    dto.setRecommendationRecipeId(rr.getId());
                     dto.setRecipeId(recipe.getId());
                     dto.setRecipeTitle(recipe.getTitle());
-                    dto.setInsight(recipe.getAiInsight() != null ? recipe.getAiInsight() : "Diyetinize ve envanterinize uygun bir seçenek.");
+                    dto.setInsight(rr.getAiInsight() != null ? rr.getAiInsight() : "Diyetinize ve envanterinize uygun bir seçenek.");
+                    dto.setUserRating(rr.getUserRating());
+                    dto.setUserComment(rr.getUserComment());
                     dto.setMatchedIngredients(getIngredientNames(recipe).stream()
                             .filter(name -> inventoryKeys.contains(normalizeKey(name)))
                             .toList());
@@ -50,6 +58,8 @@ public class RecommendationMapper {
                     dto.setAverageRating(recipe.getAverageRating());
                     dto.setRatingCount(recipe.getRatingCount());
                     dto.setImageUrl(recipe.getImageUrl());
+                    dto.setCooked(rr.isCooked());
+                    dto.setTotalCookCount(recipe.getTotalCookCount());
                     return dto;
                 })
                 .toList();

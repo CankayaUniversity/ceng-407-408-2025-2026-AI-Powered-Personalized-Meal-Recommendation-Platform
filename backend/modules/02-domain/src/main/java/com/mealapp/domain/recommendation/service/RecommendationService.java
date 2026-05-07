@@ -2,7 +2,8 @@ package com.mealapp.domain.recommendation.service;
 
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.inventory.entity.Inventory;
-import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recommendation.entity.Recommendation;
+import com.mealapp.domain.recommendation.repository.RecommendationRepository;
 import com.mealapp.domain.recipe.service.RecipeService;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.recommendation.strategy.RecommendationStrategy;
@@ -23,25 +24,29 @@ public class RecommendationService {
     private final RecipeService recipeService;
     private final DailyConsumptionService dailyConsumptionService;
     private final RecommendationStrategy aiRecommendationStrategy;
+    private final RecommendationRepository recommendationRepository;
 
     /**
      * Kullanıcı ve envanter bilgilerine dayanarak yemek tarifleri önerir.
-     * Sonuçlar kullanıcı ID'si ve envanterdeki malzeme listesine göre önbelleğe alınır.
+     * Öneriler veritabanına kaydedilir.
      */
-    @Transactional(readOnly = true)
-    @Cacheable(
-            value = "recommendations",
-            key = "#user.id + ':' + (#user.dietType != null ? #user.dietType.name() : 'NONE') + ':' + (#user.dietaryGoal != null ? #user.dietaryGoal.name() : 'NONE') + ':' + (#user.allergies != null ? #user.allergies.hashCode() : 0) + ':' + (#user.dislikedIngredients != null ? #user.dislikedIngredients.hashCode() : 0) + ':' + (#cravings != null ? #cravings.toLowerCase() : 'none') + ':' + (#aiModel != null ? #aiModel.toLowerCase() : 'default') + ':' + #inventory.hashCode()"
-    )
-    public List<Recipe> getRecommendations(User user, List<Inventory> inventory, String cravings, String aiModel) {
+    @Transactional
+    public Recommendation getRecommendations(User user, List<Inventory> inventory, String cravings, String aiModel) {
         DailyConsumptionService.DailyNutritionSummary dailySummary = dailyConsumptionService.getDailyNutritionSummary(user.getId(), java.time.LocalDate.now());
 
-        List<Recipe> recipes = aiRecommendationStrategy.recommend(user, inventory, dailySummary, cravings, aiModel);
+        Recommendation recommendation = aiRecommendationStrategy.recommend(user, inventory, dailySummary, cravings, aiModel);
 
-        // Önerilen her tarif için besin değerlerini (Transient olsa bile) 
-        // güncelleyelim ki prompt veya response'da doğru görünsün.
-        recipes.forEach(recipeService::calculateAndSetNutrition);
+        // Önerilen her tarif için besin değerlerini güncelleyelim.
+        recommendation.getRecommendedRecipes().forEach(rr -> recipeService.calculateAndSetNutrition(rr.getRecipe()));
 
-        return recipes;
+        return recommendationRepository.save(recommendation);
+    }
+
+    /**
+     * Kullanıcının geçmiş önerilerini getirir.
+     */
+    @Transactional(readOnly = true)
+    public List<Recommendation> getRecommendationHistory(String userId) {
+        return recommendationRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }

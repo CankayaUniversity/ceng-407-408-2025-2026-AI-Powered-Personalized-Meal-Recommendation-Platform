@@ -8,6 +8,8 @@ import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
 import com.mealapp.domain.recipe.service.RecipeService;
 import com.mealapp.domain.recommendation.service.IngredientMatchService;
+import com.mealapp.domain.recommendation.entity.Recommendation;
+import com.mealapp.domain.recommendation.entity.RecommendedRecipe;
 import com.mealapp.domain.user.entity.User;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,7 +50,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     private static final TypeReference<List<PromptEngine.AiResponse>> AI_RESPONSE_TYPE = new TypeReference<>() {};
 
     @Override
-    public List<Recipe> recommend(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary, String cravings, String aiModel) {
+    public Recommendation recommend(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary, String cravings, String aiModel) {
         List<Recipe> safeRecipes = getSafeRecipes(user);
 
         List<String> dislikedIngredients = normalizeValues(user.getDislikedIngredients());
@@ -59,11 +61,18 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
 
         String finalPrompt = generateFinalPrompt(user, currentInventory, dailySummary, recipesData, normalizedCravings);
 
+        Recommendation recommendation = Recommendation.builder()
+                .user(user)
+                .cravings(cravings)
+                .aiModel(aiModel)
+                .isAiGenerated(true)
+                .build();
+
         try {
             String aiResponseRaw = promptEngine.callAi(finalPrompt, aiModel);
             if (aiResponseRaw == null || aiResponseRaw.trim().isEmpty() || "[]".equals(aiResponseRaw.trim())) {
                 log.warn("AI returned empty response for user {}, falling back.", user.getId());
-                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
+                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, recommendation);
             }
 
             // Sanitize response: Remove markdown code blocks if present
@@ -77,12 +86,12 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 aiChoices = objectMapper.readValue(sanitizedResponse, AI_RESPONSE_TYPE);
             } catch (Exception parseEx) {
                 log.error("AI response JSON parsing failed for user {}. Raw response: {}. Sanitized: {}", user.getId(), aiResponseRaw, sanitizedResponse, parseEx);
-                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
+                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, recommendation);
             }
 
             if (aiChoices == null || aiChoices.isEmpty()) {
                 log.warn("AI response could not be parsed as list for user {}, falling back.", user.getId());
-                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
+                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, recommendation);
             }
 
             Map<String, String> insightMap = aiChoices.stream()
@@ -93,25 +102,29 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                         (existing, replacement) -> existing
                 ));
 
-            List<Recipe> selectedRecipes = topRecipes.stream()
+            topRecipes.stream()
                 .filter(r -> insightMap.containsKey(r.getTitle().toLowerCase()))
-                .map(r -> {
+                .limit(FINAL_RECOMMENDATION_LIMIT)
+                .forEach(r -> {
                     String aiInsight = insightMap.get(r.getTitle().toLowerCase());
-                    r.setAiInsight(aiInsight == null || aiInsight.isBlank()
-                            ? buildFallbackInsight(r, currentInventory, dislikedIngredients, normalizedCravings, user)
-                            : aiInsight);
-                    r.setAiGenerated(true);
-                    return r;
-                })
-                .toList();
+                    RecommendedRecipe rr = RecommendedRecipe.builder()
+                            .recipe(r)
+                            .aiInsight(aiInsight == null || aiInsight.isBlank()
+                                    ? buildFallbackInsight(r, currentInventory, dislikedIngredients, normalizedCravings, user, true)
+                                    : aiInsight)
+                            .build();
+                    recommendation.addRecommendedRecipe(rr);
+                });
 
-            return selectedRecipes.isEmpty()
-                    ? buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user)
-                    : selectedRecipes.stream().limit(FINAL_RECOMMENDATION_LIMIT).toList();
+            if (recommendation.getRecommendedRecipes().isEmpty()) {
+                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, recommendation);
+            }
+
+            return recommendation;
 
         } catch (Exception e) {
             log.error("AI recommendation failed, falling back to top matched recipes", e);
-            return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
+            return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, recommendation);
         }
     }
 
@@ -229,21 +242,24 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         );
     }
 
-    private List<Recipe> buildFallbackRecommendations(List<Recipe> topRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user) {
-        return topRecipes.stream()
+    private Recommendation buildFallbackRecommendations(List<Recipe> topRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user, Recommendation recommendation) {
+        recommendation.setAiGenerated(false);
+        topRecipes.stream()
                 .limit(FINAL_RECOMMENDATION_LIMIT)
-                .map(recipe -> {
-                    recipe.setAiGenerated(false);
-                    recipe.setAiInsight(buildFallbackInsight(recipe, currentInventory, dislikedIngredients, cravings, user));
-                    return recipe;
-                })
-                .toList();
+                .forEach(recipe -> {
+                    RecommendedRecipe rr = RecommendedRecipe.builder()
+                            .recipe(recipe)
+                            .aiInsight(buildFallbackInsight(recipe, currentInventory, dislikedIngredients, cravings, user, false))
+                            .build();
+                    recommendation.addRecommendedRecipe(rr);
+                });
+        return recommendation;
     }
 
-    private String buildFallbackInsight(Recipe recipe, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user) {
+    private String buildFallbackInsight(Recipe recipe, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user, boolean aiAccessed) {
         StringBuilder insight = new StringBuilder();
 
-        if (!recipe.isAiGenerated()) {
+        if (!aiAccessed) {
             insight.append("⚠️ Yapay zeka servisine şu an erişilemiyor, sistem tarafından en uygun tarifler seçildi.\n\n");
         }
 

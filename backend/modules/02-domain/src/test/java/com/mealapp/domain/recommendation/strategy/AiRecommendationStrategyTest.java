@@ -10,6 +10,8 @@ import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
 import com.mealapp.domain.recipe.service.RecipeService;
 import com.mealapp.domain.recommendation.service.IngredientMatchService;
+import com.mealapp.domain.recommendation.entity.Recommendation;
+import com.mealapp.domain.recommendation.entity.RecommendedRecipe;
 import com.mealapp.domain.user.entity.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,12 +100,12 @@ class AiRecommendationStrategyTest {
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0, 50.0);
 
         // When
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "spicy chicken", "gemini");
+        Recommendation recommendations = strategy.recommend(user, inventory, dailySummary, "spicy chicken", "gemini");
 
         // Then
-        assertFalse(recommendations.isEmpty());
-        assertEquals(2L, recommendations.get(0).getId());
-        assertEquals("Great choice!", recommendations.get(0).getAiInsight());
+        assertFalse(recommendations.getRecommendedRecipes().isEmpty());
+        assertEquals(2L, recommendations.getRecommendedRecipes().get(0).getRecipe().getId());
+        assertEquals("Great choice!", recommendations.getRecommendedRecipes().get(0).getAiInsight());
     }
 
     @Test
@@ -125,10 +127,10 @@ class AiRecommendationStrategyTest {
 
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0,50.0);
 
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "comfort food", "gemini");
+        Recommendation recommendations = strategy.recommend(user, inventory, dailySummary, "comfort food", "gemini");
 
-        assertFalse(recommendations.isEmpty());
-        assertEquals(2L, recommendations.get(0).getId());
+        assertFalse(recommendations.getRecommendedRecipes().isEmpty());
+        assertEquals(2L, recommendations.getRecommendedRecipes().get(0).getRecipe().getId());
     }
 
     @Test
@@ -182,12 +184,12 @@ class AiRecommendationStrategyTest {
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0, 50.0);
 
         // When: User wants something WITHOUT onion (English data)
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "onion-free meal", "gemini");
+        Recommendation recommendations = strategy.recommend(user, inventory, dailySummary, "onion-free meal", "gemini");
 
         // Then: Recipe without onion should be first
-        assertFalse(recommendations.isEmpty());
-        assertEquals(11L, recommendations.get(0).getId());
-        assertTrue(recommendations.get(0).getAiInsight().contains("Yapay zeka servisine şu an erişilemiyor"));
+        assertFalse(recommendations.getRecommendedRecipes().isEmpty());
+        assertEquals(11L, recommendations.getRecommendedRecipes().get(0).getRecipe().getId());
+        assertTrue(recommendations.getRecommendedRecipes().get(0).getAiInsight().contains("Yapay zeka servisine şu an erişilemiyor"));
     }
 
     @Test
@@ -208,11 +210,11 @@ class AiRecommendationStrategyTest {
 
         // When: User wants something WITHOUT onion (Turkish data)
         // Note: Using "sogansiz" to match normalized data and testing the score directly
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "soğansız", "gemini");
+        Recommendation recommendations = strategy.recommend(user, inventory, dailySummary, "soğansız", "gemini");
 
         // Then: Recipe without onion should be first
-        assertFalse(recommendations.isEmpty());
-        assertEquals(11L, recommendations.get(0).getId(), "Recipe ID 11 (without onion) should be first");
+        assertFalse(recommendations.getRecommendedRecipes().isEmpty());
+        assertEquals(11L, recommendations.getRecommendedRecipes().get(0).getRecipe().getId(), "Recipe ID 11 (without onion) should be first");
     }
 
     private Recipe recipeWithIngredients(Long id, String title, double rating, String... ingredientNames) {

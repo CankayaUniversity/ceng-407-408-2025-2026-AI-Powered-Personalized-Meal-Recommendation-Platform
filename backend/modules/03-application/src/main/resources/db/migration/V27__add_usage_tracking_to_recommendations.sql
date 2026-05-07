@@ -1,0 +1,3 @@
+-- Add cook tracking fields
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS total_cook_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE recommended_recipes ADD COLUMN IF NOT EXISTS is_cooked BOOLEAN NOT NULL DEFAULT FALSE;

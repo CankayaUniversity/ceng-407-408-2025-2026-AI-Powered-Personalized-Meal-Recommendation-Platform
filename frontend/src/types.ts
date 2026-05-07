@@ -247,11 +247,14 @@ export interface RecommendationRequest {
 }
 
 export interface RecommendedRecipe {
+  recommendationRecipeId: number;
   recipeId: number;
   recipeTitle: string;
   insight: string;
   matchedIngredients: string[];
   missingIngredients: string[];
+  userRating?: number | null;
+  userComment?: string | null;
   calories?: number | null;
   protein?: number | null;
   carbs?: number | null;
@@ -260,11 +263,16 @@ export interface RecommendedRecipe {
   servings?: number | null;
   averageRating?: number | null;
   ratingCount?: number | null;
-  userRating?: number | null;
   imageUrl?: string | null;
+  isCooked?: boolean;
+  totalCookCount?: number;
 }
 
 export interface RecommendationResponse {
+  id: number;
+  createdAt: string;
+  cravings?: string | null;
+  isAiGenerated: boolean;
   recommendedRecipes: RecommendedRecipe[];
 }
 

@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Boxes,
+  Calendar,
   CheckCircle2,
   ChefHat,
   Clock3,
   Cpu,
   Flame,
+  History,
   Loader2,
   MapPin,
   MessageSquareText,
@@ -29,7 +31,8 @@ import {
   type InventoryGroup, 
   type RecommendedRecipe, 
   type RecipeRatingResponse,
-  type Inventory
+  type Inventory,
+  type RecommendationResponse
 } from '../../types';
 
 type RatingDraft = {
@@ -133,6 +136,7 @@ const RecommendationPage: React.FC = () => {
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [selectedAiModel, setSelectedAiModel] = useState<string>('GEMINI');
   const [recommendations, setRecommendations] = useState<RecommendedRecipe[]>([]);
+  const [history, setHistory] = useState<RecommendationResponse[]>([]);
   const [cravings, setCravings] = useState('');
   const [loading, setLoading] = useState(true);
   const [recommending, setRecommending] = useState(false);
@@ -180,8 +184,8 @@ const RecommendationPage: React.FC = () => {
         // Profil kritik degilse devam edebiliriz ama genelde kritiktir
       }
 
-      // 2. Envanter ve Rating verilerini paralel yukle
-      const [inventoryGroups, userRatings] = await Promise.all([
+      // 2. Envanter, Rating ve Geçmiş verilerini paralel yukle
+      const [inventoryGroups, userRatings, recommendationHistory] = await Promise.all([
         inventoryService.getInventoryGroups().catch((err) => {
           console.error('Inventory groups load error:', err);
           return [] as InventoryGroup[];
@@ -189,6 +193,10 @@ const RecommendationPage: React.FC = () => {
         recipeService.getRatingsByUser(user.id).catch((error) => {
           console.error('Ratings load error:', error);
           return [] as RecipeRatingResponse[];
+        }),
+        recipeService.getRecommendationHistory(user.id).catch((error) => {
+          console.error('History load error:', error);
+          return [] as RecommendationResponse[];
         })
       ]);
 
@@ -199,6 +207,7 @@ const RecommendationPage: React.FC = () => {
 
       setGroups(inventoryGroups);
       setRatingsByRecipe(nextRatings);
+      setHistory(recommendationHistory);
       
       // Select the first group if none selected or current not in list
       let nextGroupId = selectedGroupId;
@@ -259,6 +268,7 @@ const RecommendationPage: React.FC = () => {
       });
 
       setRecommendations(response.recommendedRecipes);
+      setHistory((current) => [response, ...current]);
       setRatingDrafts((current: Record<number, RatingDraft>) => {
         const nextDrafts = { ...current };
 
@@ -294,12 +304,24 @@ const RecommendationPage: React.FC = () => {
     updateRatingDraft(recipe.recipeId, { saving: true, success: null, error: null });
 
     try {
-      const saved = await recipeService.rateRecipe({
+      // 1. Öneri geçmişini puanla (Bu aynı zamanda backend'de tarif puanını da tetikliyor)
+      await recipeService.rateRecommendation({
         userId: user.id,
-        recipeId: recipe.recipeId,
+        recommendedRecipeId: recipe.recommendationRecipeId,
         rating: draft.rating,
         comment: draft.comment.trim() || undefined
       });
+
+      // 2. RecipeRating local state'ini de güncellemek için rateRecipe sonucunu simüle et veya fetch et
+      // Ancak backend zaten ikisini beraber işlediği için sadece UI state'lerini güncellememiz yeterli.
+      const saved = {
+        id: Math.random(), // Geçici ID
+        userId: user.id,
+        recipeId: recipe.recipeId,
+        rating: draft.rating * 2, // Backend 2 ile çarpıyor
+        comment: draft.comment.trim() || undefined,
+        createdAt: new Date().toISOString()
+      } as RecipeRatingResponse;
 
       setRatingsByRecipe((current) => ({
         ...current,
@@ -324,8 +346,37 @@ const RecommendationPage: React.FC = () => {
     }
   };
 
-  const handleCookRecipe = (recipe: RecommendedRecipe) => {
-    // Convert RecommendedRecipe to RecipeListItem for SmartConsumptionPanel
+  const handleCookRecipe = async (recipe: RecommendedRecipe) => {
+    // 1. Backend'e pişirildi olarak işaretle (eğer henüz işaretlenmemişse)
+    if (!recipe.isCooked) {
+      try {
+        await recipeService.markAsCooked(recipe.recommendationRecipeId);
+        
+        // Local state'i güncelle (recommendations listesinde)
+        setRecommendations(prev => prev.map(r => 
+          r.recommendationRecipeId === recipe.recommendationRecipeId 
+            ? { ...r, isCooked: true, totalCookCount: (r.totalCookCount || 0) + 1 } 
+            : r
+        ));
+
+        // History listesini de güncelle (isteğe bağlı ama tutarlılık için iyi olur)
+        setHistory(prev => prev.map(h => ({
+          ...h,
+          recommendedRecipes: h.recommendedRecipes.map(r => 
+            r.recommendationRecipeId === recipe.recommendationRecipeId 
+              ? { ...r, isCooked: true, totalCookCount: (r.totalCookCount || 0) + 1 } 
+              : r
+          )
+        })));
+
+        showToast(t('toasts.recommendations.cookMarked', { defaultValue: 'Tarif pişirildi olarak işaretlendi ve istatistiklere eklendi!' }), 'success');
+      } catch (error) {
+        console.error('Cook mark error:', error);
+        // Hata olsa bile devam edebiliriz veya kullanıcıya bildirebiliriz
+      }
+    }
+
+    // 2. Tüketim panelini aç (Mevcut davranış)
     const recipeListItem = {
       id: recipe.recipeId,
       title: recipe.recipeTitle,
@@ -781,11 +832,24 @@ const RecommendationPage: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleCookRecipe(recipe)}
-                                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-moss-forest px-4 py-3.5 font-bold text-white shadow-lg shadow-moss-forest/20 transition-all hover:scale-[1.02] hover:bg-moss-forest/90 dark:bg-moss-sage dark:text-espresso-midnight"
+                                  className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3.5 font-bold shadow-lg transition-all hover:scale-[1.02] ${
+                                    recipe.isCooked 
+                                      ? 'bg-moss-sage/20 text-moss-forest border border-moss-sage/30 cursor-default' 
+                                      : 'bg-moss-forest text-white hover:bg-moss-forest/90 dark:bg-moss-sage dark:text-espresso-midnight shadow-moss-forest/20'
+                                  }`}
                                 >
-                                  <UtensilsCrossed size={18} />
-                                  {t('recommendations.results.insight.cook')}
+                                  {recipe.isCooked ? <CheckCircle2 size={18} /> : <UtensilsCrossed size={18} />}
+                                  {recipe.isCooked 
+                                    ? t('recommendations.results.insight.cooked', { defaultValue: 'Bu Tarifi Yaptınız!' }) 
+                                    : t('recommendations.results.insight.cook')}
                                 </button>
+                                {recipe.totalCookCount !== undefined && recipe.totalCookCount > 0 && (
+                                  <div className="mt-2 text-center">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/40 dark:text-alabaster/40">
+                                      {t('recommendations.results.insight.usageCount', { count: recipe.totalCookCount, defaultValue: `Bu tarif toplam ${recipe.totalCookCount} kez yapıldı` })}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -892,6 +956,70 @@ const RecommendationPage: React.FC = () => {
                 );
               })}
             </div>
+          </div>
+        )}
+      </section>
+
+      {/* 5. En Alt: Geçmiş Öneriler */}
+      <section className="mt-12 space-y-6 pb-12">
+        <div className="flex items-center gap-3">
+          <div className="rounded-2xl bg-espresso-midnight/10 p-3 text-espresso-midnight dark:bg-white/10 dark:text-alabaster">
+            <History size={20} />
+          </div>
+          <div>
+            <p className="meal-overline">{t('recommendations.history.overline', { defaultValue: 'Önceki Seçimler' })}</p>
+            <h2 className="meal-section-title mt-1 text-2xl">{t('recommendations.history.title', { defaultValue: 'Öneri Geçmişi' })}</h2>
+          </div>
+        </div>
+
+        {history.length === 0 ? (
+          <div className="meal-card border-dashed border-card-border p-8 text-center bg-card/30">
+            <p className="text-sm text-foreground-muted italic">{t('recommendations.history.empty', { defaultValue: 'Henüz bir öneri geçmişiniz bulunmuyor.' })}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {history.map((item) => (
+              <div 
+                key={item.id} 
+                className="meal-card group cursor-pointer border-card-border bg-white/50 p-5 transition-all hover:border-terracotta/30 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10"
+                onClick={() => {
+                  setRecommendations(item.recommendedRecipes);
+                  setCravings(item.cravings || '');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-terracotta uppercase">
+                    <Calendar size={12} />
+                    {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </div>
+                  {item.isAiGenerated && (
+                    <div className="rounded-full bg-primary/10 p-1 text-primary" title="AI Tarafından Oluşturuldu">
+                      <Cpu size={12} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-serif text-lg font-bold text-foreground line-clamp-1">
+                    {item.recommendedRecipes.map(r => r.recipeTitle).join(', ')}
+                  </h4>
+                  {item.cravings && (
+                    <p className="text-xs text-foreground-muted line-clamp-2 italic">
+                      "{item.cravings}"
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between pt-2 border-t border-card-border/50">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+                      {t('recommendations.history.recipeCount', { count: item.recommendedRecipes.length, defaultValue: `${item.recommendedRecipes.length} Tarif` })}
+                    </span>
+                    <span className="text-[10px] font-bold text-terracotta group-hover:underline">
+                      {t('recommendations.history.viewDetail', { defaultValue: 'Detayları Gör' })} →
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </section>

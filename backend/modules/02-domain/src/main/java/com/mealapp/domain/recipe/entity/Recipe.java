@@ -106,6 +106,13 @@ public class Recipe extends BaseEntity {
     private RecipeStatus status = RecipeStatus.APPROVED;
 
     /**
+     * Tarifin toplam pişirilme/yapılma sayısı.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer totalCookCount = 0;
+
+    /**
      * Eğer bu tarif bir güncelleme ise (APPROVED bir tarifin yeni versiyonu), 
      * orijinal tarifin ID'sini tutar.
      */
@@ -123,19 +130,6 @@ public class Recipe extends BaseEntity {
     public void markAsUpdated() {
         // Bu metot, gelecekte otomatik tetikleme mekanizmaları için kanca (hook) olarak kullanılabilir.
     }
-
-    /**
-     * AI tarafından bu tarif için üretilen özel içgörü (Geçici/Dinamik).
-     */
-    @Transient
-    private String aiInsight;
-
-    /**
-     * Önerinin AI tarafından mı yoksa fallback mekanizması tarafından mı üretildiğini belirtir.
-     */
-    @Transient
-    @Builder.Default
-    private boolean isAiGenerated = true;
 
     public enum Difficulty {
         EASY, MEDIUM, HARD

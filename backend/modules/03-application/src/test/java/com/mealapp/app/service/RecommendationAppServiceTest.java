@@ -6,6 +6,10 @@ import com.mealapp.app.model.mapper.recommendation.RecommendationMapper;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
+import com.mealapp.domain.recipe.service.RecipeRatingService;
+import com.mealapp.domain.recommendation.entity.Recommendation;
+import com.mealapp.domain.recommendation.entity.RecommendedRecipe;
+import com.mealapp.domain.recommendation.repository.RecommendedRecipeRepository;
 import com.mealapp.domain.recommendation.service.RecommendationService;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
@@ -38,6 +42,10 @@ class RecommendationAppServiceTest {
     private IngredientRepository ingredientRepository;
     @Mock
     private RecommendationMapper recommendationMapper;
+    @Mock
+    private RecommendedRecipeRepository recommendedRecipeRepository;
+    @Mock
+    private RecipeRatingService recipeRatingService;
 
     @InjectMocks
     private RecommendationAppService recommendationAppService;
@@ -53,15 +61,42 @@ class RecommendationAppServiceTest {
         User user = User.builder().id("user-1").build();
         when(userService.findById("user-1")).thenReturn(Optional.of(user));
         when(ingredientRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
-        when(recommendationService.getRecommendations(any(), anyList(), any())).thenReturn(List.of(new Recipe()));
-        when(recommendationMapper.toResponse(anyList(), anyList())).thenReturn(new RecommendationResponse());
+        Recommendation recommendation = new Recommendation();
+        when(recommendationService.getRecommendations(any(), anyList(), any(), any())).thenReturn(recommendation);
+        when(recommendationMapper.toResponse(any(), anyList())).thenReturn(new RecommendationResponse());
 
         RecommendationResponse response = recommendationAppService.getRecommendations(request);
 
         assertNotNull(response);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(recommendationService).getRecommendations(userCaptor.capture(), anyList(), eq("Something spicy"));
+        verify(recommendationService).getRecommendations(userCaptor.capture(), anyList(), eq("Something spicy"), any());
         assertEquals(List.of("Cilantro"), userCaptor.getValue().getDislikedIngredients());
+    }
+    @Test
+    void shouldRateRecommendation() {
+        // Given
+        String userId = "user-1";
+        Long rrId = 1L;
+        Long recipeId = 100L;
+        Integer rating = 4;
+        String comment = "Great!";
+
+        Recipe recipe = Recipe.builder().id(recipeId).build();
+        RecommendedRecipe rr = RecommendedRecipe.builder()
+                .id(rrId)
+                .recipe(recipe)
+                .build();
+
+        when(recommendedRecipeRepository.findById(rrId)).thenReturn(Optional.of(rr));
+
+        // When
+        recommendationAppService.rateRecommendation(userId, rrId, rating, comment);
+
+        // Then
+        assertEquals(4, rr.getUserRating());
+        assertEquals(comment, rr.getUserComment());
+        verify(recipeRatingService).rateRecipe(userId, recipeId, 8, comment); // 4 * 2 = 8
+        verify(recommendedRecipeRepository).save(rr);
     }
 }
