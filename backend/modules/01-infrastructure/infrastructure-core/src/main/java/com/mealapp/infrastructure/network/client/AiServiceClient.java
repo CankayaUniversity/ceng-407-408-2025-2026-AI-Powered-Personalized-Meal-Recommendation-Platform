@@ -41,17 +41,35 @@ public class AiServiceClient {
             backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public String callAi(String prompt) {
-        AiProvider provider = providers.get(activeProviderType);
+        return callAi(prompt, activeProviderType);
+    }
+
+    /**
+     * Belirtilen AI sağlayıcısına istek atar.
+     */
+    @Retryable(
+            retryFor = { Exception.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
+    public String callAi(String prompt, String providerType) {
+        String targetProvider = (providerType == null || providerType.isBlank()) ? activeProviderType : providerType.toUpperCase();
+        AiProvider provider = providers.get(targetProvider);
         
         if (provider == null) {
-            log.error("Active AI provider '{}' not found. Falling back to any available or empty.", activeProviderType);
+            log.error("AI provider '{}' not found. Falling back to active provider '{}'.", targetProvider, activeProviderType);
+            provider = providers.get(activeProviderType);
+        }
+
+        if (provider == null) {
+            log.error("No valid AI provider found. Falling back to any available or empty.");
             return providers.values().stream()
                     .findFirst()
                     .map(p -> p.call(prompt))
                     .orElse("[]");
         }
 
-        log.debug("Calling AI provider: {}", activeProviderType);
+        log.debug("Calling AI provider: {}", provider.getType());
         return provider.call(prompt);
     }
 }

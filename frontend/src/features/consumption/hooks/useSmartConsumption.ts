@@ -26,13 +26,14 @@ import {
 } from '../utils/SmartConsumption.utils';
 import {
   type Recipe,
+  type RecipeIngredient,
   type RecipeListItem,
   type Ingredient,
   MealType
 } from '../../../types';
 
 
-export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
+export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRecipe?: any) => {
   const { t } = useTranslation();
   const { authenticated, user } = useAuth();
   const { showToast } = useToast();
@@ -75,6 +76,13 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     () => inventoryGroups.find((group) => String(group.id) === selectedLocationId) ?? null,
     [inventoryGroups, selectedLocationId]
   );
+
+  // Auto-select initial recipe if provided
+  useEffect(() => {
+    if (initialRecipe && authenticated) {
+      handleRecipeSelect(initialRecipe);
+    }
+  }, [initialRecipe, authenticated]);
 
   useEffect(() => {
     if (authenticated && user && selectedLocationId && selectedGroup) {
@@ -716,6 +724,114 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     };
   }, [ingredientSpecificWeights, unitWeights, conversions]);
 
+  const inventoryDeductions = useMemo(() => {
+    if (isOutside) return [];
+    const summary: Record<number, { name: string; amount: number; unit: string; grams: number; id: number }> = {};
+    const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
+    
+    allItems.forEach(item => {
+      if (item.kind === 'INGREDIENT') {
+        const id = item.ingredient.id;
+        if (!summary[id]) {
+          summary[id] = { 
+            id,
+            name: item.ingredient.name, 
+            amount: 0, 
+            unit: item.unit || item.ingredient.preferredUnit || (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM'),
+            grams: 0 
+          };
+        }
+        summary[id].amount += (item.portion.amount || 0);
+        summary[id].grams += item.portion.grams;
+      } else {
+        const recipe = recipeDetailsMap[item.recipe.id];
+        if (recipe?.ingredients) {
+          recipe.ingredients.forEach((ri: RecipeIngredient) => {
+            const id = ri.ingredientId;
+            const name = ri.ingredient?.name || (ri.ingredientId && stockedIngredients.find((si: any) => si.id === ri.ingredientId)?.name) || `Ingredient #${id}`;
+            if (!summary[id]) {
+              summary[id] = { 
+                id,
+                name, 
+                amount: 0, 
+                unit: ri.unit || 'g', 
+                grams: 0 
+              };
+            }
+            summary[id].amount += (ri.amount || ri.grams) * item.portion.multiplier;
+            summary[id].grams += ri.grams * item.portion.multiplier;
+          });
+        }
+      }
+    });
+    return Object.values(summary).sort((a, b) => a.name.localeCompare(b.name, 'tr-TR'));
+  }, [selectedItems, memberSelections, recipeDetailsMap, isOutside]);
+
+  const inventoryStatus = useMemo(() => {
+    if (isOutside || !selectedGroup) return { isSufficient: true, missingIngredients: [] };
+    
+    const missing: Array<{ id: number; name: string; required: number; available: number }> = [];
+    
+    // Inventory mapped by ingredient ID
+    const inventoryMap: Record<number, number> = {};
+    (selectedGroup.items || []).forEach((item: any) => {
+      if (item.ingredient?.id) {
+        inventoryMap[item.ingredient.id] = (inventoryMap[item.ingredient.id] || 0) + (item.totalGrams || 0);
+      }
+    });
+
+    inventoryDeductions.forEach(deduction => {
+      const available = inventoryMap[deduction.id] || 0;
+      if (available < deduction.grams) {
+        missing.push({
+          id: deduction.id,
+          name: deduction.name,
+          required: deduction.grams,
+          available
+        });
+      }
+    });
+
+    return {
+      isSufficient: missing.length === 0,
+      missingIngredients: missing
+    };
+  }, [inventoryDeductions, selectedGroup, isOutside]);
+
+  const getItemInventoryStatus = useCallback((item: SelectedConsumptionItem) => {
+    if (isOutside || !selectedGroup) return { isSufficient: true, missing: [] };
+
+    const inventoryMap: Record<number, number> = {};
+    (selectedGroup.items || []).forEach((invItem: any) => {
+      if (invItem.ingredient?.id) {
+        inventoryMap[invItem.ingredient.id] = (inventoryMap[invItem.ingredient.id] || 0) + (invItem.totalGrams || 0);
+      }
+    });
+
+    const missing: string[] = [];
+    if (item.kind === 'INGREDIENT') {
+      const available = inventoryMap[item.ingredient.id] || 0;
+      if (available < item.portion.grams) {
+        missing.push(item.ingredient.name);
+      }
+    } else {
+      const recipe = recipeDetailsMap[item.recipe.id];
+      if (recipe?.ingredients) {
+        recipe.ingredients.forEach((ri: RecipeIngredient) => {
+          const available = inventoryMap[ri.ingredientId] || 0;
+          if (available < (ri.grams * item.portion.multiplier)) {
+            missing.push(ri.ingredient?.name || `Ingredient #${ri.ingredientId}`);
+          }
+        });
+      }
+    }
+
+    return {
+      isSufficient: missing.length === 0,
+      missing
+    };
+  }, [selectedGroup, isOutside, recipeDetailsMap]);
+
   return {
     user,
     inventoryGroups,
@@ -763,6 +879,9 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void) => {
     ingredientSpecificWeights,
     recipeDetailsMap,
     conversions,
-    hasCompletedIngredientSearch: !!deferredIngredientQuery.trim() && !searching
+    hasCompletedIngredientSearch: !!deferredIngredientQuery.trim() && !searching,
+    inventoryDeductions,
+    inventoryStatus,
+    getItemInventoryStatus
   };
 };

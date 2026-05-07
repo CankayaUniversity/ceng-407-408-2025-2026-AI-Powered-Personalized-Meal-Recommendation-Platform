@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Minus, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Minus, Plus, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { 
   type SelectedConsumptionItem, 
   type SelectedIngredientItem,
@@ -27,6 +27,7 @@ interface SelectedItemsListProps {
   onManualPortionUpdate: (key: string, ingredient: Ingredient, qty: string, unit: string, userId?: string) => void;
   individualPreviews?: Record<string, { calories: number; protein: number; carbs: number; fat: number }>;
   conversions?: Record<string, { list: any[]; loading: boolean }>;
+  getItemInventoryStatus?: (item: SelectedConsumptionItem) => { isSufficient: boolean; missing: string[] };
   userId?: string;
   title?: string;
 }
@@ -45,11 +46,29 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
   onManualPortionUpdate,
   individualPreviews,
   conversions,
+  getItemInventoryStatus,
   userId,
   title
 }) => {
   const { t } = useTranslation();
   if (selectedItems.length === 0) return null;
+
+  const InventoryWarning: React.FC<{ item: SelectedConsumptionItem }> = ({ item }) => {
+    const status = getItemInventoryStatus?.(item);
+    if (!status || status.isSufficient) return null;
+
+    return (
+      <div className="mt-2 flex items-start gap-2 rounded-xl bg-terracotta/5 border border-terracotta/10 px-3 py-2 text-terracotta">
+        <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-tight leading-none mb-1">Stock Shortage</p>
+          <p className="text-[10px] opacity-80 leading-tight">
+            Missing: {status.missing.join(', ')}
+          </p>
+        </div>
+      </div>
+    );
+  };
 
   const ConversionPreview: React.FC<{ itemKey: string; item: SelectedConsumptionItem }> = ({ itemKey, item }) => {
     const data = conversions?.[itemKey];
@@ -122,6 +141,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                     {getSelectedItemCategory(item)}
                   </span>
                 </div>
+                <InventoryWarning item={item} />
               </div>
               <button
                 type="button"

@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState } from 'react';
 
 type UIContextType = {
     isConsumptionOpen: boolean;
-    openConsumption: () => void;
+    consumptionInitialRecipe: any | null;
+    openConsumption: (recipe?: any) => void;
     closeConsumption: () => void;
     isSettingsOpen: boolean;
     openSettings: () => void;
@@ -24,8 +25,15 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isConsumptionOpen, setIsConsumptionOpen] = useState(false);
-    const openConsumption = () => setIsConsumptionOpen(true);
-    const closeConsumption = () => setIsConsumptionOpen(false);
+    const [consumptionInitialRecipe, setConsumptionInitialRecipe] = useState<any | null>(null);
+    const openConsumption = (recipe?: any) => {
+        setConsumptionInitialRecipe(recipe || null);
+        setIsConsumptionOpen(true);
+    };
+    const closeConsumption = () => {
+        setIsConsumptionOpen(false);
+        setConsumptionInitialRecipe(null);
+    };
 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const openSettings = () => setIsSettingsOpen(true);
@@ -59,7 +67,7 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
     return (
         <UIContext.Provider value={{ 
-            isConsumptionOpen, openConsumption, closeConsumption,
+            isConsumptionOpen, consumptionInitialRecipe, openConsumption, closeConsumption,
             isSettingsOpen, openSettings, closeSettings,
             isUnitConverterOpen, openUnitConverter, closeUnitConverter,
             isRecipeModalOpen, recipeToEdit, openRecipeModal, closeRecipeModal,

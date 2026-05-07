@@ -21,6 +21,8 @@ public class RecommendationResponse {
         private Integer preparationTimeMinutes;
         private Integer servings;
         private Double averageRating;
+        private Integer ratingCount;
+        private Double userRating;
         private String imageUrl;
     }
 }

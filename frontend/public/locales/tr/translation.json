@@ -447,7 +447,7 @@
       "other": "Diğer"
     },
     "activity": {
-      "sedentary": "Sedanter",
+      "sedentary": "Hareketsiz (Sedanter)",
       "lightlyActive": "Hafif Aktif",
       "moderatelyActive": "Orta Aktif",
       "veryActive": "Çok Aktif",
@@ -656,6 +656,12 @@
     "addToInventory": "ENVANTERE EKLE"
   },
   "consumption": {
+    "mealType": {
+      "breakfast": "Kahvaltı",
+      "lunch": "Öğle Yemeği",
+      "dinner": "Akşam Yemeği",
+      "snack": "Atıştırmalık"
+    },
     "location": {
       "title": "Nerede ve hangi öğünde yediniz?",
       "outside": "Dışarıda"

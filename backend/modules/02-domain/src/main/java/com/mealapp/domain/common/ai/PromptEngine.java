@@ -14,6 +14,11 @@ public interface PromptEngine {
     String callAi(String prompt);
 
     /**
+     * Belirli bir model ile AI servisine istek atar.
+     */
+    String callAi(String prompt, String aiModel);
+
+    /**
      * AI'dan dönen JSON cevabını (recipeTitle ve insight) modelleyen yardımcı sınıf.
      */
     @lombok.Data

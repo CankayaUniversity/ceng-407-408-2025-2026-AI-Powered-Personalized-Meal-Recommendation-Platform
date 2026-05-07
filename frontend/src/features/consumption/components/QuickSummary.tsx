@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Soup, UtensilsCrossed, MapPin, Sparkles, Loader2 } from 'lucide-react';
+import { Soup, UtensilsCrossed, MapPin, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import { 
   type EntryMode, 
   type NutritionPreview, 
@@ -18,7 +18,8 @@ interface QuickSummaryProps {
   entryMode: EntryMode;
   nutritionPreview: NutritionPreview | null;
   memberSummaryRows: Array<{ name: string; calories: number; protein: number; carbs: number; fat: number }>;
-  inventoryDeductions: Array<{ name: string; grams: number }>;
+  inventoryDeductions: Array<{ id: number; name: string; amount: number; unit: string; grams: number }>;
+  inventoryStatus?: { isSufficient: boolean; missingIngredients: Array<{ id: number; name: string; required: number; available: number }> };
   isOutside: boolean;
   selectedGroup: InventoryGroup | null;
   submitting: boolean;
@@ -33,6 +34,7 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
   nutritionPreview,
   memberSummaryRows,
   inventoryDeductions,
+  inventoryStatus,
   isOutside,
   selectedGroup,
   submitting,
@@ -104,18 +106,71 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
       )}
 
       {inventoryDeductions.length > 0 && (
-        <div className="mt-6 rounded-[1.8rem] bg-moss-sage/5 border border-moss-sage/20 p-5 dark:bg-moss-sage/10">
-          <div className="flex items-center gap-2 mb-3">
-            <MapPin size={16} className="text-moss-sage" />
-            <span className="text-[11px] uppercase tracking-[0.18em] font-bold text-moss-forest/70 dark:text-moss-sage/80">{t('consumption.summary.deductionTitle')}</span>
+        <div className={`mt-6 rounded-[1.8rem] border p-5 ${
+          inventoryStatus?.isSufficient === false 
+            ? 'bg-terracotta/5 border-terracotta/20 dark:bg-terracotta/10' 
+            : 'bg-moss-sage/5 border-moss-sage/20 dark:bg-moss-sage/10'
+        }`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className={inventoryStatus?.isSufficient === false ? 'text-terracotta' : 'text-moss-sage'} />
+              <span className={`text-[11px] uppercase tracking-[0.18em] font-bold ${
+                inventoryStatus?.isSufficient === false 
+                  ? 'text-terracotta/70 dark:text-terracotta/80' 
+                  : 'text-moss-forest/70 dark:text-moss-sage/80'
+              }`}>
+                {t('consumption.summary.deductionTitle')}
+              </span>
+            </div>
+            {inventoryStatus?.isSufficient === false && (
+              <div className="flex items-center gap-1.5 text-terracotta px-3 py-1 bg-terracotta/10 rounded-full animate-pulse">
+                <AlertTriangle size={12} />
+                <span className="text-[10px] font-black uppercase tracking-tighter">Stock Shortage</span>
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
-            {inventoryDeductions.map((d, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs shadow-sm border border-moss-sage/10">
-                <span className="font-semibold text-foreground/80">{d.name}</span>
-                <span className="text-moss-forest dark:text-moss-sage font-mono">{d.grams >= 1000 ? `${(d.grams/1000).toFixed(1)}kg` : `${Math.round(d.grams)}g`}</span>
-              </div>
-            ))}
+            {inventoryDeductions.map((d, i) => {
+              const isMissing = inventoryStatus?.missingIngredients.find(m => m.id === d.id);
+              
+              // Formatting logic for amount and unit
+              const isGramOrMl = d.unit.toLowerCase() === 'gram' || d.unit.toLowerCase() === 'g' || d.unit.toLowerCase() === 'ml';
+              let displayAmount = d.amount;
+              let displayUnit = d.unit;
+
+              if (isGramOrMl) {
+                if (d.amount >= 1000) {
+                  displayAmount = d.amount / 1000;
+                  displayUnit = d.unit.toLowerCase() === 'ml' ? 'L' : 'kg';
+                } else {
+                  displayAmount = Math.round(d.amount);
+                  displayUnit = d.unit.toLowerCase() === 'ml' ? 'ml' : 'g';
+                }
+              } else {
+                displayAmount = Number(d.amount.toFixed(1).replace(/\.0$/, ''));
+              }
+
+              return (
+                <div 
+                  key={i} 
+                  className={`flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs shadow-sm border ${
+                    isMissing ? 'border-terracotta/30 ring-1 ring-terracotta/10' : 'border-moss-sage/10'
+                  }`}
+                >
+                  <span className={`font-semibold ${isMissing ? 'text-terracotta' : 'text-foreground/80'}`}>{d.name}</span>
+                  <span className={`${
+                    isMissing ? 'text-terracotta font-black' : 'text-moss-forest dark:text-moss-sage font-mono'
+                  }`}>
+                    {displayAmount}{displayUnit}
+                    {isMissing && (
+                      <span className="ml-1 opacity-60 font-normal">
+                        (Stock: {isMissing.available >= 1000 ? `${(isMissing.available/1000).toFixed(1)}kg` : `${Math.round(isMissing.available)}g`})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

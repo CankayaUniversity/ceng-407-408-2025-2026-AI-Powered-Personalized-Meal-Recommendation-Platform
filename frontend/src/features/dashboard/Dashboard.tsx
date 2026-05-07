@@ -161,8 +161,16 @@ const Dashboard: React.FC = () => {
 
   const profileSignals = useMemo(() => {
     const signals: string[] = [];
-    if (profile?.dietType && profile.dietType !== 'NONE') signals.push(t(`dashboard.dietType.${profile.dietType}`));
-    if (profile?.dietaryGoal) signals.push(t(`dashboard.dietaryGoal.${profile.dietaryGoal}`));
+    if (profile?.dietType && profile.dietType !== 'NONE') {
+      const label = t(`dashboard.dietType.${profile.dietType}`, 
+        profile.dietType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()));
+      signals.push(label);
+    }
+    if (profile?.dietaryGoal) {
+      const label = t(`dashboard.dietaryGoal.${profile.dietaryGoal}`, 
+        profile.dietaryGoal.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()));
+      signals.push(label);
+    }
     profile?.allergies?.slice(0, 2).forEach((a) => signals.push(`${a}`));
     return signals.slice(0, 4);
   }, [profile, t]);
@@ -255,7 +263,7 @@ const Dashboard: React.FC = () => {
               { label: t('dashboard.stats.meals'), val: dailySummary?.totalMeals || 0, icon: UtensilsCrossed },
               { label: t('dashboard.stats.criticalStock'), val: inventoryMetrics.totalLowItems, icon: AlertCircle, color: 'text-terracotta' },
               { label: t('dashboard.stats.bmiValue'), val: profile?.bmi || '---', icon: Activity, color: bmiStatus?.color },
-              { label: t('dashboard.stats.activeGoal'), val: profile?.dietaryGoal ? t(`dashboard.dietaryGoal.${profile.dietaryGoal}`) : '---', icon: Target }
+              { label: t('dashboard.stats.activeGoal'), val: profile?.dietaryGoal ? t(`dashboard.dietaryGoal.${profile.dietaryGoal}`, profile.dietaryGoal.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())) : '---', icon: Target }
             ].map((stat, i) => (
                 <div key={i} className="bg-background/50 dark:bg-white/5 border border-card-border backdrop-blur-md rounded-3xl p-5 group hover:bg-primary/5 transition-all">
                   <p className="text-[10px] uppercase tracking-widest text-foreground-muted mb-2 flex items-center gap-2 font-bold">

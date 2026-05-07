@@ -10,6 +10,7 @@ import { ConsoleLoggerService } from './infrastructure/services/logging/ConsoleL
 import { AuthContextProvider } from './infrastructure/auth/AuthContextProvider';
 import { ThemeProvider } from './infrastructure/theme/ThemeContext';
 import { ToastProvider } from './shared/context/ToastContext'; // Yeni Eklenen
+import { DefinitionProvider } from './infrastructure/ui/DefinitionContext';
 import AuthGate from './infrastructure/auth/AuthGate';
 import PrivateRoute from './components/PrivateRoute';
 import MainLayout from './shared/layout/MainLayout';
@@ -69,9 +70,10 @@ const App: React.FC = () => {
         <ThemeProvider>
           <ToastProvider> {/* Toast sistemi tüm uygulama için aktif */}
             <AuthContextProvider>
-              <AuthGate>
-                <Router>
-                  <Routes>
+              <DefinitionProvider>
+                <AuthGate>
+                  <Router>
+                    <Routes>
                     <Route path="/" element={<HomeRedirect />} />
                     <Route
                         path="/about"
@@ -161,7 +163,8 @@ const App: React.FC = () => {
                       />
                     </Routes>
                 </Router>
-              </AuthGate>
+                </AuthGate>
+              </DefinitionProvider>
             </AuthContextProvider>
           </ToastProvider>
         </ThemeProvider>

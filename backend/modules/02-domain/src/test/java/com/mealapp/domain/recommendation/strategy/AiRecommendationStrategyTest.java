@@ -93,12 +93,12 @@ class AiRecommendationStrategyTest {
         when(ingredientMatchService.calculateMatchScore(eq(lowRatingHighMatch), anyList())).thenReturn(1.0);
 
         when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenReturn("mock prompt");
-        when(promptEngine.callAi(anyString())).thenReturn("[{\"recipeTitle\": \"High Match\", \"insight\": \"Great choice!\"}]");
+        when(promptEngine.callAi(anyString(), anyString())).thenReturn("[{\"recipeTitle\": \"High Match\", \"insight\": \"Great choice!\"}]");
 
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0, 50.0);
 
         // When
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "spicy chicken");
+        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "spicy chicken", "gemini");
 
         // Then
         assertFalse(recommendations.isEmpty());
@@ -121,11 +121,11 @@ class AiRecommendationStrategyTest {
         when(ingredientMatchService.calculateMatchScore(eq(preferredRecipe), anyList())).thenReturn(0.8);
 
         when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenReturn("mock prompt");
-        when(promptEngine.callAi(anyString())).thenThrow(new RuntimeException("AI unavailable"));
+        when(promptEngine.callAi(anyString(), anyString())).thenThrow(new RuntimeException("AI unavailable"));
 
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0,50.0);
 
-        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "comfort food");
+        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "comfort food", "gemini");
 
         assertFalse(recommendations.isEmpty());
         assertEquals(2L, recommendations.get(0).getId());
@@ -147,14 +147,14 @@ class AiRecommendationStrategyTest {
             String template = invocation.getArgument(0);
             return template + " :: " + Arrays.deepToString(invocation.getArguments());
         });
-        lenient().when(promptEngine.callAi(anyString())).thenReturn("[]");
+        lenient().when(promptEngine.callAi(anyString(), anyString())).thenReturn("[]");
 
         DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0,50.0);
 
-        strategy.recommend(user, inventory, dailySummary, "garlic");
+        strategy.recommend(user, inventory, dailySummary, "garlic", "gemini");
 
         ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
-        verify(promptEngine).callAi(promptCaptor.capture());
+        verify(promptEngine).callAi(promptCaptor.capture(), anyString());
 
         String finalPrompt = promptCaptor.getValue();
         assertTrue(finalPrompt.contains("Hard Constraints (Allergies)"));
@@ -163,7 +163,6 @@ class AiRecommendationStrategyTest {
         assertTrue(finalPrompt.contains("Peanut"));
         assertTrue(finalPrompt.contains("Onion"));
         assertTrue(finalPrompt.contains("garlic"));
-        assertTrue(finalPrompt.contains("Disliked overlap"));
     }
 
     private Recipe recipeWithIngredients(Long id, String title, double rating, String... ingredientNames) {

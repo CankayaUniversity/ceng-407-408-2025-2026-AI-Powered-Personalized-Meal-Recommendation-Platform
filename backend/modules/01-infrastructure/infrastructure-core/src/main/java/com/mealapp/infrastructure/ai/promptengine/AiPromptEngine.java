@@ -44,4 +44,9 @@ public class AiPromptEngine implements PromptEngine {
     public String callAi(String prompt) {
         return aiServiceClient.callAi(prompt);
     }
+
+    @Override
+    public String callAi(String prompt, String aiModel) {
+        return aiServiceClient.callAi(prompt, aiModel);
+    }
 }

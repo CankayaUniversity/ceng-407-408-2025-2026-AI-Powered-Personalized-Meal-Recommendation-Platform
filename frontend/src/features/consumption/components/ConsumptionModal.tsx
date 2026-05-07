@@ -5,7 +5,7 @@ import SmartConsumptionPanel from './SmartConsumptionPanel';
 import ModalPortal from '../../../shared/components/ModalPortal';
 
 const ConsumptionModal: React.FC = () => {
-    const { isConsumptionOpen, closeConsumption } = useUI();
+    const { isConsumptionOpen, closeConsumption, consumptionInitialRecipe } = useUI();
 
     // Modal açıkken arkadaki sayfanın kaymasını engelle
     useEffect(() => {
@@ -45,7 +45,7 @@ const ConsumptionModal: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-8 md:p-12 scrollbar-thin scrollbar-thumb-terracotta/20">
                     <div className="max-w-3xl mx-auto">
                         {/* 666 Satırlık Dev Buraya Geliyor */}
-                        <SmartConsumptionPanel />
+                        <SmartConsumptionPanel initialRecipe={consumptionInitialRecipe} />
                     </div>
                 </div>
             </div>

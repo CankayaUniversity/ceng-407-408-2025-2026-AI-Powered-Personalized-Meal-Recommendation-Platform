@@ -6,6 +6,7 @@ import com.mealapp.app.model.mapper.RecipeRatingMapper;
 import com.mealapp.domain.recipe.entity.RecipeRating;
 import com.mealapp.domain.recipe.service.RecipeRatingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class RecipeRatingController {
      * Yeni bir değerlendirme ekler veya mevcut olanı günceller.
      */
     @PostMapping
+    @Transactional
     public RecipeRatingResponse rateRecipe(@RequestBody RecipeRatingRequest request) {
         RecipeRating rating = recipeRatingService.rateRecipe(
                 request.getUserId(),
@@ -39,6 +41,7 @@ public class RecipeRatingController {
      * Belirli bir tarife ait tüm değerlendirmeleri getirir.
      */
     @GetMapping("/recipe/{recipeId}")
+    @Transactional(readOnly = true)
     public List<RecipeRatingResponse> getRatingsByRecipe(@PathVariable Long recipeId) {
         List<RecipeRating> ratings = recipeRatingService.getRatingsByRecipe(recipeId);
         return recipeRatingMapper.toResponseList(ratings);
@@ -48,6 +51,7 @@ public class RecipeRatingController {
      * Belirli bir kullanıcının yaptığı tüm değerlendirmeleri getirir.
      */
     @GetMapping("/user/{userId}")
+    @Transactional(readOnly = true)
     public List<RecipeRatingResponse> getRatingsByUser(@PathVariable String userId) {
         List<RecipeRating> ratings = recipeRatingService.getRatingsByUser(userId);
         return recipeRatingMapper.toResponseList(ratings);

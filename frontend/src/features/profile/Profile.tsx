@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Flame,
@@ -17,6 +17,7 @@ import { useUserService } from '../../services/userService';
 import { ActivityLevel, DietaryGoal, DietType, Gender, type User } from '../../types';
 import TastePreferencePicker from './TastePreferencePicker';
 import { useToast } from '../../shared/hooks/useToast';
+import { useDefinitions } from '../../infrastructure/ui/DefinitionContext';
 
 interface ProfileFormState {
   weight: string;
@@ -29,36 +30,6 @@ interface ProfileFormState {
   allergies: string[];
   dislikedIngredients: string[];
 }
-
-const genderOptions = (t: Function) => [
-  { value: Gender.MALE, label: t('profile.gender.male') },
-  { value: Gender.FEMALE, label: t('profile.gender.female') },
-  { value: Gender.OTHER, label: t('profile.gender.other') }
-];
-
-const activityOptions = (t: Function) => [
-  { value: ActivityLevel.SEDENTARY, label: t('profile.activity.sedentary') },
-  { value: ActivityLevel.LIGHTLY_ACTIVE, label: t('profile.activity.lightlyActive') },
-  { value: ActivityLevel.MODERATELY_ACTIVE, label: t('profile.activity.moderatelyActive') },
-  { value: ActivityLevel.VERY_ACTIVE, label: t('profile.activity.veryActive') },
-  { value: ActivityLevel.EXTRA_ACTIVE, label: t('profile.activity.extraActive') }
-];
-
-const dietOptions = (t: Function) => [
-  { value: DietType.NONE, label: t('profile.diet.none') },
-  { value: DietType.VEGAN, label: t('profile.diet.vegan') },
-  { value: DietType.VEGETARIAN, label: t('profile.diet.vegetarian') },
-  { value: DietType.KETO, label: t('profile.diet.keto') },
-  { value: DietType.PALEO, label: t('profile.diet.paleo') },
-  { value: DietType.GLUTEN_FREE, label: t('profile.diet.glutenFree') }
-];
-
-const goalOptions = (t: Function) => [
-  { value: DietaryGoal.LOSE_WEIGHT, label: t('profile.goal.loseWeight') },
-  { value: DietaryGoal.MAINTAIN_WEIGHT, label: t('profile.goal.maintainWeight') },
-  { value: DietaryGoal.GAIN_WEIGHT, label: t('profile.goal.gainWeight') },
-  { value: DietaryGoal.BUILD_MUSCLE, label: t('profile.goal.buildMuscle') }
-];
 
 const emptyForm = (): ProfileFormState => ({
   weight: '', height: '', age: '', gender: '',
@@ -96,6 +67,15 @@ const Profile: React.FC = () => {
   const { user, logout } = useAuth();
   const { showToast } = useToast();
   const userService = useUserService();
+  const { enums } = useDefinitions();
+
+  const genderOptions = useMemo(() => enums?.genders || [], [enums?.genders]);
+
+  const activityOptions = useMemo(() => enums?.activityLevels || [], [enums?.activityLevels]);
+
+  const dietOptions = useMemo(() => enums?.dietTypes || [], [enums?.dietTypes]);
+
+  const goalOptions = useMemo(() => enums?.dietaryGoals || [], [enums?.dietaryGoals]);
 
   const [profile, setProfile] = useState<User | null>(null);
   const [form, setForm] = useState<ProfileFormState>(emptyForm());
@@ -372,8 +352,8 @@ const Profile: React.FC = () => {
                 <div className="space-y-2">
                   <span className="meal-overline pl-1">{t('profile.biologicalSex')}</span>
                   <select value={form.gender} onChange={e => updateField('gender', e.target.value as any)} className="base-input">
-                    <option value="">{t('profile.notSpecified')}</option>
-                    {genderOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    <option value="">{t('common.select')}</option>
+                    {genderOptions.map((o: { value: string; label: string }) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
               </div>
@@ -392,20 +372,20 @@ const Profile: React.FC = () => {
                   <span className="meal-overline pl-1">{t('profile.activityLevel')}</span>
                   <select value={form.activityLevel} onChange={e => updateField('activityLevel', e.target.value as any)} className="base-input">
                     <option value="">{t('common.select')}</option>
-                    {activityOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {activityOptions.map((o: { value: string; label: string }) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <span className="meal-overline pl-1">{t('profile.nutritionGoal')}</span>
                   <select value={form.dietaryGoal} onChange={e => updateField('dietaryGoal', e.target.value as any)} className="base-input">
                     <option value="">{t('common.select')}</option>
-                    {goalOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {goalOptions.map((o: { value: string; label: string }) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <span className="meal-overline pl-1">{t('profile.diet.label')}</span>
                   <select value={form.dietType} onChange={e => updateField('dietType', e.target.value as any)} className="base-input">
-                    {dietOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {dietOptions.map((o: { value: string; label: string }) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
               </div>

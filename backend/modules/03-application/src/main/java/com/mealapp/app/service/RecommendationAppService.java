@@ -42,11 +42,17 @@ public class RecommendationAppService {
         User user = userService.findById(request.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + request.getUserId()));
 
-        user.setDislikedIngredients(resolveDislikedIngredients(user, request));
+        // Request ile gelen tercihler varsa geçici olarak uygula (AI prompt için)
+        applyRequestPreferences(user, request);
+        
         String normalizedCravings = normalizeValue(request.getCravings());
 
         // 2. İstekteki malzemeleri geçici Inventory nesnelerine çevir (Dinamik envanter)
-        List<Inventory> dynamicInventory = normalizeValues(request.getAvailableIngredients()).stream()
+        List<String> rawIngredients = request.getAvailableIngredients();
+        if (rawIngredients == null) {
+            rawIngredients = List.of();
+        }
+        List<Inventory> dynamicInventory = normalizeValues(rawIngredients).stream()
                 .map(ingredientName -> {
                     Ingredient ingredient = ingredientRepository.findByNameIgnoreCase(ingredientName)
                             .orElseGet(() -> Ingredient.builder()
@@ -60,7 +66,7 @@ public class RecommendationAppService {
                     .toList();
 
         // 3. Domain servisinden önerileri al
-        List<Recipe> recommendedRecipes = recommendationService.getRecommendations(user, dynamicInventory, normalizedCravings);
+        List<Recipe> recommendedRecipes = recommendationService.getRecommendations(user, dynamicInventory, normalizedCravings, request.getAiModel());
 
         // 4. Sonucu DTO'ya çevirip dön
         return recommendationMapper.toResponse(
@@ -72,12 +78,23 @@ public class RecommendationAppService {
         );
     }
 
-    private List<String> resolveDislikedIngredients(User user, RecommendationRequest request) {
+    private void applyRequestPreferences(User user, RecommendationRequest request) {
         if (request.getDislikedIngredients() != null) {
-            return normalizeValues(request.getDislikedIngredients());
+            user.setDislikedIngredients(normalizeValues(request.getDislikedIngredients()));
         }
-
-        return normalizeValues(user.getDislikedIngredients());
+        if (request.getAllergies() != null) {
+            user.setAllergies(normalizeValues(request.getAllergies()));
+        }
+        if (request.getDietaryGoal() != null && !request.getDietaryGoal().isBlank()) {
+            try {
+                user.setDietaryGoal(User.DietaryGoal.valueOf(request.getDietaryGoal().toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException ignored) {}
+        }
+        if (request.getDietType() != null && !request.getDietType().isBlank()) {
+            try {
+                user.setDietType(User.DietType.valueOf(request.getDietType().toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException ignored) {}
+        }
     }
 
     private List<String> normalizeValues(List<String> values) {

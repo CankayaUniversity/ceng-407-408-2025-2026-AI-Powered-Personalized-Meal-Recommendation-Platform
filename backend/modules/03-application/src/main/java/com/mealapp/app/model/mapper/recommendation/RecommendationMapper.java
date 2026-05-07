@@ -48,6 +48,7 @@ public class RecommendationMapper {
                     dto.setPreparationTimeMinutes(recipe.getPreparationTimeMinutes());
                     dto.setServings(recipe.getServings());
                     dto.setAverageRating(recipe.getAverageRating());
+                    dto.setRatingCount(recipe.getRatingCount());
                     dto.setImageUrl(recipe.getImageUrl());
                     return dto;
                 })

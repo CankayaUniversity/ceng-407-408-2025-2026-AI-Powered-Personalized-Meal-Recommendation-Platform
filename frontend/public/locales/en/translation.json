@@ -656,6 +656,12 @@
     "addToInventory": "ADD TO INVENTORY"
   },
   "consumption": {
+    "mealType": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    },
     "location": {
       "title": "Where and at which meal did you eat?",
       "outside": "Outside"

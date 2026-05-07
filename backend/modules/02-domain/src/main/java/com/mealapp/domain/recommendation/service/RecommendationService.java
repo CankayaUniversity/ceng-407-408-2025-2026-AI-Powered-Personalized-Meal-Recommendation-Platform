@@ -31,12 +31,12 @@ public class RecommendationService {
     @Transactional(readOnly = true)
     @Cacheable(
             value = "recommendations",
-            key = "#user.id + ':' + (#user.dietType != null ? #user.dietType.name() : 'NONE') + ':' + (#user.dietaryGoal != null ? #user.dietaryGoal.name() : 'NONE') + ':' + (#user.allergies != null ? #user.allergies.hashCode() : 0) + ':' + (#user.dislikedIngredients != null ? #user.dislikedIngredients.hashCode() : 0) + ':' + (#cravings != null ? #cravings.toLowerCase() : 'none') + ':' + #inventory.hashCode()"
+            key = "#user.id + ':' + (#user.dietType != null ? #user.dietType.name() : 'NONE') + ':' + (#user.dietaryGoal != null ? #user.dietaryGoal.name() : 'NONE') + ':' + (#user.allergies != null ? #user.allergies.hashCode() : 0) + ':' + (#user.dislikedIngredients != null ? #user.dislikedIngredients.hashCode() : 0) + ':' + (#cravings != null ? #cravings.toLowerCase() : 'none') + ':' + (#aiModel != null ? #aiModel.toLowerCase() : 'default') + ':' + #inventory.hashCode()"
     )
-    public List<Recipe> getRecommendations(User user, List<Inventory> inventory, String cravings) {
+    public List<Recipe> getRecommendations(User user, List<Inventory> inventory, String cravings, String aiModel) {
         DailyConsumptionService.DailyNutritionSummary dailySummary = dailyConsumptionService.getDailyNutritionSummary(user.getId(), java.time.LocalDate.now());
 
-        List<Recipe> recipes = aiRecommendationStrategy.recommend(user, inventory, dailySummary, cravings);
+        List<Recipe> recipes = aiRecommendationStrategy.recommend(user, inventory, dailySummary, cravings, aiModel);
 
         // Önerilen her tarif için besin değerlerini (Transient olsa bile) 
         // güncelleyelim ki prompt veya response'da doğru görünsün.

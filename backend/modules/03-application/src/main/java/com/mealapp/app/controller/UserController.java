@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,6 +40,7 @@ public class UserController {
      * - Body'deki fiziksel verilerden günlük kalori hedefi sunucu tarafında hesaplanır.
      */
     @PostMapping
+    @Transactional
     public UserDto upsert(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody UserDto request) {
         try {
             return performUpsert(jwt, request);
@@ -123,6 +125,7 @@ public class UserController {
      */
     @PostMapping("/{id}/profile-image")
     @SneakyThrows
+    @Transactional
     public UserDto uploadProfileImage(@PathVariable String id,
                                       @RequestParam("file") MultipartFile file,
                                       @AuthenticationPrincipal Jwt jwt) {
@@ -154,6 +157,7 @@ public class UserController {
      * Kullanıcı profili getirir.
      */
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public UserDto get(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {
         String authenticatedUserId = requireAuthenticatedUserId(jwt);
         assertSameUser(authenticatedUserId, id);
@@ -172,6 +176,7 @@ public class UserController {
      * Kullanıcı arama (İsim veya E-posta).
      */
     @GetMapping("/search")
+    @Transactional(readOnly = true)
     public java.util.List<UserDto> search(@RequestParam String query) {
         return userService.searchUsers(query).stream()
                 .map(userMapper::toDto)

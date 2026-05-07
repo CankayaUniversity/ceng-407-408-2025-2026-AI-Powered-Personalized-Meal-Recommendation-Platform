@@ -48,7 +48,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     private static final TypeReference<List<PromptEngine.AiResponse>> AI_RESPONSE_TYPE = new TypeReference<>() {};
 
     @Override
-    public List<Recipe> recommend(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary, String cravings) {
+    public List<Recipe> recommend(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary, String cravings, String aiModel) {
         List<Recipe> safeRecipes = getSafeRecipes(user);
 
         List<String> dislikedIngredients = normalizeValues(user.getDislikedIngredients());
@@ -60,8 +60,30 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         String finalPrompt = generateFinalPrompt(user, currentInventory, dailySummary, recipesData, normalizedCravings);
 
         try {
-            String aiResponseRaw = promptEngine.callAi(finalPrompt);
-            List<PromptEngine.AiResponse> aiChoices = objectMapper.readValue(aiResponseRaw, AI_RESPONSE_TYPE);
+            String aiResponseRaw = promptEngine.callAi(finalPrompt, aiModel);
+            if (aiResponseRaw == null || aiResponseRaw.trim().isEmpty() || "[]".equals(aiResponseRaw.trim())) {
+                log.warn("AI returned empty response for user {}, falling back.", user.getId());
+                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
+            }
+
+            // Sanitize response: Remove markdown code blocks if present
+            String sanitizedResponse = aiResponseRaw.trim();
+            if (sanitizedResponse.startsWith("```")) {
+                sanitizedResponse = sanitizedResponse.replaceAll("(?s)^```(?:json)?\\s*(.*?)\\s*```$", "$1").trim();
+            }
+
+            List<PromptEngine.AiResponse> aiChoices;
+            try {
+                aiChoices = objectMapper.readValue(sanitizedResponse, AI_RESPONSE_TYPE);
+            } catch (Exception parseEx) {
+                log.error("AI response JSON parsing failed for user {}. Raw response: {}. Sanitized: {}", user.getId(), aiResponseRaw, sanitizedResponse, parseEx);
+                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
+            }
+
+            if (aiChoices == null || aiChoices.isEmpty()) {
+                log.warn("AI response could not be parsed as list for user {}, falling back.", user.getId());
+                return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
+            }
 
             Map<String, String> insightMap = aiChoices.stream()
                 .filter(c -> c.getRecipeTitle() != null)
@@ -76,19 +98,19 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 .map(r -> {
                     String aiInsight = insightMap.get(r.getTitle().toLowerCase());
                     r.setAiInsight(aiInsight == null || aiInsight.isBlank()
-                            ? buildFallbackInsight(r, currentInventory, dislikedIngredients, normalizedCravings)
+                            ? buildFallbackInsight(r, currentInventory, dislikedIngredients, normalizedCravings, user)
                             : aiInsight);
                     return r;
                 })
                 .toList();
 
             return selectedRecipes.isEmpty()
-                    ? buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings)
+                    ? buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user)
                     : selectedRecipes.stream().limit(FINAL_RECOMMENDATION_LIMIT).toList();
 
         } catch (Exception e) {
             log.error("AI recommendation failed, falling back to top matched recipes", e);
-            return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings);
+            return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
         }
     }
 
@@ -171,69 +193,89 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     }
 
     private String generateFinalPrompt(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary, String recipesData, String cravings) {
-        String promptTemplate = "User Profile: Name: %s, Goal: %s, Daily Calorie Target: %d kcal. " +
-                "Hard Constraints (Allergies): %s. Soft Constraints (Disliked Ingredients): %s. " +
-                "Current Cravings (highlight these): %s. " +
-                "Today's Consumed: %d kcal, Protein: %.1fg, Carbs: %.1fg, Fat: %.1fg. " +
-                "Available Ingredients in Inventory: %s. " +
-                "Recipes:\n%s";
+        String promptTemplate = "As a personal nutritionist, provide meal recommendations based on the following user profile and data. " +
+                "CRITICAL: Tailor your 'insight' for each recipe to explain EXACTLY why it fits their dietary goal, diet type, and preferences. " +
+                "\n\nUser Profile:\n" +
+                "- Name: %s\n" +
+                "- Dietary Goal: %s (STRICTLY prioritize recipes helping this goal)\n" +
+                "- Diet Type: %s (MANDATORY: only suggest recipes compatible with this)\n" +
+                "- Daily Calorie Target: %d kcal\n" +
+                "- Hard Constraints (Allergies): %s (NEVER suggest these)\n" +
+                "- Soft Constraints (Disliked Ingredients): %s (Avoid these if possible)\n" +
+                "- Current Cravings: %s (Highly prioritize if matches)\n" +
+                "\nToday's Progress:\n" +
+                "- Consumed: %d kcal, Protein: %.1fg, Carbs: %.1fg, Fat: %.1fg\n" +
+                "\nAvailable Ingredients: %s\n" +
+                "\nCandidates Recipes:\n%s";
 
         return promptEngine.generatePrompt(
                 promptTemplate,
-                user.getName(),
-                user.getDietaryGoal(),
-                user.getDailyCalorieTarget() != null ? user.getDailyCalorieTarget() : 0,
+                user.getName() != null ? user.getName() : "Guest",
+                user.getDietaryGoal() != null ? user.getDietaryGoal() : "Not set",
+                user.getDietType() != null ? user.getDietType() : "Not set",
+                user.getDailyCalorieTarget() != null ? user.getDailyCalorieTarget() : 2000,
                 formatConstraintList(user.getAllergies()),
                 formatConstraintList(user.getDislikedIngredients()),
                 summarizeCravings(cravings),
-                dailySummary.totalCalories(),
-                dailySummary.totalProtein(),
-                dailySummary.totalCarbs(),
-                dailySummary.totalFat(),
-                currentInventory.stream().map(inv -> inv.getIngredient().getName()).collect(Collectors.joining(", ")),
+                dailySummary != null ? dailySummary.totalCalories() : 0,
+                dailySummary != null ? dailySummary.totalProtein() : 0.0,
+                dailySummary != null ? dailySummary.totalCarbs() : 0.0,
+                dailySummary != null ? dailySummary.totalFat() : 0.0,
+                currentInventory.stream()
+                        .map(inv -> inv.getIngredient() != null ? inv.getIngredient().getName() : "Unknown")
+                        .collect(Collectors.joining(", ")),
                 recipesData
         );
     }
 
-    private List<Recipe> buildFallbackRecommendations(List<Recipe> topRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings) {
+    private List<Recipe> buildFallbackRecommendations(List<Recipe> topRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user) {
         return topRecipes.stream()
                 .limit(FINAL_RECOMMENDATION_LIMIT)
                 .map(recipe -> {
-                    recipe.setAiInsight(buildFallbackInsight(recipe, currentInventory, dislikedIngredients, cravings));
+                    recipe.setAiInsight(buildFallbackInsight(recipe, currentInventory, dislikedIngredients, cravings, user));
                     return recipe;
                 })
                 .toList();
     }
 
-    private String buildFallbackInsight(Recipe recipe, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings) {
-        String matchedSummary = summarizeIngredients(getMatchedIngredients(recipe, currentInventory));
-        String missingSummary = summarizeIngredients(getMissingIngredients(recipe, currentInventory));
-        String overlapSummary = getDislikedOverlapSummary(recipe, dislikedIngredients);
-        double cravingScore = calculateCravingScore(recipe, cravings);
+    private String buildFallbackInsight(Recipe recipe, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user) {
+        StringBuilder insight = new StringBuilder();
 
-        StringBuilder builder = new StringBuilder("We prioritized this recipe because it fits your pantry");
-        if (!"none".equals(matchedSummary)) {
-            builder.append(" and uses ").append(matchedSummary);
-        }
-        builder.append(".");
-
-        if (cravings != null && !cravings.isBlank()) {
-            if (cravingScore > 0.0) {
-                builder.append(" It also aligns with your craving for ").append(cravings).append(".");
-            } else {
-                builder.append(" It still stays close to your overall profile even though the craving match is softer today.");
-            }
+        // Kullanıcının hedefi ve diyetine göre özelleştirilmiş başlangıç
+        if (user.getDietaryGoal() != null || (user.getDietType() != null && user.getDietType() != User.DietType.NONE)) {
+            insight.append(String.format("Profilinizdeki %s %s hedefinize uygun olarak: ",
+                    (user.getDietType() != null && user.getDietType() != User.DietType.NONE) ? user.getDietType().name().toLowerCase(Locale.ROOT) : "beslenme",
+                    user.getDietaryGoal() != null ? user.getDietaryGoal().name().toLowerCase(Locale.ROOT).replace("_", " ") : "rutininize"));
+        } else {
+            insight.append("Bu tarif sizin için harika bir seçenek: ");
         }
 
-        if (!"none".equals(missingSummary)) {
-            builder.append(" You may still need ").append(missingSummary).append(".");
+        double matchScore = ingredientMatchService.calculateMatchScore(recipe, currentInventory);
+        List<String> matched = getMatchedIngredients(recipe, currentInventory);
+        List<String> missing = getMissingIngredients(recipe, currentInventory);
+
+        if (matchScore >= 0.8) {
+            insight.append(String.format("Elinizdeki malzemelerin neredeyse tamamı (%s) bu tarifle tam uyumlu. ", summarizeIngredients(matched)));
+        } else if (!matched.isEmpty()) {
+            insight.append(String.format("Elinizdeki %s kullanarak bu tarifi hazırlayabilirsiniz. ", summarizeIngredients(matched)));
         }
 
-        if (!"none".equals(overlapSummary)) {
-            builder.append(" We kept the disliked overlap low, but note ").append(overlapSummary).append(".");
+        if (!missing.isEmpty()) {
+            insight.append(String.format("Sadece %s ekleyerek öğününüzü tamamlayabilirsiniz. ", summarizeIngredients(missing)));
         }
 
-        return builder.toString();
+        if (cravings != null && !cravings.isBlank() && calculateCravingScore(recipe, cravings) > 0.5) {
+            insight.append(String.format("Ayrıca canınızın çektiği %s için de çok tatmin edici bir tercih. ", cravings.toLowerCase(Locale.ROOT)));
+        }
+
+        // Besin değerlerine göre ek bilgi
+        if (recipe.getTotalProtein() != null && recipe.getTotalProtein() > 25) {
+            insight.append("Yüksek protein içeriğiyle tokluk hissinizi destekler. ");
+        } else if (recipe.getTotalCalories() != null && recipe.getTotalCalories() < 400) {
+            insight.append("Hafif ve düşük kalorili olmasıyla diyetinize sadık kalmanızı sağlar. ");
+        }
+
+        return insight.toString().trim();
     }
 
     private String getDislikedOverlapSummary(Recipe recipe, List<String> dislikedIngredients) {
@@ -294,6 +336,9 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     }
 
     private double calculateCravingScore(Recipe recipe, String cravings) {
+        if (cravings == null || cravings.isBlank()) {
+            return 1.0;
+        }
         List<String> cravingKeywords = extractCravingKeywords(cravings);
         if (cravingKeywords.isEmpty()) {
             return 1.0;

@@ -10,15 +10,24 @@ import java.util.List;
 public class RecipeRatingMapper {
 
     public RecipeRatingResponse toResponse(RecipeRating rating) {
-        return RecipeRatingResponse.builder()
+        if (rating == null) return null;
+        
+        RecipeRatingResponse.RecipeRatingResponseBuilder builder = RecipeRatingResponse.builder()
                 .id(rating.getId())
-                .userId(rating.getUser().getId())
-                .recipeId(rating.getRecipe().getId())
-                .recipeTitle(rating.getRecipe().getTitle())
                 .rating(rating.getRating())
                 .comment(rating.getComment())
-                .createdAt(rating.getCreatedAt())
-                .build();
+                .createdAt(rating.getCreatedAt());
+
+        if (rating.getUser() != null) {
+            builder.userId(rating.getUser().getId());
+        }
+
+        if (rating.getRecipe() != null) {
+            builder.recipeId(rating.getRecipe().getId());
+            builder.recipeTitle(rating.getRecipe().getTitle());
+        }
+
+        return builder.build();
     }
 
     public List<RecipeRatingResponse> toResponseList(List<RecipeRating> ratings) {

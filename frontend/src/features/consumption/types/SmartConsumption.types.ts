@@ -2,7 +2,6 @@ import {
   type ConsumptionResponse,
   type Ingredient,
   InventoryGroup,
-  MealType,
   PortionSize,
   Recipe,
   type RecipeListItem
@@ -65,13 +64,6 @@ export const OUTSIDE_LOCATION = 'outside';
 export const ENTRY_MODE_OPTIONS: Array<{ value: EntryMode; label: string; icon: typeof ChefHat }> = [
   { value: 'RECIPE', label: 'Tarif', icon: ChefHat },
   { value: 'INGREDIENT', label: 'Malzeme', icon: UtensilsCrossed }
-];
-
-export const MEAL_OPTIONS: Array<{ value: MealType; label: string }> = [
-  { value: MealType.BREAKFAST, label: 'Kahvalti' },
-  { value: MealType.LUNCH, label: 'Ogle' },
-  { value: MealType.DINNER, label: 'Aksam' },
-  { value: MealType.SNACK, label: 'Ara Ogun' }
 ];
 
 export const RECIPE_PORTION_OPTIONS: RecipePortionOption[] = [

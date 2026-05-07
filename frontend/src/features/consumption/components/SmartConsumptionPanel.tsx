@@ -18,6 +18,7 @@ import { type RecipeIngredient } from '../../../types';
 
 interface SmartConsumptionPanelProps {
   onConsumptionLogged?: () => void;
+  initialRecipe?: any;
 }
 
 const formatNameList = (names: string[]) => {
@@ -28,7 +29,7 @@ const formatNameList = (names: string[]) => {
 };
 
 
-const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsumptionLogged }) => {
+const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsumptionLogged, initialRecipe }) => {
   const { t } = useTranslation();
   const {
     user,
@@ -73,8 +74,10 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     setMemberQueries,
     memberResults,
     conversions,
-    hasCompletedIngredientSearch
-  } = useSmartConsumption(onConsumptionLogged);
+    hasCompletedIngredientSearch,
+    inventoryStatus,
+    getItemInventoryStatus
+  } = useSmartConsumption(onConsumptionLogged, initialRecipe);
 
   const activeMembers = useMemo(() => {
     const members = selectedMembers[selectedLocationId] || {};
@@ -136,13 +139,22 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
   const inventoryDeductions = useMemo(() => {
     if (isOutside) return [];
-    const summary: Record<number, { name: string; grams: number }> = {};
+    const summary: Record<number, { id: number; name: string; amount: number; unit: string; grams: number }> = {};
     const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
     
     allItems.forEach(item => {
       if (item.kind === 'INGREDIENT') {
         const id = item.ingredient.id;
-        if (!summary[id]) summary[id] = { name: item.ingredient.name, grams: 0 };
+        if (!summary[id]) {
+          summary[id] = { 
+            id,
+            name: item.ingredient.name, 
+            amount: 0, 
+            unit: item.unit || item.ingredient.preferredUnit || (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM'),
+            grams: 0 
+          };
+        }
+        summary[id].amount += (item.portion.amount || 0);
         summary[id].grams += item.portion.grams;
       } else {
         const recipe = recipeDetailsMap[item.recipe.id];
@@ -150,7 +162,16 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           recipe.ingredients.forEach((ri: RecipeIngredient) => {
             const id = ri.ingredientId;
             const name = ri.ingredient?.name || `Ingredient #${id}`;
-            if (!summary[id]) summary[id] = { name, grams: 0 };
+            if (!summary[id]) {
+              summary[id] = { 
+                id,
+                name, 
+                amount: 0, 
+                unit: ri.unit || 'g', 
+                grams: 0 
+              };
+            }
+            summary[id].amount += (ri.amount || ri.grams) * item.portion.multiplier;
             summary[id].grams += ri.grams * item.portion.multiplier;
           });
         }
@@ -276,6 +297,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
               onManualPortionUpdate={(key, ing, qty, unit) => handleManualPortionUpdate(key, ing, qty, unit)}
               individualPreviews={individualPreviews || undefined}
               conversions={conversions}
+              getItemInventoryStatus={getItemInventoryStatus}
             />
 
             {submitSummary && successTitle && (
@@ -372,6 +394,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
                       onManualPortionUpdate={(key, ing, qty, unit, uid) => handleManualPortionUpdate(key, ing, qty, unit, uid)}
                       individualPreviews={individualPreviews || undefined}
                       conversions={conversions}
+                      getItemInventoryStatus={getItemInventoryStatus}
                     />
                   </div>
                 </div>
@@ -399,6 +422,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           nutritionPreview={nutritionPreview}
           memberSummaryRows={memberSummaryRows}
           inventoryDeductions={inventoryDeductions}
+          inventoryStatus={inventoryStatus}
           isOutside={isOutside}
           selectedGroup={selectedGroup}
           submitting={submitting}

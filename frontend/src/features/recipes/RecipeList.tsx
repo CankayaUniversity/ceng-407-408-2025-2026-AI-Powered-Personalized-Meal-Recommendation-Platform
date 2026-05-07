@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
-import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info, Edit3, Users, History, CheckCircle2, Clock3, AlertCircle } from 'lucide-react';
+import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info, Edit3, Users, History, CheckCircle2, Clock3, AlertCircle, UtensilsCrossed } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRecipeService } from '../../services/recipeService';
 import type { RecipeListItem, Recipe } from '../../types';
@@ -176,7 +176,7 @@ const RecipeList: React.FC = () => {
   const recipeService = useRecipeService();
   const { showToast } = useToast();
   const { user } = useAuth();
-  const { openRecipeModal, isRecipeModalOpen, isRecipeViewOpen, recipeToView, closeRecipeView } = useUI();
+  const { openRecipeModal, isRecipeModalOpen, isRecipeViewOpen, recipeToView, closeRecipeView, openConsumption } = useUI();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -402,6 +402,11 @@ const RecipeList: React.FC = () => {
     }, 300);
   };
 
+  const handleCookThis = (recipe: RecipeListItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    openConsumption(recipe);
+  };
+
   const categories = [
     { key: 'all', label: t('recipes.categories.all') },
     { key: 'main', label: t('recipes.categories.main') },
@@ -511,6 +516,15 @@ const RecipeList: React.FC = () => {
                   </button>
                   <div className="absolute top-5 right-20 flex gap-2">
                     {user && (
+                      <button 
+                        onClick={(e) => handleCookThis(recipe, e)}
+                        className="p-2.5 bg-moss-forest text-white rounded-xl hover:bg-moss-forest/90 transition-colors shadow-lg"
+                        title="Bu Tarifi Yap"
+                      >
+                        <UtensilsCrossed size={18} />
+                      </button>
+                    )}
+                    {user && (
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -607,6 +621,18 @@ const RecipeList: React.FC = () => {
                           >
                             <Star size={24} fill={selectedRecipe.isFavorite ? "currentColor" : "none"} />
                           </button>
+                          {user && (
+                            <button 
+                              onClick={(e) => {
+                                handleCloseModal();
+                                handleCookThis(selectedRecipe, e);
+                              }}
+                              className="px-6 py-4 bg-moss-forest text-white rounded-2xl hover:bg-moss-forest/90 transition-all hover:scale-105 flex items-center gap-2 font-bold shadow-lg shadow-moss-forest/20"
+                            >
+                              <UtensilsCrossed size={20} />
+                              Bu Tarifi Yap
+                            </button>
+                          )}
                           {user && (
                             <button 
                               onClick={() => {

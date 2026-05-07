@@ -131,11 +131,19 @@ export interface RecipeListItem {
 }
 
 export interface Recipe extends Omit<RecipeListItem, 'difficulty'> {
+  description?: string | null;
   difficulty?: Difficulty | null;
   servings?: number | null;
   instructions?: string | null;
   ingredients?: RecipeIngredient[];
   ratings?: RecipeRating[];
+  dietType?: DietType | null;
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
+  imageUrl?: string | null;
+  preparationTimeMinutes?: number | null;
 }
 
 export interface Ingredient {
@@ -161,10 +169,12 @@ export interface IngredientNutrition {
 }
 
 export interface RecipeIngredient {
-  id: number;
-  recipeId: number;
+  id?: number;
+  recipeId?: number;
   ingredientId: number;
   grams: number;
+  amount?: number;
+  unit?: string;
   ingredient?: Ingredient;
 }
 
@@ -229,7 +239,11 @@ export interface RecommendationRequest {
   userId: string;
   availableIngredients: string[];
   dislikedIngredients?: string[] | null;
+  allergies?: string[] | null;
+  dietaryGoal?: string | null;
+  dietType?: string | null;
   cravings?: string | null;
+  aiModel?: string | null;
 }
 
 export interface RecommendedRecipe {
@@ -405,6 +419,23 @@ export interface ApiErrorResponse {
   path?: string;
   validationErrors?: ApiValidationErrorItem[];
   fields?: Record<string, string>;
+}
+
+export interface EnumDefinition {
+  value: string;
+  label: string;
+}
+
+export interface EnumDefinitions {
+  dietTypes: EnumDefinition[];
+  dietaryGoals: EnumDefinition[];
+  genders: EnumDefinition[];
+  activityLevels: EnumDefinition[];
+  difficulties: EnumDefinition[];
+  ingredientCategories: EnumDefinition[];
+  physicalStates: EnumDefinition[];
+  mealTypes: EnumDefinition[];
+  portionSizes: EnumDefinition[];
 }
 
 export interface UnitConversion {

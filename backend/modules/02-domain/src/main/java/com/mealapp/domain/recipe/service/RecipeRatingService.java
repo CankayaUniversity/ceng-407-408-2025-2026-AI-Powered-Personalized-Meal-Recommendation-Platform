@@ -73,6 +73,7 @@ public class RecipeRatingService {
     /**
      * Belirli bir tarife ait değerlendirmeleri listeler.
      */
+    @Transactional(readOnly = true)
     public List<RecipeRating> getRatingsByRecipe(Long recipeId) {
         return recipeRatingRepository.findByRecipeId(recipeId);
     }
@@ -80,6 +81,7 @@ public class RecipeRatingService {
     /**
      * Belirli bir kullanıcının yaptığı değerlendirmeleri listeler.
      */
+    @Transactional(readOnly = true)
     public List<RecipeRating> getRatingsByUser(String userId) {
         return recipeRatingRepository.findByUserId(userId);
     }
