@@ -95,6 +95,21 @@ public class AdminController {
         ));
     }
 
+    @PostMapping("/ingredients")
+    public IngredientDTO createIngredient(@Valid @RequestBody AdminIngredientRequest request) {
+        return ingredientMapper.toDTO(ingredientService.createIngredient(
+                request.getName(),
+                request.getCategory(),
+                request.getDensity(),
+                request.getPhysicalState(),
+                request.getPreferredUnit(),
+                request.getCaloriesPer100g(),
+                request.getProteinPer100g(),
+                request.getCarbsPer100g(),
+                request.getFatPer100g()
+        ));
+    }
+
     // --- Admin Tarif Paneli ---
 
     @GetMapping("/recipes/{id}")

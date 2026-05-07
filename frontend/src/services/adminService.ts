@@ -65,6 +65,15 @@ export const getAdminService = (api: AxiosInstance) => ({
     }
   },
 
+  createIngredient: async (request: AdminIngredientRequest): Promise<Ingredient> => {
+    try {
+      const response = await api.post<Ingredient>('/v1/admin/ingredients', request);
+      return response.data;
+    } catch (error) {
+      return mapAxiosError(error, 'Malzeme oluşturulamadı');
+    }
+  },
+
   deleteIngredient: async (id: number): Promise<void> => {
     try {
       await api.delete(`/v1/admin/ingredients/${id}`);

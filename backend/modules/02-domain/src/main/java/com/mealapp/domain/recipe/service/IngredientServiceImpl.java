@@ -98,4 +98,31 @@ public class IngredientServiceImpl implements IngredientService {
         
         return saved;
     }
+
+    @Override
+    public Ingredient createIngredient(String name, String category, Double density, String physicalState, String preferredUnit, Double calories, Double protein, Double carbs, Double fat) {
+        Ingredient ingredient = new Ingredient();
+        ingredient.setName(name);
+        if (category != null) {
+            ingredient.setCategory(Ingredient.Category.valueOf(category));
+        }
+        if (density != null) {
+            ingredient.setDensity(density);
+        }
+        if (physicalState != null) {
+            ingredient.setPhysicalState(Ingredient.PhysicalState.valueOf(physicalState));
+        }
+        ingredient.setPreferredUnit(preferredUnit);
+        ingredient.setActive(true);
+
+        IngredientNutrition nutrition = new IngredientNutrition();
+        nutrition.setIngredient(ingredient);
+        nutrition.setCaloriesPer100g(calories);
+        nutrition.setProteinPer100g(protein);
+        nutrition.setCarbsPer100g(carbs);
+        nutrition.setFatPer100g(fat);
+        ingredient.setNutrition(nutrition);
+
+        return ingredientRepository.save(ingredient);
+    }
 }

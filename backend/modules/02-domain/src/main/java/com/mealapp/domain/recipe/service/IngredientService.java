@@ -14,4 +14,6 @@ public interface IngredientService {
     Optional<Ingredient> findByIdWithUnits(Long id);
 
     Ingredient updateIngredient(Long id, String name, String category, Double density, String physicalState, String preferredUnit, Double calories, Double protein, Double carbs, Double fat);
+
+    Ingredient createIngredient(String name, String category, Double density, String physicalState, String preferredUnit, Double calories, Double protein, Double carbs, Double fat);
 }

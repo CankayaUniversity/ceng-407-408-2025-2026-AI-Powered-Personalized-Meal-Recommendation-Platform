@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
-    Search, Edit2, Trash2, RefreshCcw, Database, 
+    Search, Edit2, Trash2, Database, 
     ChevronRight, ChevronLeft, Plus
 } from 'lucide-react';
 import { useIngredientService } from '../../services/ingredientService';
@@ -21,7 +21,6 @@ const AdminIngredientList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedIngredientId, setSelectedIngredientId] = useState<number | null>(null);
-    const [actionLoading, setActionLoading] = useState(false);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -48,21 +47,6 @@ const AdminIngredientList: React.FC = () => {
         }, 300);
         return () => clearTimeout(timer);
     }, [searchTerm]);
-
-    const handleResetInventory = async () => {
-        if (!window.confirm(t('admin.ingredients.resetConfirm'))) return;
-        
-        setActionLoading(true);
-        try {
-            await adminService.resetTestInventory();
-            showToast(t('admin.ingredients.successReset'), 'success');
-            loadIngredients();
-        } catch (error) {
-            showToast(t('admin.ingredients.errorReset'), 'error');
-        } finally {
-            setActionLoading(false);
-        }
-    };
 
     const handleEdit = (id: number) => {
         setSelectedIngredientId(id);
@@ -102,14 +86,6 @@ const AdminIngredientList: React.FC = () => {
                 </div>
                 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleResetInventory}
-                        disabled={actionLoading}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-amber-200 transition-colors shadow-sm"
-                    >
-                        <RefreshCcw size={16} className={actionLoading ? 'animate-spin' : ''} />
-                        {t('admin.ingredients.resetInventory')}
-                    </button>
                     <button 
                         className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-md active:scale-95"
                         onClick={() => { setSelectedIngredientId(null); setIsEditModalOpen(true); }}
@@ -142,6 +118,7 @@ const AdminIngredientList: React.FC = () => {
                                 <th className="px-6 py-5">{t('admin.ingredients.table.category')}</th>
                                 <th className="px-6 py-5 text-center">{t('admin.ingredients.table.caloriesPer100g')}</th>
                                 <th className="px-6 py-5 text-center">{t('admin.ingredients.table.macros')}</th>
+                                <th className="px-6 py-5 text-center">{t('admin.ingredients.table.preferredUnit')}</th>
                                 <th className="px-6 py-5 text-right">{t('admin.ingredients.table.actions')}</th>
                             </tr>
                         </thead>
@@ -149,14 +126,14 @@ const AdminIngredientList: React.FC = () => {
                             {loading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={5} className="px-6 py-5">
+                                        <td colSpan={6} className="px-6 py-5">
                                             <div className="h-10 bg-espresso/5 dark:bg-white/5 rounded-xl w-full"></div>
                                         </td>
                                     </tr>
                                 ))
                             ) : ingredients.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-espresso/40 dark:text-white/30">
+                                    <td colSpan={6} className="px-6 py-12 text-center text-espresso/40 dark:text-white/30">
                                         <Database className="mx-auto mb-3 opacity-20" size={40} />
                                         <p>{t('admin.ingredients.noIngredientFound')}</p>
                                     </td>
@@ -188,6 +165,23 @@ const AdminIngredientList: React.FC = () => {
                                                 <span className="text-espresso/10 dark:text-white/10">/</span>
                                                 <span className="text-sage">{ingredient.fatPer100g?.toFixed(1) || '0'}</span>
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-center">
+                                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                                ingredient.preferredUnit 
+                                                    ? 'bg-terracotta/10 text-terracotta dark:bg-terracotta/20' 
+                                                    : 'bg-espresso/5 text-espresso/40 dark:bg-white/5 dark:text-white/30'
+                                            }`}>
+                                                {ingredient.preferredUnit 
+                                                    ? t(`admin.ingredients.modal.units.${ingredient.preferredUnit.toUpperCase()
+                                                        .replace(/Ç/g, 'C')
+                                                        .replace(/Ğ/g, 'G')
+                                                        .replace(/İ/g, 'I')
+                                                        .replace(/Ö/g, 'O')
+                                                        .replace(/Ş/g, 'S')
+                                                        .replace(/Ü/g, 'U')}`) 
+                                                    : t('admin.ingredients.notSelected')}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-5 text-right">
                                             <div className="flex items-center justify-end gap-1 sm:gap-2">

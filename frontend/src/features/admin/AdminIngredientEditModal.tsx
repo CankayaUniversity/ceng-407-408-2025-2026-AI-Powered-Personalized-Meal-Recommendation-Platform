@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Save, Info, Activity } from 'lucide-react';
 import { useAdminService, AdminIngredientRequest } from '../../services/adminService';
+import { useIngredientService } from '../../services/ingredientService';
 import { useToast } from '../../shared/hooks/useToast';
-import { IngredientCategory } from '../../types';
+import { IngredientCategory, PhysicalState } from '../../types';
 
 interface AdminIngredientEditModalProps {
     id: number | null;
@@ -15,8 +16,10 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
     const { t } = useTranslation();
     const { showToast } = useToast();
     const adminService = useAdminService();
+    const ingredientService = useIngredientService();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
     
     const [formData, setFormData] = useState<AdminIngredientRequest>({
         name: '',
@@ -31,10 +34,14 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
     });
 
     useEffect(() => {
-        if (id) {
-            const fetchIngredient = async () => {
-                setLoading(true);
-                try {
+        const fetchInitialData = async () => {
+            setLoading(true);
+            try {
+                // Fetch available units from backend
+                const unitsMap = await ingredientService.getAllUnitWeights();
+                setAvailableUnits(Object.keys(unitsMap).sort());
+
+                if (id) {
                     const data = await adminService.getIngredient(id);
                     setFormData({
                         name: data.name,
@@ -47,14 +54,14 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
                         carbsPer100g: data.carbsPer100g || 0,
                         fatPer100g: data.fatPer100g || 0
                     });
-                } catch (error) {
-                    console.error('Failed to fetch ingredient', error);
-                } finally {
-                    setLoading(false);
                 }
-            };
-            fetchIngredient();
-        }
+            } catch (error) {
+                console.error('Failed to fetch initial data', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchInitialData();
     }, [id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -64,9 +71,7 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
             if (id) {
                 await adminService.updateIngredient(id, formData);
             } else {
-                // Yeni malzeme ekleme API'si AdminController'da henüz yoksa burası hata verebilir
-                // Şimdilik sadece düzenleme odaklı ilerliyoruz
-                console.warn('Yeni malzeme ekleme henüz desteklenmiyor');
+                await adminService.createIngredient(formData);
             }
             onSuccess();
         } catch (error) {
@@ -106,58 +111,79 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
                             
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 opacity-60">{t('admin.ingredients.modal.name')}</label>
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-espresso/60 dark:text-white/60">{t('admin.ingredients.modal.name')}</label>
                                     <input
                                         type="text"
                                         required
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full px-5 py-3 bg-background dark:bg-espresso-midnight/60 rounded-2xl border-none focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all"
+                                        className="w-full px-5 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all text-espresso-midnight dark:text-alabaster placeholder:text-espresso/20 dark:placeholder:text-white/20"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 opacity-60">{t('admin.ingredients.modal.category')}</label>
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-espresso/60 dark:text-white/60">{t('admin.ingredients.modal.category')}</label>
                                     <select
                                         value={formData.category}
-                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                        className="w-full px-5 py-3 bg-background dark:bg-espresso-midnight/60 rounded-2xl border-none focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all appearance-none cursor-pointer"
+                                        onChange={e => setFormData({ ...formData, category: e.target.value as IngredientCategory })}
+                                        className="w-full px-5 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all text-espresso-midnight dark:text-alabaster appearance-none cursor-pointer"
                                     >
-                                        {Object.keys(IngredientCategory || {}).map(cat => (
+                                        {Object.values(IngredientCategory).map(cat => (
                                             <option key={cat} value={cat}>{cat}</option>
                                         ))}
-                                        <option value="VEGETABLES">VEGETABLES</option>
-                                        <option value="FRUITS">FRUITS</option>
-                                        <option value="DAIRY">DAIRY</option>
-                                        <option value="MEAT">MEAT</option>
-                                        <option value="GRAINS">GRAINS</option>
-                                        <option value="OTHERS">OTHERS</option>
                                     </select>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider mb-2 opacity-60">{t('admin.ingredients.modal.physicalState')}</label>
+                                        <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-espresso/60 dark:text-white/60">{t('admin.ingredients.modal.physicalState')}</label>
                                         <select
                                             value={formData.physicalState}
-                                            onChange={e => setFormData({ ...formData, physicalState: e.target.value })}
-                                            className="w-full px-5 py-3 bg-background dark:bg-espresso-midnight/60 rounded-2xl border-none focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all appearance-none cursor-pointer"
+                                            onChange={e => setFormData({ ...formData, physicalState: e.target.value as PhysicalState })}
+                                            className="w-full px-5 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all text-espresso-midnight dark:text-alabaster appearance-none cursor-pointer"
                                         >
-                                            <option value="SOLID">SOLID</option>
-                                            <option value="LIQUID">LIQUID</option>
-                                            <option value="POWDER">POWDER</option>
+                                            {Object.values(PhysicalState).map(state => (
+                                                <option key={state} value={state}>{state}</option>
+                                            ))}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-wider mb-2 opacity-60">{t('admin.ingredients.modal.density')}</label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.density}
-                                            onChange={e => setFormData({ ...formData, density: parseFloat(e.target.value) })}
-                                            className="w-full px-5 py-3 bg-background dark:bg-espresso-midnight/60 rounded-2xl border-none focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all"
-                                        />
+                                        <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-espresso/60 dark:text-white/60">{t('admin.ingredients.modal.preferredUnit')}</label>
+                                        <select
+                                            value={formData.preferredUnit}
+                                            onChange={e => setFormData({ ...formData, preferredUnit: e.target.value })}
+                                            className="w-full px-5 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all text-espresso-midnight dark:text-alabaster appearance-none cursor-pointer"
+                                        >
+                                            {availableUnits.map(unit => {
+                                                const normalizedKey = unit.toUpperCase()
+                                                    .replace(/Ç/g, 'C')
+                                                    .replace(/Ğ/g, 'G')
+                                                    .replace(/İ/g, 'I')
+                                                    .replace(/Ö/g, 'O')
+                                                    .replace(/Ş/g, 'S')
+                                                    .replace(/Ü/g, 'U');
+                                                
+                                                return (
+                                                    <option key={unit} value={unit.toUpperCase()}>
+                                                        {t(`admin.ingredients.modal.units.${normalizedKey}`, { 
+                                                            defaultValue: unit.charAt(0).toUpperCase() + unit.slice(1) 
+                                                        })}
+                                                    </option>
+                                                );
+                                            })}
+                                        </select>
                                     </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-espresso/60 dark:text-white/60">{t('admin.ingredients.modal.density')}</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.density}
+                                        onChange={e => setFormData({ ...formData, density: parseFloat(e.target.value) })}
+                                        className="w-full px-5 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-terracotta/10 text-sm font-medium transition-all text-espresso-midnight dark:text-alabaster"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -176,7 +202,7 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
                                         step="0.1"
                                         value={formData.caloriesPer100g}
                                         onChange={e => setFormData({ ...formData, caloriesPer100g: parseFloat(e.target.value) })}
-                                        className="w-full px-5 py-3 bg-background dark:bg-espresso-midnight/60 rounded-2xl border-none focus:ring-4 focus:ring-terracotta/10 text-lg font-black text-espresso-midnight dark:text-alabaster"
+                                        className="w-full px-5 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-terracotta/10 text-lg font-black text-espresso-midnight dark:text-alabaster"
                                     />
                                 </div>
 
@@ -188,7 +214,7 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
                                             step="0.1"
                                             value={formData.proteinPer100g}
                                             onChange={e => setFormData({ ...formData, proteinPer100g: parseFloat(e.target.value) })}
-                                            className="w-full px-2 py-3 bg-background dark:bg-espresso-midnight/60 rounded-2xl border-none focus:ring-4 focus:ring-blue-500/10 text-sm font-bold text-center transition-all"
+                                            className="w-full px-2 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-blue-500/10 text-sm font-bold text-center transition-all text-espresso-midnight dark:text-alabaster"
                                         />
                                     </div>
                                     <div>
@@ -198,7 +224,7 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
                                             step="0.1"
                                             value={formData.carbsPer100g}
                                             onChange={e => setFormData({ ...formData, carbsPer100g: parseFloat(e.target.value) })}
-                                            className="w-full px-2 py-3 bg-background dark:bg-espresso-midnight/60 rounded-2xl border-none focus:ring-4 focus:ring-amber-500/10 text-sm font-bold text-center transition-all"
+                                            className="w-full px-2 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-amber-500/10 text-sm font-bold text-center transition-all text-espresso-midnight dark:text-alabaster"
                                         />
                                     </div>
                                     <div>
@@ -208,7 +234,7 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
                                             step="0.1"
                                             value={formData.fatPer100g}
                                             onChange={e => setFormData({ ...formData, fatPer100g: parseFloat(e.target.value) })}
-                                            className="w-full px-2 py-3 bg-background dark:bg-espresso-midnight/60 rounded-2xl border-none focus:ring-4 focus:ring-sage/10 text-sm font-bold text-center transition-all"
+                                            className="w-full px-2 py-3 bg-white dark:bg-white/5 rounded-2xl border border-espresso/10 dark:border-white/10 focus:ring-4 focus:ring-sage/10 text-sm font-bold text-center transition-all text-espresso-midnight dark:text-alabaster"
                                         />
                                     </div>
                                 </div>
@@ -227,7 +253,7 @@ const AdminIngredientEditModal: React.FC<AdminIngredientEditModalProps> = ({ id,
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-8 py-3 text-xs font-black uppercase tracking-widest text-espresso/40 hover:text-espresso-midnight dark:hover:text-alabaster transition-all"
+                            className="px-8 py-3 text-xs font-black uppercase tracking-widest text-espresso/50 dark:text-white/50 hover:text-terracotta dark:hover:text-terracotta transition-all"
                         >
                             {t('admin.ingredients.modal.cancel')}
                         </button>
