@@ -28,7 +28,7 @@ public class IngredientController {
             @RequestParam(defaultValue = "") String query,
             @RequestParam(defaultValue = "12") int limit
     ) {
-        int safeLimit = Math.max(1, Math.min(limit, 25));
+        int safeLimit = Math.max(1, Math.min(limit, 1000));
         return ingredientService.searchByName(query, safeLimit).stream()
                 .map(ingredientMapper::toDTO)
                 .toList();

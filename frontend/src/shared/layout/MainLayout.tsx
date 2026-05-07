@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Utensils, User as UserIcon,
     LogOut, ChevronLeft, ChevronRight, Moon, Sun, Boxes, Sparkles, Plus,
-    Bell, Settings, Check, X, Calculator, BarChart2, Info, Eye
+    Bell, Settings, Check, X, Calculator, BarChart2, Info, Eye, ShieldCheck
 } from 'lucide-react';
 import amblem from '../../assets/meal_amblem.png';
 import logoDark from '../../assets/meal_logo_dark.png';
@@ -191,6 +191,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
     const menuItems = [
         { id: 'dashboard', text: t('navigation.home'), icon: <LayoutDashboard size={20} />, route: '/dashboard' },
+        { id: 'admin', text: t('navigation.admin') || 'Admin', icon: <ShieldCheck size={20} />, route: '/admin', roles: ['ADMIN'] },
         { id: 'recipes', text: t('navigation.recipes'), icon: <Utensils size={20} />, route: '/recipes', private: true },
         { id: 'analysis', text: t('navigation.analysis'), icon: <BarChart2 size={20} />, route: '/history', private: true },
         { id: 'inventory', text: t('navigation.inventory'), icon: <Boxes size={20} />, route: '/inventory', private: true },
@@ -199,7 +200,12 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         { id: 'about', text: t('landing.footer.about'), icon: <Info size={20} />, route: '/about' },
     ];
 
-    const visibleItems = menuItems.filter(item => !item.private || authenticated);
+    const visibleItems = menuItems.filter(item => {
+        if (item.roles) {
+            return user && item.roles.some(role => user.roles?.includes(role));
+        }
+        return !item.private || authenticated;
+    });
 
     return (
         <div className="flex h-screen bg-background dark:bg-espresso-midnight transition-colors duration-500 overflow-hidden font-sans text-espresso-midnight dark:text-alabaster">

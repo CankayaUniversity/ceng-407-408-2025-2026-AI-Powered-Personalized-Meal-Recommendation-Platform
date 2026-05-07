@@ -94,10 +94,17 @@ public class UserService {
      * İsim veya e-postaya göre kullanıcı arar.
      */
     public java.util.List<User> searchUsers(String query) {
-        if (query == null || query.length() < 2) {
+        if (query == null || query.isBlank()) {
             return userRepository.findAllActive();
         }
         return userRepository.searchByQuery(query);
+    }
+
+    /**
+     * Tüm aktif kullanıcıları getirir.
+     */
+    public java.util.List<User> findAll() {
+        return userRepository.findAllActive();
     }
 
     /**
@@ -164,6 +171,18 @@ public class UserService {
                 .map(user -> {
                     user.setDietType(dietType);
                     user.setAllergies(allergies);
+                    return userRepository.save(user);
+                })
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + id));
+    }
+
+    /**
+     * Kullanıcı rolünü günceller.
+     */
+    public User updateRole(String id, User.UserRole role) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    user.setRole(role);
                     return userRepository.save(user);
                 })
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + id));

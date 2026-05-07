@@ -75,6 +75,93 @@
     }
   },
   "welcome": "Yapay Zeka Destekli Yemek Önerisi Platformuna Hoş Geldiniz!",
+  "admin": {
+    "title": "Admin Paneli",
+    "subtitle": "Sistem genelindeki tüm verileri ve ayarları buradan yönetebilirsiniz.",
+    "tabs": {
+      "ingredients": "Malzemeler",
+      "users": "Kullanıcılar",
+      "settings": "Ayarlar"
+    },
+    "ingredients": {
+      "title": "Malzeme Yönetimi",
+      "subtitle": "Sistemdeki malzemeleri düzenleyin, besin değerlerini güncelleyin ve test ortamını yönetin.",
+      "resetInventory": "Envanteri Sıfırla",
+      "newIngredient": "Yeni Malzeme",
+      "editIngredient": "Malzemeyi Düzenle",
+      "searchPlaceholder": "Malzeme ara...",
+      "deleteConfirm": "Bu malzemeyi silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve bu malzemeyi içeren tarifleri etkileyebilir.",
+      "resetConfirm": "Tüm test envanterini sıfırlamak ve stokları 10.000 birime eşitlemek istediğinize emin misiniz?",
+      "successReset": "Test envanteri başarıyla sıfırlandı.",
+      "errorReset": "Sıfırlama işlemi başarısız oldu.",
+      "successDelete": "Malzeme başarıyla silindi.",
+      "errorDelete": "Silme işlemi başarısız.",
+      "table": {
+        "name": "Malzeme",
+        "category": "Kategori",
+        "nutrients": "Besin Değerleri (100g)",
+        "caloriesPer100g": "Kalori (100g)",
+        "macros": "P / K / Y",
+        "actions": "İşlemler"
+      },
+      "noIngredientFound": "Hiç malzeme bulunamadı.",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "id": "ID",
+      "successAction": "İşlem başarıyla tamamlandı.",
+      "modal": {
+        "basicInfo": "Temel Bilgiler",
+        "name": "Malzeme Adı",
+        "category": "Kategori",
+        "density": "Yoğunluk (g/ml)",
+        "physicalState": "Fiziksel Hal",
+        "preferredUnit": "Tercih Edilen Birim",
+        "nutritionalValues": "Besin Değerleri (100g için)",
+        "calories": "Kalori (kcal)",
+        "protein": "Protein (g)",
+        "carbs": "Karbonhidrat (g)",
+        "fat": "Yağ (g)",
+        "cancel": "Vazgeç",
+        "save": "Kaydet",
+        "saving": "Kaydediliyor..."
+      }
+    },
+    "users": {
+      "searchPlaceholder": "Kullanıcı ara (isim veya e-posta)...",
+      "table": {
+        "user": "Kullanıcı",
+        "email": "E-Posta",
+        "role": "Rol",
+        "actions": "İşlemler"
+      },
+      "noUserFound": "Kullanıcı bulunamadı.",
+      "deleteConfirm": "Bu kullanıcıyı silmek istediğinize emin misiniz?",
+      "roleUpdateConfirm": "{{name}} kullanıcısının rolünü {{role}} yapmak istediğinize emin misiniz?",
+      "successDelete": "Kullanıcı başarıyla silindi.",
+      "errorDelete": "Kullanıcı silinemedi.",
+      "successRoleUpdate": "Kullanıcı rolü güncellendi.",
+      "errorRoleUpdate": "Rol güncellenemedi.",
+      "errorLoad": "Kullanıcılar yüklenemedi.",
+      "close": "Kapat",
+      "unnamed": "İsimsiz Kullanıcı",
+      "makeAdmin": "Admin Yap",
+      "makeUser": "Kullanıcı Yap",
+      "deleteUser": "Kullanıcıyı Sil"
+    },
+    "settings": {
+      "dataTitle": "Veri ve Envanter Yönetimi",
+      "resetInventoryTitle": "Test Envanterini Sıfırla",
+      "resetInventoryDesc": "\"Tüm Malzemeler (Test)\" grubundaki tüm stokları 10.000 birim olarak günceller.",
+      "resetButton": "Sıfırla",
+      "setupInventoryTitle": "Test Envanterini Kur",
+      "setupInventoryDesc": "Eksik olan malzemeleri test envanterine ekler ve admin yetkilerini kontrol eder.",
+      "setupButton": "Kurulumu Başlat",
+      "securityTitle": "Güvenlik ve Sistem Ayarları",
+      "infoTitle": "Admin Bilgilendirmesi",
+      "infoDesc": "Bu panelde yapılan işlemler doğrudan veritabanını etkiler. Kullanıcı silme veya malzeme güncelleme işlemlerinde dikkatli olunmalıdır.",
+      "successSetup": "Test envanteri kurulumu tetiklendi."
+    }
+  },
   "navigation": {
     "home": "Anasayfa",
     "recipes": "Tarifler",
@@ -82,7 +169,8 @@
     "analysis": "Analizler",
     "recommendations": "Öneriler",
     "profile": "Profil",
-    "notifications": "Bildirimler"
+    "notifications": "Bildirimler",
+    "admin": "Admin"
   },
   "analysis": {
     "title": "Beslenme Analizi",
@@ -213,7 +301,8 @@
     "accept": "Kabul Et",
     "reject": "Reddet",
     "close": "Kapat",
-    "error": "Hata oluştu"
+    "error": "Hata oluştu",
+    "page": "Sayfa"
   },
   "auth": {
     "loginRequired": "Bu Sayfayı Görmek İçin Giriş Yapmalısınız",
@@ -454,7 +543,9 @@
       "criticalStock": "Kritik Stok",
       "searchPlaceholder": "Malzeme veya kategori ara...",
       "statusMissing": "BİTTİ",
-      "statusLow": "AZALDI"
+      "statusLow": "AZALDI",
+      "noIngredientsFound": "Malzeme bulunamadı.",
+      "quickAdjust": "Hızlı Miktar Ayarla"
     },
     "groupModal": {
       "editTitle": "Lokasyonu Düzenle",
@@ -613,7 +704,11 @@
     },
     "recipes": {
       "loadError": "Tarifler yüklenemedi",
-      "detailsError": "Detaylar yüklenemedi"
+      "detailsError": "Detaylar yüklenemedi",
+      "approveSuccess": "Tarif başarıyla onaylandı.",
+      "approveError": "Tarif onaylanırken hata oluştu.",
+      "rejectSuccess": "Tarif reddedildi.",
+      "rejectError": "Tarif reddedilirken hata oluştu."
     },
     "dashboard": {
       "syncError": "Veriler senkronize edilemedi."

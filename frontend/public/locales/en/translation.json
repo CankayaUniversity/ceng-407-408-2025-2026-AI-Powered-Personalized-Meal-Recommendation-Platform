@@ -75,6 +75,93 @@
     }
   },
   "welcome": "Welcome to AI-Powered Meal Recommendation Platform!",
+  "admin": {
+    "title": "Admin Panel",
+    "subtitle": "You can manage all system-wide data and settings from here.",
+    "tabs": {
+      "ingredients": "Ingredients",
+      "users": "Users",
+      "settings": "Settings"
+    },
+    "ingredients": {
+      "title": "Ingredient Management",
+      "subtitle": "Edit ingredients in the system, update nutritional values, and manage the test environment.",
+      "resetInventory": "Reset Inventory",
+      "newIngredient": "New Ingredient",
+      "editIngredient": "Edit Ingredient",
+      "searchPlaceholder": "Search ingredient...",
+      "deleteConfirm": "Are you sure you want to delete this ingredient? This action cannot be undone and may affect recipes containing this ingredient.",
+      "resetConfirm": "Are you sure you want to reset the entire test inventory and set stocks to 10,000 units?",
+      "successReset": "Test inventory reset successfully.",
+      "errorReset": "Reset operation failed.",
+      "successDelete": "Ingredient deleted successfully.",
+      "errorDelete": "Delete operation failed.",
+      "table": {
+        "name": "Ingredient",
+        "category": "Category",
+        "nutrients": "Nutritional Values (100g)",
+        "caloriesPer100g": "Calories (100g)",
+        "macros": "P / C / F",
+        "actions": "Actions"
+      },
+      "noIngredientFound": "No ingredients found.",
+      "edit": "Edit",
+      "delete": "Delete",
+      "id": "ID",
+      "successAction": "Operation completed successfully.",
+      "modal": {
+        "basicInfo": "Basic Information",
+        "name": "Ingredient Name",
+        "category": "Category",
+        "density": "Density (g/ml)",
+        "physicalState": "Physical State",
+        "preferredUnit": "Preferred Unit",
+        "nutritionalValues": "Nutritional Values (per 100g)",
+        "calories": "Calories (kcal)",
+        "protein": "Protein (g)",
+        "carbs": "Carbohydrates (g)",
+        "fat": "Fat (g)",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving..."
+      }
+    },
+    "users": {
+      "searchPlaceholder": "Search user (name or email)...",
+      "table": {
+        "user": "User",
+        "email": "Email",
+        "role": "Role",
+        "actions": "Actions"
+      },
+      "noUserFound": "User not found.",
+      "deleteConfirm": "Are you sure you want to delete this user?",
+      "roleUpdateConfirm": "Are you sure you want to change the role of {{name}} to {{role}}?",
+      "successDelete": "User deleted successfully.",
+      "errorDelete": "Could not delete user.",
+      "successRoleUpdate": "User role updated.",
+      "errorRoleUpdate": "Could not update role.",
+      "errorLoad": "Could not load users.",
+      "close": "Close",
+      "unnamed": "Unnamed User",
+      "makeAdmin": "Make Admin",
+      "makeUser": "Make User",
+      "deleteUser": "Delete User"
+    },
+    "settings": {
+      "dataTitle": "Data and Inventory Management",
+      "resetInventoryTitle": "Reset Test Inventory",
+      "resetInventoryDesc": "Updates all stocks in the \"All Ingredients (Test)\" group to 10,000 units.",
+      "resetButton": "Reset",
+      "setupInventoryTitle": "Setup Test Inventory",
+      "setupInventoryDesc": "Adds missing ingredients to the test inventory and checks admin permissions.",
+      "setupButton": "Start Setup",
+      "securityTitle": "Security and System Settings",
+      "infoTitle": "Admin Information",
+      "infoDesc": "Operations performed in this panel directly affect the database. Caution should be exercised when deleting users or updating ingredients.",
+      "successSetup": "Test inventory setup triggered."
+    }
+  },
   "navigation": {
     "home": "Home",
     "recipes": "Recipes",
@@ -82,7 +169,8 @@
     "analysis": "Analysis",
     "recommendations": "Recommendations",
     "profile": "Profile",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "admin": "Admin"
   },
   "analysis": {
     "title": "Nutrition Analysis",
@@ -213,7 +301,8 @@
     "accept": "Accept",
     "reject": "Reject",
     "close": "Close",
-    "error": "An error occurred"
+    "error": "An error occurred",
+    "page": "Page"
   },
   "auth": {
     "loginRequired": "You Must Log In to View This Page",
@@ -261,6 +350,7 @@
     "empty": "You have no notifications yet.",
     "inviteAnswered": "This invitation has been answered or marked as read",
     "markRead": "Mark as read",
+    "viewDetails": "View Details",
     "title": "Notifications",
     "markAllRead": "Mark All Read",
     "accept": "Accept",
@@ -395,6 +485,34 @@
       "salad": "Salad",
       "dessert": "Dessert",
       "fit": "Fit & Healthy"
+    },
+    "status": {
+      "draft": "Draft",
+      "pending": "Pending Approval",
+      "approved": "Live",
+      "rejected": "Rejected",
+      "updated_version": "Updated Version"
+    },
+    "modal": {
+      "addTitle": "Add New Recipe",
+      "editTitle": "Edit Recipe",
+      "basics": "Basic Information",
+      "titleLabel": "Recipe Title",
+      "titlePlaceholder": "E.g: Mom's Meatballs, Vegetable Gratin...",
+      "timeLabel": "Preparation Time (Min)",
+      "servingsLabel": "Servings",
+      "caloriesLabel": "Calories (Kcal)",
+      "categoryLabel": "Category",
+      "ingredients": "Ingredients",
+      "addIngredient": "Add Ingredient",
+      "grams": "Grams",
+      "instructionsLabel": "Instructions",
+      "instructionsPlaceholder": "You can write the recipe instructions step by step here...",
+      "saveDraft": "SAVE AS DRAFT",
+      "submitForApproval": "SUBMIT FOR APPROVAL",
+      "saveChanges": "SAVE CHANGES",
+      "sending": "Sending...",
+      "ingredientPlaceholder": "Select ingredient..."
     }
   },
   "inventory": {
@@ -424,8 +542,10 @@
       "categories": "Categories",
       "criticalStock": "Critical Stock",
       "searchPlaceholder": "Search ingredient or category...",
-      "statusMissing": "MISSING",
-      "statusLow": "LOW"
+      "statusMissing": "OUT OF STOCK",
+      "statusLow": "LOW STOCK",
+      "noIngredientsFound": "No ingredients found.",
+      "quickAdjust": "Quick Adjust Amount"
     },
     "groupModal": {
       "editTitle": "Edit Location",
@@ -584,7 +704,11 @@
     },
     "recipes": {
       "loadError": "Could not load recipes",
-      "detailsError": "Could not load details"
+      "detailsError": "Could not load details",
+      "approveSuccess": "Recipe approved successfully.",
+      "approveError": "Error while approving recipe.",
+      "rejectSuccess": "Recipe rejected.",
+      "rejectError": "Error while rejecting recipe."
     },
     "dashboard": {
       "syncError": "Could not sync data."

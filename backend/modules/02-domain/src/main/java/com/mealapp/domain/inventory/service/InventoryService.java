@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -100,6 +101,85 @@ public class InventoryService {
         // Güvenlik kontrolü: Kullanıcı bu gruba dahil mi?
         getRequiredGroup(userId, groupId);
         return inventoryRepository.findByInventoryGroupIdAndInventoryGroupUsersIdOrderByIngredientNameAsc(groupId, userId, pageable);
+    }
+
+    /**
+     * Tüm malzemeleri içeren ve tüm adminlerin erişebildiği bir test envanteri grubu oluşturur.
+     * Eğer grup zaten varsa, mevcut verileri bozmamak için işlem yapmadan döner.
+     */
+    @Transactional
+    public InventoryGroup createTestInventoryForAllAdmins() {
+        String groupName = "Tüm Malzemeler (Test)";
+        
+        // Eğer grup zaten varsa, değişiklik yapmadan geri dön (Adminlerin manuel değişikliklerini korumak için)
+        Optional<InventoryGroup> existingGroup = inventoryGroupRepository.findByName(groupName);
+        if (existingGroup.isPresent()) {
+            return existingGroup.get();
+        }
+
+        List<User> admins = userRepository.findAllAdmins();
+        if (admins.isEmpty()) {
+            throw new MealAppDomainException("Sistemde admin bulunamadı. Test envanteri oluşturulamıyor.");
+        }
+
+        InventoryGroup testGroup = InventoryGroup.builder()
+                .name(groupName)
+                .icon("🧪")
+                .users(new ArrayList<>(admins))
+                .items(new ArrayList<>())
+                .build();
+        
+        testGroup = inventoryGroupRepository.save(testGroup);
+        
+        // Adminlerin listesine bu grubu ekleyelim (Bidirectional ilişki)
+        for (User admin : admins) {
+            if (!admin.getInventoryGroups().contains(testGroup)) {
+                admin.getInventoryGroups().add(testGroup);
+            }
+        }
+        userRepository.saveAll(admins);
+
+        List<Ingredient> allIngredients = ingredientRepository.findAll();
+        List<Inventory> inventoryItemsToSave = new ArrayList<>();
+
+        for (Ingredient ingredient : allIngredients) {
+            Inventory newItem = new Inventory();
+            newItem.setIngredient(ingredient);
+            newItem.setInventoryGroup(testGroup);
+            
+            String unit = ingredient.getPreferredUnit() != null ? ingredient.getPreferredUnit() : "GRAM";
+            newItem.setQuantity(10000.0); // Başlangıç miktarı
+            newItem.setUnit(unit);
+            inventoryItemsToSave.add(newItem);
+        }
+        
+        inventoryRepository.saveAll(inventoryItemsToSave);
+        testGroup.setItems(inventoryItemsToSave);
+        
+        return testGroup;
+    }
+
+    /**
+     * Test envanterini tamamen siler ve tüm malzemelerle birlikte 10000 birim olacak şekilde yeniden oluşturur.
+     */
+    @Transactional
+    public InventoryGroup resetTestInventory() {
+        String groupName = "Tüm Malzemeler (Test)";
+        
+        inventoryGroupRepository.findByName(groupName).ifPresent(group -> {
+            // Önce ilişkileri temizle (Özellikle User tarafındaki referansları)
+            for (User user : group.getUsers()) {
+                user.getInventoryGroups().remove(group);
+            }
+            userRepository.saveAll(group.getUsers());
+            
+            // Grubu sil (Cascade sayesinde içindeki Inventory öğeleri de silinmeli)
+            inventoryGroupRepository.delete(group);
+            inventoryGroupRepository.flush();
+        });
+        
+        // Yeniden oluştur
+        return createTestInventoryForAllAdmins();
     }
 
     /**

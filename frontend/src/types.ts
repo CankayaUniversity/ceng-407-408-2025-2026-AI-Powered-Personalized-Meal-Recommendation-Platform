@@ -93,6 +93,7 @@ export interface User {
   createdAt?: string | null;
   updatedAt?: string | null;
   profileImageUrl?: string | null;
+  role?: 'USER' | 'ADMIN';
 }
 
 export interface Notification {

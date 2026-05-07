@@ -242,4 +242,87 @@ class InventoryServiceTest {
         assertEquals("diş", existingGarlic.getUnit());
         verify(inventoryRepository).save(existingGarlic);
     }
+
+    @Test
+    void shouldCreateTestInventoryForAllAdmins() {
+        // Given
+        User admin1 = User.builder().id("admin-1").role(User.UserRole.ADMIN).inventoryGroups(new ArrayList<>()).build();
+        User admin2 = User.builder().id("admin-2").role(User.UserRole.ADMIN).inventoryGroups(new ArrayList<>()).build();
+        List<User> admins = List.of(admin1, admin2);
+
+        Ingredient ingredient1 = Ingredient.builder().id(1L).name("Ingredient 1").preferredUnit("kg").build();
+        Ingredient ingredient2 = Ingredient.builder().id(2L).name("Ingredient 2").build(); // No preferred unit
+        List<Ingredient> ingredients = List.of(ingredient1, ingredient2);
+
+        when(userRepository.findAllAdmins()).thenReturn(admins);
+        when(ingredientRepository.findAll()).thenReturn(ingredients);
+        when(inventoryGroupRepository.findByName("Tüm Malzemeler (Test)")).thenReturn(Optional.empty());
+        when(inventoryGroupRepository.save(any(InventoryGroup.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        // When
+        InventoryGroup testGroup = inventoryService.createTestInventoryForAllAdmins();
+
+        // Then
+        assertNotNull(testGroup);
+        assertEquals("Tüm Malzemeler (Test)", testGroup.getName());
+        assertEquals(2, testGroup.getUsers().size());
+        assertTrue(testGroup.getUsers().contains(admin1));
+        assertTrue(testGroup.getUsers().contains(admin2));
+
+        verify(inventoryGroupRepository).save(any(InventoryGroup.class));
+        verify(userRepository).saveAll(admins);
+        verify(inventoryRepository).saveAll(anyList());
+
+        assertEquals(2, testGroup.getItems().size());
+        
+        Inventory item1 = testGroup.getItems().stream().filter(i -> i.getIngredient().getId().equals(1L)).findFirst().orElseThrow();
+        assertEquals(10000.0, item1.getQuantity());
+        assertEquals("kg", item1.getUnit());
+
+        Inventory item2 = testGroup.getItems().stream().filter(i -> i.getIngredient().getId().equals(2L)).findFirst().orElseThrow();
+        assertEquals(10000.0, item2.getQuantity());
+        assertEquals("GRAM", item2.getUnit());
+    }
+
+    @Test
+    void shouldNotRecreateTestInventoryIfAlreadyExists() {
+        // Given
+        InventoryGroup existingGroup = InventoryGroup.builder().name("Tüm Malzemeler (Test)").build();
+        when(inventoryGroupRepository.findByName("Tüm Malzemeler (Test)")).thenReturn(Optional.of(existingGroup));
+
+        // When
+        InventoryGroup result = inventoryService.createTestInventoryForAllAdmins();
+
+        // Then
+        assertSame(existingGroup, result);
+        verify(inventoryGroupRepository, never()).save(any());
+        verify(inventoryRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void shouldResetTestInventory() {
+        // Given
+        User admin = User.builder().id("admin-1").inventoryGroups(new ArrayList<>()).build();
+        InventoryGroup existingGroup = InventoryGroup.builder()
+                .name("Tüm Malzemeler (Test)")
+                .users(new ArrayList<>(List.of(admin)))
+                .build();
+        admin.getInventoryGroups().add(existingGroup);
+
+        when(inventoryGroupRepository.findByName("Tüm Malzemeler (Test)"))
+                .thenReturn(Optional.of(existingGroup)) // resetTestInventory finds it
+                .thenReturn(Optional.empty()); // createTestInventoryForAllAdmins does NOT find it
+        User admin1 = User.builder().id("admin-1").role(User.UserRole.ADMIN).inventoryGroups(new ArrayList<>()).build();
+        when(userRepository.findAllAdmins()).thenReturn(List.of(admin1));
+        when(ingredientRepository.findAll()).thenReturn(List.of());
+        when(inventoryGroupRepository.save(any(InventoryGroup.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        // When
+        inventoryService.resetTestInventory();
+
+        // Then
+        verify(inventoryGroupRepository).delete(existingGroup);
+        verify(userRepository, atLeast(1)).saveAll(anyList()); // For clearing user-group link AND re-creation
+        verify(inventoryGroupRepository, atLeastOnce()).save(any()); // Re-creation
+    }
 }

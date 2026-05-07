@@ -29,6 +29,8 @@ public interface InventoryGroupRepository extends JpaRepository<InventoryGroup, 
     boolean existsByUsersIdAndNameIgnoreCase(String userId, String name);
 
     boolean existsByUsersIdAndNameIgnoreCaseAndIdNot(String userId, String name, Long id);
+    
+    Optional<InventoryGroup> findByName(String name);
 
     long countByUsersId(String userId);
 }

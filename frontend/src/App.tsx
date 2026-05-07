@@ -22,6 +22,7 @@ import InventoryPage from './features/inventory/InventoryPage';
 import NotificationsPage from './features/notifications/NotificationsPage';
 import RecommendationPage from './features/recommendations/RecommendationPage';
 import ConsumptionHistoryPage from './features/consumption/pages/ConsumptionHistoryPage';
+import AdminPanel from './features/admin/AdminPanel';
 import keycloakConfig from './keycloak-config.json';
 import type { AuthService } from './infrastructure/services/auth/AuthService';
 
@@ -144,6 +145,16 @@ const App: React.FC = () => {
                           <PrivateRoute>
                             <MainLayout>
                               <ConsumptionHistoryPage />
+                            </MainLayout>
+                          </PrivateRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin"
+                        element={
+                          <PrivateRoute roles={['ADMIN']}>
+                            <MainLayout>
+                              <AdminPanel />
                             </MainLayout>
                           </PrivateRoute>
                         }
