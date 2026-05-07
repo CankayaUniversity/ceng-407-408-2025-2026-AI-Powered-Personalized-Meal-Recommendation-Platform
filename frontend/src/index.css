@@ -161,6 +161,34 @@
     color: var(--color-primary);
   }
 
+  /* BİLDİRİM TÜRÜ BADGELERİ */
+  .notification-icon-container {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300;
+  }
+
+  .notification-type-invitation {
+    background-color: rgba(218, 165, 32, 0.1);
+    color: var(--raw-ochre);
+    border: 1px solid rgba(218, 165, 32, 0.2);
+  }
+
+  .notification-type-system {
+    background-color: rgba(141, 163, 153, 0.1);
+    color: var(--raw-sage);
+    border: 1px solid rgba(141, 163, 153, 0.2);
+  }
+
+  .notification-type-recipe {
+    background-color: var(--color-primary-soft);
+    color: var(--color-primary);
+    border: 1px solid rgba(226, 114, 91, 0.2);
+  }
+
+  .notification-type-default {
+    background-color: var(--color-card-border);
+    color: var(--color-text-muted);
+  }
+
   /* --- RESPONSIVE MERKEZİ KONTROL SINIFLARI --- */
 
   /* Grup butonları için esnek ve responsive container */

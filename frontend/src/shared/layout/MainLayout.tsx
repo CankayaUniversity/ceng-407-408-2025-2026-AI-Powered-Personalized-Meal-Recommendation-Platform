@@ -191,12 +191,13 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
     const menuItems = [
         { id: 'dashboard', text: t('navigation.home'), icon: <LayoutDashboard size={20} />, route: '/dashboard' },
-        { id: 'admin', text: t('navigation.admin') || 'Admin', icon: <ShieldCheck size={20} />, route: '/admin', roles: ['ADMIN'] },
         { id: 'recipes', text: t('navigation.recipes'), icon: <Utensils size={20} />, route: '/recipes', private: true },
         { id: 'analysis', text: t('navigation.analysis'), icon: <BarChart2 size={20} />, route: '/history', private: true },
         { id: 'inventory', text: t('navigation.inventory'), icon: <Boxes size={20} />, route: '/inventory', private: true },
         { id: 'recommendations', text: t('navigation.recommendations'), icon: <Sparkles size={20} />, route: '/recommendations', private: true },
+        { id: 'notifications', text: t('navigation.notifications'), icon: <Bell size={20} />, route: '/notifications', private: true },
         { id: 'profile', text: t('navigation.profile'), icon: <UserIcon size={20} />, route: '/profile', private: true },
+        { id: 'admin', text: t('navigation.admin') || 'Admin', icon: <ShieldCheck size={20} />, route: '/admin', roles: ['ADMIN'] },
         { id: 'about', text: t('landing.footer.about'), icon: <Info size={20} />, route: '/about' },
     ];
 
