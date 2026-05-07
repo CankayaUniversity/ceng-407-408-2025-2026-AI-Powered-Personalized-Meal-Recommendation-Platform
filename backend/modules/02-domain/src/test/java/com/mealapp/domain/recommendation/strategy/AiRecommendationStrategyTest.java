@@ -165,6 +165,56 @@ class AiRecommendationStrategyTest {
         assertTrue(finalPrompt.contains("garlic"));
     }
 
+    @Test
+    void shouldHandleNegativeCravingsInScoring() {
+        Recipe withOnion = recipeWithIngredients(10L, "Onion Soup", 5.0, "Onion", "Water");
+        Recipe withoutOnion = recipeWithIngredients(11L, "Water Soup", 5.0, "Water");
+
+        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyString(), anyList(), any(Pageable.class)))
+                .thenReturn(List.of(withOnion, withoutOnion));
+
+        lenient().when(recipeService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);
+        when(ingredientMatchService.calculateMatchScore(any(), anyList())).thenReturn(1.0);
+
+        when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenReturn("mock prompt");
+        when(promptEngine.callAi(anyString(), anyString())).thenThrow(new RuntimeException("AI unavailable"));
+
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0, 50.0);
+
+        // When: User wants something WITHOUT onion (English data)
+        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "onion-free meal", "gemini");
+
+        // Then: Recipe without onion should be first
+        assertFalse(recommendations.isEmpty());
+        assertEquals(11L, recommendations.get(0).getId());
+        assertTrue(recommendations.get(0).getAiInsight().contains("Yapay zeka servisine şu an erişilemiyor"));
+    }
+
+    @Test
+    void shouldHandleTurkishNegativeCravingsInScoring() {
+        Recipe withOnion = recipeWithIngredients(10L, "Soganli Corba", 5.0, "Sogan", "Su");
+        Recipe withoutOnion = recipeWithIngredients(11L, "Sade Corba", 5.0, "Su");
+
+        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyString(), anyList(), any(Pageable.class)))
+                .thenReturn(List.of(withOnion, withoutOnion));
+
+        lenient().when(recipeService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);
+        when(ingredientMatchService.calculateMatchScore(any(), anyList())).thenReturn(1.0);
+
+        when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenReturn("mock prompt");
+        when(promptEngine.callAi(anyString(), anyString())).thenThrow(new RuntimeException("AI unavailable"));
+
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0, 50.0);
+
+        // When: User wants something WITHOUT onion (Turkish data)
+        // Note: Using "sogansiz" to match normalized data and testing the score directly
+        List<Recipe> recommendations = strategy.recommend(user, inventory, dailySummary, "soğansız", "gemini");
+
+        // Then: Recipe without onion should be first
+        assertFalse(recommendations.isEmpty());
+        assertEquals(11L, recommendations.get(0).getId(), "Recipe ID 11 (without onion) should be first");
+    }
+
     private Recipe recipeWithIngredients(Long id, String title, double rating, String... ingredientNames) {
         List<RecipeIngredient> recipeIngredients = Arrays.stream(ingredientNames)
                 .map(name -> RecipeIngredient.builder()

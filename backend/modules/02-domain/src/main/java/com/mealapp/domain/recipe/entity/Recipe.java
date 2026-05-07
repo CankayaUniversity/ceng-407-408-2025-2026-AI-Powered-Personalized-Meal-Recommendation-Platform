@@ -130,6 +130,13 @@ public class Recipe extends BaseEntity {
     @Transient
     private String aiInsight;
 
+    /**
+     * Önerinin AI tarafından mı yoksa fallback mekanizması tarafından mı üretildiğini belirtir.
+     */
+    @Transient
+    @Builder.Default
+    private boolean isAiGenerated = true;
+
     public enum Difficulty {
         EASY, MEDIUM, HARD
     }

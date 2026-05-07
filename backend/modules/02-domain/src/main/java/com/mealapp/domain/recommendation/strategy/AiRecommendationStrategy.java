@@ -100,6 +100,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                     r.setAiInsight(aiInsight == null || aiInsight.isBlank()
                             ? buildFallbackInsight(r, currentInventory, dislikedIngredients, normalizedCravings, user)
                             : aiInsight);
+                    r.setAiGenerated(true);
                     return r;
                 })
                 .toList();
@@ -232,6 +233,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return topRecipes.stream()
                 .limit(FINAL_RECOMMENDATION_LIMIT)
                 .map(recipe -> {
+                    recipe.setAiGenerated(false);
                     recipe.setAiInsight(buildFallbackInsight(recipe, currentInventory, dislikedIngredients, cravings, user));
                     return recipe;
                 })
@@ -240,6 +242,10 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
 
     private String buildFallbackInsight(Recipe recipe, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user) {
         StringBuilder insight = new StringBuilder();
+
+        if (!recipe.isAiGenerated()) {
+            insight.append("⚠️ Yapay zeka servisine şu an erişilemiyor, sistem tarafından en uygun tarifler seçildi.\n\n");
+        }
 
         // Kullanıcının hedefi ve diyetine göre özelleştirilmiş başlangıç
         if (user.getDietaryGoal() != null || (user.getDietType() != null && user.getDietType() != User.DietType.NONE)) {
@@ -339,14 +345,20 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         if (cravings == null || cravings.isBlank()) {
             return 1.0;
         }
+
+        String lowerCravings = cravings.toLowerCase(Locale.ROOT);
         List<String> cravingKeywords = extractCravingKeywords(cravings);
         if (cravingKeywords.isEmpty()) {
             return 1.0;
         }
 
+        List<String> recipeIngredients = getRecipeIngredientNames(recipe).stream()
+                .map(this::normalizeKey)
+                .toList();
+
         String recipeText = Stream.concat(
-                        Stream.of(recipe.getTitle(), recipe.getInstructions()),
-                        getRecipeIngredientNames(recipe).stream()
+                        Stream.of(recipe.getTitle(), recipe.getInstructions(), recipe.getCategory()),
+                        recipeIngredients.stream()
                 )
                 .filter(Objects::nonNull)
                 .map(this::normalizeKey)
@@ -354,6 +366,47 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
 
         if (recipeText.isBlank()) {
             return 0.0;
+        }
+
+        // Negatif istek kontrolü (Örn: "soğansız", "nane içermeyen")
+        // "olmasın", "istemiyorum", "içermeyen", "olmayan", "-siz", "-suz", "free", "without" ekleri kontrol edilebilir.
+        List<String> negativeKeywords = List.of("olmasin", "istemiyorum", "icermeyen", "olmayan", "suz", "siz", "suz", "suz", "free", "without");
+        boolean isNegativeRequest = negativeKeywords.stream().anyMatch(lowerCravings::contains) || 
+                                   negativeKeywords.stream().anyMatch(normalizeKey(lowerCravings)::contains);
+
+        if (isNegativeRequest) {
+            for (String keyword : cravingKeywords) {
+                // Sadece negatif anlam taşıyan kelimenin köküne odaklanalım
+                // Örn: "soğansız" içindeki "soğan" yasaklıdır.
+                boolean wordIsNegative = negativeKeywords.stream().anyMatch(keyword::endsWith) || 
+                                       negativeKeywords.stream().anyMatch(keyword::contains); 
+                
+                if (!wordIsNegative) continue;
+
+                String root = keyword;
+                // Normalize keywords: "siz", "siz", "suz", "suz" all become "siz" or "suz" after replace
+                if (keyword.endsWith("siz") || keyword.endsWith("suz")) {
+                    root = keyword.substring(0, keyword.length() - 3);
+                } else if (keyword.endsWith("free")) {
+                    root = keyword.substring(0, keyword.length() - 4);
+                } else if (keyword.startsWith("without")) {
+                    root = keyword.substring(7);
+                } else {
+                    // Diğer negatif kelimeler için (olmasın, istemiyorum vb.) kelimenin kendisini değil, 
+                    // ondan önceki kelimeyi yasaklamak gerekebilir ama şu an basitleştirmek için 
+                    // bu kelimeyi listeden çıkarıyoruz.
+                    continue; 
+                }
+
+                final String searchRoot = root.trim();
+                if (searchRoot.isEmpty()) continue;
+
+                if (recipeIngredients.stream().anyMatch(ing -> ing.contains(searchRoot) || searchRoot.contains(ing)) ||
+                    recipeText.contains(searchRoot)) {
+                    return 0.0;
+                }
+            }
+            return 1.0;
         }
 
         long matchedKeywords = cravingKeywords.stream()
@@ -402,9 +455,9 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
 
         Set<String> seen = new LinkedHashSet<>();
 
-        return Stream.of(normalized.split("[,\\s]+"))
+        return Stream.of(normalized.split("[\\s,.;!?]+"))
                 .map(String::trim)
-                .filter(token -> token.length() >= 3)
+                .filter(token -> token.length() >= 2)
                 .map(this::normalizeKey)
                 .filter(seen::add)
                 .toList();
@@ -420,6 +473,13 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     }
 
     private String normalizeKey(String value) {
-        return value == null ? "" : value.toLowerCase(Locale.ROOT);
+        if (value == null) return "";
+        return value.toLowerCase(Locale.ROOT)
+                .replace("ı", "i")
+                .replace("ğ", "g")
+                .replace("ü", "u")
+                .replace("ş", "s")
+                .replace("ö", "o")
+                .replace("ç", "c");
     }
 }
