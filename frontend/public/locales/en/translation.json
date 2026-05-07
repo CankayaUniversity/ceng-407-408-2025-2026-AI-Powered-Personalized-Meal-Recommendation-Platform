@@ -1,4 +1,111 @@
 {
+  "recommendations": {
+    "engine": "AI Recommendation Engine",
+    "hero": {
+      "title": "Connect what you crave to data.",
+      "subtitle": "Strict constraints in your profile, dislikes, selected inventory location, and today's craving signal are all carried to {{model}} in a single prompt."
+    },
+    "stats": {
+      "activeLocation": "Active Location",
+      "ingredients": "Ingredients",
+      "notSelected": "Not Selected"
+    },
+    "errors": {
+      "title": "Operation failed",
+      "aiFlowUpdated": "AI flow updated"
+    },
+    "inventory": {
+      "overline": "Location and Inventory",
+      "title": "Inventory Selection",
+      "registered": "Registered Locations",
+      "noLocation": "No locations found yet.",
+      "itemCount": "{{count}} Ingredients",
+      "categories": "Categories",
+      "lowStock": "Low Stock"
+    },
+    "algorithm": {
+      "overline": "Algorithm Settings",
+      "title": "AI Model",
+      "description": "The selected model prepares the most suitable recipes by analyzing your personal preferences and inventory status."
+    },
+    "profile": {
+      "overline": "User Information",
+      "editTitle": "Edit Profile",
+      "dietType": "Diet Type",
+      "goal": "Goal",
+      "calorieTarget": "Daily Calorie Target",
+      "normal": "Normal"
+    },
+    "cravings": {
+      "overline": "Get Recommendation",
+      "title": "Add final craving signal.",
+      "button": "Get Recommendations",
+      "loading": "AI is thinking...",
+      "label": "Is there anything you specifically crave today?",
+      "placeholder": "e.g. \"A light dinner\", \"High protein\", \"Asian cuisine\"",
+      "context": {
+        "title": "Context Summary",
+        "allergens": "Allergens are applied as strict constraints.",
+        "pantry": "{{count}} ingredients are prioritized.",
+        "signalActive": "Custom craving signal active.",
+        "signalNone": "No additional signal added."
+      }
+    },
+    "results": {
+      "empty": {
+        "title": "Recommendation results will appear here.",
+        "desc": "When you send your final craving signal along with your selected inventory location and user profile, we will create AI insight cards explaining why each recipe was chosen."
+      },
+      "title": "Recipes selected by AI",
+      "context": "Based on {{location}} location",
+      "cravingHighlight": " and \"{{craving}}\" craving highlighted.",
+      "pantryFit": "{{percent}}% pantry fit",
+      "cravingActive": "Craving active",
+      "aiPick": "AI Pick",
+      "noMatches": "No direct pantry matches",
+      "detail": "Recommendation Detail",
+      "insightReady": "AI Insight Ready",
+      "servings": "{{count}} servings",
+      "flexiblePortions": "Flexible portions",
+      "reviews": "{{count}} reviews",
+      "metrics": {
+        "calories": "Calories",
+        "protein": "Protein",
+        "prep": "Prep",
+        "rating": "Rating",
+        "carbs": "Carbs",
+        "fat": "Fat",
+        "matched": "Matched",
+        "missing": "Missing"
+      },
+      "insight": {
+        "title": "Why we recommended this?",
+        "pantry": "Prioritized from inventory",
+        "noPantryMatch": "This recipe was chosen mostly for goal and craving alignment.",
+        "missing": "Might still need",
+        "missingNone": "You can prepare this recipe almost entirely with current stock.",
+        "cook": "Cook This Recipe"
+      },
+      "feedback": {
+        "overline": "Feedback Loop",
+        "title": "Rate and Comment",
+        "rating": "Rating",
+        "needsWork": "Needs work",
+        "loveIt": "Love it",
+        "comment": "Comment",
+        "commentPlaceholder": "Did this recommendation match your craving? Was it practical for your inventory?",
+        "saving": "Saving...",
+        "saveButton": "Save Feedback"
+      },
+      "common": {
+        "page": "Results"
+      }
+    },
+    "loading": {
+      "title": "Recommendation engine loading",
+      "desc": "Profile, inventory, and past rating info are being synced."
+    }
+  },
   "landing": {
     "nav": {
       "login": "Login",
@@ -708,6 +815,14 @@
     }
   },
   "toasts": {
+    "recommendations": {
+      "loadError": "Could not load recommendation data.",
+      "inventoryRequired": "You must select a non-empty inventory location before generating recommendations.",
+      "generationError": "Could not generate recommendations.",
+      "generationSuccess": "{{count}} AI recommendations ready.",
+      "ratingSaved": "Your comment and rating have been saved.",
+      "ratingError": "Could not save rating."
+    },
     "inventory": {
       "loadError": "Could not load inventory.",
       "invitationsLoadError": "Could not load pending invitations.",

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
-  AlertCircle,
   Boxes,
   CheckCircle2,
   ChefHat,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth, type AuthUser } from '../../infrastructure/auth/AuthContext';
 import { useUI } from '../../infrastructure/ui/UIContext';
+import { useToast } from '../../shared/hooks/useToast';
 import { ApiError, NotFoundError } from '../../services/errors';
 import { useInventoryService } from '../../services/inventoryService';
 import { useRecipeService } from '../../services/recipeService';
@@ -117,9 +118,11 @@ const loadProfile = async (authUser: AuthUser, userService: ReturnType<typeof us
 };
 
 const RecommendationPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, authenticated } = useAuth();
   const { openConsumption } = useUI();
+  const { showToast } = useToast();
   const userService = useUserService();
   const inventoryService = useInventoryService();
   const recipeService = useRecipeService();
@@ -133,8 +136,6 @@ const RecommendationPage: React.FC = () => {
   const [cravings, setCravings] = useState('');
   const [loading, setLoading] = useState(true);
   const [recommending, setRecommending] = useState(false);
-  const [pageError, setPageError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [ratingsByRecipe, setRatingsByRecipe] = useState<Record<number, RecipeRatingResponse>>({});
   const [ratingDrafts, setRatingDrafts] = useState<Record<number, RatingDraft>>({});
 
@@ -168,8 +169,6 @@ const RecommendationPage: React.FC = () => {
     } else {
       setLoading(true);
     }
-
-    setPageError(null);
 
     try {
       // 1. Profil verilerini yukle
@@ -231,7 +230,7 @@ const RecommendationPage: React.FC = () => {
         console.warn('No inventory groups found for user');
       }
     } catch (error) {
-      setPageError(getErrorMessage(error, 'Recommendation verileri yuklenemedi.'));
+      showToast(getErrorMessage(error, t('toasts.recommendations.loadError')), 'error');
     } finally {
       setLoading(false);
     }
@@ -242,19 +241,13 @@ const RecommendationPage: React.FC = () => {
     void loadPageData();
   }, [authenticated, inventoryService, recipeService, user?.id, userService]);
 
-  useEffect(() => {
-    setSuccessMessage(null);
-  }, [selectedGroupId, cravings]);
-
   const handleGetRecommendations = async () => {
     if (!user?.id || !activeGroup || availableIngredients.length === 0) {
-      setPageError('Oneri olusturmak icin once dolu bir inventory lokasyonu secmelisin.');
+      showToast(t('toasts.recommendations.inventoryRequired'), 'warning');
       return;
     }
 
     setRecommending(true);
-    setPageError(null);
-    setSuccessMessage(null);
 
     try {
       console.log('Fetching recommendations for user:', user.id);
@@ -275,9 +268,9 @@ const RecommendationPage: React.FC = () => {
 
         return nextDrafts;
       });
-      setSuccessMessage(`${response.recommendedRecipes.length} AI onerisi hazir.`);
+      showToast(t('toasts.recommendations.generationSuccess', { count: response.recommendedRecipes.length }), 'success');
     } catch (error) {
-      setPageError(getErrorMessage(error, 'Oneriler olusturulamadi.'));
+      showToast(getErrorMessage(error, t('toasts.recommendations.generationError')), 'error');
       setRecommendations([]);
     } finally {
       setRecommending(false);
@@ -316,15 +309,18 @@ const RecommendationPage: React.FC = () => {
         rating: saved.rating,
         comment: saved.comment ?? '',
         saving: false,
-        success: 'Yorum ve puanin kaydedildi.',
+        success: t('toasts.recommendations.ratingSaved'),
         error: null
       });
+      showToast(t('toasts.recommendations.ratingSaved'), 'success');
     } catch (error) {
+      const errMsg = getErrorMessage(error, t('toasts.recommendations.ratingError'));
       updateRatingDraft(recipe.recipeId, {
         saving: false,
         success: null,
-        error: getErrorMessage(error, 'Puan kaydedilemedi.')
+        error: errMsg
       });
+      showToast(errMsg, 'error');
     }
   };
 
@@ -354,8 +350,8 @@ const RecommendationPage: React.FC = () => {
         <div className="meal-card flex items-center gap-4 px-8 py-7 shadow-[0_24px_60px_-30px_rgba(40,36,33,0.45)]">
           <Loader2 size={24} className="animate-spin text-terracotta" />
           <div>
-            <p className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Recommendation engine loading</p>
-            <p className="text-sm text-espresso-midnight/60 dark:text-alabaster/60">Profil, inventory ve gecmis rating bilgileri esleniyor.</p>
+            <p className="font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{t('recommendations.loading.title')}</p>
+            <p className="text-sm text-espresso-midnight/60 dark:text-alabaster/60">{t('recommendations.loading.desc')}</p>
           </div>
         </div>
       </div>
@@ -375,52 +371,28 @@ const RecommendationPage: React.FC = () => {
           <div className="max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-primary dark:border-white/10 dark:bg-white/5 dark:text-alabaster/80">
               <Sparkles size={14} className="text-terracotta" />
-              AI Recommendation Engine
+              {t('recommendations.engine')}
             </div>
             <div>
-              <h1 className="font-serif text-4xl font-bold leading-tight text-foreground dark:text-white sm:text-5xl">Canin ne cekiyorsa onu veriye bagla.</h1>
+              <h1 className="font-serif text-4xl font-bold leading-tight text-foreground dark:text-white sm:text-5xl">{t('recommendations.hero.title')}</h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-foreground-muted dark:text-alabaster/70 sm:text-lg">
-                Profilindeki sert kisitlar, sevmediklerin, sectigin inventory lokasyonu ve bugunku craving sinyalin tek prompt icinde {selectedAiModel.charAt(0) + selectedAiModel.slice(1).toLowerCase()}&apos;ye tasinir.
+                {t('recommendations.hero.subtitle', { model: selectedAiModel.charAt(0) + selectedAiModel.slice(1).toLowerCase() })}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="rounded-[2rem] border border-card-border bg-white/70 px-5 py-4 text-foreground backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">Aktif Lokasyon</p>
-              <p className="mt-2 font-serif text-3xl font-bold text-foreground dark:text-white">{activeGroup?.name || 'Seçilmedi'}</p>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">{t('recommendations.stats.activeLocation')}</p>
+              <p className="mt-2 font-serif text-3xl font-bold text-foreground dark:text-white">{activeGroup?.name || t('recommendations.stats.notSelected')}</p>
             </div>
             <div className="rounded-[2rem] border border-card-border bg-white/70 px-5 py-4 text-foreground backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">Malzemeler</p>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-foreground-muted dark:text-alabaster/40">{t('recommendations.stats.ingredients')}</p>
               <p className="mt-2 font-serif text-3xl font-bold text-foreground dark:text-white">{availableIngredients.length}</p>
             </div>
           </div>
         </div>
       </header>
-
-      {pageError && (
-        <div className="rounded-[2rem] border border-red-200/70 bg-red-50/90 px-5 py-4 text-red-700 shadow-[0_18px_48px_-28px_rgba(185,28,28,0.35)]">
-          <div className="flex items-start gap-3">
-            <AlertCircle size={18} className="mt-0.5 shrink-0" />
-            <div>
-              <p className="font-semibold">Islem tamamlanamadi</p>
-              <p className="mt-1 text-sm text-red-600">{pageError}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="rounded-[2rem] border border-moss-sage/30 bg-moss-sage/10 px-5 py-4 text-moss-forest shadow-[0_18px_48px_-28px_rgba(74,93,78,0.35)]">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-moss-sage" />
-            <div>
-              <p className="font-semibold">AI akisi guncellendi</p>
-              <p className="mt-1 text-sm text-moss-forest/80 dark:text-moss-sage">{successMessage}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 2. Orta-Üst: Envanter ve AI Model Seçimi */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -430,20 +402,20 @@ const RecommendationPage: React.FC = () => {
               <Boxes size={20} />
             </div>
             <div>
-              <p className="meal-overline">Lokasyon ve Envanter</p>
-              <h2 className="meal-section-title mt-1 text-2xl">Envanter Seçimi</h2>
+              <p className="meal-overline">{t('recommendations.inventory.overline')}</p>
+              <h2 className="meal-section-title mt-1 text-2xl">{t('recommendations.inventory.title')}</h2>
             </div>
           </div>
 
           <div className="mt-6 space-y-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-espresso-midnight/35 dark:text-alabaster/35 flex items-center gap-2">
-              <MapPin size={12} /> Kayıtlı Lokasyonlar
+              <MapPin size={12} /> {t('recommendations.inventory.registered')}
             </p>
             
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {groups.length === 0 ? (
                 <div className="col-span-full rounded-2xl border border-dashed border-card-border p-4 text-center">
-                  <p className="text-sm text-foreground-muted italic">Henüz lokasyon bulunamadı.</p>
+                  <p className="text-sm text-foreground-muted italic">{t('recommendations.inventory.noLocation')}</p>
                 </div>
               ) : (
                 groups.map((group) => (
@@ -468,7 +440,7 @@ const RecommendationPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-3 text-xs text-foreground-muted">
                       <span className="flex items-center gap-1">
-                        <Boxes size={12} /> {group.itemCount || 0} Malzeme
+                        <Boxes size={12} /> {t('recommendations.inventory.itemCount', { count: group.itemCount || 0 })}
                       </span>
                     </div>
                   </button>
@@ -479,11 +451,11 @@ const RecommendationPage: React.FC = () => {
             {activeGroup && inventorySummary && (
               <div className="mt-4 grid grid-cols-2 gap-4 animate-in fade-in zoom-in duration-300">
                 <div className="rounded-2xl bg-primary/5 p-4 border border-primary/10">
-                  <p className="text-[10px] uppercase font-bold text-primary/60">Kategoriler</p>
+                  <p className="text-[10px] uppercase font-bold text-primary/60">{t('recommendations.inventory.categories')}</p>
                   <p className="text-2xl font-bold text-primary">{inventorySummary.categories}</p>
                 </div>
                 <div className="rounded-2xl bg-terracotta/5 p-4 border border-terracotta/10">
-                  <p className="text-[10px] uppercase font-bold text-terracotta/60">Azalan Stok</p>
+                  <p className="text-[10px] uppercase font-bold text-terracotta/60">{t('recommendations.inventory.lowStock')}</p>
                   <p className="text-2xl font-bold text-terracotta">{inventorySummary.lowStock}</p>
                 </div>
               </div>
@@ -497,8 +469,8 @@ const RecommendationPage: React.FC = () => {
               <Cpu size={20} />
             </div>
             <div>
-              <p className="meal-overline">Algoritma Ayarları</p>
-              <h2 className="meal-section-title mt-1 text-2xl">Yapay Zeka Modeli</h2>
+              <p className="meal-overline">{t('recommendations.algorithm.overline')}</p>
+              <h2 className="meal-section-title mt-1 text-2xl">{t('recommendations.algorithm.title')}</h2>
             </div>
           </div>
 
@@ -529,7 +501,7 @@ const RecommendationPage: React.FC = () => {
           <div className="mt-6 rounded-2xl bg-primary/5 p-4 border border-primary/10">
             <p className="text-xs leading-relaxed text-primary/80">
               <Sparkles size={14} className="inline mr-2 mb-1" />
-              Seçilen model, kişisel tercihleriniz ve envanter durumunuzu analiz ederek en uygun tarifleri hazırlar.
+              {t('recommendations.algorithm.description')}
             </p>
           </div>
         </section>
@@ -544,7 +516,7 @@ const RecommendationPage: React.FC = () => {
                 <ShieldAlert size={20} />
               </div>
               <div>
-                <p className="meal-overline">Kullanıcı Bilgileri</p>
+                <p className="meal-overline">{t('recommendations.profile.overline')}</p>
                 <h2 className="meal-section-title mt-1 text-2xl">{buildDisplayName(user) || 'Chef AI'}</h2>
               </div>
             </div>
@@ -552,7 +524,7 @@ const RecommendationPage: React.FC = () => {
               type="button"
               onClick={() => navigate('/profile')}
               className="rounded-xl bg-espresso-midnight p-2 text-white hover:bg-espresso-midnight/90 dark:bg-terracotta"
-              title="Profili Düzenle"
+              title={t('recommendations.profile.editTitle')}
             >
               <ChefHat size={18} />
             </button>
@@ -561,11 +533,11 @@ const RecommendationPage: React.FC = () => {
           <div className="mt-6 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-white/50 p-3 border border-card-border dark:bg-white/5">
-                <p className="text-[10px] uppercase font-bold opacity-50">Diyet Tipi</p>
-                <p className="font-semibold text-sm truncate">{profile?.dietType ? formatEnumLabel(profile.dietType) : 'Normal'}</p>
+                <p className="text-[10px] uppercase font-bold opacity-50">{t('recommendations.profile.dietType')}</p>
+                <p className="font-semibold text-sm truncate">{profile?.dietType ? formatEnumLabel(profile.dietType) : t('recommendations.profile.normal')}</p>
               </div>
               <div className="rounded-2xl bg-white/50 p-3 border border-card-border dark:bg-white/5">
-                <p className="text-[10px] uppercase font-bold opacity-50">Hedef</p>
+                <p className="text-[10px] uppercase font-bold opacity-50">{t('recommendations.profile.goal')}</p>
                 <p className="font-semibold text-sm truncate">{formatEnumLabel(profile?.dietaryGoal)}</p>
               </div>
             </div>
@@ -585,7 +557,7 @@ const RecommendationPage: React.FC = () => {
 
             <div className="rounded-2xl bg-terracotta/5 p-4 border border-terracotta/10">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-terracotta/70 uppercase">Günlük Kalori Hedefi</span>
+                <span className="text-xs font-bold text-terracotta/70 uppercase">{t('recommendations.profile.calorieTarget')}</span>
                 <span className="text-xl font-bold text-terracotta">{profile?.dailyCalorieTarget ?? '-'} kcal</span>
               </div>
             </div>
@@ -595,8 +567,8 @@ const RecommendationPage: React.FC = () => {
         <section className="meal-card meal-highlight-frame shadow-[0_24px_60px_-30px_rgba(40,36,33,0.38)]">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="meal-overline">Get Recommendation</p>
-              <h2 className="meal-section-title mt-2 text-3xl">Final craving sinyalini ekle.</h2>
+              <p className="meal-overline">{t('recommendations.cravings.overline')}</p>
+              <h2 className="meal-section-title mt-2 text-3xl">{t('recommendations.cravings.title')}</h2>
             </div>
 
             <button
@@ -606,20 +578,20 @@ const RecommendationPage: React.FC = () => {
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-terracotta px-8 py-4 font-bold text-white shadow-xl shadow-terracotta/25 transition-all hover:scale-[1.02] hover:bg-terracotta/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {recommending ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-              {recommending ? 'AI Düşünüyor...' : 'Önerileri Al'}
+              {recommending ? t('recommendations.cravings.loading') : t('recommendations.cravings.button')}
             </button>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
             <div className="space-y-3">
               <label className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">
-                Bugün özellikle canınızın çektiği bir şey var mı?
+                {t('recommendations.cravings.label')}
               </label>
               <textarea
                 rows={4}
                 value={cravings}
                 onChange={(event) => setCravings(event.target.value)}
-                placeholder='Örn: "Hafif bir akşam yemeği", "Yüksek proteinli", "Asya mutfağı"'
+                placeholder={t('recommendations.cravings.placeholder')}
                 className="base-input px-5 py-4 dark:border-gray-700 dark:bg-gray-800/50"
               />
             </div>
@@ -629,21 +601,21 @@ const RecommendationPage: React.FC = () => {
                 <div className="rounded-xl bg-primary/10 p-2 text-terracotta">
                   <ChefHat size={18} />
                 </div>
-                <p className="font-serif text-lg font-bold">Context Summary</p>
+                <p className="font-serif text-lg font-bold">{t('recommendations.cravings.context.title')}</p>
               </div>
 
               <div className="mt-4 space-y-3 text-sm text-foreground/75 dark:text-white/75">
                 <div className="flex items-center gap-3">
                   <ShieldAlert size={14} className="text-red-400" />
-                  <span>Alerjenler kesin kısıt olarak uygulanır.</span>
+                  <span>{t('recommendations.cravings.context.allergens')}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Boxes size={14} className="text-ochre-soft" />
-                  <span>{availableIngredients.length} malzeme önceliklendirilir.</span>
+                  <span>{t('recommendations.cravings.context.pantry', { count: availableIngredients.length })}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Flame size={14} className="text-terracotta" />
-                  <span>{cravings.trim() ? 'Özel craving sinyali aktif.' : 'Ek sinyal eklenmedi.'}</span>
+                  <span>{cravings.trim() ? t('recommendations.cravings.context.signalActive') : t('recommendations.cravings.context.signalNone')}</span>
                 </div>
               </div>
             </div>
@@ -658,20 +630,20 @@ const RecommendationPage: React.FC = () => {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-terracotta/10 text-terracotta">
               <Sparkles size={28} />
             </div>
-            <h3 className="meal-section-title mt-5">Recommendation sonuçları burada belirecek.</h3>
+            <h3 className="meal-section-title mt-5">{t('recommendations.results.empty.title')}</h3>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-espresso-midnight/60 dark:text-alabaster/60">
-              Seçtiğin inventory lokasyonu ve kullanıcı profilinle birlikte son craving sinyalini gönderdiğinde, her tarif için neden seçildiğini anlatan AI insight kartları oluşturacağız.
+              {t('recommendations.results.empty.desc')}
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="meal-overline">Results</p>
-                <h2 className="meal-section-title mt-1">AI tarafından seçilen tarifler</h2>
+                <p className="meal-overline">{t('recommendations.common.page', { defaultValue: 'Results' })}</p>
+                <h2 className="meal-section-title mt-1">{t('recommendations.results.title')}</h2>
               </div>
               <p className="text-sm text-espresso-midnight/55 dark:text-alabaster/55">
-                {activeGroup?.name || 'Inventory'} lokasyonu baz alındı{cravings.trim() ? ` ve "${cravings.trim()}" craving'i vurgulandı.` : '.'}
+                {t('recommendations.results.context', { location: activeGroup?.name || 'Inventory' })}{cravings.trim() ? t('recommendations.results.cravingHighlight', { craving: cravings.trim() }) : '.'}
               </p>
             </div>
 
@@ -693,17 +665,17 @@ const RecommendationPage: React.FC = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-alabaster/95 via-alabaster/35 to-transparent dark:from-espresso-midnight/90 dark:via-espresso-midnight/25 dark:to-transparent" />
 
                         <div className="absolute left-5 top-5 flex flex-wrap gap-2">
-                          <span className="match-score-badge text-xs">{matchPercentage}% pantry fit</span>
+                          <span className="match-score-badge text-xs">{t('recommendations.results.pantryFit', { percent: matchPercentage })}</span>
                           {cravings.trim() && (
                             <span className="meal-badge-neon border-card-border bg-white/80 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground dark:border-white/20 dark:bg-white/10 dark:text-white">
-                              Craving active
+                              {t('recommendations.results.cravingActive')}
                             </span>
                           )}
                         </div>
 
                         <div className="absolute bottom-5 left-5 right-5">
                           <div className="meal-card rounded-[2rem] border-card-border bg-white/85 p-5 shadow-none dark:border-white/20 dark:bg-white/10">
-                            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted dark:text-white/65">AI Pick</p>
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted dark:text-white/65">{t('recommendations.results.aiPick')}</p>
                             <h3 className="mt-2 font-serif text-3xl font-bold text-foreground dark:text-white">{recipe.recipeTitle}</h3>
                             <div className="mt-3 flex flex-wrap gap-2">
                               {recipe.matchedIngredients.length > 0 ? (
@@ -713,7 +685,7 @@ const RecommendationPage: React.FC = () => {
                                   </span>
                                 ))
                               ) : (
-                                <span className="text-[10px] text-foreground/50 dark:text-white/50 italic">No direct pantry matches</span>
+                                <span className="text-[10px] text-foreground/50 dark:text-white/50 italic">{t('recommendations.results.noMatches')}</span>
                               )}
                             </div>
                           </div>
@@ -723,16 +695,16 @@ const RecommendationPage: React.FC = () => {
                       <div className="space-y-6 p-6">
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                           <div>
-                            <p className="meal-overline">Recommendation Detail</p>
+                            <p className="meal-overline">{t('recommendations.results.detail')}</p>
                             <h3 className="meal-section-title mt-2">{recipe.recipeTitle}</h3>
                             <div className="mt-3 flex flex-wrap gap-2">
-                              <span className="meal-badge-neon">AI Insight Ready</span>
+                              <span className="meal-badge-neon">{t('recommendations.results.insightReady')}</span>
                               <span className="meal-badge-neon border-ochre-soft/20 bg-ochre-soft/10 text-ochre-soft">
-                                {recipe.servings ? `${recipe.servings} servings` : 'Flexible portions'}
+                                {recipe.servings ? t('recommendations.results.servings', { count: recipe.servings }) : t('recommendations.results.flexiblePortions')}
                               </span>
                               {recipe.ratingCount ? (
                                 <span className="meal-badge-neon border-primary/20 bg-primary/5 text-primary">
-                                  {recipe.ratingCount} reviews
+                                  {t('recommendations.results.reviews', { count: recipe.ratingCount })}
                                 </span>
                               ) : null}
                             </div>
@@ -740,19 +712,19 @@ const RecommendationPage: React.FC = () => {
 
                           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                             <div className="meal-metric-card rounded-[1.4rem] px-4 py-3 text-center dark:bg-white/5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Calories</p>
+                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.calories')}</p>
                               <p className="mt-2 font-semibold text-terracotta">{formatMetric(recipe.calories)}</p>
                             </div>
                             <div className="meal-metric-card rounded-[1.4rem] px-4 py-3 text-center dark:bg-white/5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Protein</p>
+                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.protein')}</p>
                               <p className="mt-2 font-semibold text-moss-forest dark:text-moss-sage">{formatMetric(recipe.protein, 'g')}</p>
                             </div>
                             <div className="meal-metric-card rounded-[1.4rem] px-4 py-3 text-center dark:bg-white/5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Prep</p>
+                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.prep')}</p>
                               <p className="mt-2 font-semibold text-ochre-soft">{formatMetric(recipe.preparationTimeMinutes, 'm')}</p>
                             </div>
                             <div className="meal-metric-card rounded-[1.4rem] px-4 py-3 text-center dark:bg-white/5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Rating</p>
+                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.rating')}</p>
                               <p className="mt-2 inline-flex items-center gap-1 font-semibold text-espresso-midnight dark:text-alabaster">
                                 <Star size={14} className="fill-ochre-soft text-ochre-soft" />
                                 {recipe.averageRating != null ? recipe.averageRating.toFixed(1) : '-'}
@@ -768,15 +740,15 @@ const RecommendationPage: React.FC = () => {
                                 <MessageSquareText size={18} />
                               </div>
                               <div>
-                                <p className="meal-overline tracking-[0.18em]">AI Insight</p>
-                                <h4 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Why we recommended this?</h4>
+                                <p className="meal-overline tracking-[0.18em]">{t('recommendations.results.insightReady')}</p>
+                                <h4 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{t('recommendations.results.insight.title')}</h4>
                               </div>
                             </div>
                             <p className="mt-4 text-sm leading-7 text-espresso-midnight/70 dark:text-alabaster/70">{recipe.insight}</p>
 
                             <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
                               <div className="meal-metric-card border-moss-sage/20 bg-moss-sage/10 px-4">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-moss-forest/55 dark:text-moss-sage">Prioritized from inventory</p>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-moss-forest/55 dark:text-moss-sage">{t('recommendations.results.insight.pantry')}</p>
                                 <div className="mt-3 flex flex-wrap gap-2">
                                   {recipe.matchedIngredients.length > 0 ? (
                                     recipe.matchedIngredients.map((item: string) => (
@@ -785,14 +757,14 @@ const RecommendationPage: React.FC = () => {
                                       </span>
                                     ))
                                   ) : (
-                                    <span className="text-sm text-espresso-midnight/55 dark:text-alabaster/55">Bu tarif daha cok hedef ve craving uyumundan secildi.</span>
+                                    <span className="text-sm text-espresso-midnight/55 dark:text-alabaster/55">{t('recommendations.results.insight.noPantryMatch')}</span>
                                   )}
                                 </div>
                               </div>
 
                               <div className="flex flex-col gap-4">
                                 <div className="meal-metric-card border-ochre-soft/20 bg-ochre-soft/10 px-4 flex-1">
-                                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ochre-soft">Might still need</p>
+                                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ochre-soft">{t('recommendations.results.insight.missing')}</p>
                                   <div className="mt-3 flex flex-wrap gap-2">
                                     {recipe.missingIngredients.length > 0 ? (
                                       recipe.missingIngredients.map((item: string) => (
@@ -801,7 +773,7 @@ const RecommendationPage: React.FC = () => {
                                         </span>
                                       ))
                                     ) : (
-                                      <span className="text-sm text-espresso-midnight/55 dark:text-alabaster/55">Bu tarifi neredeyse tamamen mevcut stock ile kurabiliyorsun.</span>
+                                      <span className="text-sm text-espresso-midnight/55 dark:text-alabaster/55">{t('recommendations.results.insight.missingNone')}</span>
                                     )}
                                   </div>
                                 </div>
@@ -812,7 +784,7 @@ const RecommendationPage: React.FC = () => {
                                   className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-moss-forest px-4 py-3.5 font-bold text-white shadow-lg shadow-moss-forest/20 transition-all hover:scale-[1.02] hover:bg-moss-forest/90 dark:bg-moss-sage dark:text-espresso-midnight"
                                 >
                                   <UtensilsCrossed size={18} />
-                                  Bu Tarifi Yap
+                                  {t('recommendations.results.insight.cook')}
                                 </button>
                               </div>
                             </div>
@@ -824,15 +796,15 @@ const RecommendationPage: React.FC = () => {
                                 <Star size={18} />
                               </div>
                               <div>
-                                <p className="meal-overline tracking-[0.18em]">Feedback Loop</p>
-                                <h4 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">Rate and Comment</h4>
+                                <p className="meal-overline tracking-[0.18em]">{t('recommendations.results.feedback.overline')}</p>
+                                <h4 className="mt-1 font-serif text-2xl font-bold text-espresso-midnight dark:text-alabaster">{t('recommendations.results.feedback.title')}</h4>
                               </div>
                             </div>
 
                             <div className="mt-5 space-y-5">
                               <div>
                                 <div className="flex items-center justify-between gap-4">
-                                  <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">Rating</span>
+                                  <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">{t('recommendations.results.feedback.rating')}</span>
                                   <span className="meal-badge-neon border-transparent bg-terracotta px-3 py-1 text-white">{draft.rating}/10</span>
                                 </div>
                                 <input
@@ -848,13 +820,13 @@ const RecommendationPage: React.FC = () => {
                                   className="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-terracotta/20 accent-terracotta"
                                 />
                                 <div className="mt-2 flex justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">
-                                  <span>Needs work</span>
-                                  <span>Love it</span>
+                                  <span>{t('recommendations.results.feedback.needsWork')}</span>
+                                  <span>{t('recommendations.results.feedback.loveIt')}</span>
                                 </div>
                               </div>
 
                               <label className="block space-y-2">
-                                <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">Comment</span>
+                                <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">{t('recommendations.results.feedback.comment')}</span>
                                 <textarea
                                   rows={4}
                                   value={draft.comment}
@@ -863,7 +835,7 @@ const RecommendationPage: React.FC = () => {
                                     success: null,
                                     error: null
                                   })}
-                                  placeholder="Bu oneri craving'ine uydu mu, inventory acisindan pratik miydi?"
+                                  placeholder={t('recommendations.results.feedback.commentPlaceholder')}
                                   className="base-input px-4 py-3 dark:border-white/10 dark:bg-white/5"
                                 />
                               </label>
@@ -887,7 +859,7 @@ const RecommendationPage: React.FC = () => {
                                 className="inline-flex w-full items-center justify-center gap-2 rounded-[1.6rem] bg-espresso-midnight px-4 py-3 font-semibold text-white transition-all hover:bg-espresso-midnight/90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-terracotta"
                               >
                                 {draft.saving ? <Loader2 size={16} className="animate-spin" /> : <Star size={16} />}
-                                {draft.saving ? 'Kaydediliyor' : 'Save Feedback'}
+                                {draft.saving ? t('recommendations.results.feedback.saving') : t('recommendations.results.feedback.saveButton')}
                               </button>
                             </div>
                           </div>
@@ -895,19 +867,19 @@ const RecommendationPage: React.FC = () => {
 
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                           <div className="meal-metric-card rounded-[1.5rem] px-4 py-4 dark:bg-white/5">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Carbs</p>
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.carbs')}</p>
                             <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMetric(recipe.carbs, 'g')}</p>
                           </div>
                           <div className="meal-metric-card rounded-[1.5rem] px-4 py-4 dark:bg-white/5">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Fat</p>
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.fat')}</p>
                             <p className="mt-2 font-semibold text-espresso-midnight dark:text-alabaster">{formatMetric(recipe.fat, 'g')}</p>
                           </div>
                           <div className="meal-metric-card rounded-[1.5rem] px-4 py-4 dark:bg-white/5">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Matched</p>
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.matched')}</p>
                             <p className="mt-2 font-semibold text-moss-forest dark:text-moss-sage">{recipe.matchedIngredients.length}</p>
                           </div>
                           <div className="meal-metric-card rounded-[1.5rem] px-4 py-4 dark:bg-white/5">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">Missing</p>
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.missing')}</p>
                             <p className="mt-2 inline-flex items-center gap-2 font-semibold text-espresso-midnight dark:text-alabaster">
                               <Clock3 size={14} className="text-ochre-soft" />
                               {recipe.missingIngredients.length}

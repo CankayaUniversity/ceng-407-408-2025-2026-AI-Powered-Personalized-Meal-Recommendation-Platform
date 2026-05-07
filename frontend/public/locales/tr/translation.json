@@ -1,4 +1,111 @@
 {
+  "recommendations": {
+    "engine": "AI Öneri Motoru",
+    "hero": {
+      "title": "Canın ne çekiyorsa onu veriye bağla.",
+      "subtitle": "Profilindeki sert kısıtlar, sevmediklerin, seçtiğin envanter lokasyonu ve bugünkü craving sinyalin tek prompt içinde {{model}}'ye taşınır."
+    },
+    "stats": {
+      "activeLocation": "Aktif Lokasyon",
+      "ingredients": "Malzemeler",
+      "notSelected": "Seçilmedi"
+    },
+    "errors": {
+      "title": "İşlem tamamlanamadi",
+      "aiFlowUpdated": "AI akışı güncellendi"
+    },
+    "inventory": {
+      "overline": "Lokasyon ve Envanter",
+      "title": "Envanter Seçimi",
+      "registered": "Kayıtlı Lokasyonlar",
+      "noLocation": "Henüz lokasyon bulunamadı.",
+      "itemCount": "{{count}} Malzeme",
+      "categories": "Kategoriler",
+      "lowStock": "Azalan Stok"
+    },
+    "algorithm": {
+      "overline": "Algoritma Ayarları",
+      "title": "Yapay Zeka Modeli",
+      "description": "Seçilen model, kişisel tercihleriniz ve envanter durumunuzu analiz ederek en uygun tarifleri hazırlar."
+    },
+    "profile": {
+      "overline": "Kullanıcı Bilgileri",
+      "editTitle": "Profili Düzenle",
+      "dietType": "Diyet Tipi",
+      "goal": "Hedef",
+      "calorieTarget": "Günlük Kalori Hedefi",
+      "normal": "Normal"
+    },
+    "cravings": {
+      "overline": "Öneri Al",
+      "title": "Final craving sinyalini ekle.",
+      "button": "Önerileri Al",
+      "loading": "AI Düşünüyor...",
+      "label": "Bugün özellikle canınızın çektiği bir şey var mı?",
+      "placeholder": "Örn: \"Hafif bir akşam yemeği\", \"Yüksek proteinli\", \"Asya mutfağı\"",
+      "context": {
+        "title": "Context Özeti",
+        "allergens": "Alerjenler kesin kısıt olarak uygulanır.",
+        "pantry": "{{count}} malzeme önceliklendirilir.",
+        "signalActive": "Özel craving sinyali aktif.",
+        "signalNone": "Ek sinyal eklenmedi."
+      }
+    },
+    "results": {
+      "empty": {
+        "title": "Öneri sonuçları burada belirecek.",
+        "desc": "Seçtiğin envanter lokasyonu ve kullanıcı profilinle birlikte son craving sinyalini gönderdiğinde, her tarif için neden seçildiğini anlatan AI insight kartları oluşturacağız."
+      },
+      "title": "AI tarafından seçilen tarifler",
+      "context": "{{location}} lokasyonu baz alındı",
+      "cravingHighlight": " ve \"{{craving}}\" craving'i vurgulandı.",
+      "pantryFit": "{{percent}}% mutfak uyumu",
+      "cravingActive": "Craving aktif",
+      "aiPick": "AI Seçimi",
+      "noMatches": "Direkt stok eşleşmesi yok",
+      "detail": "Öneri Detayı",
+      "insightReady": "AI Analizi Hazır",
+      "servings": "{{count}} porsiyon",
+      "flexiblePortions": "Esnek porsiyon",
+      "reviews": "{{count}} yorum",
+      "metrics": {
+        "calories": "Kalori",
+        "protein": "Protein",
+        "prep": "Hazırlama",
+        "rating": "Puan",
+        "carbs": "Karb",
+        "fat": "Yağ",
+        "matched": "Eşleşen",
+        "missing": "Eksik"
+      },
+      "insight": {
+        "title": "Neden önerdik?",
+        "pantry": "Envanterden önceliklendirildi",
+        "noPantryMatch": "Bu tarif daha çok hedef ve craving uyumundan seçildi.",
+        "missing": "Hala gerekebilir",
+        "missingNone": "Bu tarifi neredeyse tamamen mevcut stok ile kurabiliyorsun.",
+        "cook": "Bu Tarifi Yap"
+      },
+      "feedback": {
+        "overline": "Geri Bildirim Döngüsü",
+        "title": "Puanla ve Yorum Yap",
+        "rating": "Puan",
+        "needsWork": "Geliştirilmeli",
+        "loveIt": "Harika",
+        "comment": "Yorum",
+        "commentPlaceholder": "Bu öneri craving'ine uydu mu, envanter açısından pratik miydi?",
+        "saving": "Kaydediliyor...",
+        "saveButton": "Geri Bildirimi Kaydet"
+      },
+      "common": {
+        "page": "Sonuçlar"
+      }
+    },
+    "loading": {
+      "title": "Öneri motoru yükleniyor",
+      "desc": "Profil, envanter ve geçmiş puanlama bilgileri eşleniyor."
+    }
+  },
   "landing": {
     "nav": {
       "login": "Giriş Yap",
@@ -708,6 +815,14 @@
     }
   },
   "toasts": {
+    "recommendations": {
+      "loadError": "Öneri verileri yüklenemedi.",
+      "inventoryRequired": "Öneri oluşturmak için önce dolu bir envanter lokasyonu seçmelisin.",
+      "generationError": "Öneriler oluşturulamadı.",
+      "generationSuccess": "{{count}} AI önerisi hazır.",
+      "ratingSaved": "Yorum ve puanın kaydedildi.",
+      "ratingError": "Puan kaydedilemedi."
+    },
     "inventory": {
       "loadError": "Envanter bilgileri alınamadı.",
       "invitationsLoadError": "Bekleyen davetler yüklenemedi.",
