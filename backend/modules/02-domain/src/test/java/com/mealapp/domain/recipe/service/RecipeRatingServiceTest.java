@@ -92,6 +92,32 @@ class RecipeRatingServiceTest {
     }
 
     @Test
+    void rateRecipe_WhenNewRating_ShouldUpdateRecipeStats() {
+        // Given
+        String userId = "user-1";
+        Long recipeId = 1L;
+        Integer ratingValue = 8;
+        
+        when(userService.findById(userId)).thenReturn(Optional.of(user));
+        when(recipeService.findById(recipeId)).thenReturn(Optional.of(recipe));
+        when(recipeRatingRepository.findByUserIdAndRecipeId(userId, recipeId)).thenReturn(Collections.emptyList());
+        when(recipeRatingRepository.save(any(RecipeRating.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        
+        // Mocking for updateRecipeRatingStats
+        RecipeRating r1 = RecipeRating.builder().rating(10).build();
+        RecipeRating r2 = RecipeRating.builder().rating(8).build();
+        when(recipeRatingRepository.findByRecipeId(recipeId)).thenReturn(List.of(r1, r2));
+
+        // When
+        recipeRatingService.rateRecipe(userId, recipeId, ratingValue, "Guzel");
+
+        // Then
+        assertEquals(2, recipe.getRatingCount());
+        assertEquals(9.0, recipe.getAverageRating());
+        verify(recipeService).save(recipe);
+    }
+
+    @Test
     void getRatingsByRecipe_ShouldReturnList() {
         when(recipeRatingRepository.findByRecipeId(1L)).thenReturn(Collections.emptyList());
 

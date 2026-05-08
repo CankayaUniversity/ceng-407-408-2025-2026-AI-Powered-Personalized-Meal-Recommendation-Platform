@@ -30,8 +30,10 @@ public class OpenAiProvider implements AiProvider {
     }
 
     @Override
-    public String call(String prompt) {
-        if (apiKey == null || apiKey.equals("your-key-here")) {
+    public String call(String prompt, String userApiKey) {
+        String effectiveApiKey = (userApiKey != null && !userApiKey.isBlank()) ? userApiKey : this.apiKey;
+
+        if (effectiveApiKey == null || effectiveApiKey.equals("your-key-here")) {
             log.warn("OpenAI API Key is missing, returning simulation response.");
             return "[{\"recipeTitle\": \"Chicken Salad (Simulated)\", \"insight\": \"OpenAI simülasyon yanıtı. Envanterinizdeki malzemelerle harika bir salata yapabilirsiniz.\"}]";
         }
@@ -44,7 +46,7 @@ public class OpenAiProvider implements AiProvider {
 
         OpenAiResponse response = webClient.post()
                 .uri(apiUrl)
-                .header("Authorization", "Bearer " + apiKey)
+                .header("Authorization", "Bearer " + effectiveApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()

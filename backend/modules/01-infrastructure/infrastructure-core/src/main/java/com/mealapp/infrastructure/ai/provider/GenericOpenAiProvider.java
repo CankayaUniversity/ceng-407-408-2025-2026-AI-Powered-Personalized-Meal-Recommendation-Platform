@@ -36,8 +36,10 @@ public class GenericOpenAiProvider implements AiProvider {
     }
 
     @Override
-    public String call(String prompt) {
-        if (apiKey == null || apiKey.equals("your-key-here")) {
+    public String call(String prompt, String customApiKey) {
+        String effectiveApiKey = (customApiKey != null && !customApiKey.isBlank()) ? customApiKey : apiKey;
+
+        if (effectiveApiKey == null || effectiveApiKey.equals("your-key-here")) {
             log.warn("{} API Key is missing, returning simulation response.", providerType);
             return "[{\"recipeTitle\": \"Generic AI Recipe (Simulated)\", \"insight\": \""+ providerType +" simülasyon yanıtı. Bu jenerik sağlayıcı üzerinden dönen bir tariftir.\"}]";
         }
@@ -50,7 +52,7 @@ public class GenericOpenAiProvider implements AiProvider {
 
         OpenAiResponse response = webClient.post()
                 .uri(apiUrl)
-                .header("Authorization", "Bearer " + apiKey)
+                .header("Authorization", "Bearer " + effectiveApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
@@ -62,6 +64,11 @@ public class GenericOpenAiProvider implements AiProvider {
         }
 
         return "[]";
+    }
+
+    @Override
+    public String call(String prompt) {
+        return call(prompt, null);
     }
 
     @Override

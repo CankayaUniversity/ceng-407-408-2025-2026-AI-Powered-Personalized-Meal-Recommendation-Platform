@@ -26,7 +26,25 @@
     "algorithm": {
       "overline": "Algorithm Settings",
       "title": "AI Model",
-      "description": "The selected model prepares the most suitable recipes by analyzing your personal preferences and inventory status."
+      "description": "The selected model prepares the most suitable recipes by analyzing your personal preferences and inventory status. Please note that the use of your API keys is entirely your responsibility and these keys are stored locally. The free version is not a direct AI model, but a smart recommendation mechanism offered by our application.",
+      "locked": "Locked",
+      "unlocked": "Active",
+      "apiKeyRequired": "API Key Required",
+      "apiKeyModal": {
+        "title": "Define {{model}} API Key",
+        "description": "To use this model, you must define your own API key. Your key is stored securely in your browser.",
+        "placeholder": "Paste your API Key here...",
+        "save": "Save Key",
+        "remove": "Remove Key",
+        "saved": "Key saved successfully.",
+        "required": "Please enter a valid API key."
+      },
+      "models": {
+        "free": "Free",
+        "gemini": "Gemini",
+        "openai": "OpenAI",
+        "claude": "Claude"
+      }
     },
     "profile": {
       "overline": "User Information",
