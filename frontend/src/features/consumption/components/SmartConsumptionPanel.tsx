@@ -14,7 +14,6 @@ import { MemberSelection } from './MemberSelection';
 import { SearchSection } from './SearchSection';
 import { SelectedItemsList } from './SelectedItemsList';
 import { QuickSummary } from './QuickSummary';
-import { type RecipeIngredient } from '../../../types';
 
 interface SmartConsumptionPanelProps {
   onConsumptionLogged?: () => void;
@@ -69,12 +68,12 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     getIngredientUnits,
     unitWeights,
     ingredientSpecificWeights,
-    recipeDetailsMap,
     memberQueries,
     setMemberQueries,
     memberResults,
     conversions,
     hasCompletedIngredientSearch,
+    inventoryDeductions,
     inventoryStatus,
     getItemInventoryStatus
   } = useSmartConsumption(onConsumptionLogged, initialRecipe);
@@ -136,49 +135,6 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
     // Seçilen birimi (unit) parametre olarak geçiyoruz
     handleManualPortionUpdate(itemKey, ingredient, nextQty.toString(), unit, userId);
   };
-
-  const inventoryDeductions = useMemo(() => {
-    if (isOutside) return [];
-    const summary: Record<number, { id: number; name: string; amount: number; unit: string; grams: number }> = {};
-    const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
-    
-    allItems.forEach(item => {
-      if (item.kind === 'INGREDIENT') {
-        const id = item.ingredient.id;
-        if (!summary[id]) {
-          summary[id] = { 
-            id,
-            name: item.ingredient.name, 
-            amount: 0, 
-            unit: item.unit || item.ingredient.preferredUnit || (item.ingredient.physicalState === 'LIQUID' ? 'ML' : 'GRAM'),
-            grams: 0 
-          };
-        }
-        summary[id].amount += (item.portion.amount || 0);
-        summary[id].grams += item.portion.grams;
-      } else {
-        const recipe = recipeDetailsMap[item.recipe.id];
-        if (recipe?.ingredients) {
-          recipe.ingredients.forEach((ri: RecipeIngredient) => {
-            const id = ri.ingredientId;
-            const name = ri.ingredient?.name || `Ingredient #${id}`;
-            if (!summary[id]) {
-              summary[id] = { 
-                id,
-                name, 
-                amount: 0, 
-                unit: ri.unit || 'g', 
-                grams: 0 
-              };
-            }
-            summary[id].amount += (ri.amount || ri.grams) * item.portion.multiplier;
-            summary[id].grams += ri.grams * item.portion.multiplier;
-          });
-        }
-      }
-    });
-    return Object.values(summary).sort((a, b) => a.name.localeCompare(b.name, 'tr-TR'));
-  }, [selectedItems, memberSelections, recipeDetailsMap, isOutside]);
 
   const selectionLabel = useMemo(() => {
     const totalCount = selectedItems.length + Object.values(memberSelections).reduce((acc, items) => acc + items.length, 0);

@@ -173,6 +173,7 @@ export interface RecipeIngredient {
   id?: number;
   recipeId?: number;
   ingredientId: number;
+  name?: string | null;
   grams: number;
   amount?: number;
   unit?: string;

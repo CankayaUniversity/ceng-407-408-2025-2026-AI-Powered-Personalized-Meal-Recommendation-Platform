@@ -22,7 +22,8 @@ import {
   getItemKey,
   getErrorMessage,
   normalizeSearchText,
-  getSelectedItemName
+  getSelectedItemName,
+  getRecipeIngredientName
 } from '../utils/SmartConsumption.utils';
 import {
   type Recipe,
@@ -746,9 +747,12 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
       } else {
         const recipe = recipeDetailsMap[item.recipe.id];
         if (recipe?.ingredients) {
+          const servingFactor = recipe.servings && recipe.servings > 0 ? 1 / recipe.servings : 1;
+          const finalMultiplier = item.portion.multiplier * servingFactor;
+
           recipe.ingredients.forEach((ri: RecipeIngredient) => {
             const id = ri.ingredientId;
-            const name = ri.ingredient?.name || (ri.ingredientId && stockedIngredients.find((si: any) => si.id === ri.ingredientId)?.name) || `Ingredient #${id}`;
+            const name = getRecipeIngredientName(ri, stockedIngredients);
             if (!summary[id]) {
               summary[id] = { 
                 id,
@@ -758,14 +762,14 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
                 grams: 0 
               };
             }
-            summary[id].amount += (ri.amount || ri.grams) * item.portion.multiplier;
-            summary[id].grams += ri.grams * item.portion.multiplier;
+            summary[id].amount += (ri.amount || ri.grams) * finalMultiplier;
+            summary[id].grams += ri.grams * finalMultiplier;
           });
         }
       }
     });
     return Object.values(summary).sort((a, b) => a.name.localeCompare(b.name, 'tr-TR'));
-  }, [selectedItems, memberSelections, recipeDetailsMap, isOutside]);
+  }, [selectedItems, memberSelections, recipeDetailsMap, isOutside, stockedIngredients]);
 
   const inventoryStatus = useMemo(() => {
     if (isOutside || !selectedGroup) return { isSufficient: true, missingIngredients: [] };
@@ -817,10 +821,13 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
     } else {
       const recipe = recipeDetailsMap[item.recipe.id];
       if (recipe?.ingredients) {
+        const servingFactor = recipe.servings && recipe.servings > 0 ? 1 / recipe.servings : 1;
+        const finalMultiplier = item.portion.multiplier * servingFactor;
+
         recipe.ingredients.forEach((ri: RecipeIngredient) => {
           const available = inventoryMap[ri.ingredientId] || 0;
-          if (available < (ri.grams * item.portion.multiplier)) {
-            missing.push(ri.ingredient?.name || `Ingredient #${ri.ingredientId}`);
+          if (available < (ri.grams * finalMultiplier)) {
+            missing.push(getRecipeIngredientName(ri, stockedIngredients));
           }
         });
       }
@@ -830,7 +837,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
       isSufficient: missing.length === 0,
       missing
     };
-  }, [selectedGroup, isOutside, recipeDetailsMap]);
+  }, [selectedGroup, isOutside, recipeDetailsMap, stockedIngredients]);
 
   return {
     user,

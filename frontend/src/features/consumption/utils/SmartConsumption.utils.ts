@@ -1,4 +1,5 @@
 import { ApiError } from '../../../services/errors';
+import type { Ingredient, RecipeIngredient } from '../../../types';
 import {
   type InventoryGroup,
   type SelectedConsumptionItem,
@@ -37,3 +38,16 @@ export const getSelectedItemCategory = (item: SelectedConsumptionItem) =>
   item.kind === 'RECIPE'
     ? formatCategoryLabel(item.recipe.category)
     : formatCategoryLabel(item.ingredient.category);
+
+export const getRecipeIngredientName = (
+  recipeIngredient: RecipeIngredient,
+  stockedIngredients: Array<Pick<Ingredient, 'id' | 'name'>> = []
+) => {
+  const directName = recipeIngredient.ingredient?.name || recipeIngredient.name;
+  if (directName?.trim()) return directName;
+
+  const stockedName = stockedIngredients.find((ingredient) => ingredient.id === recipeIngredient.ingredientId)?.name;
+  if (stockedName?.trim()) return stockedName;
+
+  return `Ingredient #${recipeIngredient.ingredientId}`;
+};
