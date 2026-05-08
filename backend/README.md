@@ -19,15 +19,23 @@ This project is a platform that provides AI-powered personalized meal recommenda
 
 ### 🏗️ Architecture and Key Features
 The project is developed using a **Multi-module** architecture in line with enterprise standards. With the latest updates:
-- **Hybrid AI Recommendation Engine:** A sophisticated recommendation system that combines SQL-based filtering (allergens, diets), scoring (inventory match, ratings), and LLM-based (OpenAI GPT-4o, Google Gemini) refinement.
-- **Multi-Provider AI Support:** Flexible architecture supporting multiple AI engines (OpenAI, Gemini) with dynamic switching and fallback mechanisms.
-- **Flexible Consumption Tracking:** Users can log meals as "home-made" (deducts ingredients from Minio-backed inventory) or "external" (AI estimates nutritional values).
+- **Thin Client Architecture:** All business logic, scoring, filtering, and unit calculations are handled exclusively in the backend (Single Source of Truth). Frontend only renders and handles user interaction.
+- **Recipe / Recommendation Separation:** `Recipe` (permanent catalog entry) and `Recommendation` (ephemeral AI suggestion with per-user history) are distinct domain concepts. Recommendation history stores AI insights and per-recommendation ratings permanently.
+- **Hybrid AI Recommendation Engine:** Combines SQL-based filtering (allergens, diets), mathematical scoring (inventory match, ratings, craving match), and LLM-based refinement with configurable fallback.
+- **Negative Craving Detection:** Smart scoring detects and penalizes recipes that match user exclusion preferences (e.g., "no onion" correctly down-scores recipes with onion in the ingredient list).
+- **Craving Matching Against Full Ingredient List:** User cravings are matched against the complete ingredient list of each recipe, not just the title or category.
+- **Multi-Provider AI Support:** Flexible architecture supporting OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, DeepSeek, and local LLM endpoints — dynamic switching with fallback.
+- **Flexible Consumption Tracking:** Users can log meals as "home-made" (deducts ingredients from inventory) or "external" (AI estimates nutritional values).
+- **Admin Panel Backend:** Role-based admin endpoints for user management, ingredient material editing, recipe/ingredient deletion, and test inventory seeding.
+- **Inventory Invitations:** Users can share inventories and accept/reject invitations via a dedicated invitation flow.
+- **Notification System:** Full notification management (create, list, mark as read/unread, delete) with sidebar badge support.
+- **Recipe & Recommendation Ratings:** Separate rating systems — `RecipeRating` on the recipe catalog and `RecommendationRating` on individual recommendation history entries.
 - **Integrated Object Storage:** Full MinIO integration for managing recipe images and user-uploaded content with pre-signed URL support.
-- **Robust AI Client:** Multi-provider integration (OpenAI, Gemini) with Spring Retry for high availability and token usage monitoring.
+- **Robust AI Client:** Multi-provider integration with Spring Retry for high availability and token usage monitoring.
 - **Keycloak Synchronization:** User IDs are centrally managed as `String` (UUID) type via the Keycloak `sub` value.
 - **Automatic Profile Management:** User information is automatically synchronized with the backend database upon first login.
 - **Secure API:** All endpoints are protected with JWT-based authentication.
-- **Type Safety:** Backend and test codes are fully compatible with Keycloak integration.
+- **Expanded Unit Converter:** Covers all measurement units present in the 50,000+ recipe dataset.
 - **Dynamic Dataset Support:** Handles 50,000+ recipes with real-time ranking and filtering capabilities.
 
 ### 🚀 Quick Start (with Docker)
@@ -88,8 +96,23 @@ Keycloak is used for application security.
 | :--- | :--- |
 | `POST /api/v1/users` | User registration and profile synchronization (Upsert). |
 | `GET /api/v1/users/{id}` | Retrieve profile details. |
-| `GET /api/v1/recommendations` | AI-assisted meal recommendations. |
+| `GET /api/v1/recommendations` | AI-assisted meal recommendations (with scoring + LLM refinement). |
+| `GET /api/v1/recommendations/history` | Persistent recommendation history for the current user. |
+| `POST /api/v1/recommendations/{id}/rate` | Rate a specific recommendation entry. |
 | `POST /api/v1/consumption` | Daily calorie and consumption tracking. |
+| `GET /api/v1/consumption` | Retrieve daily/range consumption logs. |
+| `GET /api/v1/inventory` | Get user inventory items. |
+| `POST /api/v1/inventory` | Add item to inventory. |
+| `POST /api/v1/inventory/invitations` | Share inventory via invitation. |
+| `GET /api/v1/recipes` | Search and list recipes. |
+| `POST /api/v1/recipes/{id}/ratings` | Rate a recipe in the catalog. |
+| `GET /api/v1/ingredients` | Search ingredients (used in inventory and admin). |
+| `GET /api/v1/notifications` | List user notifications. |
+| `PATCH /api/v1/notifications/{id}/read` | Mark notification as read. |
+| `GET /api/v1/admin/users` | *(Admin)* List all users. |
+| `PUT /api/v1/admin/users/{id}/role` | *(Admin)* Change user role. |
+| `PUT /api/v1/admin/ingredients/{id}` | *(Admin)* Edit ingredient material properties. |
+| `DELETE /api/v1/admin/recipes/{id}` | *(Admin)* Delete a recipe. |
 
 ### 📦 Packaging and Deployment
 To package the application as a JAR file:
@@ -115,15 +138,23 @@ Bu proje, kullanıcıların tercihlerine ve elindeki malzemelere göre yapay zek
 
 ### 🏗️ Mimari ve Önemli Özellikler
 Proje, kurumsal standartlara uygun **Multi-module** mimari ile geliştirilmiştir. Yapılan son güncellemelerle birlikte:
-- **Hibrit AI Öneri Motoru:** SQL tabanlı filtreleme (alerjen, diyet), puanlama (envanter uyumu, rating) ve LLM tabanlı (OpenAI GPT-4o, Google Gemini, Anthropic Claude) rafine etme işlemlerini birleştiren gelişmiş bir öneri sistemi.
-- **Çoklu AI Sağlayıcı Desteği:** OpenAI (ChatGPT), Google Gemini, Anthropic Claude ve OpenAI uyumlu diğer sağlayıcılar (Mistral, DeepSeek, Local LLM) üzerinden dinamik öneri alabilme.
+- **İnce İstemci (Thin Client) Mimarisi:** Tüm iş mantığı, puanlama, filtreleme ve birim hesaplamaları backend'de merkezi olarak yönetilir (Tek Doğruluk Kaynağı). Frontend yalnızca sunum ve kullanıcı etkileşiminden sorumludur.
+- **Tarif / Öneri Ayrımı:** `Recipe` (kalıcı katalog girişi) ve `Recommendation` (AI tarafından üretilen, kullanıcıya özel geçmiş kaydı) ayrı domain kavramlarıdır. Öneri geçmişi; AI içgörülerini ve öneriye özel değerlendirmeleri kalıcı olarak saklar.
+- **Hibrit AI Öneri Motoru:** SQL tabanlı filtreleme (alerjen, diyet), matematiksel puanlama (envanter uyumu, rating, arzu eşleştirmesi) ve fallback destekli LLM rafine etme işlemlerini birleştiren gelişmiş bir öneri sistemi.
+- **Negatif Arzu Tespiti:** "Soğansız" gibi dışlama tercihlerini akıllıca tespit eden ve malzeme listesinde eşleşen tarifleri penalize eden puanlama mantığı.
+- **Tam Malzeme Listesiyle Arzu Eşleştirmesi:** Kullanıcı arzuları yalnızca başlık/kategori değil, tarifin tüm malzeme listesiyle karşılaştırılır.
+- **Çoklu AI Sağlayıcı Desteği:** OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, DeepSeek ve yerel LLM uç noktaları — fallback destekli dinamik geçiş.
 - **Esnek Tüketim Takibi:** Öğünler "ev yapımı" (envanterden otomatik malzeme düşer) veya "dışarıdan" (AI tarafından besin değeri tahmini yapılır) olarak kaydedilebilir.
-- **Entegre Nesne Depolama:** Tarif görselleri ve kullanıcı içerikleri için tam MinIO entegrasyonu ve geçici URL (pre-signed) desteği.
-- **Dayanıklı AI İstemcisi:** Spring Retry ile güçlendirilmiş, çoklu sağlayıcı (OpenAI, Gemini) destekli ve token kullanım takibi yapan AI entegrasyonu.
+- **Admin Paneli Backend:** Rol tabanlı admin uç noktaları ile kullanıcı/rol yönetimi, malzeme düzenleme, tarif/malzeme silme ve test envanteri oluşturma.
+- **Envanter Davetleri:** Kullanıcılar envanter paylaşabilir ve davetleri kabul/reddedebilir.
+- **Bildirim Sistemi:** Tam bildirim yönetimi (oluşturma, listeleme, okundu işaretleme, silme) ve sidebar rozet desteği.
+- **Tarif ve Öneri Değerlendirme:** İki ayrı değerlendirme sistemi — tarif kataloğu üzerinde `RecipeRating`, öneri geçmişi girişleri üzerinde `RecommendationRating`.
+- **Entegre Nesne Depolama:** Tarif görselleri ve kullanıcı içerikleri için tam MinIO entegrasyonu ve pre-signed URL desteği.
+- **Dayanıklı AI İstemcisi:** Spring Retry ile güçlendirilmiş, çoklu sağlayıcı destekli ve token kullanım takibi yapan AI entegrasyonu.
 - **Keycloak Senkronizasyonu:** Kullanıcı ID'leri, Keycloak `sub` değeri üzerinden merkezi olarak `String` (UUID) tipinde yönetilir.
 - **Otomatik Profil Yönetimi:** Kullanıcı bilgileri, ilk girişte backend veritabanı ile otomatik olarak senkronize edilir.
 - **Güvenli API:** Tüm uç noktalar JWT tabanlı kimlik doğrulama ile korunmaktadır.
-- **Tip Güvenliği:** Backend ve test kodları Keycloak entegrasyonu ile tam uyumludur.
+- **Genişletilmiş Birim Dönüştürücü:** 50.000+ tarif veri setindeki tüm ölçü birimlerini kapsar.
 - **Dinamik Veri Seti Desteği:** 50.000+ tarif üzerinde gerçek zamanlı sıralama ve filtreleme yapabilen ölçeklenebilir yapı.
 
 ### 🚀 Hızlı Başlangıç (Docker ile)
@@ -184,8 +215,23 @@ Uygulama güvenliği için Keycloak kullanılmaktadır.
 | :--- | :--- |
 | `POST /api/v1/users` | Kullanıcı kaydı ve profil senkronizasyonu (Upsert). |
 | `GET /api/v1/users/{id}` | Profil detaylarını getirme. |
-| `GET /api/v1/recommendations` | AI destekli yemek önerileri. |
+| `GET /api/v1/recommendations` | AI destekli yemek önerileri (puanlama + LLM rafine). |
+| `GET /api/v1/recommendations/history` | Kullanıcının kalıcı öneri geçmişi. |
+| `POST /api/v1/recommendations/{id}/rate` | Belirli bir öneri kaydını değerlendirme. |
 | `POST /api/v1/consumption` | Günlük kalori ve tüketim takibi. |
+| `GET /api/v1/consumption` | Günlük/aralıklı tüketim kayıtlarını getirme. |
+| `GET /api/v1/inventory` | Kullanıcı envanterini getirme. |
+| `POST /api/v1/inventory` | Envantere ürün ekleme. |
+| `POST /api/v1/inventory/invitations` | Envanter paylaşım daveti gönderme. |
+| `GET /api/v1/recipes` | Tarifleri arama ve listeleme. |
+| `POST /api/v1/recipes/{id}/ratings` | Katalogdaki bir tarifi değerlendirme. |
+| `GET /api/v1/ingredients` | Malzeme arama (envanter ve admin için). |
+| `GET /api/v1/notifications` | Kullanıcı bildirimlerini listeleme. |
+| `PATCH /api/v1/notifications/{id}/read` | Bildirimi okundu olarak işaretleme. |
+| `GET /api/v1/admin/users` | *(Admin)* Tüm kullanıcıları listeleme. |
+| `PUT /api/v1/admin/users/{id}/role` | *(Admin)* Kullanıcı rolünü değiştirme. |
+| `PUT /api/v1/admin/ingredients/{id}` | *(Admin)* Malzeme özelliklerini düzenleme. |
+| `DELETE /api/v1/admin/recipes/{id}` | *(Admin)* Tarif silme. |
 
 ### 📦 Paketleme ve Dağıtım
 Uygulamayı bir JAR dosyası olarak paketlemek için:

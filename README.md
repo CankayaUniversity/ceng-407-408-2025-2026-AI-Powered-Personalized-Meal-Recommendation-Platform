@@ -63,12 +63,21 @@ Many existing meal recommendation platforms rely on static recipe lists or simpl
 ### Key Features
 - User profile management (diet goals, liked/disliked foods)
 - Ingredient-based recipe recommendations
-- Hybrid AI Recommendation Engine (SQL Filtering + Custom Scoring + LLM Refinement)
+- **Hybrid AI Recommendation Engine:** SQL Filtering + Mathematical Scoring + LLM Refinement with fallback states
+- **Negative Craving Detection:** Smart scoring penalizes recipes matching exclusion preferences (e.g., "no onion")
+- **Craving Matching Against Full Ingredient List:** User cravings compared to complete recipe ingredient sets, not just titles
+- **Persistent Recommendation History:** AI-generated insights and per-recommendation user ratings stored separately from recipes
+- **"Prepare This Recipe" Flow:** Direct consumption modal triggered from recipe cards
+- **Admin Panel:** User/role management, ingredient material editing, test inventory seeding
 - Daily Food Logging and Consumption Tracking (Flexible stock deduction: home-made vs external meals)
+- Inventory management with sharing/invitation support
+- Notification center with sidebar integration
 - Dynamic Dataset Support (Efficiently handling 50,000+ recipes)
 - Nutritional value calculation (calories, protein, fat, carbohydrates)
-- AI-assisted personalized meal and diet suggestions (Powered by OpenAI GPT-4o)
+- **Multi-Provider AI:** OpenAI GPT-4o, Google Gemini, Anthropic Claude, Mistral, DeepSeek, Local LLM — dynamic switching with fallback
 - Integrated File Storage (MinIO) for recipe images and user uploads
+- **Thin Client Architecture:** All business logic and calculations centralized in backend (Single Source of Truth)
+- **Expanded Unit Converter:** Covers all units present in the 50,000+ recipe dataset
 - Web-based, modular and extensible architecture
 - **Multi-language Support (i18n):** Full internationalization and localization support for both Backend and Frontend.
 
@@ -216,12 +225,21 @@ Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtr
 ### Temel Özellikler
 - Kullanıcı profil yönetimi (diyet hedefleri, sevilen/sevilmeyen yiyecekler)
 - Malzeme bazlı tarif önerileri
-- Hibrit AI Öneri Motoru (SQL Filtreleme + Özel Puanlama + LLM Rafine Etme)
+- **Hibrit AI Öneri Motoru:** SQL Filtreleme + Matematiksel Puanlama + LLM Rafine Etme, fallback durumları dahil
+- **Negatif Arzu Tespiti:** "Soğansız" gibi dışlama tercihlerine uyan tarifleri penalize eden akıllı puanlama
+- **Tam Malzeme Listesiyle Arzu Eşleştirmesi:** Kullanıcı arzuları yalnızca başlık/kategori değil, tarifin tüm malzeme listesiyle karşılaştırılır
+- **Kalıcı Öneri Geçmişi:** AI tarafından üretilen içgörüler ve öneriye özel kullanıcı değerlendirmeleri, tariflerden ayrı olarak saklanır
+- **"Bu Tarifi Hazırla" Akışı:** Tarif kartlarından doğrudan tüketim modalı açılır
+- **Admin Paneli:** Kullanıcı/rol yönetimi, malzeme düzenleme, test envanteri oluşturma
 - Günlük Yemek Günlüğü ve Tüketim Takibi (Esnek stok düşümü: Evde yapım vs. dışarıdan tüketim)
+- Envanter yönetimi ve paylaşım/davet desteği
+- Bildirim merkezi ve sidebar entegrasyonu
 - Dinamik Veri Seti Desteği (50.000+ tarifin verimli yönetimi)
 - Besin değeri hesaplama (kalori, protein, yağ, karbonhidrat)
-- Yapay zeka destekli kişiselleştirilmiş yemek ve diyet önerileri (OpenAI GPT-4o Destekli)
+- **Çoklu AI Sağlayıcı:** OpenAI GPT-4o, Google Gemini, Anthropic Claude, Mistral, DeepSeek, Yerel LLM — dinamik geçiş ve fallback desteği
 - Entegre Dosya Depolama (MinIO) - Tarif görselleri ve kullanıcı yüklemeleri için
+- **İnce İstemci (Thin Client) Mimarisi:** Tüm iş mantığı ve hesaplamalar backend'de merkezi olarak yönetilir (Tek Doğruluk Kaynağı)
+- **Genişletilmiş Birim Dönüştürücü:** 50.000+ tarif veri setindeki tüm birimleri kapsar
 - Web tabanlı, modüler ve genişletilebilir mimari
 - **Çok Dilli Destek (i18n):** Backend ve Frontend için tam uluslararasılaştırma ve yerelleştirme desteği.
 

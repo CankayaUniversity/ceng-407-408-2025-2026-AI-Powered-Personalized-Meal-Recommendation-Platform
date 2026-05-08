@@ -68,19 +68,32 @@ The project uses `i18next` and `react-i18next` for multi-language support.
 - `src/infrastructure/`: Core application services (DI, Auth, API Clients).
 - `src/shared/layout/`: Main application skeleton and Sidebar.
 - `src/features/`: Application modules:
-  - `dashboard/`: Main screen with summary information.
-  - `recipes/`: Recipe listing and details.
-  - `profile/`: User profile settings.
+  - `dashboard/`: Main screen with daily summary and nutrition overview.
+  - `recipes/`: Recipe listing, search, details, and "Prepare This Recipe" flow.
+  - `recommendations/`: AI-powered recommendation engine UI with model/provider selector, craving input, and persistent history list.
+  - `inventory/`: Inventory management (add, edit, remove items) with sharing and invitation support.
+  - `consumption/`: Daily food logging and consumption tracking.
+  - `notifications/`: Notification center with sidebar badge and read/unread management.
+  - `admin/`: Admin panel for user/role management and ingredient material editing.
+  - `profile/`: User profile settings (diet goals, allergens, preferences).
+  - `about/`: Project and platform information page.
   - `landing-page/`: Welcome page before login.
 - `src/services/`: Common API services.
+- `src/i18n/`: i18next configuration and translation loader.
 - `src/App.tsx`: Application entry point, DI registration, and route definitions.
 
 ### Current Status
 - [x] Keycloak Integration (AuthService, AuthGate).
 - [x] Dependency Injection Layer.
-- [x] Modern MainLayout and Sidebar.
+- [x] Modern MainLayout and Sidebar with notification badge.
 - [x] Axios Interceptor (Auto-token handling).
-- [x] Page Skeletons (Dashboard, Recipes, Profile).
+- [x] i18n (EN/TR) via i18next + react-i18next.
+- [x] Dashboard, Recipes, Profile, Inventory, Consumption.
+- [x] Recommendation page with AI provider/model selector and craving input.
+- [x] Persistent Recommendation History at the bottom of the recommendations page.
+- [x] "Prepare This Recipe" direct consumption modal from recipe cards.
+- [x] Notifications page with sidebar integration.
+- [x] Admin panel (user management, ingredient material editing).
 
 ---
 
@@ -148,16 +161,29 @@ Proje, çok dilli destek için `i18next` ve `react-i18next` kütüphanelerini ku
 - `src/infrastructure/`: Uygulamanın çekirdek servisleri (DI, Auth, API Clients).
 - `src/shared/layout/`: Ana uygulama iskeleti ve Sidebar.
 - `src/features/`: Uygulama modülleri:
-  - `dashboard/`: Özet bilgilerin yer aldığı ana ekran.
-  - `recipes/`: Tarif listeleme ve detaylandırma.
-  - `profile/`: Kullanıcı profil ayarları.
+  - `dashboard/`: Günlük özet ve beslenme genel görünümü ana ekranı.
+  - `recipes/`: Tarif listeleme, arama, detaylar ve "Bu Tarifi Hazırla" akışı.
+  - `recommendations/`: Model/sağlayıcı seçici, arzu girişi ve kalıcı geçmiş listesi içeren AI öneri motoru arayüzü.
+  - `inventory/`: Envanter yönetimi (ekleme, düzenleme, silme) ve paylaşım/davet desteği.
+  - `consumption/`: Günlük yemek günlüğü ve tüketim takibi.
+  - `notifications/`: Sidebar rozeti ve okundu/okunmadı yönetimi içeren bildirim merkezi.
+  - `admin/`: Kullanıcı/rol yönetimi ve malzeme düzenleme için admin paneli.
+  - `profile/`: Kullanıcı profil ayarları (diyet hedefleri, alerjenler, tercihler).
+  - `about/`: Proje ve platform bilgi sayfası.
   - `landing-page/`: Giriş öncesi karşılama sayfası.
 - `src/services/`: Ortak API servisleri.
+- `src/i18n/`: i18next yapılandırması ve çeviri yükleyici.
 - `src/App.tsx`: Uygulama girişi, DI kaydı ve route tanımları.
 
 ### Güncel Durum
 - [x] Keycloak Entegrasyonu (AuthService, AuthGate).
 - [x] Dependency Injection Katmanı.
-- [x] Modern MainLayout ve Sidebar.
+- [x] Bildirim rozeti ile Modern MainLayout ve Sidebar.
 - [x] Axios Interceptor (Auto-token handling).
-- [x] Sayfa İskeletleri (Dashboard, Tarifler, Profil).
+- [x] i18n (TR/EN) — i18next + react-i18next.
+- [x] Dashboard, Tarifler, Profil, Envanter, Tüketim.
+- [x] AI sağlayıcı/model seçici ve arzu girişi ile Öneri sayfası.
+- [x] Öneriler sayfasının altında Kalıcı Öneri Geçmişi.
+- [x] Tarif kartlarından doğrudan "Bu Tarifi Hazırla" tüketim modalı.
+- [x] Sidebar entegrasyonlu Bildirimler sayfası.
+- [x] Admin paneli (kullanıcı yönetimi, malzeme düzenleme).

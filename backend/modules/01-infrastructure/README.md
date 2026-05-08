@@ -14,9 +14,10 @@ This directory contains two separate independent modules including the technical
 #### 1. `infrastructure-core`
 Contains core infrastructure components used in the production (prod) environment.
 - **Responsibilities:**
-  - **AI Service Client:** Robust OpenAI (GPT-4o) integration with **Spring Retry** (exponential backoff) and token usage tracking.
-  - **AI Prompt Engine:** Dynamic template-based prompt generation for personalized recommendations.
+  - **AI Service Client:** Multi-provider AI integration (OpenAI GPT-4o, Google Gemini, Anthropic Claude, Mistral, DeepSeek, local LLM) with **Spring Retry** (exponential backoff), dynamic provider switching, fallback, and token usage tracking.
+  - **AI Prompt Engine:** Dynamic template-based prompt generation for personalized recommendations, including negative craving and ingredient-level context.
   - **Object Storage (MinIO):** `MinioFileStorageService` for secure file uploads, deletions, and **7-day pre-signed URL** generation.
+  - **Unit Converter:** Expanded converter covering all measurement units present in the 50,000+ recipe dataset.
   - **Persistence:** Database drivers, JPA configurations, and Flyway migrations.
 - **Usage:** Added as `implementation(project(":infrastructure-core"))` in other modules.
 
@@ -43,9 +44,10 @@ Bu dizin, uygulamanın teknik altyapısını ve test araçlarını içeren iki a
 #### 1. `infrastructure-core`
 Üretim (prod) ortamında kullanılan çekirdek altyapı bileşenlerini içerir.
 - **Sorumluluklar:**
-  - **AI Service Client:** **Spring Retry** (üstel geri çekilme) ve token kullanım takibi içeren dayanıklı OpenAI (GPT-4o) entegrasyonu.
-  - **AI Prompt Engine:** Kişiselleştirilmiş öneriler için şablon tabanlı dinamik prompt üretimi.
+  - **AI Service Client:** OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, DeepSeek ve yerel LLM desteği; **Spring Retry** (üstel geri çekilme), dinamik sağlayıcı geçişi, fallback ve token kullanım takibi.
+  - **AI Prompt Engine:** Negatif arzu tespiti ve malzeme düzeyinde bağlam içeren, kişiselleştirilmiş öneriler için şablon tabanlı dinamik prompt üretimi.
   - **Object Storage (MinIO):** Güvenli dosya yükleme, silme ve **7 günlük pre-signed URL** oluşturma desteği sunan `MinioFileStorageService`.
+  - **Birim Dönüştürücü:** 50.000+ tarif veri setindeki tüm ölçü birimlerini kapsayan genişletilmiş dönüştürücü.
   - **Persistence:** Veritabanı sürücüleri, JPA yapılandırmaları ve Flyway geçişleri.
 - **Kullanım:** Diğer modüllerde `implementation(project(":infrastructure-core"))` olarak eklenir.
 

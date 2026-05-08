@@ -16,10 +16,21 @@ The entry point of the application and the communication layer with the outside 
 - **Orchestration:** Manages complex API flows by calling multiple Domain services.
 
 ### 📂 Key Components
-- `controller/`: REST API endpoints (Users, Recommendations, Consumptions, Storage).
-- `model.dto/`: Request and Response objects (e.g., `ConsumptionRequest`, `RecommendationResponse`).
-- `config/`: Application-wide configurations including Security, WebClient, and Swagger.
-- `exception/`: Global Exception Handling logic.
+- `controller/`: REST API endpoints:
+  - `UserController` — profile upsert and retrieval
+  - `RecommendationController` — AI recommendations, history, and per-recommendation rating
+  - `RecipeController` — recipe search and listing
+  - `RecipeRatingController` — catalog recipe ratings
+  - `ConsumptionController` — daily food logging and consumption tracking
+  - `InventoryController` — inventory CRUD
+  - `InventoryInvitationController` — inventory sharing and invitation flow
+  - `IngredientController` — ingredient search and lookup
+  - `NotificationController` — notification management (list, read, delete)
+  - `AdminController` — role-based admin operations (user/role management, ingredient editing)
+  - `DefinitionController` — unit and category definitions
+- `model.dto/`: Request and Response objects (e.g., `ConsumptionRequest`, `RecommendationResponse`, `RecommendationHistoryResponse`).
+- `config/`: Application-wide configurations including Security, WebClient, Swagger, and i18n (`I18nConfig`).
+- `exception/`: Global Exception Handling logic with i18n-aware error messages.
 
 ### 🔗 Dependencies
 This module uses the **Domain** and **Infrastructure** modules. It is the conductor of the system.
@@ -83,10 +94,21 @@ Uygulamanın giriş kapısı ve dış dünya ile iletişim katmanıdır. Spring 
 - **Orchestration:** Birden fazla Domain servisini çağırarak karmaşık API akışlarını yönetir.
 
 ### 📂 Önemli Birimler
-- `controller/`: REST API uç noktaları (Users, Recommendations, Consumptions, Storage).
-- `model.dto/`: İstek ve Yanıt nesneleri (Örn: `ConsumptionRequest`, `RecommendationResponse`).
-- `config/`: Güvenlik, WebClient ve Swagger dahil uygulama genelindeki yapılandırmalar.
-- `exception/`: Global Hata Yönetimi mantığı.
+- `controller/`: REST API uç noktaları:
+  - `UserController` — profil upsert ve getirme
+  - `RecommendationController` — AI önerileri, geçmiş ve öneriye özel değerlendirme
+  - `RecipeController` — tarif arama ve listeleme
+  - `RecipeRatingController` — katalog tarif değerlendirmeleri
+  - `ConsumptionController` — günlük yemek günlüğü ve tüketim takibi
+  - `InventoryController` — envanter CRUD
+  - `InventoryInvitationController` — envanter paylaşımı ve davet akışı
+  - `IngredientController` — malzeme arama ve sorgulama
+  - `NotificationController` — bildirim yönetimi (listeleme, okundu, silme)
+  - `AdminController` — rol tabanlı admin operasyonları (kullanıcı/rol yönetimi, malzeme düzenleme)
+  - `DefinitionController` — birim ve kategori tanımlamaları
+- `model.dto/`: İstek ve Yanıt nesneleri (Örn: `ConsumptionRequest`, `RecommendationResponse`, `RecommendationHistoryResponse`).
+- `config/`: Güvenlik, WebClient, Swagger ve i18n (`I18nConfig`) dahil uygulama genelindeki yapılandırmalar.
+- `exception/`: i18n farkında hata mesajları ile Global Hata Yönetimi mantığı.
 
 ### 🔗 Bağımlılıklar
 Bu modül **Domain** ve **Infrastructure** modüllerini kullanır. Sistemin orkestra şefidir.

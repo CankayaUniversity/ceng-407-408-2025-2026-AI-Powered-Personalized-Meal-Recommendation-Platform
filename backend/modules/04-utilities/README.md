@@ -15,7 +15,7 @@ Utility tools used throughout the application and development conveniences are l
 - **Common Helpers:** Shared utility classes used across the project.
 
 ### 📂 Key Components
-- `datapopulator/`: Test data loading services.
+- `datapopulator/`: Test data loading services, including admin-triggered default test inventory seeding.
 
 ### 🔗 Dependencies
 Usually works dependent on **Domain** models.
@@ -33,7 +33,7 @@ Uygulama genelinde kullanılan yardımcı araçlar ve geliştirme kolaylıkları
 - **Ortak Yardımcılar (Common Helpers):** Proje genelinde paylaşılan yardımcı sınıflar.
 
 ### 📂 Önemli Birimler
-- `datapopulator/`: Test verisi yükleme servisleri.
+- `datapopulator/`: Test verisi yükleme servisleri; admin tarafından tetiklenebilen varsayılan test envanteri oluşturma dahil.
 
 ### 🔗 Bağımlılıklar
 Genellikle **Domain** modellerine bağımlı çalışır.
