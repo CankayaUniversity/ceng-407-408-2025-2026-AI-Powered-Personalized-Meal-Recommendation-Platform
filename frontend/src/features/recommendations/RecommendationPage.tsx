@@ -707,103 +707,117 @@ const RecommendationPage: React.FC = () => {
                   : 100;
 
                 return (
-                  <article key={recipe.recipeId} className="meal-card meal-highlight-frame overflow-hidden rounded-3xl p-0 shadow-[0_12px_40px_-20px_rgba(40,36,33,0.32)]">
-                    <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
-                      <div className="relative min-h-[200px] overflow-hidden bg-gradient-to-br from-terracotta/90 via-ochre-soft/55 to-alabaster dark:from-terracotta dark:via-terracotta/90 dark:to-espresso-midnight lg:h-full">
+                  <article key={recipe.recipeId} className="meal-card meal-highlight-frame overflow-hidden rounded-[2rem] p-0 shadow-[0_24px_70px_-36px_rgba(40,36,33,0.38)]">
+                    <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)]">
+                      <div className="relative min-h-[260px] overflow-hidden bg-gradient-to-br from-terracotta/85 via-ochre-soft/45 to-moss-sage/30 dark:from-terracotta/90 dark:via-espresso-midnight dark:to-moss-forest/60 xl:min-h-full">
                         {recipe.imageUrl ? (
                           <img src={recipe.imageUrl} alt={recipe.recipeTitle} className="absolute inset-0 h-full w-full object-cover" />
-                        ) : null}
-                        <div className="absolute inset-0 bg-gradient-to-t from-alabaster/95 via-alabaster/35 to-transparent dark:from-espresso-midnight/90 dark:via-espresso-midnight/25 dark:to-transparent" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <ChefHat size={88} className="text-terracotta" strokeWidth={1.4} />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight/80 via-espresso-midnight/20 to-transparent" />
 
-                        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-                          <span className="match-score-badge text-xs">{t('recommendations.results.pantryFit', { percent: matchPercentage })}</span>
+                        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/90 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-terracotta shadow-sm backdrop-blur-md dark:bg-espresso-midnight/75 dark:text-alabaster">
+                            <Sparkles size={13} />
+                            {t('recommendations.results.aiPick')}
+                          </span>
                           {cravings.trim() && (
-                            <span className="meal-badge-neon border-card-border bg-white/80 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground dark:border-white/20 dark:bg-white/10 dark:text-white">
+                            <span className="inline-flex items-center rounded-full border border-white/25 bg-espresso-midnight/70 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-md">
                               {t('recommendations.results.cravingActive')}
                             </span>
                           )}
                         </div>
 
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <div className="meal-card rounded-xl border-card-border bg-white/85 p-3 shadow-none dark:border-white/20 dark:bg-white/10">
-                            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground-muted dark:text-white/65">{t('recommendations.results.aiPick')}</p>
-                            <h3 className="mt-1 font-serif text-xl font-bold text-foreground dark:text-white">{recipe.recipeTitle}</h3>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              {recipe.matchedIngredients.length > 0 ? (
-                                recipe.matchedIngredients.slice(0, 3).map((item: string) => (
-                                  <span key={item} className="rounded-full border border-card-border bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-foreground dark:border-white/20 dark:bg-white/10 dark:text-white">
-                                    {item}
-                                  </span>
-                                ))
-                              ) : (
-                                <span className="text-[10px] text-foreground/50 dark:text-white/50 italic">{t('recommendations.results.noMatches')}</span>
-                              )}
+                        <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                          <div className="mb-4">
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/65">{t('recommendations.results.pantryFit', { percent: matchPercentage })}</p>
+                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/20">
+                              <div
+                                className="h-full rounded-full bg-terracotta shadow-[0_0_24px_rgba(226,114,91,0.55)]"
+                                style={{ width: `${matchPercentage}%` }}
+                              />
                             </div>
+                          </div>
+
+                          <h3 className="font-serif text-3xl font-bold leading-tight text-white">{recipe.recipeTitle}</h3>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {recipe.matchedIngredients.length > 0 ? (
+                              recipe.matchedIngredients.slice(0, 3).map((item: string) => (
+                                <span key={item} className="rounded-full border border-white/25 bg-white/15 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md">
+                                  {item}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs italic text-white/70">{t('recommendations.results.noMatches')}</span>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-4 p-4">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                          <div>
+                      <div className="space-y-5 p-5 lg:p-6">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="min-w-0">
                             <p className="meal-overline">{t('recommendations.results.detail')}</p>
-                            <h3 className="font-serif text-xl font-bold mt-1 text-foreground dark:text-white">{recipe.recipeTitle}</h3>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              <span className="meal-badge-neon !px-2.5 !py-1 text-[10px]">{t('recommendations.results.insightReady')}</span>
-                              <span className="meal-badge-neon !px-2.5 !py-1 text-[10px] border-ochre-soft/20 bg-ochre-soft/10 text-ochre-soft">
+                            <h3 className="mt-1 font-serif text-2xl font-bold leading-snug text-foreground dark:text-white">{recipe.recipeTitle}</h3>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <span className="meal-badge-neon !px-3 !py-1.5 text-[10px] font-bold">{t('recommendations.results.insightReady')}</span>
+                              <span className="meal-badge-neon !px-3 !py-1.5 text-[10px] border-ochre-soft/20 bg-ochre-soft/10 font-bold text-ochre-soft">
                                 {recipe.servings ? t('recommendations.results.servings', { count: recipe.servings }) : t('recommendations.results.flexiblePortions')}
                               </span>
                               {recipe.ratingCount ? (
-                                <span className="meal-badge-neon !px-2.5 !py-1 text-[10px] border-primary/20 bg-primary/5 text-primary">
+                                <span className="meal-badge-neon !px-3 !py-1.5 text-[10px] border-primary/20 bg-primary/5 font-bold text-primary">
                                   {t('recommendations.results.reviews', { count: recipe.ratingCount })}
                                 </span>
                               ) : null}
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                            <div className="meal-metric-card rounded-xl px-3 py-2 text-center dark:bg-white/5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.calories')}</p>
-                              <p className="mt-1 font-semibold text-terracotta">{formatMetric(recipe.calories)}</p>
+                          <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 lg:max-w-[460px]">
+                            {[
+                              { label: t('recommendations.results.metrics.calories'), value: formatMetric(recipe.calories), tone: 'text-terracotta' },
+                              { label: t('recommendations.results.metrics.protein'), value: formatMetric(recipe.protein, 'g'), tone: 'text-moss-forest dark:text-moss-sage' },
+                              { label: t('recommendations.results.metrics.prep'), value: formatMetric(recipe.preparationTimeMinutes, 'm'), tone: 'text-ochre-soft' },
+                              { label: t('recommendations.results.metrics.rating'), value: recipe.averageRating != null ? recipe.averageRating.toFixed(1) : '-', tone: 'text-espresso-midnight dark:text-alabaster', icon: true }
+                            ].map((metric) => (
+                              <div key={metric.label} className="rounded-2xl border border-card-border bg-white/55 px-3 py-3 text-center dark:border-white/10 dark:bg-white/5">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-espresso-midnight/35 dark:text-alabaster/35">{metric.label}</p>
+                                <p className={`mt-1 inline-flex items-center justify-center gap-1 font-bold ${metric.tone}`}>
+                                  {metric.icon && <Star size={12} className="fill-ochre-soft text-ochre-soft" />}
+                                  {metric.value}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="rounded-[1.75rem] border border-card-border bg-white/55 p-5 dark:border-white/10 dark:bg-white/[0.04]">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 rounded-2xl bg-terracotta/10 p-2 text-terracotta">
+                              <MessageSquareText size={18} />
                             </div>
-                            <div className="meal-metric-card rounded-xl px-3 py-2 text-center dark:bg-white/5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.protein')}</p>
-                              <p className="mt-1 font-semibold text-moss-forest dark:text-moss-sage">{formatMetric(recipe.protein, 'g')}</p>
-                            </div>
-                            <div className="meal-metric-card rounded-xl px-3 py-2 text-center dark:bg-white/5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.prep')}</p>
-                              <p className="mt-1 font-semibold text-ochre-soft">{formatMetric(recipe.preparationTimeMinutes, 'm')}</p>
-                            </div>
-                            <div className="meal-metric-card rounded-xl px-3 py-2 text-center dark:bg-white/5">
-                              <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.rating')}</p>
-                              <p className="mt-1 inline-flex items-center gap-1 font-semibold text-espresso-midnight dark:text-alabaster">
-                                <Star size={12} className="fill-ochre-soft text-ochre-soft" />
-                                {recipe.averageRating != null ? recipe.averageRating.toFixed(1) : '-'}
-                              </p>
+                            <div>
+                              <p className="meal-overline tracking-[0.18em]">{t('recommendations.results.insightReady')}</p>
+                              <h4 className="mt-1 font-serif text-xl font-bold text-espresso-midnight dark:text-alabaster">{t('recommendations.results.insight.title')}</h4>
+                              <p className="mt-3 text-sm leading-7 text-espresso-midnight/70 dark:text-alabaster/70">{recipe.insight}</p>
                             </div>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 items-stretch">
-                          <div className="meal-card rounded-2xl bg-white/65 p-4 shadow-none dark:bg-white/5 h-full">
-                            <div className="flex items-center gap-3">
-                              <div className="rounded-xl bg-terracotta/10 p-2 text-terracotta">
-                                <MessageSquareText size={16} />
-                              </div>
-                              <div>
-                                <p className="meal-overline tracking-[0.18em]">{t('recommendations.results.insightReady')}</p>
-                                <h4 className="mt-1 font-serif text-lg font-bold text-espresso-midnight dark:text-alabaster">{t('recommendations.results.insight.title')}</h4>
-                              </div>
-                            </div>
-                            <p className="mt-3 text-sm leading-6 text-espresso-midnight/70 dark:text-alabaster/70">{recipe.insight}</p>
-
-                            <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-                              <div className="meal-metric-card border-moss-sage/20 bg-moss-sage/10 px-3 py-3">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-moss-forest/55 dark:text-moss-sage">{t('recommendations.results.insight.pantry')}</p>
-                                <div className="mt-2 flex flex-wrap gap-1.5">
+                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                              <div className="rounded-[1.5rem] border border-moss-sage/20 bg-moss-sage/10 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-moss-forest/60 dark:text-moss-sage">{t('recommendations.results.insight.pantry')}</p>
+                                  <span className="rounded-full bg-white/60 px-2.5 py-1 text-xs font-bold text-moss-forest dark:bg-white/10 dark:text-moss-sage">{recipe.matchedIngredients.length}</span>
+                                </div>
+                                <div className="mt-3 flex flex-wrap gap-1.5">
                                   {recipe.matchedIngredients.length > 0 ? (
                                     recipe.matchedIngredients.map((item: string) => (
-                                      <span key={item} className="medical-badge bg-white/60 border-moss-sage/20 text-moss-forest dark:text-moss-sage">
+                                      <span key={item} className="medical-badge bg-white/70 border-moss-sage/20 text-moss-forest dark:bg-white/5 dark:text-moss-sage">
                                         {item}
                                       </span>
                                     ))
@@ -813,51 +827,72 @@ const RecommendationPage: React.FC = () => {
                                 </div>
                               </div>
 
-                              <div className="flex flex-col gap-4">
-                                <div className="meal-metric-card border-ochre-soft/20 bg-ochre-soft/10 px-3 py-3 flex-1">
-                                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-ochre-soft">{t('recommendations.results.insight.missing')}</p>
-                                  <div className="mt-2 flex flex-wrap gap-1.5">
-                                    {recipe.missingIngredients.length > 0 ? (
-                                      recipe.missingIngredients.map((item: string) => (
-                                        <span key={item} className="meal-badge-neon !px-2 !py-0.5 text-[10px] border-ochre-soft/20 bg-white/70 text-espresso-midnight dark:border-ochre-soft/30 dark:bg-white/5 dark:text-alabaster">
-                                          {item}
-                                        </span>
-                                      ))
-                                    ) : (
-                                      <span className="text-sm text-espresso-midnight/55 dark:text-alabaster/55">{t('recommendations.results.insight.missingNone')}</span>
-                                    )}
-                                  </div>
+                              <div className="rounded-[1.5rem] border border-ochre-soft/20 bg-ochre-soft/10 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-ochre-soft">{t('recommendations.results.insight.missing')}</p>
+                                  <span className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-bold text-espresso-midnight dark:bg-white/10 dark:text-alabaster">{recipe.missingIngredients.length}</span>
                                 </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleCookRecipe(recipe)}
-                                  className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-2.5 font-bold shadow-md transition-all hover:scale-[1.02] ${
-                                    recipe.isCooked 
-                                      ? 'bg-moss-sage/20 text-moss-forest border border-moss-sage/30 cursor-default' 
-                                      : 'bg-moss-forest text-white hover:bg-moss-forest/90 dark:bg-moss-sage dark:text-espresso-midnight shadow-moss-forest/20'
-                                  }`}
-                                >
-                                  {recipe.isCooked ? <CheckCircle2 size={18} /> : <UtensilsCrossed size={18} />}
-                                  {recipe.isCooked 
-                                    ? t('recommendations.results.insight.cooked', { defaultValue: 'Bu Tarifi Yaptınız!' }) 
-                                    : t('recommendations.results.insight.cook')}
-                                </button>
-                                {recipe.totalCookCount !== undefined && recipe.totalCookCount > 0 && (
-                                  <div className="mt-2 text-center">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/40 dark:text-alabaster/40">
-                                      {t('recommendations.results.insight.usageCount', { count: recipe.totalCookCount, defaultValue: `Bu tarif toplam ${recipe.totalCookCount} kez yapıldı` })}
-                                    </p>
-                                  </div>
-                                )}
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                  {recipe.missingIngredients.length > 0 ? (
+                                    recipe.missingIngredients.map((item: string) => (
+                                      <span key={item} className="rounded-full border border-ochre-soft/20 bg-white/70 px-2.5 py-1 text-[10px] font-bold text-espresso-midnight dark:border-ochre-soft/30 dark:bg-white/5 dark:text-alabaster">
+                                        {item}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-sm text-espresso-midnight/55 dark:text-alabaster/55">{t('recommendations.results.insight.missingNone')}</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                              <div className="rounded-2xl border border-card-border bg-white/45 px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.carbs')}</p>
+                                <p className="mt-1 font-bold text-espresso-midnight dark:text-alabaster">{formatMetric(recipe.carbs, 'g')}</p>
+                              </div>
+                              <div className="rounded-2xl border border-card-border bg-white/45 px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.fat')}</p>
+                                <p className="mt-1 font-bold text-espresso-midnight dark:text-alabaster">{formatMetric(recipe.fat, 'g')}</p>
+                              </div>
+                              <div className="rounded-2xl border border-card-border bg-white/45 px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.matched')}</p>
+                                <p className="mt-1 font-bold text-moss-forest dark:text-moss-sage">{recipe.matchedIngredients.length}</p>
+                              </div>
+                              <div className="rounded-2xl border border-card-border bg-white/45 px-3 py-3 dark:border-white/10 dark:bg-white/5">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.missing')}</p>
+                                <p className="mt-1 inline-flex items-center gap-1.5 font-bold text-espresso-midnight dark:text-alabaster">
+                                  <Clock3 size={12} className="text-ochre-soft" />
+                                  {recipe.missingIngredients.length}
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCookRecipe(recipe)}
+                              className={`inline-flex w-full items-center justify-center gap-2 rounded-[1.5rem] px-5 py-3 font-bold shadow-md transition-all hover:-translate-y-0.5 ${
+                                recipe.isCooked
+                                  ? 'border border-moss-sage/30 bg-moss-sage/20 text-moss-forest dark:text-moss-sage'
+                                  : 'bg-moss-forest text-white shadow-moss-forest/20 hover:bg-moss-forest/90 dark:bg-moss-sage dark:text-espresso-midnight'
+                              }`}
+                            >
+                              {recipe.isCooked ? <CheckCircle2 size={18} /> : <UtensilsCrossed size={18} />}
+                              {recipe.isCooked
+                                ? t('recommendations.results.insight.cooked', { defaultValue: 'Bu Tarifi Yaptınız!' })
+                                : t('recommendations.results.insight.cook')}
+                            </button>
+                            {recipe.totalCookCount !== undefined && recipe.totalCookCount > 0 && (
+                              <p className="text-center text-[10px] font-bold uppercase tracking-widest text-espresso-midnight/40 dark:text-alabaster/40">
+                                {t('recommendations.results.insight.usageCount', { count: recipe.totalCookCount, defaultValue: `Bu tarif toplam ${recipe.totalCookCount} kez yapıldı` })}
+                              </p>
+                            )}
                           </div>
 
-                          <div className="meal-card rounded-2xl bg-white/65 p-4 shadow-none dark:bg-white/5 h-full relative z-10">
+                          <div className="rounded-[1.75rem] border border-card-border bg-white/55 p-5 dark:border-white/10 dark:bg-white/[0.04]">
                             <div className="flex items-center gap-3">
-                              <div className="rounded-xl bg-espresso-midnight/10 p-2 text-espresso-midnight dark:bg-white/10 dark:text-alabaster">
-                                <Star size={16} />
+                              <div className="rounded-2xl bg-espresso-midnight/10 p-2 text-espresso-midnight dark:bg-white/10 dark:text-alabaster">
+                                <Star size={17} />
                               </div>
                               <div>
                                 <p className="meal-overline tracking-[0.18em]">{t('recommendations.results.feedback.overline')}</p>
@@ -869,7 +904,7 @@ const RecommendationPage: React.FC = () => {
                               <div>
                                 <div className="flex items-center justify-between gap-4">
                                   <span className="text-sm font-semibold text-espresso-midnight/80 dark:text-alabaster/80">{t('recommendations.results.feedback.rating')}</span>
-                                  <span className="meal-badge-neon border-transparent bg-terracotta px-3 py-1 text-white">{draft.rating}/10</span>
+                                  <span className="rounded-full bg-terracotta px-3 py-1 text-sm font-bold text-white shadow-sm">{draft.rating}/10</span>
                                 </div>
                                 <input
                                   type="range"
@@ -883,7 +918,7 @@ const RecommendationPage: React.FC = () => {
                                   })}
                                   className="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-terracotta/20 accent-terracotta"
                                 />
-                                <div className="mt-2 flex justify-between text-[10px] font-bold uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">
+                                <div className="mt-2 flex justify-between text-[10px] font-bold uppercase tracking-[0.14em] text-espresso-midnight/35 dark:text-alabaster/35">
                                   <span>{t('recommendations.results.feedback.needsWork')}</span>
                                   <span>{t('recommendations.results.feedback.loveIt')}</span>
                                 </div>
@@ -920,34 +955,12 @@ const RecommendationPage: React.FC = () => {
                                 type="button"
                                 onClick={() => void handleSaveRating(recipe)}
                                 disabled={draft.saving}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1.6rem] bg-espresso-midnight px-4 py-3 font-semibold text-white transition-all hover:bg-espresso-midnight/90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-terracotta"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1.5rem] bg-espresso-midnight px-4 py-3 font-semibold text-white transition-all hover:bg-espresso-midnight/90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-terracotta"
                               >
                                 {draft.saving ? <Loader2 size={16} className="animate-spin" /> : <Star size={16} />}
                                 {draft.saving ? t('recommendations.results.feedback.saving') : t('recommendations.results.feedback.saveButton')}
                               </button>
                             </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                          <div className="meal-metric-card rounded-xl px-3 py-2 dark:bg-white/5">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.carbs')}</p>
-                            <p className="mt-1 font-semibold text-espresso-midnight dark:text-alabaster">{formatMetric(recipe.carbs, 'g')}</p>
-                          </div>
-                          <div className="meal-metric-card rounded-xl px-3 py-2 dark:bg-white/5">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.fat')}</p>
-                            <p className="mt-1 font-semibold text-espresso-midnight dark:text-alabaster">{formatMetric(recipe.fat, 'g')}</p>
-                          </div>
-                          <div className="meal-metric-card rounded-xl px-3 py-2 dark:bg-white/5">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.matched')}</p>
-                            <p className="mt-1 font-semibold text-moss-forest dark:text-moss-sage">{recipe.matchedIngredients.length}</p>
-                          </div>
-                          <div className="meal-metric-card rounded-xl px-3 py-2 dark:bg-white/5">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-espresso-midnight/35 dark:text-alabaster/35">{t('recommendations.results.metrics.missing')}</p>
-                            <p className="mt-1 inline-flex items-center gap-1.5 font-semibold text-espresso-midnight dark:text-alabaster">
-                              <Clock3 size={12} className="text-ochre-soft" />
-                              {recipe.missingIngredients.length}
-                            </p>
                           </div>
                         </div>
                       </div>
