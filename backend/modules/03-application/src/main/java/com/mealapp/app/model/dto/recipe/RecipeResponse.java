@@ -30,6 +30,7 @@ public class RecipeResponse {
     private String difficulty;
     private String createdBy;
     private Long parentId;
+    private Integer versionNumber;
     private java.time.LocalDateTime createdAt;
     private List<RecipeIngredientDTO> ingredients;
     private boolean isFavorite;

@@ -127,6 +127,7 @@ export interface RecipeListItem {
   createdBy?: string;
   createdAt?: string;
   parentId?: number | null;
+  versionNumber?: number | null;
   isFavorite?: boolean;
 }
 
@@ -394,7 +395,8 @@ export enum RecipeStatus {
   DRAFT = 'DRAFT',
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED'
+  REJECTED = 'REJECTED',
+  SUPERSEDED = 'SUPERSEDED'
 }
 
 export interface RecipeIngredientRequest {

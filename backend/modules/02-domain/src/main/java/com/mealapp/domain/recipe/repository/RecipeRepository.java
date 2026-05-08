@@ -28,7 +28,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     @Query("SELECT r FROM Recipe r WHERE r.active = true AND " +
            "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
-           "(r.parentId IS NOT NULL AND r.createdBy = :userId))")
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED'))")
     Page<Recipe> findAllActive(@Param("userId") String userId, Pageable pageable);
 
     @Query("SELECT r FROM Recipe r " +
@@ -37,7 +37,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
            "LEFT JOIN FETCH i.nutrition " +
            "WHERE r.active = true AND " +
            "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
-           "(r.parentId IS NOT NULL AND r.createdBy = :userId))")
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED'))")
     Page<Recipe> findAllWithIngredients(@Param("userId") String userId, Pageable pageable);
 
     @Query("SELECT DISTINCT r FROM Recipe r " +
@@ -46,7 +46,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
            "LEFT JOIN FETCH i.nutrition " +
            "WHERE r.active = true AND " +
            "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
-           "(r.parentId IS NOT NULL AND r.createdBy = :userId))")
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED'))")
     List<Recipe> findAllWithIngredients(@Param("userId") String userId);
 
     /**
@@ -54,11 +54,11 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
      */
     @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
                    "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
-                   "(r.parentId IS NOT NULL AND r.createdBy = :userId)) AND " +
+                   "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
                    "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))",
            countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
                         "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
-                        "(r.parentId IS NOT NULL AND r.createdBy = :userId)) AND " +
+                        "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
                         "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%'))")
     Page<Recipe> findByTitleContainingIgnoreCase(@Param("title") String title, @Param("userId") String userId, Pageable pageable);
 
@@ -86,7 +86,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
            "JOIN ri.ingredient i " +
            "WHERE r.active = true AND " +
            "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
-           "(r.parentId IS NOT NULL AND r.createdBy = :userId)) " +
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) " +
            "AND (:dietType = 'NONE' OR r.title LIKE %:dietType%) " + 
            "AND NOT EXISTS (SELECT 1 FROM RecipeIngredient ri2 " +
            "                JOIN ri2.ingredient i2 " +
@@ -96,9 +96,21 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     @Query("SELECT r FROM Recipe r WHERE r.active = true AND " +
            "(r.id = :rootId OR r.parentId = :rootId) AND " +
+           "(r.active = true OR r.id = :rootId) AND " +
            "(r.status = 'APPROVED' OR r.createdBy = :userId OR :isAdmin = true) " +
-           "ORDER BY r.createdAt DESC")
+           "ORDER BY r.versionNumber DESC, r.createdAt DESC")
     List<Recipe> findAllVersions(@Param("rootId") Long rootId, @Param("userId") String userId, @Param("isAdmin") boolean isAdmin);
+
+    @Query("SELECT COALESCE(MAX(r.versionNumber), 1) FROM Recipe r WHERE r.id = :rootId OR r.parentId = :rootId")
+    Integer findMaxVersionNumber(@Param("rootId") Long rootId);
+
+    List<Recipe> findByParentIdAndStatusAndActiveTrue(Long parentId, RecipeStatus status);
+
+    Optional<Recipe> findFirstByParentIdAndCreatedByAndStatusInAndActiveTrueOrderByVersionNumberDescCreatedAtDesc(
+            Long parentId,
+            String createdBy,
+            List<RecipeStatus> statuses
+    );
 
     @Modifying
     @Query("UPDATE Recipe r SET r.active = false WHERE r.id = :id")

@@ -649,6 +649,7 @@
       "pending": "Pending Approval",
       "approved": "Live",
       "rejected": "Rejected",
+      "superseded": "Superseded",
       "updated_version": "Updated Version"
     },
     "modal": {

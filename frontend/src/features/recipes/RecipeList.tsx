@@ -319,6 +319,10 @@ const RecipeList: React.FC = () => {
                           ratingCount: details.ratingCount,
                           isFavorite: details.isFavorite,
                           status: details.status,
+                          createdBy: details.createdBy,
+                          createdAt: details.createdAt,
+                          parentId: details.parentId,
+                          versionNumber: details.versionNumber,
                           category: details.category
                       };
                       handleOpenDetail(listItem);
@@ -357,7 +361,17 @@ const RecipeList: React.FC = () => {
         ));
         setSelectedRecipe(prev => {
           if (!prev) return null;
-          return { ...prev, isFavorite: isFav, imageUrl: details.imageUrl, status: details.status };
+          return {
+            ...prev,
+            id: details.id,
+            isFavorite: isFav,
+            imageUrl: details.imageUrl,
+            status: details.status,
+            createdBy: details.createdBy,
+            createdAt: details.createdAt,
+            parentId: details.parentId,
+            versionNumber: details.versionNumber
+          };
         });
       }
     } catch (err: any) {
@@ -381,6 +395,10 @@ const RecipeList: React.FC = () => {
           title: details.title, 
           imageUrl: details.imageUrl, 
           status: details.status,
+          createdBy: details.createdBy,
+          createdAt: details.createdAt,
+          parentId: details.parentId,
+          versionNumber: details.versionNumber,
           totalCalories: details.totalCalories,
           preparationTimeMinutes: details.preparationTimeMinutes,
           servings: details.servings,
@@ -502,6 +520,7 @@ const RecipeList: React.FC = () => {
                         recipe.status === 'APPROVED' ? 'bg-moss-forest/20 text-moss-forest border-moss-forest/30' :
                         recipe.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' :
                         recipe.status === 'DRAFT' ? 'bg-blue-500/20 text-blue-500 border-blue-500/30' :
+                        recipe.status === 'SUPERSEDED' ? 'bg-zinc-500/20 text-zinc-500 border-zinc-500/30' :
                         'bg-red-500/20 text-red-500 border-red-500/30'
                       }`}>
                         {t(`recipes.status.${recipe.status.toLowerCase()}`)}
@@ -662,6 +681,7 @@ const RecipeList: React.FC = () => {
                             selectedRecipe.status === 'APPROVED' ? 'text-moss-sage' :
                             selectedRecipe.status === 'PENDING' ? 'text-yellow-400' :
                             selectedRecipe.status === 'DRAFT' ? 'text-blue-400' :
+                            selectedRecipe.status === 'SUPERSEDED' ? 'text-zinc-300' :
                             'text-red-400'
                           }`}>
                             {t(`recipes.status.${selectedRecipe.status.toLowerCase()}`)}
@@ -671,7 +691,7 @@ const RecipeList: React.FC = () => {
                           <div className="relative group/versions">
                             <button className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all">
                               <History size={16} className="text-terracotta" />
-                              VERSİYON {recipeVersions.findIndex(v => v.id === selectedRecipe.id) + 1}
+                              VERSİYON {selectedRecipe.versionNumber ?? recipeVersions.find(v => v.id === selectedRecipe.id)?.versionNumber ?? recipeVersions.findIndex(v => v.id === selectedRecipe.id) + 1}
                             </button>
                             <div className="absolute top-full right-0 mt-2 w-64 glass-card-dark rounded-2xl border border-white/10 shadow-2xl opacity-0 invisible group-hover/versions:opacity-100 group-hover/versions:visible transition-all z-50 overflow-hidden">
                               <div className="p-4 border-b border-white/5 bg-white/5">
@@ -685,16 +705,17 @@ const RecipeList: React.FC = () => {
                                     className={`w-full flex items-center gap-3 p-4 hover:bg-white/10 transition-all text-left border-b border-white/5 last:border-0 ${v.id === selectedRecipe.id ? 'bg-terracotta/20' : ''}`}
                                   >
                                     <div className="flex-none w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-white/60">
-                                      V{idx + 1}
+                                      V{v.versionNumber ?? idx + 1}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2">
                                         <p className="text-sm font-bold text-white truncate">
-                                          {v.status === 'APPROVED' ? 'Orijinal Tarif' : `Revizyon ${idx + 1}`}
+                                          {v.parentId ? `Revizyon V${v.versionNumber ?? idx + 1}` : `Yayındaki V${v.versionNumber ?? idx + 1}`}
                                         </p>
                                         {v.status === 'APPROVED' && <CheckCircle2 size={12} className="text-moss-sage" />}
                                         {v.status === 'PENDING' && <Clock3 size={12} className="text-yellow-400" />}
                                         {v.status === 'REJECTED' && <AlertCircle size={12} className="text-red-400" />}
+                                        {v.status === 'SUPERSEDED' && <History size={12} className="text-zinc-300" />}
                                       </div>
                                       <p className="text-[10px] text-white/40 font-medium">
                                         {v.createdAt ? new Date(v.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tarih Belirtilmemiş'}

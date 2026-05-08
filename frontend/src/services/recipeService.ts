@@ -31,8 +31,15 @@ type RecipeListItemDto = {
   preparationTime?: number;
   servings?: number;
   rating?: number;
+  ratingCount?: number;
   imageUrl?: string;
   isFavorite?: boolean;
+  status?: RecipeListItem['status'];
+  difficulty?: string | null;
+  createdBy?: string;
+  createdAt?: string;
+  parentId?: number | null;
+  versionNumber?: number | null;
 };
 
 /**
@@ -278,7 +285,14 @@ export const getRecipeService = (api: AxiosInstance) => {
         preparationTimeMinutes: r.preparationTime,
         servings: r.servings,
         averageRating: r.rating,
+        ratingCount: r.ratingCount,
         imageUrl: r.imageUrl,
+        status: r.status,
+        difficulty: r.difficulty,
+        createdBy: r.createdBy,
+        createdAt: r.createdAt,
+        parentId: r.parentId,
+        versionNumber: r.versionNumber,
         isFavorite: r.isFavorite || false
       }));
 

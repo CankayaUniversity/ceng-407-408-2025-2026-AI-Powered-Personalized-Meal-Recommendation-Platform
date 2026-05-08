@@ -119,6 +119,14 @@ public class Recipe extends BaseEntity {
     private Long parentId;
 
     /**
+     * Aynı tarif ailesi içindeki sürüm numarası. Ana tarif v1 olarak başlar,
+     * her revizyon yeni bir numara alır.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer versionNumber = 1;
+
+    /**
      * Tarifi oluşturan kullanıcının ID'si.
      */
     private String createdBy;

@@ -47,6 +47,9 @@ public class RecipeService {
         if (recipe.getStatus() == null) {
             recipe.setStatus(RecipeStatus.DRAFT);
         }
+        if (recipe.getVersionNumber() == null) {
+            recipe.setVersionNumber(1);
+        }
         recipe.setActive(true);
         Recipe savedRecipe = recipeRepository.save(recipe);
 
@@ -73,78 +76,17 @@ public class RecipeService {
         Recipe existing = recipeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
 
-        // Eğer onaylanmış bir tarif düzenleniyorsa, orijinali bozmamak için yeni bir 'pending update' oluştururuz.
-        if (existing.getStatus() == RecipeStatus.APPROVED) {
-            // Zaten bekleyen bir güncelleme var mı kontrol et? 
-            // Varsa onu güncelle, yoksa yeni oluştur.
-            Recipe pendingUpdate = recipeRepository.findByParentIdAndStatus(id, RecipeStatus.PENDING)
-                .orElse(new Recipe());
-            
-            pendingUpdate.setParentId(id);
-            
-            if (updatedData.getTitle() != null) {
-                pendingUpdate.setTitle(updatedData.getTitle());
-            } else {
-                pendingUpdate.setTitle(existing.getTitle());
-            }
+        RecipeStatus requestedStatus = updatedData.getStatus() != null ? updatedData.getStatus() : RecipeStatus.PENDING;
+        boolean shouldCreateNewRevision = existing.getStatus() == RecipeStatus.APPROVED
+            || (existing.getParentId() != null && requestedStatus == RecipeStatus.PENDING
+                && (existing.getStatus() == RecipeStatus.PENDING || existing.getStatus() == RecipeStatus.REJECTED || existing.getStatus() == RecipeStatus.SUPERSEDED));
 
-            if (updatedData.getInstructions() != null) {
-                pendingUpdate.setInstructions(updatedData.getInstructions());
-            } else {
-                pendingUpdate.setInstructions(existing.getInstructions());
+        if (shouldCreateNewRevision) {
+            Recipe savedRevision = createRevision(existing, updatedData, ingredients, userId, requestedStatus);
+            if (savedRevision.getStatus() == RecipeStatus.PENDING) {
+                notifyAdminsForApproval(savedRevision);
             }
-
-            if (updatedData.getPreparationTimeMinutes() != null) {
-                pendingUpdate.setPreparationTimeMinutes(updatedData.getPreparationTimeMinutes());
-            } else {
-                pendingUpdate.setPreparationTimeMinutes(existing.getPreparationTimeMinutes());
-            }
-
-            if (updatedData.getServings() != null) {
-                pendingUpdate.setServings(updatedData.getServings());
-            } else {
-                pendingUpdate.setServings(existing.getServings());
-            }
-
-            if (updatedData.getDifficulty() != null) {
-                pendingUpdate.setDifficulty(updatedData.getDifficulty());
-            } else {
-                pendingUpdate.setDifficulty(existing.getDifficulty());
-            }
-
-            if (updatedData.getCategory() != null) {
-                pendingUpdate.setCategory(updatedData.getCategory());
-            } else {
-                pendingUpdate.setCategory(existing.getCategory());
-            }
-
-            // Zorunlu alanları orijinden kopyala
-            pendingUpdate.setAverageRating(existing.getAverageRating());
-            pendingUpdate.setRatingCount(existing.getRatingCount());
-            pendingUpdate.setActive(true);
-
-            pendingUpdate.setStatus(RecipeStatus.PENDING);
-            pendingUpdate.setCreatedBy(userId);
-            
-            if (updatedData.getImageUrl() != null) {
-                pendingUpdate.setImageUrl(updatedData.getImageUrl());
-            } else {
-                pendingUpdate.setImageUrl(existing.getImageUrl());
-            }
-
-            Recipe savedUpdate = recipeRepository.save(pendingUpdate);
-            if (ingredients != null) {
-                if (savedUpdate.getRecipeIngredients() != null) {
-                    savedUpdate.getRecipeIngredients().clear();
-                }
-                setupIngredients(savedUpdate, ingredients);
-            }
-            calculateAndSetNutrition(savedUpdate);
-            
-            // Onay bekleyen bir güncelleme olduğu için adminlere haber ver
-            notifyAdminsForApproval(savedUpdate);
-            
-            return savedUpdate;
+            return savedRevision;
         }
 
         // Taslak veya reddedilmiş ise doğrudan üzerine yazarız
@@ -210,6 +152,9 @@ public class RecipeService {
         }
 
         if (recipe.getStatus() == RecipeStatus.DRAFT || recipe.getStatus() == RecipeStatus.REJECTED) {
+            if (recipe.getParentId() != null) {
+                supersedePendingRevisions(recipe.getParentId());
+            }
             recipe.setStatus(RecipeStatus.PENDING);
             recipeRepository.save(recipe);
             notifyAdminsForApproval(recipe);
@@ -217,7 +162,7 @@ public class RecipeService {
     }
 
     private void notifyAdminsForApproval(Recipe recipe) {
-        List<User> admins = userRepository.findAllAdmins();
+        List<User> admins = Optional.ofNullable(userRepository.findAllAdmins()).orElse(List.of());
         log.info("Tarif onayı için adminler bilgilendiriliyor. Bulunan admin sayısı: {}", admins.size());
         
         String title = "Yeni Tarif Onay Bekliyor";
@@ -237,6 +182,74 @@ public class RecipeService {
                 log.debug("Admin {} için zaten okunmamış onay bildirimi var, yeni bildirim oluşturulmadı.", admin.getEmail());
             }
         }
+    }
+
+    private Recipe createRevision(Recipe source, Recipe updatedData, List<RecipeIngredient> ingredients, String userId, RecipeStatus targetStatus) {
+        Long rootId = resolveRootId(source);
+        if (targetStatus == RecipeStatus.PENDING) {
+            supersedePendingRevisions(rootId);
+        }
+
+        Recipe revision = new Recipe();
+        revision.setParentId(rootId);
+        revision.setVersionNumber(nextVersionNumber(rootId));
+        revision.setCreatedBy(userId);
+        revision.setStatus(targetStatus);
+        revision.setActive(true);
+
+        applyRecipeFields(revision, source, updatedData);
+        revision.setAverageRating(source.getAverageRating());
+        revision.setRatingCount(source.getRatingCount());
+        revision.setTotalCookCount(source.getTotalCookCount());
+
+        Recipe savedRevision = recipeRepository.save(revision);
+        if (ingredients != null) {
+            setupIngredients(savedRevision, ingredients);
+        } else if (source.getRecipeIngredients() != null) {
+            setupIngredients(savedRevision, cloneIngredients(source.getRecipeIngredients()));
+        }
+
+        calculateAndSetNutrition(savedRevision);
+        return recipeRepository.save(savedRevision);
+    }
+
+    private void applyRecipeFields(Recipe target, Recipe source, Recipe updatedData) {
+        target.setTitle(updatedData.getTitle() != null ? updatedData.getTitle() : source.getTitle());
+        target.setInstructions(updatedData.getInstructions() != null ? updatedData.getInstructions() : source.getInstructions());
+        target.setPreparationTimeMinutes(updatedData.getPreparationTimeMinutes() != null ? updatedData.getPreparationTimeMinutes() : source.getPreparationTimeMinutes());
+        target.setServings(updatedData.getServings() != null ? updatedData.getServings() : source.getServings());
+        target.setDifficulty(updatedData.getDifficulty() != null ? updatedData.getDifficulty() : source.getDifficulty());
+        target.setCategory(updatedData.getCategory() != null ? updatedData.getCategory() : source.getCategory());
+        target.setImageUrl(updatedData.getImageUrl() != null ? updatedData.getImageUrl() : source.getImageUrl());
+    }
+
+    private List<RecipeIngredient> cloneIngredients(List<RecipeIngredient> ingredients) {
+        return ingredients.stream()
+            .map(ri -> RecipeIngredient.builder()
+                .ingredient(ri.getIngredient())
+                .amount(ri.getAmount())
+                .unit(ri.getUnit())
+                .grams(ri.getGrams())
+                .build())
+            .toList();
+    }
+
+    private void supersedePendingRevisions(Long rootId) {
+        List<Recipe> pendingRevisions = recipeRepository.findByParentIdAndStatusAndActiveTrue(rootId, RecipeStatus.PENDING);
+        if (pendingRevisions == null || pendingRevisions.isEmpty()) {
+            return;
+        }
+        pendingRevisions.forEach(revision -> revision.setStatus(RecipeStatus.SUPERSEDED));
+        recipeRepository.saveAll(pendingRevisions);
+    }
+
+    private int nextVersionNumber(Long rootId) {
+        Integer currentMax = recipeRepository.findMaxVersionNumber(rootId);
+        return (currentMax != null ? currentMax : 1) + 1;
+    }
+
+    private Long resolveRootId(Recipe recipe) {
+        return recipe.getParentId() != null ? recipe.getParentId() : recipe.getId();
     }
 
     private void setupIngredients(Recipe recipe, List<RecipeIngredient> ingredients) {
@@ -329,6 +342,10 @@ public class RecipeService {
     public void approveRecipe(Long recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
             .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + recipeId));
+
+        if (recipe.getStatus() != RecipeStatus.PENDING) {
+            throw new RuntimeException("Sadece onay bekleyen tarifler onaylanabilir.");
+        }
         
         if (recipe.getParentId() != null) {
             Recipe original = recipeRepository.findById(recipe.getParentId())
@@ -340,11 +357,13 @@ public class RecipeService {
             original.setPreparationTimeMinutes(recipe.getPreparationTimeMinutes());
             original.setServings(recipe.getServings());
             original.setDifficulty(recipe.getDifficulty());
+            original.setCategory(recipe.getCategory());
             original.setImageUrl(recipe.getImageUrl());
             original.setTotalCalories(recipe.getTotalCalories());
             original.setTotalProtein(recipe.getTotalProtein());
             original.setTotalCarbs(recipe.getTotalCarbs());
             original.setTotalFat(recipe.getTotalFat());
+            original.setVersionNumber(recipe.getVersionNumber());
 
             // Malzemeleri güncelle
             original.getRecipeIngredients().clear();
@@ -436,23 +455,11 @@ public class RecipeService {
         String uploadedFileName = fileStorageService.uploadFile(inputStream, fileName, contentType);
 
         if (recipe.getStatus() == RecipeStatus.APPROVED) {
-            // Onaylı tarif için görsel değişikliği bir 'pending update' olarak kaydedilir
-            Recipe pendingUpdate = recipeRepository.findByParentIdAndStatus(recipeId, RecipeStatus.PENDING)
-                    .orElse(new Recipe());
-            
-            pendingUpdate.setParentId(recipeId);
-            pendingUpdate.setStatus(RecipeStatus.PENDING);
-            pendingUpdate.setCreatedBy(userId);
-            pendingUpdate.setImageUrl(uploadedFileName);
-            
-            // Diğer alanlar boşsa orijinden kopyala (updateRecipe ile paralel mantık)
-            if (pendingUpdate.getTitle() == null) pendingUpdate.setTitle(recipe.getTitle());
-            if (pendingUpdate.getInstructions() == null) pendingUpdate.setInstructions(recipe.getInstructions());
-            if (pendingUpdate.getPreparationTimeMinutes() == null) pendingUpdate.setPreparationTimeMinutes(recipe.getPreparationTimeMinutes());
-            if (pendingUpdate.getServings() == null) pendingUpdate.setServings(recipe.getServings());
-            if (pendingUpdate.getDifficulty() == null) pendingUpdate.setDifficulty(recipe.getDifficulty());
-
-            recipeRepository.save(pendingUpdate);
+            Recipe updatedData = Recipe.builder()
+                .imageUrl(uploadedFileName)
+                .build();
+            Recipe pendingUpdate = createRevision(recipe, updatedData, null, userId, RecipeStatus.PENDING);
+            notifyAdminsForApproval(pendingUpdate);
         } else {
             // Taslak ise doğrudan üzerine yaz
             // Eski görseli sil (sadece taslak/reddedilmiş ise doğrudan silmek güvenli)
@@ -578,6 +585,21 @@ public class RecipeService {
     @Transactional(readOnly = true)
     public Optional<Recipe> findPendingUpdate(Long parentId) {
         return recipeRepository.findByParentIdAndStatus(parentId, RecipeStatus.PENDING);
+    }
+
+    /**
+     * Kullanıcının ana tarif üzerinde gördüğü en güncel yerel revizyonu döner.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Recipe> findLatestUserRevision(Long parentId, String userId) {
+        if (userId == null || userId.isBlank()) {
+            return Optional.empty();
+        }
+        return recipeRepository.findFirstByParentIdAndCreatedByAndStatusInAndActiveTrueOrderByVersionNumberDescCreatedAtDesc(
+            parentId,
+            userId,
+            List.of(RecipeStatus.PENDING, RecipeStatus.DRAFT, RecipeStatus.REJECTED)
+        );
     }
 
     /**

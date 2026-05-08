@@ -44,7 +44,7 @@ public class RecipeMapper {
         return RecipeResponse.builder()
             .id(recipe.getId())
             .title(recipe.getTitle())
-            .category("Genel")
+            .category(recipe.getCategory())
             .calories(recipe.getTotalCalories())
             .protein(recipe.getTotalProtein())
             .carbs(recipe.getTotalCarbs())
@@ -60,6 +60,8 @@ public class RecipeMapper {
             .status(recipe.getStatus() != null ? recipe.getStatus().name() : null)
             .createdBy(recipe.getCreatedBy())
             .parentId(recipe.getParentId())
+            .versionNumber(recipe.getVersionNumber())
+            .createdAt(recipe.getCreatedAt())
             .ingredients(mapIngredients(recipe))
             .isFavorite(isFavorite)
             .build();

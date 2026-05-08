@@ -649,6 +649,7 @@
       "pending": "Onay Bekliyor",
       "approved": "Yayında",
       "rejected": "Reddedildi",
+      "superseded": "Geçersiz Kaldı",
       "updated_version": "Güncellenmiş Versiyon"
     },
     "modal": {

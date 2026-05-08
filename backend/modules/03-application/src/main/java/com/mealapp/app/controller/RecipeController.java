@@ -66,11 +66,11 @@ public class RecipeController {
         Recipe recipe = recipeService.findById(id)
             .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
 
-        // Eğer kullanıcı bu tarifin sahibi ise ve bekleyen bir güncelleme varsa, onu gösterelim (düzenleme için)
-        if (userId != null && userId.equals(recipe.getCreatedBy())) {
-            Optional<Recipe> pendingUpdate = recipeService.findPendingUpdate(id);
-            if (pendingUpdate.isPresent()) {
-                RecipeResponse response = recipeMapper.toResponse(pendingUpdate.get(), userId);
+        // Ana tarif açıldığında kullanıcının kendi en güncel yerel revizyonu varsa onu gösterelim.
+        if (userId != null && recipe.getParentId() == null) {
+            Optional<Recipe> latestUserRevision = recipeService.findLatestUserRevision(id, userId);
+            if (latestUserRevision.isPresent()) {
+                RecipeResponse response = recipeMapper.toResponse(latestUserRevision.get(), userId);
                 enrichImageUrl(response);
                 return response;
             }
@@ -173,6 +173,7 @@ public class RecipeController {
         
         Recipe recipeData = Recipe.builder()
             .title(request.getTitle())
+            .category(request.getCategory())
             .instructions(request.getInstructions())
             .preparationTimeMinutes(request.getPreparationTimeMinutes() != null ? request.getPreparationTimeMinutes() : request.getPreparationTime())
             .servings(request.getServings())

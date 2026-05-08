@@ -431,7 +431,7 @@ const NotificationsPage: React.FC = () => {
                       {notification.recipeStatus !== 'PENDING' && notification.recipeStatus && (
                         <div className="medical-badge w-fit">
                           <CheckCircle2 size={12} />
-                          {notification.recipeStatus === 'APPROVED' ? t('recipes.status.approved') : t('recipes.status.rejected')}
+                          {t(`recipes.status.${notification.recipeStatus.toLowerCase()}`)}
                         </div>
                       )}
                     </div>

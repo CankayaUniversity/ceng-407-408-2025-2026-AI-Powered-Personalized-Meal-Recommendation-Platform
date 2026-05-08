@@ -165,7 +165,8 @@ class RecipeServiceTest {
             .build();
 
         when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(existingRecipe));
-        when(recipeRepository.findByParentIdAndStatus(recipeId, RecipeStatus.PENDING)).thenReturn(Optional.empty());
+        when(recipeRepository.findMaxVersionNumber(recipeId)).thenReturn(1);
+        when(recipeRepository.findByParentIdAndStatusAndActiveTrue(recipeId, RecipeStatus.PENDING)).thenReturn(List.of());
         when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Recipe result = recipeService.updateRecipe(recipeId, updatedData, null, userId);
@@ -177,6 +178,48 @@ class RecipeServiceTest {
         assertEquals(10, result.getRatingCount());
         assertEquals(userId, result.getCreatedBy());
         assertEquals(true, result.isActive());
+        assertEquals(2, result.getVersionNumber());
+    }
+
+    @Test
+    void shouldCreateNewVersionAndSupersedeExistingPendingRevision() {
+        Long recipeId = 1L;
+        String userId = "user123";
+        Recipe existingRecipe = Recipe.builder()
+            .id(recipeId)
+            .title("Approved Title")
+            .status(RecipeStatus.APPROVED)
+            .versionNumber(1)
+            .createdBy("anotherUser")
+            .build();
+        Recipe existingPending = Recipe.builder()
+            .id(2L)
+            .parentId(recipeId)
+            .title("Previous Pending")
+            .status(RecipeStatus.PENDING)
+            .versionNumber(2)
+            .createdBy(userId)
+            .build();
+        existingPending.setActive(true);
+
+        Recipe updatedData = Recipe.builder()
+            .title("Second Proposed Change")
+            .status(RecipeStatus.PENDING)
+            .build();
+
+        when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(existingRecipe));
+        when(recipeRepository.findMaxVersionNumber(recipeId)).thenReturn(2);
+        when(recipeRepository.findByParentIdAndStatusAndActiveTrue(recipeId, RecipeStatus.PENDING)).thenReturn(List.of(existingPending));
+        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Recipe result = recipeService.updateRecipe(recipeId, updatedData, null, userId);
+
+        assertEquals(RecipeStatus.SUPERSEDED, existingPending.getStatus());
+        assertEquals(recipeId, result.getParentId());
+        assertEquals(3, result.getVersionNumber());
+        assertEquals(RecipeStatus.PENDING, result.getStatus());
+        assertEquals("Second Proposed Change", result.getTitle());
+        verify(recipeRepository).saveAll(List.of(existingPending));
     }
 
     @Test
