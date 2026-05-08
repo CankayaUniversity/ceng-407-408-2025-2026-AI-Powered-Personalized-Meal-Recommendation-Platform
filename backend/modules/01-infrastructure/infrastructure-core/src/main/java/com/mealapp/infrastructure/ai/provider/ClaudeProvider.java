@@ -33,8 +33,10 @@ public class ClaudeProvider implements AiProvider {
     }
 
     @Override
-    public String call(String prompt) {
-        if (apiKey == null || apiKey.equals("your-key-here")) {
+    public String call(String prompt, String userApiKey) {
+        String effectiveApiKey = (userApiKey != null && !userApiKey.isBlank()) ? userApiKey : this.apiKey;
+
+        if (effectiveApiKey == null || effectiveApiKey.equals("your-key-here")) {
             log.warn("Claude API Key is missing, returning simulation response.");
             return "[{\"recipeTitle\": \"Baked Salmon with Asparagus (Simulated)\", \"insight\": \"Claude simülasyon yanıtı. Omega-3 zengini bir akşam yemeği sizi bekliyor.\"}]";
         }
@@ -48,7 +50,7 @@ public class ClaudeProvider implements AiProvider {
 
         ClaudeResponse response = webClient.post()
                 .uri(apiUrl)
-                .header("x-api-key", apiKey)
+                .header("x-api-key", effectiveApiKey)
                 .header("anthropic-version", anthropicVersion)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)

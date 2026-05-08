@@ -16,6 +16,8 @@ import com.mealapp.domain.recipe.service.RecipeRatingService;
 import com.mealapp.domain.user.entity.User;
 import com.mealapp.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import com.mealapp.utilities.security.EncryptionUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,9 @@ public class RecommendationAppService {
     private final RecommendationMapper recommendationMapper;
     private final RecommendedRecipeRepository recommendedRecipeRepository;
     private final RecipeRatingService recipeRatingService;
+
+    @Value("${com.mealapp.ai.security.encryption-key}")
+    private String encryptionKey;
 
     /**
      * Öneri akışını yöneten ana metod.
@@ -70,7 +75,8 @@ public class RecommendationAppService {
                     .toList();
 
         // 3. Domain servisinden önerileri al
-        Recommendation recommendation = recommendationService.getRecommendations(user, dynamicInventory, normalizedCravings, request.getAiModel());
+        String decryptedApiKey = decryptApiKey(request.getApiKey());
+        Recommendation recommendation = recommendationService.getRecommendations(user, dynamicInventory, normalizedCravings, request.getAiModel(), decryptedApiKey);
 
         // 4. Sonucu DTO'ya çevirip dön
         return recommendationMapper.toResponse(
@@ -179,5 +185,18 @@ public class RecommendationAppService {
 
         String normalized = value.trim();
         return normalized.isBlank() ? null : normalized;
+    }
+
+    private String decryptApiKey(String encryptedKey) {
+        if (encryptedKey == null || encryptedKey.isBlank()) {
+            return null;
+        }
+        try {
+            return EncryptionUtils.decrypt(encryptedKey, encryptionKey);
+        } catch (Exception e) {
+            // Şifre çözme hatası durumunda (geçersiz anahtar vb.) güvenli bir şekilde loglayıp boş dönebiliriz.
+            // Ama kullanıcıya "API anahtarı geçersiz" uyarısı vermek için hata da fırlatılabilir.
+            throw new IllegalArgumentException("API anahtarı çözülemedi. Lütfen anahtarınızı kontrol edin.", e);
+        }
     }
 }

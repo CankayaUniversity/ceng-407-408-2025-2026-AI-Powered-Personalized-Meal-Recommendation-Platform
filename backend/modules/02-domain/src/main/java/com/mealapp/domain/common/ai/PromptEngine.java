@@ -14,9 +14,9 @@ public interface PromptEngine {
     String callAi(String prompt);
 
     /**
-     * Belirli bir model ile AI servisine istek atar.
+     * Belirli bir model ve API anahtarı ile AI servisine istek atar.
      */
-    String callAi(String prompt, String aiModel);
+    String callAi(String prompt, String aiModel, String apiKey);
 
     /**
      * AI'dan dönen JSON cevabını (recipeTitle ve insight) modelleyen yardımcı sınıf.

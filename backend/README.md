@@ -21,7 +21,10 @@ This project is a platform that provides AI-powered personalized meal recommenda
 The project is developed using a **Multi-module** architecture in line with enterprise standards. With the latest updates:
 - **Thin Client Architecture:** All business logic, scoring, filtering, and unit calculations are handled exclusively in the backend (Single Source of Truth). Frontend only renders and handles user interaction.
 - **Recipe / Recommendation Separation:** `Recipe` (permanent catalog entry) and `Recommendation` (ephemeral AI suggestion with per-user history) are distinct domain concepts. Recommendation history stores AI insights and per-recommendation ratings permanently.
-- **Hybrid AI Recommendation Engine:** Combines SQL-based filtering (allergens, diets), mathematical scoring (inventory match, ratings, craving match), and LLM-based refinement with configurable fallback.
+- **Hybrid AI Recommendation Engine:** Combines SQL-based filtering (allergens, diets), mathematical scoring (inventory match, ratings, craving match, nutrition, time), and LLM-based refinement with a robust, intelligent fallback system.
+- **Smart Diversity & Recency Filtering:** Advanced scoring algorithm prevents repetitive suggestions by analyzing user's recent recommendation history and actual consumption logs (last 7 days).
+- **Time-Decay Scoring:** Penalties for recently consumed/recommended recipes decrease dynamically over time (e.g., 20% penalty for yesterday, 5% for last week), ensuring a varied diet.
+- **Intelligent Fallback Insights:** When AI is unavailable, the system generates human-like insights explaining why a recipe was chosen (e.g., "High protein", "Quick to cook", "Diversifies your diet").
 - **Negative Craving Detection:** Smart scoring detects and penalizes recipes that match user exclusion preferences (e.g., "no onion" correctly down-scores recipes with onion in the ingredient list).
 - **Craving Matching Against Full Ingredient List:** User cravings are matched against the complete ingredient list of each recipe, not just the title or category.
 - **Multi-Provider AI Support:** Flexible architecture supporting OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, DeepSeek, and local LLM endpoints — dynamic switching with fallback.
@@ -35,8 +38,18 @@ The project is developed using a **Multi-module** architecture in line with ente
 - **Keycloak Synchronization:** User IDs are centrally managed as `String` (UUID) type via the Keycloak `sub` value.
 - **Automatic Profile Management:** User information is automatically synchronized with the backend database upon first login.
 - **Secure API:** All endpoints are protected with JWT-based authentication.
-- **Expanded Unit Converter:** Covers all measurement units present in the 50,000+ recipe dataset.
-- **Dynamic Dataset Support:** Handles 50,000+ recipes with real-time ranking and filtering capabilities.
+
+### 🧠 Intelligent Recommendation Flow
+The platform follows a multi-stage pipeline to ensure the most relevant and diverse suggestions:
+1. **Hard Constraints (SQL):** Filters recipes based on allergens and diet types (Vegan, Keto, etc.) at the database level.
+2. **Scoring & Ranking (Mathematical Model):**
+   - **Inventory Match (40%):** Availability of ingredients in the user's kitchen.
+   - **Taste & Cravings (20%):** Matching against liked/disliked ingredients and current cravings.
+   - **Nutrition & Goal Alignment (15%):** Checking calorie/protein balance against user goals.
+   - **Diversity Penalty (15%):** Penalizing recipes recommended or consumed in the last 7 days using time-decay (higher penalty for very recent items).
+   - **Performance & Popularity (10%):** Recipe ratings and cook time suitability.
+3. **AI Personalization (LLM):** Top candidates are refined by AI to generate personalized "Insights" (e.g., "We picked this because you have 90% of ingredients and it's high in protein for your workout").
+4. **Fallback Mechanism:** If AI is offline, the system provides advanced algorithmic suggestions with dynamically generated explanations.
 
 ### 🚀 Quick Start (with Docker)
 You can start the entire project (Frontend, Backend, Database, Keycloak, and MinIO) from the project root using a single command.
@@ -140,7 +153,10 @@ Bu proje, kullanıcıların tercihlerine ve elindeki malzemelere göre yapay zek
 Proje, kurumsal standartlara uygun **Multi-module** mimari ile geliştirilmiştir. Yapılan son güncellemelerle birlikte:
 - **İnce İstemci (Thin Client) Mimarisi:** Tüm iş mantığı, puanlama, filtreleme ve birim hesaplamaları backend'de merkezi olarak yönetilir (Tek Doğruluk Kaynağı). Frontend yalnızca sunum ve kullanıcı etkileşiminden sorumludur.
 - **Tarif / Öneri Ayrımı:** `Recipe` (kalıcı katalog girişi) ve `Recommendation` (AI tarafından üretilen, kullanıcıya özel geçmiş kaydı) ayrı domain kavramlarıdır. Öneri geçmişi; AI içgörülerini ve öneriye özel değerlendirmeleri kalıcı olarak saklar.
-- **Hibrit AI Öneri Motoru:** SQL tabanlı filtreleme (alerjen, diyet), matematiksel puanlama (envanter uyumu, rating, arzu eşleştirmesi) ve fallback destekli LLM rafine etme işlemlerini birleştiren gelişmiş bir öneri sistemi.
+- **Hibrit AI Öneri Motoru:** SQL tabanlı filtreleme (alerjen, diyet), matematiksel puanlama (envanter uyumu, rating, arzu eşleştirmesi, besin değeri, süre) ve LLM rafine etme işlemlerini gelişmiş bir fallback (yedek) mekanizmasıyla birleştiren sistem.
+- **Akıllı Çeşitlilik ve Güncellik Filtresi:** Kullanıcının son öneri geçmişini ve gerçek tüketim kayıtlarını (son 7 gün) analiz ederek aynı/benzer tariflerin sürekli önerilmesini engelleyen gelişmiş algoritma.
+- **Zaman Bazlı Dinamik Puanlama:** Yakın zamanda tüketilen/önerilen tariflerin ceza puanları zamanla azalır (örn. dün için %20, geçen hafta için %5 ceza), bu sayede beslenmede çeşitlilik korunur.
+- **Akıllı Fallback İçgörüleri:** AI servislerine ulaşılamadığında sistem; tarifin neden seçildiğini (örn. "Yüksek proteinli", "Pratik", "Beslenme çeşitliliği için") açıklayan insan benzeri metinler üretir.
 - **Negatif Arzu Tespiti:** "Soğansız" gibi dışlama tercihlerini akıllıca tespit eden ve malzeme listesinde eşleşen tarifleri penalize eden puanlama mantığı.
 - **Tam Malzeme Listesiyle Arzu Eşleştirmesi:** Kullanıcı arzuları yalnızca başlık/kategori değil, tarifin tüm malzeme listesiyle karşılaştırılır.
 - **Çoklu AI Sağlayıcı Desteği:** OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, DeepSeek ve yerel LLM uç noktaları — fallback destekli dinamik geçiş.
@@ -154,8 +170,18 @@ Proje, kurumsal standartlara uygun **Multi-module** mimari ile geliştirilmişti
 - **Keycloak Senkronizasyonu:** Kullanıcı ID'leri, Keycloak `sub` değeri üzerinden merkezi olarak `String` (UUID) tipinde yönetilir.
 - **Otomatik Profil Yönetimi:** Kullanıcı bilgileri, ilk girişte backend veritabanı ile otomatik olarak senkronize edilir.
 - **Güvenli API:** Tüm uç noktalar JWT tabanlı kimlik doğrulama ile korunmaktadır.
-- **Genişletilmiş Birim Dönüştürücü:** 50.000+ tarif veri setindeki tüm ölçü birimlerini kapsar.
-- **Dinamik Veri Seti Desteği:** 50.000+ tarif üzerinde gerçek zamanlı sıralama ve filtreleme yapabilen ölçeklenebilir yapı.
+
+### 🧠 Akıllı Öneri Akışı
+Platform, en alakalı ve çeşitli önerileri sunmak için çok aşamalı bir boru hattı (pipeline) izler:
+1. **Sert Kısıtlamalar (SQL):** Alerjenler ve diyet tiplerine (Vegan, Keto vb.) göre tarifleri veritabanı seviyesinde filtreler.
+2. **Puanlama ve Sıralama (Matematiksel Model):**
+   - **Envanter Uyumu (%40):** Malzemelerin kullanıcının mutfağındaki mevcudiyeti.
+   - **Damak Tadı ve Arzular (%20):** Sevilen/sevilmeyen malzemeler ve anlık aşermelerle eşleşme.
+   - **Beslenme ve Hedef Uyumu (%15):** Kalori/protein dengesinin kullanıcı hedefleriyle kontrolü.
+   - **Çeşitlilik Cezası (%15):** Son 7 günde önerilen veya tüketilen tariflerin zaman bazlı (yakın tarihlilere daha yüksek ceza) puanının düşürülmesi.
+   - **Performans ve Popülerlik (%10):** Tarif puanları ve pişirme süresi uygunluğu.
+3. **AI Kişiselleştirme (LLM):** En iyi adaylar yapay zeka tarafından rafine edilir ve kişiselleştirilmiş "İçgörüler" oluşturulur (örn. "Malzemelerin %90'ına sahip olduğunuz ve antrenman sonrası protein ihtiyacınızı karşıladığı için bu tarifi seçtik").
+4. **Fallback (Yedek) Mekanizması:** Yapay zekaya ulaşılamadığında sistem, dinamik olarak üretilen açıklamalarla gelişmiş algoritmik öneriler sunmaya devam eder.
 
 ### 🚀 Hızlı Başlangıç (Docker ile)
 Projeyi tüm bileşenleriyle (Frontend, Backend, Veritabanı, Keycloak ve MinIO) proje kök dizininden tek komutla ayağa kaldırabilirsiniz.

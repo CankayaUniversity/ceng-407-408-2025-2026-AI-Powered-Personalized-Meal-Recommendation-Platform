@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface RecommendationRepository extends JpaRepository<Recommendation, Long> {
-    List<Recommendation> findByUserIdOrderByCreatedAtDesc(String userId);
+    List<Recommendation> findByUserIdOrderByCreatedAtDesc(String userId, org.springframework.data.domain.Pageable pageable);
 }

@@ -41,7 +41,7 @@ public class AiServiceClient {
             backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public String callAi(String prompt) {
-        return callAi(prompt, activeProviderType);
+        return callAi(prompt, activeProviderType, null);
     }
 
     /**
@@ -53,6 +53,18 @@ public class AiServiceClient {
             backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public String callAi(String prompt, String providerType) {
+        return callAi(prompt, providerType, null);
+    }
+
+    /**
+     * Belirtilen AI sağlayıcısına ve API anahtarı ile istek atar.
+     */
+    @Retryable(
+            retryFor = { Exception.class },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
+    public String callAi(String prompt, String providerType, String apiKey) {
         String targetProvider = (providerType == null || providerType.isBlank()) ? activeProviderType : providerType.toUpperCase();
         AiProvider provider = providers.get(targetProvider);
         
@@ -65,11 +77,11 @@ public class AiServiceClient {
             log.error("No valid AI provider found. Falling back to any available or empty.");
             return providers.values().stream()
                     .findFirst()
-                    .map(p -> p.call(prompt))
+                    .map(p -> p.call(prompt, apiKey))
                     .orElse("[]");
         }
 
-        log.debug("Calling AI provider: {}", provider.getType());
-        return provider.call(prompt);
+        log.debug("Calling AI provider: {} with user-provided key: {}", provider.getType(), apiKey != null);
+        return provider.call(prompt, apiKey);
     }
 }

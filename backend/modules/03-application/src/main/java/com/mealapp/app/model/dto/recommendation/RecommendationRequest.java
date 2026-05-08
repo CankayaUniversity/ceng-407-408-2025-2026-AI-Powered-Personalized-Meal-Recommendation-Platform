@@ -13,4 +13,5 @@ public class RecommendationRequest {
     private String dietType;
     private String cravings;
     private String aiModel;
+    private String apiKey;
 }

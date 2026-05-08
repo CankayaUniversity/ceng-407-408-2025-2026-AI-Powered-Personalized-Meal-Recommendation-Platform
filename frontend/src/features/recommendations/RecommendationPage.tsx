@@ -1,23 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  Boxes,
-  Calendar,
-  CheckCircle2,
-  ChefHat,
-  Clock3,
-  Cpu,
-  Flame,
-  History,
-  Loader2,
-  MapPin,
-  MessageSquareText,
-  ShieldAlert,
-  Sparkles,
-  Star,
-  UtensilsCrossed
-} from 'lucide-react';
+import { X, Trash2, Loader2, Sparkles, Cpu, Boxes, MapPin, CheckCircle2, ShieldAlert, ChefHat, MessageSquareText, Star, Clock3, History, Calendar, Lock, UtensilsCrossed, Flame } from 'lucide-react';
 import { useAuth, type AuthUser } from '../../infrastructure/auth/AuthContext';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useToast } from '../../shared/hooks/useToast';
@@ -26,6 +10,7 @@ import { useInventoryService } from '../../services/inventoryService';
 import { useRecipeService } from '../../services/recipeService';
 import { useUserService } from '../../services/userService';
 import { useDefinitions } from '../../infrastructure/ui/DefinitionContext';
+import { encryptText, decryptText } from '../../shared/utils/encryption';
 import { 
   type User, 
   type InventoryGroup, 
@@ -134,7 +119,7 @@ const RecommendationPage: React.FC = () => {
   const [profile, setProfile] = useState<User | null>(null);
   const [groups, setGroups] = useState<InventoryGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
-  const [selectedAiModel, setSelectedAiModel] = useState<string>('GEMINI');
+  const [selectedAiModel, setSelectedAiModel] = useState<string>('FREE');
   const [recommendations, setRecommendations] = useState<RecommendedRecipe[]>([]);
   const [history, setHistory] = useState<RecommendationResponse[]>([]);
   const [cravings, setCravings] = useState('');
@@ -142,6 +127,97 @@ const RecommendationPage: React.FC = () => {
   const [recommending, setRecommending] = useState(false);
   const [ratingsByRecipe, setRatingsByRecipe] = useState<Record<number, RecipeRatingResponse>>({});
   const [ratingDrafts, setRatingDrafts] = useState<Record<number, RatingDraft>>({});
+
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [modalModel, setModalModel] = useState<string | null>(null);
+  const [tempKey, setTempKey] = useState('');
+
+  // Sayfa yüklendiğinde API anahtarlarını çözerek yükle ve seçimi koru
+  useEffect(() => {
+    const loadKeys = async () => {
+      const saved = localStorage.getItem('ai-api-keys');
+      const savedLastModel = localStorage.getItem('ai-last-selected-model');
+      
+      if (saved) {
+        try {
+          const encryptedKeys = JSON.parse(saved);
+          const decryptedKeys: Record<string, string> = {};
+          
+          for (const [model, encryptedValue] of Object.entries(encryptedKeys)) {
+            try {
+              decryptedKeys[model] = await decryptText(encryptedValue as string);
+            } catch (err) {
+              console.error(`Failed to decrypt key for ${model}:`, err);
+            }
+          }
+          setApiKeys(decryptedKeys);
+
+          // Eğer kaydedilmiş bir model varsa ve anahtarı mevcutsa seç
+          if (savedLastModel && decryptedKeys[savedLastModel]) {
+            setSelectedAiModel(savedLastModel);
+          } else if (savedLastModel === 'FREE') {
+            setSelectedAiModel('FREE');
+          }
+        } catch (err) {
+          console.error('Failed to parse saved API keys:', err);
+        }
+      }
+    };
+    void loadKeys();
+  }, []);
+
+  const availableModels = [
+    { id: 'FREE', icon: Sparkles, color: 'bg-moss-forest' },
+    { id: 'GEMINI', icon: Cpu, color: 'bg-terracotta' },
+    { id: 'OPENAI', icon: Cpu, color: 'bg-primary' },
+    { id: 'CLAUDE', icon: Cpu, color: 'bg-ochre-soft' }
+  ];
+
+  const handleOpenApiKeyModal = (model: string) => {
+    setModalModel(model);
+    setTempKey(apiKeys[model] || '');
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!modalModel) return;
+    
+    if (!tempKey || tempKey.trim() === '') {
+      showToast(t('recommendations.algorithm.apiKeyModal.required'), 'error');
+      return;
+    }
+
+    const nextKeys = { ...apiKeys, [modalModel]: tempKey };
+    setApiKeys(nextKeys);
+    
+    // Tüm anahtarları şifreleyerek kaydet
+    const encryptedKeys: Record<string, string> = {};
+    for (const [model, value] of Object.entries(nextKeys)) {
+      encryptedKeys[model] = await encryptText(value);
+    }
+    
+    localStorage.setItem('ai-api-keys', JSON.stringify(encryptedKeys));
+    showToast(t('recommendations.algorithm.apiKeyModal.saved'), 'success');
+    setModalModel(null);
+    setSelectedAiModel(modalModel);
+    localStorage.setItem('ai-last-selected-model', modalModel);
+  };
+
+  const handleRemoveApiKey = async (model: string) => {
+    const nextKeys = { ...apiKeys };
+    delete nextKeys[model];
+    setApiKeys(nextKeys);
+    
+    const encryptedKeys: Record<string, string> = {};
+    for (const [m, value] of Object.entries(nextKeys)) {
+      encryptedKeys[m] = await encryptText(value);
+    }
+    
+    localStorage.setItem('ai-api-keys', JSON.stringify(encryptedKeys));
+    if (selectedAiModel === model) {
+      setSelectedAiModel('FREE');
+      localStorage.setItem('ai-last-selected-model', 'FREE');
+    }
+  };
 
   const activeGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId) ?? null,
@@ -256,15 +332,28 @@ const RecommendationPage: React.FC = () => {
       return;
     }
 
+    // Seçilen model için API key kontrolü (FREE hariç)
+    if (selectedAiModel !== 'FREE' && !apiKeys[selectedAiModel]) {
+      handleOpenApiKeyModal(selectedAiModel);
+      return;
+    }
+
     setRecommending(true);
 
     try {
       console.log('Fetching recommendations for user:', user.id);
+      
+      // Backend'e şifreli API key gönderiyoruz
+      const encryptedApiKey = apiKeys[selectedAiModel] 
+        ? await encryptText(apiKeys[selectedAiModel]) 
+        : undefined;
+
       const response = await recipeService.getRecommendations({
         userId: user.id,
         availableIngredients,
         cravings: cravings.trim() || undefined,
-        aiModel: selectedAiModel
+        aiModel: selectedAiModel,
+        apiKey: encryptedApiKey
       });
 
       setRecommendations(response.recommendedRecipes);
@@ -328,7 +417,7 @@ const RecommendationPage: React.FC = () => {
         [recipe.recipeId]: saved
       }));
       updateRatingDraft(recipe.recipeId, {
-        rating: saved.rating,
+        rating: draft.rating,
         comment: saved.comment ?? '',
         saving: false,
         success: t('toasts.recommendations.ratingSaved'),
@@ -413,6 +502,71 @@ const RecommendationPage: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* API Key Modal */}
+      {modalModel && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-espresso-midnight/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="meal-card w-full max-w-md border-card-border shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-serif text-2xl font-bold text-foreground">
+                {t('recommendations.algorithm.apiKeyModal.title', { model: modalModel })}
+              </h3>
+              <button 
+                onClick={() => setModalModel(null)}
+                className="rounded-full p-2 text-foreground/40 hover:bg-foreground/5 hover:text-foreground transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-sm text-foreground-muted mb-6 leading-relaxed">
+              {t('recommendations.algorithm.apiKeyModal.description', { model: modalModel })}
+            </p>
+
+            <div className="space-y-4">
+              <div className="relative">
+                <input
+                  type="password"
+                  value={tempKey}
+                  onChange={(e) => setTempKey(e.target.value)}
+                  placeholder={t('recommendations.algorithm.apiKeyModal.placeholder')}
+                  className="base-input px-4 py-3 pr-10"
+                  autoFocus
+                />
+                {tempKey && (
+                  <button 
+                    onClick={() => setTempKey('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 hover:text-foreground"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-3 pt-2">
+                <button
+                  onClick={handleSaveApiKey}
+                  className="meal-button w-full justify-center !py-3 font-bold"
+                >
+                  {t('recommendations.algorithm.apiKeyModal.save')}
+                </button>
+                {apiKeys[modalModel] && (
+                  <button
+                    onClick={() => {
+                      handleRemoveApiKey(modalModel);
+                      setModalModel(null);
+                    }}
+                    className="flex items-center justify-center gap-2 text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-widest"
+                  >
+                    <Trash2 size={14} />
+                    {t('recommendations.algorithm.apiKeyModal.remove')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="relative overflow-hidden rounded-[2.9rem] bg-card px-8 py-8 text-foreground shadow-[0_30px_90px_-36px_rgba(40,36,33,0.18)] meal-highlight-frame dark:bg-espresso-midnight dark:text-white dark:shadow-[0_30px_90px_-36px_rgba(40,36,33,0.78)]">
         <div className="absolute inset-0 pointer-events-none opacity-75 dark:opacity-100">
           <div className="absolute -top-16 right-0 h-56 w-56 rounded-full bg-terracotta/25 blur-[100px] dark:bg-terracotta/35" />
@@ -525,32 +679,61 @@ const RecommendationPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {['GEMINI', 'OPENAI', 'CLAUDE'].map((model) => (
-              <button
-                key={model}
-                type="button"
-                onClick={() => setSelectedAiModel(model)}
-                className={`flex items-center justify-between rounded-2xl border p-4 text-sm font-semibold transition-all sm:flex-col sm:items-start sm:gap-4 ${
-                  selectedAiModel === model
-                    ? 'border-terracotta bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                    : 'border-card-border bg-white text-espresso-midnight hover:border-terracotta/50 dark:border-white/10 dark:bg-white/5 dark:text-alabaster'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Cpu size={16} />
-                  {model}
-                </div>
-                {selectedAiModel === model && (
-                  <div className="rounded-full bg-white/20 p-1 sm:self-end">
-                    <CheckCircle2 size={16} />
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {availableModels.map((model) => {
+              const isLocked = model.id !== 'FREE' && !apiKeys[model.id];
+              const isSelected = selectedAiModel === model.id;
+              
+              return (
+                <button
+                  key={model.id}
+                  type="button"
+                  onClick={() => {
+                    if (isLocked) {
+                      handleOpenApiKeyModal(model.id);
+                    } else {
+                      setSelectedAiModel(model.id);
+                      localStorage.setItem('ai-last-selected-model', model.id);
+                    }
+                  }}
+                  className={`group relative flex items-center justify-between rounded-2xl border p-4 text-sm font-semibold transition-all sm:flex-col sm:items-start sm:gap-4 ${
+                    isSelected
+                      ? 'border-terracotta bg-terracotta text-white shadow-lg shadow-terracotta/20'
+                      : isLocked
+                        ? 'border-card-border bg-white/40 text-espresso-midnight/40 dark:border-white/5 dark:bg-white/5 dark:text-alabaster/30 grayscale opacity-80'
+                        : 'border-card-border bg-white text-espresso-midnight hover:border-terracotta/50 dark:border-white/10 dark:bg-white/5 dark:text-alabaster'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <model.icon size={16} className={isSelected ? 'text-white' : isLocked ? 'text-foreground/20' : 'text-terracotta'} />
+                    {t(`recommendations.algorithm.models.${model.id.toLowerCase()}`)}
                   </div>
-                )}
-              </button>
-            ))}
+                  
+                  <div className="flex items-center gap-2 sm:absolute sm:right-3 sm:top-3">
+                    {isLocked ? (
+                      <div className="rounded-full bg-foreground/10 p-1.5 text-foreground/40 dark:bg-white/10 dark:text-white/40">
+                        <Lock size={12} />
+                      </div>
+                    ) : isSelected && (
+                      <div className="rounded-full bg-white/20 p-1">
+                        <CheckCircle2 size={16} />
+                      </div>
+                    )}
+                  </div>
+
+                  {isLocked && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/0 opacity-0 group-hover:bg-white/5 group-hover:opacity-100 transition-all rounded-2xl">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-terracotta bg-white px-2 py-1 rounded shadow-sm border border-terracotta/20">
+                        {t('recommendations.algorithm.apiKeyRequired')}
+                      </span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
           <div className="mt-6 rounded-2xl bg-primary/5 p-4 border border-primary/10">
-            <p className="text-xs leading-relaxed text-primary/80">
+            <p className="text-[11px] leading-relaxed text-primary/80">
               <Sparkles size={14} className="inline mr-2 mb-1" />
               {t('recommendations.algorithm.description')}
             </p>

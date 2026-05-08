@@ -31,13 +31,15 @@ public class GeminiProvider implements AiProvider {
     }
 
     @Override
-    public String call(String prompt) {
-        if (apiKey == null || apiKey.equals("your-key-here")) {
+    public String call(String prompt, String userApiKey) {
+        String effectiveApiKey = (userApiKey != null && !userApiKey.isBlank()) ? userApiKey : this.apiKey;
+
+        if (effectiveApiKey == null || effectiveApiKey.equals("your-key-here")) {
             log.warn("Gemini API Key is missing, returning simulation response.");
             return "[{\"recipeTitle\": \"Lentil Soup (Simulated)\", \"insight\": \"Gemini simülasyon yanıtı. Envanterinizdeki bakliyatlarla besleyici bir çorba hazırlayabilirsiniz.\"}]";
         }
 
-        String fullUrl = apiUrl + model + ":generateContent?key=" + apiKey;
+        String fullUrl = apiUrl + model + ":generateContent?key=" + effectiveApiKey;
 
         GeminiRequest request = GeminiRequest.builder()
                 .contents(List.of(GeminiRequest.Content.builder()
@@ -70,9 +72,9 @@ public class GeminiProvider implements AiProvider {
                 .block();
 
         if (response != null && response.getCandidates() != null && !response.getCandidates().isEmpty()) {
-            List<GeminiResponse.Part> parts = response.getCandidates().getFirst().getContent().getParts();
+            List<GeminiResponse.Part> parts = response.getCandidates().get(0).getContent().getParts();
             if (parts != null && !parts.isEmpty()) {
-                return parts.getFirst().getText();
+                return parts.get(0).getText();
             }
         }
 

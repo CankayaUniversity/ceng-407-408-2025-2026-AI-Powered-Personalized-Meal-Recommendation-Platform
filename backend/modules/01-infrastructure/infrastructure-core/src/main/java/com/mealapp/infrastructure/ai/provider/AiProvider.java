@@ -7,9 +7,14 @@ public interface AiProvider {
     /**
      * AI servisine istek atar.
      * @param prompt Gönderilecek metin.
+     * @param apiKey Opsiyonel API anahtarı.
      * @return AI'dan dönen metin yanıtı.
      */
-    String call(String prompt);
+    String call(String prompt, String apiKey);
+
+    default String call(String prompt) {
+        return call(prompt, null);
+    }
 
     /**
      * Sağlayıcı tipini döner (OPENAI, GEMINI vb.).

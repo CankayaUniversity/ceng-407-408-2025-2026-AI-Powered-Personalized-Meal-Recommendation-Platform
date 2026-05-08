@@ -244,6 +244,7 @@ export interface RecommendationRequest {
   dietType?: string | null;
   cravings?: string | null;
   aiModel?: string | null;
+  apiKey?: string | null;
 }
 
 export interface RecommendedRecipe {

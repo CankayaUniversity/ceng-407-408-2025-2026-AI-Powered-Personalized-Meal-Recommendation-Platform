@@ -26,7 +26,25 @@
     "algorithm": {
       "overline": "Algoritma Ayarları",
       "title": "Yapay Zeka Modeli",
-      "description": "Seçilen model, kişisel tercihleriniz ve envanter durumunuzu analiz ederek en uygun tarifleri hazırlar."
+      "description": "Seçilen model, kişisel tercihleriniz ve envanter durumunuzu analiz ederek en uygun tarifleri hazırlar. Lütfen API anahtarlarınızın kullanımının tamamen sizin sorumluluğunuzda olduğunu ve bu anahtarların yerel olarak saklandığını unutmayın. Ücretsiz versiyon doğrudan bir yapay zeka modeli olmayıp, uygulamamızın sunduğu akıllı bir öneri mekanizmasıdır.",
+      "locked": "Kilitli",
+      "unlocked": "Aktif",
+      "apiKeyRequired": "API Anahtarı Gerekli",
+      "apiKeyModal": {
+        "title": "{{model}} API Anahtarı Tanımla",
+        "description": "Bu modeli kullanabilmek için kendi API anahtarınızı tanımlamanız gerekmektedir. Anahtarınız tarayıcınızda güvenli bir şekilde saklanır.",
+        "placeholder": "API Anahtarınızı buraya yapıştırın...",
+        "save": "Anahtarı Kaydet",
+        "remove": "Anahtarı Sil",
+        "saved": "Anahtar başarıyla kaydedildi.",
+        "required": "Lütfen geçerli bir API anahtarı girin."
+      },
+      "models": {
+        "free": "Ücretsiz",
+        "gemini": "Gemini",
+        "openai": "OpenAI",
+        "claude": "Claude"
+      }
     },
     "profile": {
       "overline": "Kullanıcı Bilgileri",
