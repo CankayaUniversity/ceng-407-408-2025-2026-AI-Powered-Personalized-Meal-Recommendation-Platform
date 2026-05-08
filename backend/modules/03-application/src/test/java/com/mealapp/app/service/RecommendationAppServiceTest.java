@@ -79,7 +79,7 @@ class RecommendationAppServiceTest {
         String userId = "user-1";
         Long rrId = 1L;
         Long recipeId = 100L;
-        Integer rating = 4;
+        Integer rating = 9;
         String comment = "Great!";
 
         Recipe recipe = Recipe.builder().id(recipeId).build();
@@ -94,9 +94,9 @@ class RecommendationAppServiceTest {
         recommendationAppService.rateRecommendation(userId, rrId, rating, comment);
 
         // Then
-        assertEquals(4, rr.getUserRating());
+        assertEquals(9, rr.getUserRating());
         assertEquals(comment, rr.getUserComment());
-        verify(recipeRatingService).rateRecipe(userId, recipeId, 8, comment); // 4 * 2 = 8
+        verify(recipeRatingService).rateRecipe(userId, recipeId, 9, comment);
         verify(recommendedRecipeRepository).save(rr);
     }
 }

@@ -318,7 +318,7 @@ const RecommendationPage: React.FC = () => {
         id: Math.random(), // Geçici ID
         userId: user.id,
         recipeId: recipe.recipeId,
-        rating: draft.rating * 2, // Backend 2 ile çarpıyor
+        rating: draft.rating,
         comment: draft.comment.trim() || undefined,
         createdAt: new Date().toISOString()
       } as RecipeRatingResponse;

@@ -102,14 +102,13 @@ public class RecommendationAppService {
                 .orElseThrow(() -> new ResourceNotFoundException("Önerilen tarif bulunamadı ID: " + recommendedRecipeId));
 
         if (rating != null) {
-            if (rating < 1 || rating > 5) {
-                throw new IllegalArgumentException("Puan 1 ile 5 arasında olmalıdır.");
+            if (rating < 1 || rating > 10) {
+                throw new IllegalArgumentException("Puan 1 ile 10 arasında olmalıdır.");
             }
             rr.setUserRating(rating);
             
             // Kullanıcı "ikisini bir arada işleyelim" dediği için RecipeRatingService'i de çağırıyoruz.
-            // Öneri puanı 1-5 arası, RecipeRating ise 1-10 arası. Puanı 2 ile çarparak ölçekliyoruz.
-            recipeRatingService.rateRecipe(userId, rr.getRecipe().getId(), rating * 2, comment);
+            recipeRatingService.rateRecipe(userId, rr.getRecipe().getId(), rating, comment);
         }
         
         rr.setUserComment(comment);

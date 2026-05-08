@@ -37,7 +37,7 @@ public class RecommendedRecipe extends BaseEntity {
     private String aiInsight;
 
     /**
-     * Kullanıcının bu öneri özelinde verdiği puan (1-5 arası).
+     * Kullanıcının bu öneri özelinde verdiği puan (1-10 arası).
      */
     private Integer userRating;
 
