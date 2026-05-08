@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef, useState, useCallback, useLayoutEffect, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Search, Loader2, Plus, Mail } from 'lucide-react';
 import { User } from '../../../types';
@@ -25,6 +26,63 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
   onRemoveMember
 }) => {
   const { t } = useTranslation();
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties | null>(null);
+
+  const shouldShowDropdown = userSearchResults.length > 0;
+
+  const updateDropdownPosition = useCallback(() => {
+    const anchor = inputContainerRef.current;
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const viewportPadding = 16;
+    const gap = 8;
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const shouldOpenAbove = spaceBelow < 200 && spaceAbove > spaceBelow;
+    const availableSpace = shouldOpenAbove ? spaceAbove : spaceBelow;
+    const maxHeight = Math.max(120, Math.min(220, availableSpace - gap));
+    setDropdownStyle({
+      position: 'fixed',
+      left: rect.left,
+      top: shouldOpenAbove
+        ? Math.max(viewportPadding, rect.top - gap - maxHeight)
+        : Math.min(window.innerHeight - viewportPadding - maxHeight, rect.bottom + gap),
+      width: rect.width,
+      maxHeight,
+      zIndex: 9999,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!shouldShowDropdown) {
+      setDropdownStyle(null);
+      return;
+    }
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [shouldShowDropdown, updateDropdownPosition]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        !inputContainerRef.current?.contains(target) &&
+        !dropdownRef.current?.contains(target)
+      ) {
+        // Dropdown kapanması userSearchResults'ın temizlenmesiyle yönetilir
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
+
   if (!activeGroup) return null;
 
   return (
@@ -67,7 +125,7 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
             <Mail size={20} />
             <h4 className="font-serif font-bold">{t('inventory.members.inviteTitle')}</h4>
           </div>
-          <div className="relative">
+          <div ref={inputContainerRef} className="relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/20">
               <Search size={16} />
             </div>
@@ -84,29 +142,34 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
                 <Loader2 size={16} className="animate-spin text-terracotta" />
               </div>
             )}
-            
-            {userSearchResults.length > 0 && (
-              <div className="absolute left-0 right-0 top-full z-10 mt-2 max-h-48 overflow-y-auto rounded-2xl border border-card-border bg-card p-2 shadow-xl animate-in fade-in zoom-in-95 duration-200">
-                {userSearchResults.map((user) => (
-                  <button
-                    key={user.id}
-                    onClick={() => onAddMember(user)}
-                    className="flex w-full items-center justify-between rounded-xl p-3 text-left hover:bg-foreground/5 transition-colors"
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-foreground">{user.name}</span>
-                      <span className="text-[10px] text-foreground-muted">{user.email}</span>
-                    </div>
-                    <Plus size={14} className="text-terracotta" />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
           <p className="text-[10px] text-foreground-muted leading-relaxed">
             {t('inventory.members.hint')}
           </p>
         </div>
+
+        {shouldShowDropdown && dropdownStyle && createPortal(
+          <div
+            ref={dropdownRef}
+            style={dropdownStyle}
+            className="overflow-y-auto rounded-2xl border border-card-border bg-card p-2 shadow-xl animate-in fade-in zoom-in-95 duration-200 custom-scrollbar"
+          >
+            {userSearchResults.map((user) => (
+              <button
+                key={user.id}
+                onClick={() => onAddMember(user)}
+                className="flex w-full items-center justify-between rounded-xl p-3 text-left hover:bg-foreground/5 transition-colors"
+              >
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-foreground">{user.name}</span>
+                  <span className="text-[10px] text-foreground-muted">{user.email}</span>
+                </div>
+                <Plus size={14} className="text-terracotta" />
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
       </div>
     </section>
   );

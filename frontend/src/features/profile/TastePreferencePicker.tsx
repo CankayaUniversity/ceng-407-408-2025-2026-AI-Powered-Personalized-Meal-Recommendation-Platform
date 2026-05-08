@@ -1,4 +1,5 @@
-import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Plus, Search, X, Ban } from 'lucide-react';
 import { useInventoryService } from '../../services/inventoryService';
@@ -38,10 +39,67 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
   const [results, setResults] = useState<Ingredient[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties | null>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const trimmedQuery = query.trim();
   const selectedKeys = useMemo(() => new Set(values.map((value) => normalizeKey(value))), [values]);
   const canAddQuery = trimmedQuery.length > 0 && !selectedKeys.has(normalizeKey(trimmedQuery));
+
+  const shouldShowDropdown = isFocused && (searching || results.length > 0 || searchError !== null || (trimmedQuery.length >= 2 && !searching));
+
+  const updateDropdownPosition = useCallback(() => {
+    const anchor = inputContainerRef.current;
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const viewportPadding = 16;
+    const gap = 8;
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const shouldOpenAbove = spaceBelow < 200 && spaceAbove > spaceBelow;
+    const availableSpace = shouldOpenAbove ? spaceAbove : spaceBelow;
+    const maxHeight = Math.max(120, Math.min(280, availableSpace - gap));
+    setDropdownStyle({
+      position: 'fixed',
+      left: rect.left,
+      top: shouldOpenAbove
+        ? Math.max(viewportPadding, rect.top - gap - maxHeight)
+        : Math.min(window.innerHeight - viewportPadding - maxHeight, rect.bottom + gap),
+      width: rect.width,
+      maxHeight,
+      zIndex: 9999,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!shouldShowDropdown) {
+      setDropdownStyle(null);
+      return;
+    }
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [shouldShowDropdown, updateDropdownPosition, searching, results.length, searchError, trimmedQuery]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        !inputContainerRef.current?.contains(target) &&
+        !dropdownRef.current?.contains(target)
+      ) {
+        setIsFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
 
   useEffect(() => {
     const searchTerm = deferredQuery.trim();
@@ -88,6 +146,56 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
     onChange(values.filter((item) => normalizeKey(item) !== normalizeKey(value)));
   };
 
+  const dropdownPortal = shouldShowDropdown && dropdownStyle
+    ? createPortal(
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          className="overflow-y-auto rounded-2xl border border-card-border bg-card shadow-brand-elevated animate-in slide-in-from-top-2 duration-300 custom-scrollbar"
+        >
+          {searching ? (
+            <div className="p-6 text-center text-sm text-foreground/40 flex items-center justify-center gap-3">
+              <Loader2 size={18} className="animate-spin text-terracotta" /> {t('profile.taste.searching')}
+            </div>
+          ) : searchError ? (
+            <div className="p-5 text-center text-sm text-red-500 bg-red-500/5 flex items-center justify-center gap-2 font-semibold">
+              <Ban size={16} /> {searchError}
+            </div>
+          ) : results.length > 0 ? (
+            <div className="divide-y divide-card-border">
+              {results.map((ingredient) => (
+                <button
+                  key={ingredient.id}
+                  type="button"
+                  onClick={() => { commitValue(ingredient.name); setIsFocused(false); }}
+                  className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-terracotta/5 transition-colors group/item"
+                >
+                  <div>
+                    <p className="font-bold text-foreground group-hover/item:text-terracotta transition-colors">{ingredient.name}</p>
+                    <p className="text-[10px] uppercase tracking-widest text-foreground/30 mt-0.5">{formatCategory(ingredient.category)}</p>
+                  </div>
+                  <Plus size={16} className="text-terracotta opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                </button>
+              ))}
+            </div>
+          ) : trimmedQuery.length >= 2 ? (
+            <button
+              type="button"
+              onClick={() => { commitValue(trimmedQuery); setIsFocused(false); }}
+              className="w-full px-5 py-4 text-left hover:bg-terracotta/5 flex items-center justify-between group/add"
+            >
+              <div>
+                <p className="text-sm font-bold text-foreground">"{trimmedQuery}"</p>
+                <p className="text-xs text-foreground/40 mt-0.5">{t('profile.taste.noMatch')}</p>
+              </div>
+              <Plus size={18} className="text-terracotta" />
+            </button>
+          ) : null}
+        </div>,
+        document.body
+      )
+    : null;
+
   return (
       <div className="space-y-6">
         {/* Header Kısmı */}
@@ -110,7 +218,7 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
         </div>
 
         {/* Arama Inputu */}
-        <div className="relative group">
+        <div ref={inputContainerRef} className="relative group">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-terracotta/50 group-focus-within:text-terracotta transition-colors">
             <Search size={20} />
           </div>
@@ -118,7 +226,11 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && trimmedQuery && commitValue(trimmedQuery)}
+              onFocus={() => setIsFocused(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && trimmedQuery) commitValue(trimmedQuery);
+                if (e.key === 'Escape') setIsFocused(false);
+              }}
               className="base-input pl-12 pr-14 py-4 shadow-brand-soft border-terracotta/5 focus:border-terracotta/30"
               placeholder={t("profile.taste.placeholder")}
           />
@@ -135,51 +247,9 @@ const TastePreferencePicker: React.FC<TastePreferencePickerProps> = ({ values, o
                 </button>
             ) : null}
           </div>
-
-          {/* Canlı Arama Sonuçları ve Hata Paneli */}
-          {(searching || results.length > 0 || searchError || (trimmedQuery.length >= 2 && !searching)) && (
-              <div className="absolute top-full left-0 right-0 mt-2 z-50 overflow-hidden rounded-2xl border border-card-border bg-card shadow-brand-elevated animate-in slide-in-from-top-2 duration-300">
-                {searching ? (
-                    <div className="p-6 text-center text-sm text-foreground/40 flex items-center justify-center gap-3">
-                      <Loader2 size={18} className="animate-spin text-terracotta" /> {t('profile.taste.searching')}
-                    </div>
-                ) : searchError ? (
-                    <div className="p-5 text-center text-sm text-red-500 bg-red-500/5 flex items-center justify-center gap-2 font-semibold">
-                      <Ban size={16} /> {searchError}
-                    </div>
-                ) : results.length > 0 ? (
-                    <div className="divide-y divide-card-border">
-                      {results.map((ingredient) => (
-                          <button
-                              key={ingredient.id}
-                              type="button"
-                              onClick={() => commitValue(ingredient.name)}
-                              className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-terracotta/5 transition-colors group/item"
-                          >
-                            <div>
-                              <p className="font-bold text-foreground group-hover/item:text-terracotta transition-colors">{ingredient.name}</p>
-                              <p className="text-[10px] uppercase tracking-widest text-foreground/30 mt-0.5">{formatCategory(ingredient.category)}</p>
-                            </div>
-                            <Plus size={16} className="text-terracotta opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                          </button>
-                      ))}
-                    </div>
-                ) : trimmedQuery.length >= 2 ? (
-                    <button
-                        type="button"
-                        onClick={() => commitValue(trimmedQuery)}
-                        className="w-full px-5 py-4 text-left hover:bg-terracotta/5 flex items-center justify-between group/add"
-                    >
-                      <div>
-                        <p className="text-sm font-bold text-foreground">"{trimmedQuery}"</p>
-                        <p className="text-xs text-foreground/40 mt-0.5">{t('profile.taste.noMatch')}</p>
-                      </div>
-                      <Plus size={18} className="text-terracotta" />
-                    </button>
-                ) : null}
-              </div>
-          )}
         </div>
+
+        {dropdownPortal}
 
         {/* Dislike Edilenler Listesi (Badges) */}
         <div className="min-h-[60px] p-4 rounded-3xl border-2 border-dashed border-card-border bg-card/30">

@@ -83,7 +83,7 @@ export const IngredientSelector: React.FC<IngredientSelectorProps> = ({
         : Math.min(window.innerHeight - viewportPadding - maxHeight, rect.bottom + gap),
       width: rect.width,
       maxHeight,
-      zIndex: 300
+      zIndex: 99999
     });
   }, []);
 
