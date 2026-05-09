@@ -1,3 +1,18 @@
+-- Add missing auditing columns if they don't exist (needed for versioning order)
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE;
+
+-- Update existing records to have a valid created_at if it was just added
+UPDATE recipes SET created_at = NOW() WHERE created_at IS NULL;
+UPDATE recipes SET updated_at = NOW() WHERE updated_at IS NULL;
+UPDATE recipes SET active = TRUE WHERE active IS NULL;
+
+-- Make them NOT NULL after populating
+ALTER TABLE recipes ALTER COLUMN created_at SET NOT NULL;
+ALTER TABLE recipes ALTER COLUMN updated_at SET NOT NULL;
+ALTER TABLE recipes ALTER COLUMN active SET NOT NULL;
+
 -- Add explicit recipe version numbers for approval/revision history.
 ALTER TABLE recipes ADD COLUMN IF NOT EXISTS version_number INTEGER NOT NULL DEFAULT 1;
 
