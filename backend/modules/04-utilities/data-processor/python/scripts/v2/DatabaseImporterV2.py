@@ -232,7 +232,7 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
             df_ing['created_at'] = now
             df_ing['updated_at'] = now
 
-            df_ing[['id', 'name', 'category', 'density', 'physical_state', 'preferred_unit', 'active', 'created_at', 'updated_at']].to_sql(
+            df_ing[['id', 'name', 'category', 'density', 'physical_state', 'active', 'created_at', 'updated_at']].to_sql(
                 'ingredients', conn, if_exists='append', index=False)
             conn.execute(text("SELECT setval('ingredients_id_seq', (SELECT COALESCE(MAX(id), 1) FROM ingredients))"))
             print(f"       ✅ ingredients")
