@@ -26,7 +26,7 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:postgres} # Buraya kendi şifrenizi yazınız
     driver-class-name: org.postgresql.Driver
-  
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -54,6 +54,8 @@ spring:
 com:
   mealapp:
     ai:
+      security:
+        encryption-key: ${AI_ENCRYPTION_KEY:1234567890123456} # 16 byte AES key
       provider-type: ${AI_PROVIDER_TYPE:OPENAI} # OPENAI, GEMINI, CLAUDE, MISTRAL, DEEPSEEK vb.
       service:
         openai:
@@ -85,7 +87,7 @@ com:
           client-id: ${KEYCLOAK_ADMIN_CLIENT:admin-cli}
       storage:
         bucket:
-          name: meal-app-bucket
+          name: ${STORAGE_BUCKET_NAME:meal-app-bucket}
         minio:
           # Sunucu tarafı erişim (örn Docker ağı içi): http://minio-server:9000
           endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
