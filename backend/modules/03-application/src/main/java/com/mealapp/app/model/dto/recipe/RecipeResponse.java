@@ -1,5 +1,6 @@
 package com.mealapp.app.model.dto.recipe;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,5 +34,6 @@ public class RecipeResponse {
     private Integer versionNumber;
     private java.time.LocalDateTime createdAt;
     private List<RecipeIngredientDTO> ingredients;
+    @JsonProperty("isFavorite")
     private boolean isFavorite;
 }
