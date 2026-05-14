@@ -172,7 +172,7 @@ const RecipeRating: React.FC<{
  * MealAI Recipe Explorer - Custom Toast & Portal Integrated
  */
 const RecipeList: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const recipeService = useRecipeService();
   const { showToast } = useToast();
   const { user } = useAuth();
@@ -208,18 +208,20 @@ const RecipeList: React.FC = () => {
 
     try {
       const isFav = await recipeService.toggleFavorite(recipeId);
-      
-      // Update local state
-      setRecipes(prev => prev.map(r => 
-        r.id === recipeId ? { ...r, isFavorite: isFav } : r
-      ));
-      
-      if (selectedRecipe?.id === recipeId) {
-        setSelectedRecipe({ ...selectedRecipe, isFavorite: isFav });
-      }
-      
-      if (recipeDetail?.id === recipeId) {
-        setRecipeDetail({ ...recipeDetail, isFavorite: isFav });
+
+      if (activeCategory === 'favorites' && !isFav) {
+        setRecipes(prev => prev.filter(r => r.id !== recipeId));
+        if (selectedRecipe?.id === recipeId) handleCloseModal();
+      } else {
+        setRecipes(prev => prev.map(r =>
+          r.id === recipeId ? { ...r, isFavorite: isFav } : r
+        ));
+        if (selectedRecipe?.id === recipeId) {
+          setSelectedRecipe({ ...selectedRecipe, isFavorite: isFav });
+        }
+        if (recipeDetail?.id === recipeId) {
+          setRecipeDetail({ ...recipeDetail, isFavorite: isFav });
+        }
       }
 
       showToast(isFav ? 'Favorilere eklendi.' : 'Favorilerden çıkarıldı.', 'success');
@@ -234,7 +236,9 @@ const RecipeList: React.FC = () => {
     const abortController = new AbortController();
 
     const fetchData = async () => {
-      const queryKey = `${debouncedSearch ?? ''}|${page}|${size}|${user?.id || 'anonymous'}`;
+      const favoritesOnly = activeCategory === 'favorites';
+      const categoryParam = !favoritesOnly && activeCategory !== 'all' ? activeCategory : undefined;
+      const queryKey = `${debouncedSearch ?? ''}|${categoryParam ?? ''}|${favoritesOnly}|${page}|${size}|${user?.id || 'anonymous'}`;
       if (lastQueryRef.current === queryKey) return;
 
       lastQueryRef.current = queryKey;
@@ -243,6 +247,8 @@ const RecipeList: React.FC = () => {
       try {
         const data = await recipeService.getRecipes({
           title: debouncedSearch || undefined,
+          category: categoryParam,
+          favoritesOnly: favoritesOnly || undefined,
           page,
           size,
           signal: abortController.signal
@@ -250,7 +256,6 @@ const RecipeList: React.FC = () => {
         if (mounted) setRecipes(data);
       } catch (e: any) {
         if (mounted && e?.name !== 'CanceledError' && e?.name !== 'AbortError') {
-          // Profil sayfasındaki toast kullanımınıza göre (success/error/info)
           showToast(e?.message || t('toasts.recipes.loadError'), 'error');
         }
       } finally {
@@ -262,7 +267,7 @@ const RecipeList: React.FC = () => {
       mounted = false;
       abortController.abort();
     };
-  }, [debouncedSearch, page, recipeService, showToast, user?.id]);
+  }, [debouncedSearch, page, activeCategory, recipeService, showToast, user?.id]);
 
   useEffect(() => {
     if (!isRecipeModalOpen && lastQueryRef.current) {
@@ -277,6 +282,11 @@ const RecipeList: React.FC = () => {
   useEffect(() => {
     setPage(0);
   }, [debouncedSearch]);
+
+  useEffect(() => {
+    setPage(0);
+    lastQueryRef.current = '';
+  }, [activeCategory]);
 
   // Handle direct recipe link from notifications
   useEffect(() => {
@@ -432,6 +442,12 @@ const RecipeList: React.FC = () => {
     { key: 'salad', label: t('recipes.categories.salad') },
     { key: 'dessert', label: t('recipes.categories.dessert') },
     { key: 'fit', label: t('recipes.categories.fit') },
+    {
+      key: 'favorites',
+      label: t('recipes.categories.favorites', {
+        defaultValue: i18n.language?.startsWith('tr') ? 'Favoriler' : 'Favorites'
+      })
+    },
   ];
 
   return (

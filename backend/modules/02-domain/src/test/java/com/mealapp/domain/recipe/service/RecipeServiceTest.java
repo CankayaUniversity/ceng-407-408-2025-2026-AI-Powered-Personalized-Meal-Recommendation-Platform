@@ -14,6 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -310,6 +314,88 @@ class RecipeServiceTest {
         assertNotNull(versions);
         assertFalse(versions.isEmpty());
         verify(recipeRepository).findAllVersions(eq(rootId), eq(userId), eq(false));
+    }
+
+    // ---- findFiltered dispatch tests ----
+
+    private Page<Recipe> emptyPage() {
+        return new PageImpl<>(List.of());
+    }
+
+    @Test
+    void findFiltered_noParams_callsFindAllActive() {
+        Pageable p = PageRequest.of(0, 10);
+        when(recipeRepository.findAllActive("u1", p)).thenReturn(emptyPage());
+
+        recipeService.findFiltered("u1", null, null, false, p);
+
+        verify(recipeRepository).findAllActive("u1", p);
+        verifyNoMoreInteractions(recipeRepository);
+    }
+
+    @Test
+    void findFiltered_titleOnly_callsFindByTitle() {
+        Pageable p = PageRequest.of(0, 10);
+        when(recipeRepository.findByTitleContainingIgnoreCase("pasta", "u1", p)).thenReturn(emptyPage());
+
+        recipeService.findFiltered("u1", "pasta", null, false, p);
+
+        verify(recipeRepository).findByTitleContainingIgnoreCase("pasta", "u1", p);
+        verifyNoMoreInteractions(recipeRepository);
+    }
+
+    @Test
+    void findFiltered_categoryOnly_callsFindAllActiveByCategory() {
+        Pageable p = PageRequest.of(0, 10);
+        when(recipeRepository.findAllActiveByCategory("u1", "main", p)).thenReturn(emptyPage());
+
+        recipeService.findFiltered("u1", null, "main", false, p);
+
+        verify(recipeRepository).findAllActiveByCategory("u1", "main", p);
+        verifyNoMoreInteractions(recipeRepository);
+    }
+
+    @Test
+    void findFiltered_titleAndCategory_callsFindByTitleAndCategory() {
+        Pageable p = PageRequest.of(0, 10);
+        when(recipeRepository.findByTitleAndCategory("pasta", "main", "u1", p)).thenReturn(emptyPage());
+
+        recipeService.findFiltered("u1", "pasta", "main", false, p);
+
+        verify(recipeRepository).findByTitleAndCategory("pasta", "main", "u1", p);
+        verifyNoMoreInteractions(recipeRepository);
+    }
+
+    @Test
+    void findFiltered_favoritesOnly_noTitle_callsFindAllFavorites() {
+        Pageable p = PageRequest.of(0, 10);
+        when(recipeRepository.findAllFavoritesByUserId("u1", p)).thenReturn(emptyPage());
+
+        recipeService.findFiltered("u1", null, null, true, p);
+
+        verify(recipeRepository).findAllFavoritesByUserId("u1", p);
+        verifyNoMoreInteractions(recipeRepository);
+    }
+
+    @Test
+    void findFiltered_favoritesOnly_withTitle_callsFindFavoritesByTitle() {
+        Pageable p = PageRequest.of(0, 10);
+        when(recipeRepository.findFavoritesByTitleAndUserId("soup", "u1", p)).thenReturn(emptyPage());
+
+        recipeService.findFiltered("u1", "soup", null, true, p);
+
+        verify(recipeRepository).findFavoritesByTitleAndUserId("soup", "u1", p);
+        verifyNoMoreInteractions(recipeRepository);
+    }
+
+    @Test
+    void findFiltered_favoritesOnly_nullUser_returnsEmptyPageWithoutRepoCall() {
+        Pageable p = PageRequest.of(0, 10);
+
+        Page<Recipe> result = recipeService.findFiltered(null, null, null, true, p);
+
+        assertTrue(result.isEmpty());
+        verifyNoInteractions(recipeRepository);
     }
 
     @Test

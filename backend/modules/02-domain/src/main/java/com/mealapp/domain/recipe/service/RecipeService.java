@@ -667,4 +667,37 @@ public class RecipeService {
         return recipes;
     }
 
+    /**
+     * Kategori, favori ve başlık filtrelerini birleştirerek sayfalanmış tarif listesi döner.
+     * favoritesOnly=true ise userId null olduğunda boş sayfa döner.
+     */
+    @Transactional
+    public Page<Recipe> findFiltered(String userId, String title, String category, boolean favoritesOnly, Pageable pageable) {
+        boolean hasTitle = title != null && !title.isBlank();
+        boolean hasCategory = category != null && !category.isBlank();
+
+        Page<Recipe> recipes;
+        if (favoritesOnly) {
+            if (userId == null) return org.springframework.data.domain.Page.empty(pageable);
+            recipes = hasTitle
+                ? recipeRepository.findFavoritesByTitleAndUserId(title, userId, pageable)
+                : recipeRepository.findAllFavoritesByUserId(userId, pageable);
+        } else if (hasCategory) {
+            recipes = hasTitle
+                ? recipeRepository.findByTitleAndCategory(title, category, userId, pageable)
+                : recipeRepository.findAllActiveByCategory(userId, category, pageable);
+        } else {
+            recipes = hasTitle
+                ? recipeRepository.findByTitleContainingIgnoreCase(title, userId, pageable)
+                : recipeRepository.findAllActive(userId, pageable);
+        }
+
+        recipes.forEach(recipe -> {
+            if (recipe.getTotalCalories() == null || recipe.getTotalCalories() == 0) {
+                calculateAndSetNutrition(recipe);
+            }
+        });
+        return recipes;
+    }
+
 }

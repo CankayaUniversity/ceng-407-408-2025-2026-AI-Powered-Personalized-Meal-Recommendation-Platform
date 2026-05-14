@@ -251,10 +251,10 @@ export const getRecipeService = (api: AxiosInstance) => {
    * Tarif listesini backend'den getirir.
    * Response doğrudan backend liste DTO'suna hizalanır.
    */
-  getRecipes: async (params?: { title?: string; page?: number; size?: number; signal?: AbortSignal }): Promise<RecipeListItem[]> => {
+  getRecipes: async (params?: { title?: string; category?: string; favoritesOnly?: boolean; page?: number; size?: number; signal?: AbortSignal }): Promise<RecipeListItem[]> => {
     try {
-      const { title, page = 0, size = 12, signal } = params || {};
-      const key = `GET:/v1/recipes|${title ?? ''}|${page}|${size}`;
+      const { title, category, favoritesOnly, page = 0, size = 12, signal } = params || {};
+      const key = `GET:/v1/recipes|${title ?? ''}|${category ?? ''}|${favoritesOnly ?? false}|${page}|${size}`;
 
       // Return existing in-flight promise if present (dedupe)
       const existing = inFlight.get(key);
@@ -267,7 +267,9 @@ export const getRecipeService = (api: AxiosInstance) => {
         params: {
           page,
           size,
-          ...(title ? { title } : {})
+          ...(title ? { title } : {}),
+          ...(category && category !== 'all' && category !== 'favorites' ? { category } : {}),
+          ...(favoritesOnly ? { favoritesOnly: true } : {})
         },
         // Pass AbortSignal if provided (Axios >= 0.22)
         signal

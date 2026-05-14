@@ -39,19 +39,19 @@ public class RecipeController {
     public List<RecipeResponse> getAllRecipes(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) String title,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "false") boolean favoritesOnly,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
-        PageRequest pageRequest = PageRequest.of(page, size);
-        List<RecipeResponse> responses;
+
         String userId = (jwt != null) ? jwt.getSubject() : null;
-        
-        if (title != null && !title.isBlank()) {
-            responses = recipeMapper.toResponseList(recipeService.searchByTitle(title, userId, pageRequest).getContent(), userId);
-        } else {
-            responses = recipeMapper.toResponseList(recipeService.findAll(userId, pageRequest).getContent(), userId);
-        }
-        
+        PageRequest pageRequest = PageRequest.of(page, size);
+
+        List<RecipeResponse> responses = recipeMapper.toResponseList(
+            recipeService.findFiltered(userId, title, category, favoritesOnly, pageRequest).getContent(),
+            userId
+        );
+
         responses.forEach(this::enrichImageUrl);
         return responses;
     }

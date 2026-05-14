@@ -115,4 +115,48 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     @Modifying
     @Query("UPDATE Recipe r SET r.active = false WHERE r.id = :id")
     void softDelete(@Param("id") Long id);
+
+    @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
+                   "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                   "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
+                   "LOWER(r.category) = LOWER(:category)",
+           countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
+                        "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                        "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
+                        "LOWER(r.category) = LOWER(:category)")
+    Page<Recipe> findAllActiveByCategory(@Param("userId") String userId, @Param("category") String category, Pageable pageable);
+
+    @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
+                   "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                   "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
+                   "EXISTS (SELECT rf FROM RecipeFavorite rf WHERE rf.recipe = r AND rf.userId = :userId)",
+           countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
+                        "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                        "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
+                        "EXISTS (SELECT rf FROM RecipeFavorite rf WHERE rf.recipe = r AND rf.userId = :userId)")
+    Page<Recipe> findAllFavoritesByUserId(@Param("userId") String userId, Pageable pageable);
+
+    @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
+                   "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                   "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
+                   "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
+                   "LOWER(r.category) = LOWER(:category)",
+           countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
+                        "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                        "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
+                        "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
+                        "LOWER(r.category) = LOWER(:category)")
+    Page<Recipe> findByTitleAndCategory(@Param("title") String title, @Param("category") String category, @Param("userId") String userId, Pageable pageable);
+
+    @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
+                   "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                   "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
+                   "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
+                   "EXISTS (SELECT rf FROM RecipeFavorite rf WHERE rf.recipe = r AND rf.userId = :userId)",
+           countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
+                        "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId)) OR " +
+                        "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED')) AND " +
+                        "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
+                        "EXISTS (SELECT rf FROM RecipeFavorite rf WHERE rf.recipe = r AND rf.userId = :userId)")
+    Page<Recipe> findFavoritesByTitleAndUserId(@Param("title") String title, @Param("userId") String userId, Pageable pageable);
 }

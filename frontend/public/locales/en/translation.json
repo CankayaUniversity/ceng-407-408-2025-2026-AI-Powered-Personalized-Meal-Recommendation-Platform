@@ -660,7 +660,8 @@
       "breakfast": "Breakfast",
       "salad": "Salad",
       "dessert": "Dessert",
-      "fit": "Fit & Healthy"
+      "fit": "Fit & Healthy",
+      "favorites": "Favorites"
     },
     "status": {
       "draft": "Draft",
