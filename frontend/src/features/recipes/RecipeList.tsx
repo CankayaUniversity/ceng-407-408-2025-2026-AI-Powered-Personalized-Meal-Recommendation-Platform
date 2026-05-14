@@ -17,6 +17,19 @@ type RecipeArtworkProps = {
   mediaClassName?: string;
 };
 
+type RecipeFamilyRef = Pick<RecipeListItem, 'id' | 'parentId'> | Pick<Recipe, 'id' | 'parentId'>;
+
+const getRecipeFamilyId = (recipe?: RecipeFamilyRef | null) => {
+  if (!recipe) return null;
+  return recipe.parentId ?? recipe.id;
+};
+
+const isSameRecipeFamily = (a?: RecipeFamilyRef | null, b?: RecipeFamilyRef | null) => {
+  const left = getRecipeFamilyId(a);
+  const right = getRecipeFamilyId(b);
+  return left !== null && right !== null && left === right;
+};
+
 const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
   imageUrl,
   title,
@@ -199,7 +212,7 @@ const RecipeList: React.FC = () => {
   const debouncedSearch = useDebounce(searchTerm, 400);
   const lastQueryRef = useRef<string>('');
 
-  const handleToggleFavorite = async (recipeId: number, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (recipe: RecipeFamilyRef, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
       showToast('Favorilere eklemek için giriş yapmalısınız.', 'info');
@@ -207,19 +220,20 @@ const RecipeList: React.FC = () => {
     }
 
     try {
+      const recipeId = recipe.id;
       const isFav = await recipeService.toggleFavorite(recipeId);
 
       if (activeCategory === 'favorites' && !isFav) {
-        setRecipes(prev => prev.filter(r => r.id !== recipeId));
-        if (selectedRecipe?.id === recipeId) handleCloseModal();
+        setRecipes(prev => prev.filter(r => !isSameRecipeFamily(r, recipe)));
+        if (isSameRecipeFamily(selectedRecipe, recipe)) handleCloseModal();
       } else {
         setRecipes(prev => prev.map(r =>
-          r.id === recipeId ? { ...r, isFavorite: isFav } : r
+          isSameRecipeFamily(r, recipe) ? { ...r, isFavorite: isFav } : r
         ));
-        if (selectedRecipe?.id === recipeId) {
-          setSelectedRecipe({ ...selectedRecipe, isFavorite: isFav });
-        }
-        if (recipeDetail?.id === recipeId) {
+        setSelectedRecipe(prev =>
+          prev && isSameRecipeFamily(prev, recipe) ? { ...prev, isFavorite: isFav } : prev
+        );
+        if (isSameRecipeFamily(recipeDetail, recipe)) {
           setRecipeDetail({ ...recipeDetail, isFavorite: isFav });
         }
       }
@@ -367,7 +381,7 @@ const RecipeList: React.FC = () => {
       if (details && details.isFavorite !== undefined) {
         const isFav = details.isFavorite;
         setRecipes(prev => prev.map(r => 
-          r.id === recipe.id ? { ...r, isFavorite: isFav } : r
+          isSameRecipeFamily(r, details) ? { ...r, isFavorite: isFav } : r
         ));
         setSelectedRecipe(prev => {
           if (!prev) return null;
@@ -412,7 +426,8 @@ const RecipeList: React.FC = () => {
           totalCalories: details.totalCalories,
           preparationTimeMinutes: details.preparationTimeMinutes,
           servings: details.servings,
-          category: details.category
+          category: details.category,
+          isFavorite: details.isFavorite
         };
       });
     } catch (err: any) {
@@ -544,7 +559,7 @@ const RecipeList: React.FC = () => {
                     )}
                   </div>
                   <button 
-                    onClick={(e) => handleToggleFavorite(recipe.id, e)}
+                    onClick={(e) => handleToggleFavorite(recipe, e)}
                     className={`absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl transition-all hover:scale-110 active:scale-90 ${recipe.isFavorite ? 'text-terracotta' : 'text-white/70 hover:text-terracotta'}`}
                   >
                     <Star size={18} fill={recipe.isFavorite ? "currentColor" : "none"} />
@@ -651,7 +666,7 @@ const RecipeList: React.FC = () => {
                         <h2 className="text-4xl md:text-5xl font-serif font-bold text-white drop-shadow-lg">{selectedRecipe.title}</h2>
                         <div className="flex gap-3">
                           <button 
-                            onClick={(e) => handleToggleFavorite(selectedRecipe.id, e)}
+                            onClick={(e) => handleToggleFavorite(selectedRecipe, e)}
                             className={`p-4 rounded-2xl backdrop-blur-md border border-white/20 transition-all hover:scale-105 active:scale-95 ${selectedRecipe.isFavorite ? 'bg-terracotta text-white' : 'bg-white/10 text-white/70 hover:text-white'}`}
                           >
                             <Star size={24} fill={selectedRecipe.isFavorite ? "currentColor" : "none"} />

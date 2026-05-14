@@ -1,7 +1,9 @@
 package com.mealapp.domain.recipe.repository;
 
+import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeFavorite;
+import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.entity.RecipeStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -19,6 +21,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -96,14 +100,15 @@ class RecipeRepositoryTest {
     void findAllActiveByCategory_returnsOnlyMatchingCategory() {
         Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER1, "main", PAGE);
 
+        // approvedMain excluded: user1 has an active non-superseded revision for it (dedup rule)
         assertThat(result.getContent())
                 .extracting(Recipe::getId)
                 .containsExactlyInAnyOrder(
-                        approvedMain.getId(),
                         user1DraftMain.getId(),
                         user1PendingRevision.getId()
                 )
                 .doesNotContain(
+                        approvedMain.getId(),          // has user1's revision — dedup hides root
                         approvedBreakfast.getId(),     // wrong category
                         supersededRevision.getId(),    // SUPERSEDED
                         inactiveRecipe.getId(),        // inactive
@@ -122,9 +127,10 @@ class RecipeRepositoryTest {
 
     @Test
     void findAllActiveByCategory_countQueryMatchesContent() {
+        // After dedup: user1 sees user1DraftMain + user1PendingRevision = 2 results for "main"
         Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER1, "main", PageRequest.of(0, 2));
 
-        assertThat(result.getTotalElements()).isGreaterThanOrEqualTo(3);
+        assertThat(result.getTotalElements()).isGreaterThanOrEqualTo(2);
         assertThat(result.getContent()).hasSize(2);
     }
 
@@ -134,10 +140,13 @@ class RecipeRepositoryTest {
     void findByTitleAndCategory_matchesTitleAndCategory() {
         Page<Recipe> result = recipeRepository.findByTitleAndCategory("pizza", "main", USER1, PAGE);
 
+        // approvedMain excluded by dedup (user1 has a pending revision for it)
+        // user1PendingRevision title contains "pizza" and category is "main"
         assertThat(result.getContent())
                 .extracting(Recipe::getId)
-                .contains(approvedMain.getId(), user1PendingRevision.getId())
-                .doesNotContain(user1DraftMain.getId()); // title doesn't contain "pizza"
+                .contains(user1PendingRevision.getId())
+                .doesNotContain(approvedMain.getId(),    // dedup: root hidden when revision exists
+                                user1DraftMain.getId()); // title doesn't contain "pizza"
     }
 
     @Test
@@ -170,7 +179,8 @@ class RecipeRepositoryTest {
 
         assertThat(user1Result.getContent())
                 .extracting(Recipe::getId)
-                .containsExactlyInAnyOrder(approvedMain.getId(), approvedBreakfast.getId());
+                .containsExactlyInAnyOrder(user1PendingRevision.getId(), approvedBreakfast.getId())
+                .doesNotContain(approvedMain.getId());
 
         assertThat(user2Result.getContent())
                 .extracting(Recipe::getId)
@@ -244,7 +254,8 @@ class RecipeRepositoryTest {
 
         assertThat(result.getContent())
                 .extracting(Recipe::getId)
-                .containsExactly(approvedMain.getId());
+                .containsExactly(user1PendingRevision.getId())
+                .doesNotContain(approvedMain.getId());
     }
 
     @Test
@@ -269,6 +280,155 @@ class RecipeRepositoryTest {
         assertThat(result.getContent()).isEmpty();
     }
 
+    @Test
+    void findAllFavoritesByUserId_dedupsFavoritedRecipeFamily() {
+        favorite(USER1, approvedMain);
+        favorite(USER1, user1PendingRevision);
+        em.flush();
+        em.clear();
+
+        Page<Recipe> result = recipeRepository.findAllFavoritesByUserId(USER1, PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .containsExactly(user1PendingRevision.getId())
+                .doesNotContain(approvedMain.getId());
+    }
+
+    // ---- dedup (per-family one card) ----
+
+    @Test
+    void findAllActive_usesVersionNumberBeforeIdWhenChoosingLatestRevision() {
+        Recipe existingRevision = em.find(Recipe.class, user1PendingRevision.getId());
+        existingRevision.setVersionNumber(5);
+
+        Recipe user1DraftRevision = recipe("Approved Main Pizza Draft", "main", RecipeStatus.DRAFT, USER1, approvedMain.getId(), true);
+        user1DraftRevision.setVersionNumber(2);
+        persist(user1DraftRevision);
+        em.flush();
+        em.clear();
+
+        Page<Recipe> result = recipeRepository.findAllActive(USER1, PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .contains(user1PendingRevision.getId())
+                .doesNotContain(user1DraftRevision.getId(), approvedMain.getId());
+    }
+
+    @Test
+    void findAllActive_usesIdAsFinalTieBreakerWhenVersionAndCreatedAtMatch() {
+        Recipe firstRevision = em.find(Recipe.class, user1PendingRevision.getId());
+        firstRevision.setVersionNumber(7);
+
+        Recipe secondRevision = recipe("Approved Main Pizza Tie Breaker", "main", RecipeStatus.DRAFT, USER1, approvedMain.getId(), true);
+        secondRevision.setVersionNumber(7);
+        persist(secondRevision);
+        em.flush();
+
+        em.getEntityManager()
+                .createNativeQuery("UPDATE recipes SET created_at = TIMESTAMP '2026-01-01 00:00:00' WHERE id IN (?, ?)")
+                .setParameter(1, firstRevision.getId())
+                .setParameter(2, secondRevision.getId())
+                .executeUpdate();
+        em.clear();
+
+        Page<Recipe> result = recipeRepository.findAllActive(USER1, PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .contains(secondRevision.getId())
+                .doesNotContain(firstRevision.getId(), approvedMain.getId());
+    }
+
+    @Test
+    void findAllActive_dedupExcludesRootWhenUserHasActiveRevision() {
+        // user1 has user1PendingRevision (parentId=approvedMain) — root must not appear for user1
+        Page<Recipe> result = recipeRepository.findAllActive(USER1, PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .doesNotContain(approvedMain.getId())
+                .contains(user1PendingRevision.getId());
+    }
+
+    @Test
+    void findAllActive_rootVisibleToOtherUserWithNoRevision() {
+        // user2 has no revision for approvedMain — root must appear for user2
+        Page<Recipe> result = recipeRepository.findAllActive(USER2, PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .contains(approvedMain.getId());
+    }
+
+    @Test
+    void findAllActive_rootAppearsAfterAllRevisionsSuperseded() {
+        // supersededRevision is SUPERSEDED → should not block root from appearing
+        // user2 viewpoint: approvedMain visible, supersededRevision not visible
+        Page<Recipe> result = recipeRepository.findAllActive(USER2, PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .contains(approvedMain.getId())
+                .doesNotContain(supersededRevision.getId());
+    }
+
+    @Test
+    void findByTitleContainingIgnoreCase_dedupExcludesRootWhenUserHasRevision() {
+        // "pizza" matches approvedMain AND user1PendingRevision; user1 should see only revision
+        Page<Recipe> result = recipeRepository.findByTitleContainingIgnoreCase("pizza", USER1, PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .contains(user1PendingRevision.getId())
+                .doesNotContain(approvedMain.getId());
+    }
+
+    @Test
+    void findByTitleContainingIgnoreCase_rootVisibleWhenNoRevision() {
+        // user2 has no revision for approvedMain — root must appear in search
+        Page<Recipe> result = recipeRepository.findByTitleContainingIgnoreCase("pizza", USER2, PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .contains(approvedMain.getId());
+    }
+
+    @Test
+    void findAllActiveByCategory_rootVisibleToOtherUserWithNoRevision() {
+        // user2 has no revision for approvedMain — root must appear in category filter
+        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER2, "main", PAGE);
+
+        assertThat(result.getContent())
+                .extracting(Recipe::getId)
+                .contains(approvedMain.getId());
+    }
+
+    @Test
+    void findTopRecipesSafeForUser_dedupsRecipeFamily() {
+        Ingredient tomato = em.persist(Ingredient.builder()
+                .name("Tomato")
+                .category(Ingredient.Category.VEGETABLE)
+                .build());
+        recipeIngredient(approvedMain, tomato);
+        recipeIngredient(user1PendingRevision, tomato);
+        em.flush();
+        em.clear();
+
+        List<Recipe> result = recipeRepository.findTopRecipesSafeForUser(
+                USER1,
+                "NONE",
+                List.of("Peanut"),
+                PAGE
+        );
+
+        assertThat(result)
+                .extracting(Recipe::getId)
+                .contains(user1PendingRevision.getId())
+                .doesNotContain(approvedMain.getId());
+    }
+
     // ---- helpers ----
 
     private Recipe persist(Recipe recipe) {
@@ -282,6 +442,16 @@ class RecipeRepositoryTest {
                 .build();
         fav.setActive(true);
         em.persist(fav);
+    }
+
+    private void recipeIngredient(Recipe recipe, Ingredient ingredient) {
+        em.persist(RecipeIngredient.builder()
+                .recipe(recipe)
+                .ingredient(ingredient)
+                .amount(100.0)
+                .unit("GRAM")
+                .grams(100.0)
+                .build());
     }
 
     private static Recipe recipe(String title, String category, RecipeStatus status,

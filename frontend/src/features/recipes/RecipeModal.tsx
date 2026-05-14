@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChefHat, Clock, Users, Plus, Trash2, Save, Send, Loader2, Camera, Image as ImageIcon } from 'lucide-react';
 import { IngredientSelector } from '../../shared/components/IngredientSelector';
-import { Ingredient } from '../../types';
+import { Ingredient, type Recipe, type RecipeRequest } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useRecipeService } from '../../services/recipeService';
 import { useToast } from '../../shared/hooks/useToast';
 import ModalPortal from '../../shared/components/ModalPortal';
-import { RecipeRequest } from '../../types';
 import { useIngredientLookup } from '../../shared/hooks/useIngredientLookup';
+
+type EditableRecipe = Partial<Recipe> & {
+    id?: number;
+    preparationTime?: number | null;
+    status?: string | null;
+};
+
+type RecipeIngredientFormItem = {
+    ingredientId: number;
+    name: string;
+    amount: number;
+    unit: string;
+    grams: number;
+};
 
 const RecipeModal: React.FC = () => {
     const { t } = useTranslation();
@@ -26,6 +39,8 @@ const RecipeModal: React.FC = () => {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [status, setStatus] = useState<string | null>(null);
+    const [editTargetId, setEditTargetId] = useState<number | null>(null);
+    const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
     
     // UI states
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -44,51 +59,52 @@ const RecipeModal: React.FC = () => {
         enabled: isRecipeModalOpen
     });
 
+    const mapRecipeIngredients = (recipe: EditableRecipe): RecipeIngredientFormItem[] => {
+        return (recipe.ingredients || []).map((ing: any) => ({
+            ingredientId: ing.ingredientId || ing.id,
+            name: ing.name || ing.ingredient?.name,
+            amount: ing.amount,
+            unit: ing.unit,
+            grams: ing.grams
+        }));
+    };
+
+    const applyRecipeToForm = (recipe: EditableRecipe) => {
+        setTitle(recipe.title || '');
+        setCategory(recipe.category || 'main');
+        setPrepTime(recipe.preparationTimeMinutes ?? recipe.preparationTime ?? 30);
+        setServings(recipe.servings || 2);
+        setInstructions(recipe.instructions || '');
+        setIngredients(mapRecipeIngredients(recipe));
+        setImagePreview(recipe.imageUrl || null);
+        setEditImageUrl(recipe.imageUrl || null);
+        setStatus(recipe.status || null);
+        setEditTargetId(recipe.id ?? null);
+    };
+
     useEffect(() => {
+        let cancelled = false;
+
         const fetchDetails = async () => {
             if (recipeToEdit && isRecipeModalOpen) {
-                // Temel verileri hemen set et (liste verisinden gelenler)
-                setTitle(recipeToEdit.title || '');
-                setCategory(recipeToEdit.category || 'main');
-                setPrepTime(recipeToEdit.preparationTimeMinutes || 30);
-                setServings(recipeToEdit.servings || 2);
-                setImagePreview(recipeToEdit.imageUrl || null);
+                applyRecipeToForm(recipeToEdit);
                 setImageFile(null);
-                setStatus(recipeToEdit.status || null);
 
-                // Eğer detaylar eksikse (ingredients veya instructions yoksa) backend'den çek
-                if (!recipeToEdit.ingredients || !recipeToEdit.instructions) {
-                    try {
-                        setIsLoadingDetails(true);
-                        const fullRecipe = await recipeService.getRecipeById(recipeToEdit.id);
-                        setInstructions(fullRecipe.instructions || '');
-                        if (fullRecipe.ingredients) {
-                            setIngredients(fullRecipe.ingredients.map((ing: any) => ({
-                                ingredientId: ing.ingredientId || ing.id,
-                                name: ing.name || ing.ingredient?.name,
-                                amount: ing.amount,
-                                unit: ing.unit,
-                                grams: ing.grams
-                            })));
-                        } else {
-                            setIngredients([]);
-                        }
-                    } catch (err) {
-                        console.error("Failed to fetch recipe details:", err);
-                        setInstructions(recipeToEdit.instructions || '');
-                    } finally {
+                try {
+                    setIsLoadingDetails(true);
+                    // Root recipes: load user's active working copy if one exists.
+                    const fullRecipe = recipeToEdit.parentId == null
+                        ? await recipeService.getPreferredRecipe(recipeToEdit.id)
+                        : await recipeService.getRecipeById(recipeToEdit.id);
+                    if (!cancelled) {
+                        applyRecipeToForm(fullRecipe);
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch recipe details:", err);
+                } finally {
+                    if (!cancelled) {
                         setIsLoadingDetails(false);
                     }
-                } else {
-                    // Detaylar zaten varsa (nadiren liste verisinde tam olabilir)
-                    setInstructions(recipeToEdit.instructions || '');
-                    setIngredients(recipeToEdit.ingredients.map((ing: any) => ({
-                        ingredientId: ing.ingredientId || ing.id,
-                        name: ing.name || ing.ingredient?.name,
-                        amount: ing.amount,
-                        unit: ing.unit,
-                        grams: ing.grams
-                    })));
                 }
             } else if (!isRecipeModalOpen) {
                 resetForm();
@@ -96,6 +112,10 @@ const RecipeModal: React.FC = () => {
         };
 
         fetchDetails();
+
+        return () => {
+            cancelled = true;
+        };
     }, [recipeToEdit, isRecipeModalOpen, recipeService]);
 
     const resetForm = () => {
@@ -108,6 +128,8 @@ const RecipeModal: React.FC = () => {
         setImageFile(null);
         setImagePreview(null);
         setStatus(null);
+        setEditTargetId(null);
+        setEditImageUrl(null);
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -231,7 +253,8 @@ const RecipeModal: React.FC = () => {
             
             let savedRecipe: any;
             if (recipeToEdit) {
-                savedRecipe = await recipeService.updateRecipe(recipeToEdit.id, request);
+                const targetId = editTargetId ?? recipeToEdit.id;
+                savedRecipe = await recipeService.updateRecipe(targetId, request);
                 showToast(isPublishing ? 'Tarif güncellendi ve onaya gönderildi.' : 'Taslak güncellendi.', 'success');
             } else {
                 savedRecipe = await recipeService.createRecipe(request);
@@ -338,7 +361,7 @@ const RecipeModal: React.FC = () => {
                                                         <button 
                                                             onClick={() => {
                                                                 setImageFile(null);
-                                                                setImagePreview(recipeToEdit?.imageUrl || null);
+                                                                setImagePreview(editImageUrl);
                                                             }}
                                                             className="px-4 py-2 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-colors rounded-xl"
                                                         >

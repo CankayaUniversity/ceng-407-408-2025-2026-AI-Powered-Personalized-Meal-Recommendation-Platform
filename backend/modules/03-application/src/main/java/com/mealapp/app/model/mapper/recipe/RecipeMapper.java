@@ -30,13 +30,14 @@ public class RecipeMapper {
         Integer userRating = null;
         boolean isFavorite = false;
         if (currentUserId != null && recipe.getId() != null) {
+            Long rootId = recipe.getParentId() != null ? recipe.getParentId() : recipe.getId();
             userRating = recipeRatingRepository.findByUserIdAndRecipeId(currentUserId, recipe.getId())
                     .stream()
                     .findFirst()
                     .map(RecipeRating::getRating)
                     .orElse(null);
             
-            isFavorite = recipeFavoriteRepository.existsByUserIdAndRecipeId(currentUserId, recipe.getId());
+            isFavorite = recipeFavoriteRepository.existsByUserIdAndRecipeFamily(currentUserId, rootId);
         } else if (recipe.getId() != null) {
             // Eğer userId yoksa ama favorite verisi mappleme içine sızmışsa logla veya varsayılan false yap
         }

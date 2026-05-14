@@ -1,6 +1,7 @@
 package com.mealapp.domain.recipe.service;
 
 import com.mealapp.domain.common.storage.FileStorageService;
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.notification.entity.Notification;
 import com.mealapp.domain.notification.service.NotificationService;
 import com.mealapp.domain.recipe.entity.Ingredient;
@@ -73,8 +74,14 @@ public class RecipeService {
      */
     @Transactional
     public Recipe updateRecipe(Long id, Recipe updatedData, List<RecipeIngredient> ingredients, String userId) {
+        return updateRecipe(id, updatedData, ingredients, userId, false);
+    }
+
+    @Transactional
+    public Recipe updateRecipe(Long id, Recipe updatedData, List<RecipeIngredient> ingredients, String userId, boolean isAdmin) {
         Recipe existing = recipeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
+        assertCanEdit(existing, userId, isAdmin);
 
         RecipeStatus requestedStatus = updatedData.getStatus() != null ? updatedData.getStatus() : RecipeStatus.PENDING;
         boolean shouldCreateNewRevision = existing.getStatus() == RecipeStatus.APPROVED
@@ -139,6 +146,11 @@ public class RecipeService {
         return saved;
     }
 
+    @Transactional
+    public Recipe updateRecipeAsAdmin(Long id, Recipe updatedData, List<RecipeIngredient> ingredients) {
+        return updateRecipe(id, updatedData, ingredients, "SYSTEM_ADMIN", true);
+    }
+
     /**
      * Tarifi onaya gönderir.
      */
@@ -186,7 +198,10 @@ public class RecipeService {
 
     private Recipe createRevision(Recipe source, Recipe updatedData, List<RecipeIngredient> ingredients, String userId, RecipeStatus targetStatus) {
         Long rootId = resolveRootId(source);
+        // Supersede all prior user revisions first — guarantees single active revision per user-root
+        supersedePriorUserRevisions(rootId, userId);
         if (targetStatus == RecipeStatus.PENDING) {
+            // Also supersede any other users' PENDING revisions for the same root
             supersedePendingRevisions(rootId);
         }
 
@@ -232,6 +247,16 @@ public class RecipeService {
                 .grams(ri.getGrams())
                 .build())
             .toList();
+    }
+
+    private void supersedePriorUserRevisions(Long rootId, String userId) {
+        if (userId == null || userId.isBlank()) return;
+        List<Recipe> prior = recipeRepository.findByParentIdAndCreatedByAndStatusInAndActiveTrue(
+            rootId, userId, List.of(RecipeStatus.DRAFT, RecipeStatus.PENDING, RecipeStatus.REJECTED)
+        );
+        if (prior == null || prior.isEmpty()) return;
+        prior.forEach(r -> r.setStatus(RecipeStatus.SUPERSEDED));
+        recipeRepository.saveAll(prior);
     }
 
     private void supersedePendingRevisions(Long rootId) {
@@ -442,8 +467,13 @@ public class RecipeService {
      * Eğer tarif APPROVED ise, bu görsel değişikliği bir PENDING güncellemesi olarak kaydedilir.
      */
     public String uploadRecipeImage(Long recipeId, InputStream inputStream, String originalFilename, String contentType, String userId) {
+        return uploadRecipeImage(recipeId, inputStream, originalFilename, contentType, userId, false);
+    }
+
+    public String uploadRecipeImage(Long recipeId, InputStream inputStream, String originalFilename, String contentType, String userId, boolean isAdmin) {
         Recipe recipe = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + recipeId));
+        assertCanEdit(recipe, userId, isAdmin);
 
         // Dosya adı formatı: recipes/{recipeId}/image_{timestamp}.{ext}
         String extension = "";
@@ -572,6 +602,16 @@ public class RecipeService {
     }
 
     /**
+     * ID ile exact tarifi döner, ancak private kullanıcı revizyonlarını sadece sahibine/admin'e açar.
+     */
+    @Transactional
+    public Optional<Recipe> findVisibleById(Long id, String userId, boolean isAdmin) {
+        return recipeRepository.findByIdWithIngredients(id)
+            .filter(recipe -> canView(recipe, userId, isAdmin))
+            .map(this::ensureNutritionCalculated);
+    }
+
+    /**
      * Sadece aktif tarifleri ID'ye göre getirir.
      */
     @Transactional(readOnly = true)
@@ -588,6 +628,28 @@ public class RecipeService {
     }
 
     /**
+     * Kullanıcı için tercih edilen tarifi döner.
+     * Kök tarif ise ve kullanıcının aktif revizyonu varsa revizyonu döner; yoksa kök tarifi döner.
+     */
+    @Transactional
+    public Recipe findPreferred(Long id, String userId) {
+        return findPreferred(id, userId, false);
+    }
+
+    @Transactional
+    public Recipe findPreferred(Long id, String userId, boolean isAdmin) {
+        Recipe recipe = findVisibleById(id, userId, isAdmin)
+            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + id));
+        if (userId != null && recipe.getParentId() == null) {
+            return findLatestUserRevision(id, userId)
+                .filter(revision -> canView(revision, userId, isAdmin))
+                .map(this::ensureNutritionCalculated)
+                .orElse(recipe);
+        }
+        return recipe;
+    }
+
+    /**
      * Kullanıcının ana tarif üzerinde gördüğü en güncel yerel revizyonu döner.
      */
     @Transactional(readOnly = true)
@@ -595,11 +657,51 @@ public class RecipeService {
         if (userId == null || userId.isBlank()) {
             return Optional.empty();
         }
-        return recipeRepository.findFirstByParentIdAndCreatedByAndStatusInAndActiveTrueOrderByVersionNumberDescCreatedAtDesc(
+        return recipeRepository.findFirstByParentIdAndCreatedByAndStatusInAndActiveTrueOrderByVersionNumberDescCreatedAtDescIdDesc(
             parentId,
             userId,
             List.of(RecipeStatus.PENDING, RecipeStatus.DRAFT, RecipeStatus.REJECTED)
         );
+    }
+
+    private Recipe ensureNutritionCalculated(Recipe recipe) {
+        if (recipe.getTotalCalories() == null || recipe.getTotalCalories() == 0) {
+            calculateAndSetNutrition(recipe);
+        }
+        return recipe;
+    }
+
+    private boolean canView(Recipe recipe, String userId, boolean isAdmin) {
+        if (recipe == null) {
+            return false;
+        }
+        if (isAdmin) {
+            return true;
+        }
+        if (!recipe.isActive()) {
+            return false;
+        }
+
+        boolean isOwner = userId != null && userId.equals(recipe.getCreatedBy());
+        if (recipe.getParentId() == null) {
+            return recipe.getStatus() == RecipeStatus.APPROVED || isOwner;
+        }
+        return isOwner;
+    }
+
+    private void assertCanEdit(Recipe recipe, String userId, boolean isAdmin) {
+        if (isAdmin) {
+            return;
+        }
+        if (recipe == null || !recipe.isActive() || recipe.getStatus() == RecipeStatus.SUPERSEDED) {
+            throw new ResourceNotFoundException("Tarif bulunamadı");
+        }
+        boolean isOwner = userId != null && userId.equals(recipe.getCreatedBy());
+        boolean isPublishedRoot = recipe.getParentId() == null && recipe.getStatus() == RecipeStatus.APPROVED;
+        if (isPublishedRoot || isOwner) {
+            return;
+        }
+        throw new ResourceNotFoundException("Tarif bulunamadı");
     }
 
     /**
@@ -607,8 +709,8 @@ public class RecipeService {
      */
     @Transactional
     public List<Recipe> findAllVersions(Long id, String userId, boolean isAdmin) {
-        Recipe recipe = recipeRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Tarif bulunamadı"));
+        Recipe recipe = findVisibleById(id, userId, isAdmin)
+            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı"));
         
         // Eğer parentId varsa o bir versiyondur, root tarifin id'sini bulmalıyız
         Long rootId = recipe.getParentId() != null ? recipe.getParentId() : recipe.getId();

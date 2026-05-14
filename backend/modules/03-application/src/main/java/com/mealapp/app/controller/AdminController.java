@@ -141,8 +141,8 @@ public class AdminController {
                         .build())
                 .collect(Collectors.toList());
 
-        // Admin olarak doğrudan güncelliyoruz (userId olarak null veya sistem admini verilebilir)
-        return recipeMapper.toResponse(recipeService.updateRecipe(id, updatedData, ingredients, "SYSTEM_ADMIN"));
+        // Admin olarak doğrudan güncelliyoruz.
+        return recipeMapper.toResponse(recipeService.updateRecipeAsAdmin(id, updatedData, ingredients));
     }
 
     @PostMapping("/inventory/setup-test-inventory")

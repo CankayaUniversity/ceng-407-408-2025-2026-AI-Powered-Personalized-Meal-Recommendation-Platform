@@ -344,6 +344,16 @@ export const getRecipeService = (api: AxiosInstance) => {
     },
 
     /**
+     * Kullanıcının tercih edilen çalışma kopyasını getirir.
+     * Kök tarif için aktif taslak/bekleyen/reddedilmiş revizyon varsa onu döner; yoksa kök tarifi döner.
+     * Düzenleme akışları bu endpoint'i kullanabilir.
+     */
+    getPreferredRecipe: async (id: number): Promise<Recipe> => {
+      const response = await api.get<Recipe>(`/v1/recipes/${id}/preferred`);
+      return response.data;
+    },
+
+    /**
      * Tarifin tüm versiyonlarını getirir.
      */
     getRecipeVersions: async (id: number): Promise<Recipe[]> => {

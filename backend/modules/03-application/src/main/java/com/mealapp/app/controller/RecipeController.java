@@ -4,6 +4,7 @@ import com.mealapp.app.model.dto.recipe.RecipeRequest;
 import com.mealapp.app.model.dto.recipe.RecipeResponse;
 import com.mealapp.app.model.mapper.recipe.RecipeMapper;
 import com.mealapp.domain.common.exception.MealAppDomainException;
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -60,22 +61,23 @@ public class RecipeController {
     @Transactional(readOnly = true)
     public RecipeResponse getRecipeById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         String userId = jwt != null ? jwt.getSubject() : null;
-        
-        // Önce aktif veya pasif fark etmeksizin tarifi bulalım
-        // (Soft-delete yapılmış bir tarif bildirimden açılmak istenmiş olabilir)
-        Recipe recipe = recipeService.findById(id)
-            .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
+        Recipe recipe = recipeService.findVisibleById(id, userId, isAdmin(jwt))
+            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + id));
+        RecipeResponse response = recipeMapper.toResponse(recipe, userId);
+        enrichImageUrl(response);
+        return response;
+    }
 
-        // Ana tarif açıldığında kullanıcının kendi en güncel yerel revizyonu varsa onu gösterelim.
-        if (userId != null && recipe.getParentId() == null) {
-            Optional<Recipe> latestUserRevision = recipeService.findLatestUserRevision(id, userId);
-            if (latestUserRevision.isPresent()) {
-                RecipeResponse response = recipeMapper.toResponse(latestUserRevision.get(), userId);
-                enrichImageUrl(response);
-                return response;
-            }
-        }
-
+    /**
+     * Kullanıcının tercih edilen çalışma kopyasını döner.
+     * Kök tarif için kullanıcının aktif taslak/bekleyen/reddedilmiş revizyonu varsa onu döner;
+     * yoksa kök tarifi döner. Düzenleme akışları bu endpoint'i kullanabilir.
+     */
+    @GetMapping("/{id}/preferred")
+    @Transactional(readOnly = true)
+    public RecipeResponse getPreferredRecipe(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        String userId = jwt != null ? jwt.getSubject() : null;
+        Recipe recipe = recipeService.findPreferred(id, userId, isAdmin(jwt));
         RecipeResponse response = recipeMapper.toResponse(recipe, userId);
         enrichImageUrl(response);
         return response;
@@ -84,10 +86,10 @@ public class RecipeController {
     @GetMapping("/{id}/versions")
     public List<RecipeResponse> getRecipeVersions(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         String userId = jwt.getSubject();
-        boolean isAdmin = jwt.getClaimAsStringList("roles") != null && jwt.getClaimAsStringList("roles").contains("ROLE_ADMIN");
+        boolean isAdmin = isAdmin(jwt);
         
         return recipeService.findAllVersions(id, userId, isAdmin).stream()
-            .map(recipeMapper::toResponse)
+            .map(recipe -> recipeMapper.toResponse(recipe, userId))
             .peek(this::enrichImageUrl)
             .collect(java.util.stream.Collectors.toList());
     }
@@ -203,7 +205,7 @@ public class RecipeController {
                 .collect(Collectors.toList());
         }
 
-        Recipe updated = recipeService.updateRecipe(id, recipeData, ingredients, jwt.getSubject());
+        Recipe updated = recipeService.updateRecipe(id, recipeData, ingredients, jwt.getSubject(), isAdmin(jwt));
         RecipeResponse response = recipeMapper.toResponse(updated, jwt.getSubject());
         enrichImageUrl(response);
         return response;
@@ -232,12 +234,13 @@ public class RecipeController {
                 file.getInputStream(),
                 file.getOriginalFilename(),
                 file.getContentType(),
-                jwt.getSubject()
+                jwt.getSubject(),
+                isAdmin(jwt)
         );
 
-        RecipeResponse response = recipeService.findById(id)
+        RecipeResponse response = recipeService.findVisibleById(id, jwt.getSubject(), isAdmin(jwt))
                 .map(r -> recipeMapper.toResponse(r, jwt.getSubject()))
-                .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + id));
 
         enrichImageUrl(response);
         return response;
@@ -247,5 +250,23 @@ public class RecipeController {
         if (response != null && response.getImageUrl() != null && !response.getImageUrl().startsWith("http")) {
             response.setImageUrl(recipeService.getRecipeImageUrl(response.getImageUrl()));
         }
+    }
+
+    private boolean isAdmin(Jwt jwt) {
+        if (jwt == null) {
+            return false;
+        }
+        List<String> roles = jwt.getClaimAsStringList("roles");
+        if (roles != null && (roles.contains("ROLE_ADMIN") || roles.contains("ADMIN") || roles.contains("admin"))) {
+            return true;
+        }
+        Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+        Object realmRoles = realmAccess != null ? realmAccess.get("roles") : null;
+        if (realmRoles instanceof List<?> list) {
+            return list.stream()
+                .map(String::valueOf)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equalsIgnoreCase("ADMIN"));
+        }
+        return false;
     }
 }

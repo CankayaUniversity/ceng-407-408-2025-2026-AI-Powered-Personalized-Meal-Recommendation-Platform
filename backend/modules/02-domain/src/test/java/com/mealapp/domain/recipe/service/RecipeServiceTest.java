@@ -1,6 +1,7 @@
 package com.mealapp.domain.recipe.service;
 
 import com.mealapp.domain.notification.service.NotificationService;
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.IngredientNutrition;
 import com.mealapp.domain.recipe.entity.Recipe;
@@ -79,6 +80,64 @@ class RecipeServiceTest {
         List<Recipe> result = recipeService.findAll();
         
         assertEquals(1, result.size());
+    }
+
+    @Test
+    void findVisibleById_allowsOwnerDraftRevision() {
+        Recipe revision = Recipe.builder()
+            .id(25L)
+            .parentId(10L)
+            .title("Owner Draft")
+            .createdBy("user1")
+            .status(RecipeStatus.DRAFT)
+            .totalCalories(10.0)
+            .build();
+
+        when(recipeRepository.findByIdWithIngredients(25L)).thenReturn(Optional.of(revision));
+
+        Optional<Recipe> result = recipeService.findVisibleById(25L, "user1", false);
+
+        assertTrue(result.isPresent());
+        assertEquals(25L, result.get().getId());
+    }
+
+    @Test
+    void findVisibleById_hidesOtherUsersDraftRevision() {
+        Recipe revision = Recipe.builder()
+            .id(25L)
+            .parentId(10L)
+            .title("Other Draft")
+            .createdBy("user2")
+            .status(RecipeStatus.DRAFT)
+            .totalCalories(10.0)
+            .build();
+
+        when(recipeRepository.findByIdWithIngredients(25L)).thenReturn(Optional.of(revision));
+
+        Optional<Recipe> result = recipeService.findVisibleById(25L, "user1", false);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void updateRecipe_rejectsOtherUsersPrivateRevision() {
+        Recipe revision = Recipe.builder()
+            .id(25L)
+            .parentId(10L)
+            .title("Other Draft")
+            .createdBy("user2")
+            .status(RecipeStatus.DRAFT)
+            .build();
+        Recipe updatedData = Recipe.builder()
+            .title("Hijack")
+            .status(RecipeStatus.DRAFT)
+            .build();
+
+        when(recipeRepository.findById(25L)).thenReturn(Optional.of(revision));
+
+        assertThrows(ResourceNotFoundException.class,
+            () -> recipeService.updateRecipe(25L, updatedData, null, "user1"));
+        verify(recipeRepository, never()).save(any(Recipe.class));
     }
 
     @Test
@@ -304,9 +363,9 @@ class RecipeServiceTest {
     void shouldFindAllVersions() {
         Long rootId = 1L;
         String userId = "user1";
-        Recipe root = Recipe.builder().id(rootId).build();
+        Recipe root = Recipe.builder().id(rootId).status(RecipeStatus.APPROVED).totalCalories(10.0).build();
         
-        when(recipeRepository.findById(rootId)).thenReturn(Optional.of(root));
+        when(recipeRepository.findByIdWithIngredients(rootId)).thenReturn(Optional.of(root));
         when(recipeRepository.findAllVersions(eq(rootId), eq(userId), anyBoolean())).thenReturn(List.of(root));
 
         List<Recipe> versions = recipeService.findAllVersions(rootId, userId, false);
