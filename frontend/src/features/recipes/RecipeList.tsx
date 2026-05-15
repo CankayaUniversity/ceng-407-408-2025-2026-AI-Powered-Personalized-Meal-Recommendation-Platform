@@ -199,6 +199,7 @@ const RecipeList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [refreshToken, setRefreshToken] = useState(0);
 
 
   // --- Modal States ---
@@ -211,6 +212,7 @@ const RecipeList: React.FC = () => {
   const size = 12;
   const debouncedSearch = useDebounce(searchTerm, 400);
   const lastQueryRef = useRef<string>('');
+  const hasRecipeModalOpenedRef = useRef(false);
 
   const handleToggleFavorite = async (recipe: RecipeFamilyRef, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -252,7 +254,7 @@ const RecipeList: React.FC = () => {
     const fetchData = async () => {
       const favoritesOnly = activeCategory === 'favorites';
       const categoryParam = !favoritesOnly && activeCategory !== 'all' ? activeCategory : undefined;
-      const queryKey = `${debouncedSearch ?? ''}|${categoryParam ?? ''}|${favoritesOnly}|${page}|${size}|${user?.id || 'anonymous'}`;
+      const queryKey = `${debouncedSearch ?? ''}|${categoryParam ?? ''}|${favoritesOnly}|${page}|${size}|${user?.id || 'anonymous'}|${refreshToken}`;
       if (lastQueryRef.current === queryKey) return;
 
       lastQueryRef.current = queryKey;
@@ -281,15 +283,19 @@ const RecipeList: React.FC = () => {
       mounted = false;
       abortController.abort();
     };
-  }, [debouncedSearch, page, activeCategory, recipeService, showToast, user?.id]);
+  }, [debouncedSearch, page, activeCategory, refreshToken, recipeService, showToast, user?.id]);
 
   useEffect(() => {
-    if (!isRecipeModalOpen && lastQueryRef.current) {
-        // Force refresh if modal closed (might have added/edited)
-        lastQueryRef.current = '';
-        // Bu useEffect bağımlılıkları değişince zaten yukarıdaki fetchData'yı tetikleyecek queryKey değiştiği için
-        // ama explicit çağırmak yerine lastQueryRef'i temizlemek yeterli.
-        setPage(0); // Veya mevcut sayfayı tetiklemek için state güncellemesi
+    if (isRecipeModalOpen) {
+      hasRecipeModalOpenedRef.current = true;
+      return;
+    }
+
+    if (hasRecipeModalOpenedRef.current) {
+      hasRecipeModalOpenedRef.current = false;
+      lastQueryRef.current = '';
+      setPage(0);
+      setRefreshToken(token => token + 1);
     }
   }, [isRecipeModalOpen]);
 
@@ -686,8 +692,9 @@ const RecipeList: React.FC = () => {
                           {user && (
                             <button 
                               onClick={() => {
+                                const recipeToEdit = recipeDetail ?? selectedRecipe;
                                 handleCloseModal();
-                                openRecipeModal(selectedRecipe);
+                                openRecipeModal({ ...recipeToEdit, editExactVersion: true });
                               }}
                               className="p-4 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl hover:bg-terracotta transition-all hover:scale-105"
                               title={t('common.edit')}

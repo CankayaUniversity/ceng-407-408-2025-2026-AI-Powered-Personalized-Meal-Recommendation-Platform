@@ -21,7 +21,7 @@ public class RecipeFavoriteServiceImpl implements RecipeFavoriteService {
     @Transactional
     public boolean toggleFavorite(String userId, Long recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
-            .orElseThrow(() -> new RuntimeException("Recipe not found: " + recipeId));
+            .orElseThrow(() -> new ResourceNotFoundException("Recipe not found: " + recipeId));
         if (!canFavorite(recipe, userId)) {
             throw new ResourceNotFoundException("Recipe not found: " + recipeId);
         }
@@ -34,7 +34,7 @@ public class RecipeFavoriteServiceImpl implements RecipeFavoriteService {
             Recipe rootRecipe = recipe.getParentId() == null
                 ? recipe
                 : recipeRepository.findById(rootId)
-                    .orElseThrow(() -> new RuntimeException("Recipe not found: " + rootId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Recipe not found: " + rootId));
             
             RecipeFavorite favorite = RecipeFavorite.builder()
                 .userId(userId)

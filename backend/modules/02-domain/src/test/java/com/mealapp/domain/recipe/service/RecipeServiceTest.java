@@ -286,6 +286,115 @@ class RecipeServiceTest {
     }
 
     @Test
+    void sendToApproval_rootIdUsesUsersDraftRevision() {
+        Long rootId = 1L;
+        String userId = "user123";
+        Recipe approvedRoot = Recipe.builder()
+            .id(rootId)
+            .title("Approved Title")
+            .status(RecipeStatus.APPROVED)
+            .createdBy("anotherUser")
+            .build();
+        approvedRoot.setActive(true);
+
+        Recipe draftRevision = Recipe.builder()
+            .id(2L)
+            .parentId(rootId)
+            .title("Draft Update")
+            .status(RecipeStatus.DRAFT)
+            .createdBy(userId)
+            .build();
+        draftRevision.setActive(true);
+
+        when(recipeRepository.findById(rootId)).thenReturn(Optional.of(approvedRoot));
+        when(recipeRepository.findUserRevisionsWithIngredients(eq(rootId), eq(userId), anyList(), any(Pageable.class)))
+            .thenReturn(List.of(draftRevision));
+        when(recipeRepository.findByParentIdAndCreatedByAndStatusInAndActiveTrue(eq(rootId), eq(userId), anyList()))
+            .thenReturn(List.of(draftRevision));
+        when(recipeRepository.findByParentIdAndStatusAndActiveTrue(rootId, RecipeStatus.PENDING)).thenReturn(List.of());
+        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        recipeService.sendToApproval(rootId, userId);
+
+        assertEquals(RecipeStatus.PENDING, draftRevision.getStatus());
+        verify(recipeRepository).save(draftRevision);
+        verify(recipeRepository, never()).save(approvedRoot);
+        verify(recipeRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void updateRecipe_draftRevisionCanBeSubmittedForApprovalWithoutCreatingAnotherRevision() {
+        Long rootId = 1L;
+        Long draftRevisionId = 2L;
+        String userId = "user123";
+        IngredientNutrition nutrition = IngredientNutrition.builder()
+            .caloriesPer100g(20.0)
+            .proteinPer100g(1.0)
+            .carbsPer100g(4.0)
+            .fatPer100g(0.5)
+            .build();
+        Ingredient tomato = Ingredient.builder()
+            .id(10L)
+            .name("Tomato")
+            .nutrition(nutrition)
+            .build();
+        RecipeIngredient recipeIngredient = RecipeIngredient.builder()
+            .ingredient(tomato)
+            .amount(100.0)
+            .unit("GRAM")
+            .grams(100.0)
+            .build();
+        Recipe draftRevision = Recipe.builder()
+            .id(draftRevisionId)
+            .parentId(rootId)
+            .title("Draft Update")
+            .status(RecipeStatus.DRAFT)
+            .createdBy(userId)
+            .recipeIngredients(List.of(recipeIngredient))
+            .build();
+        draftRevision.setActive(true);
+        Recipe olderDraftRevision = Recipe.builder()
+            .id(3L)
+            .parentId(rootId)
+            .title("Older Draft Update")
+            .status(RecipeStatus.DRAFT)
+            .createdBy(userId)
+            .build();
+        olderDraftRevision.setActive(true);
+        Recipe pendingRevisionFromAnotherUser = Recipe.builder()
+            .id(4L)
+            .parentId(rootId)
+            .title("Other Pending Update")
+            .status(RecipeStatus.PENDING)
+            .createdBy("anotherUser")
+            .build();
+        pendingRevisionFromAnotherUser.setActive(true);
+
+        Recipe updatedData = Recipe.builder()
+            .title("Ready for Approval")
+            .status(RecipeStatus.PENDING)
+            .build();
+
+        when(recipeRepository.findById(draftRevisionId)).thenReturn(Optional.of(draftRevision));
+        when(recipeRepository.findByParentIdAndCreatedByAndStatusInAndActiveTrue(eq(rootId), eq(userId), anyList()))
+            .thenReturn(List.of(draftRevision, olderDraftRevision));
+        when(recipeRepository.findByParentIdAndStatusAndActiveTrue(rootId, RecipeStatus.PENDING))
+            .thenReturn(List.of(pendingRevisionFromAnotherUser));
+        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Recipe result = recipeService.updateRecipe(draftRevisionId, updatedData, null, userId);
+
+        assertEquals(draftRevisionId, result.getId());
+        assertEquals(rootId, result.getParentId());
+        assertEquals(RecipeStatus.PENDING, result.getStatus());
+        assertEquals("Ready for Approval", result.getTitle());
+        assertEquals(RecipeStatus.SUPERSEDED, olderDraftRevision.getStatus());
+        assertEquals(RecipeStatus.SUPERSEDED, pendingRevisionFromAnotherUser.getStatus());
+        verify(recipeRepository, never()).findMaxVersionNumber(anyLong());
+        verify(recipeRepository, times(2)).saveAll(anyList());
+    }
+
+    @Test
     void shouldNotThrowExceptionWhenIngredientNotFoundForPendingRecipe() {
         Long recipeId = 1L;
         String userId = "user123";

@@ -112,7 +112,11 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
            "ORDER BY r.averageRating DESC, r.versionNumber DESC, r.createdAt DESC, r.id DESC")
     List<Recipe> findTopRecipesSafeForUser(@Param("userId") String userId, @Param("dietType") String dietType, @Param("allergies") List<String> allergies, org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT r FROM Recipe r WHERE r.active = true AND " +
+    @Query("SELECT DISTINCT r FROM Recipe r " +
+           "LEFT JOIN FETCH r.recipeIngredients ri " +
+           "LEFT JOIN FETCH ri.ingredient i " +
+           "LEFT JOIN FETCH i.nutrition " +
+           "WHERE r.active = true AND " +
            "(r.id = :rootId OR r.parentId = :rootId) AND " +
            "(r.active = true OR r.id = :rootId) AND " +
            "(r.status = 'APPROVED' OR r.createdBy = :userId OR :isAdmin = true) " +
@@ -128,6 +132,20 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
             Long parentId,
             String createdBy,
             List<RecipeStatus> statuses
+    );
+
+    @Query("SELECT DISTINCT r FROM Recipe r " +
+           "LEFT JOIN FETCH r.recipeIngredients ri " +
+           "LEFT JOIN FETCH ri.ingredient i " +
+           "LEFT JOIN FETCH i.nutrition " +
+           "WHERE r.parentId = :parentId AND r.createdBy = :createdBy " +
+           "AND r.status IN :statuses AND r.active = true " +
+           "ORDER BY r.versionNumber DESC, r.createdAt DESC, r.id DESC")
+    List<Recipe> findUserRevisionsWithIngredients(
+            @Param("parentId") Long parentId,
+            @Param("createdBy") String createdBy,
+            @Param("statuses") List<RecipeStatus> statuses,
+            Pageable pageable
     );
 
     List<Recipe> findByParentIdAndCreatedByAndStatusInAndActiveTrue(
@@ -164,7 +182,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
                    "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
                    "EXISTS (SELECT rf FROM RecipeFavorite rf WHERE rf.active = true AND rf.userId = :userId AND " +
                    "  ((r.parentId IS NULL AND (rf.recipe.id = r.id OR rf.recipe.parentId = r.id)) OR " +
-                   "   (r.parentId IS NOT NULL AND (rf.recipe.id = r.parentId OR rf.recipe.parentId = r.parentId))))",
+                   "   (r.parentId IS NOT NULL AND rf.recipe.id = r.parentId)))",
            countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
                         "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
                         "  AND NOT EXISTS (SELECT rev.id FROM Recipe rev WHERE rev.parentId = r.id AND rev.createdBy = :userId AND rev.status <> 'SUPERSEDED' AND rev.active = true)) OR " +
@@ -173,7 +191,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
                         "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
                         "EXISTS (SELECT rf FROM RecipeFavorite rf WHERE rf.active = true AND rf.userId = :userId AND " +
                         "  ((r.parentId IS NULL AND (rf.recipe.id = r.id OR rf.recipe.parentId = r.id)) OR " +
-                        "   (r.parentId IS NOT NULL AND (rf.recipe.id = r.parentId OR rf.recipe.parentId = r.parentId))))")
+                        "   (r.parentId IS NOT NULL AND rf.recipe.id = r.parentId)))")
     Page<Recipe> findAllFavoritesByUserId(@Param("userId") String userId, Pageable pageable);
 
     @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
@@ -203,7 +221,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
                    "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
                    "EXISTS (SELECT rf FROM RecipeFavorite rf WHERE rf.active = true AND rf.userId = :userId AND " +
                    "  ((r.parentId IS NULL AND (rf.recipe.id = r.id OR rf.recipe.parentId = r.id)) OR " +
-                   "   (r.parentId IS NOT NULL AND (rf.recipe.id = r.parentId OR rf.recipe.parentId = r.parentId))))",
+                   "   (r.parentId IS NOT NULL AND rf.recipe.id = r.parentId)))",
            countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
                         "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
                         "  AND NOT EXISTS (SELECT rev.id FROM Recipe rev WHERE rev.parentId = r.id AND rev.createdBy = :userId AND rev.status <> 'SUPERSEDED' AND rev.active = true)) OR " +
@@ -213,6 +231,6 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
                         "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
                         "EXISTS (SELECT rf FROM RecipeFavorite rf WHERE rf.active = true AND rf.userId = :userId AND " +
                         "  ((r.parentId IS NULL AND (rf.recipe.id = r.id OR rf.recipe.parentId = r.id)) OR " +
-                        "   (r.parentId IS NOT NULL AND (rf.recipe.id = r.parentId OR rf.recipe.parentId = r.parentId))))")
+                        "   (r.parentId IS NOT NULL AND rf.recipe.id = r.parentId)))")
     Page<Recipe> findFavoritesByTitleAndUserId(@Param("title") String title, @Param("userId") String userId, Pageable pageable);
 }

@@ -1,6 +1,7 @@
 package com.mealapp.domain.recipe.service;
 
 import com.mealapp.domain.common.storage.FileStorageService;
+import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.notification.entity.Notification;
 import com.mealapp.domain.notification.service.NotificationService;
@@ -15,6 +16,7 @@ import com.mealapp.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,13 +82,17 @@ public class RecipeService {
     @Transactional
     public Recipe updateRecipe(Long id, Recipe updatedData, List<RecipeIngredient> ingredients, String userId, boolean isAdmin) {
         Recipe existing = recipeRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + id));
         assertCanEdit(existing, userId, isAdmin);
 
         RecipeStatus requestedStatus = updatedData.getStatus() != null ? updatedData.getStatus() : RecipeStatus.PENDING;
+        RecipeStatus currentStatus = existing.getStatus();
         boolean shouldCreateNewRevision = existing.getStatus() == RecipeStatus.APPROVED
             || (existing.getParentId() != null && requestedStatus == RecipeStatus.PENDING
-                && (existing.getStatus() == RecipeStatus.PENDING || existing.getStatus() == RecipeStatus.REJECTED || existing.getStatus() == RecipeStatus.SUPERSEDED));
+                && (existing.getStatus() == RecipeStatus.PENDING || existing.getStatus() == RecipeStatus.REJECTED));
+        boolean shouldSupersedeFamilyBeforeSubmit = existing.getParentId() != null
+            && currentStatus == RecipeStatus.DRAFT
+            && requestedStatus == RecipeStatus.PENDING;
 
         if (shouldCreateNewRevision) {
             Recipe savedRevision = createRevision(existing, updatedData, ingredients, userId, requestedStatus);
@@ -136,6 +142,14 @@ public class RecipeService {
             setupIngredients(existing, ingredients);
         }
 
+        if (shouldSupersedeFamilyBeforeSubmit) {
+            // Mevcut taslak revizyon ilk kez onaya gönderilirken yeni kayıt açmıyoruz.
+            // Bu yüzden createRevision içinde yapılan aile temizliğini burada da uygulayıp,
+            // aynı kök tarif altında birden fazla aktif taslak/bekleyen revizyon kalmasını engelliyoruz.
+            supersedePriorUserRevisions(existing.getParentId(), userId, existing.getId());
+            supersedePendingRevisions(existing.getParentId(), existing.getId());
+        }
+
         calculateAndSetNutrition(existing);
         Recipe saved = recipeRepository.save(existing);
         
@@ -156,21 +170,41 @@ public class RecipeService {
      */
     @Transactional
     public void sendToApproval(Long recipeId, String userId) {
-        Recipe recipe = recipeRepository.findById(recipeId)
-            .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + recipeId));
-        
-        if (!recipe.getCreatedBy().equals(userId)) {
-            throw new RuntimeException("Bu işlemi yapmak için yetkiniz yok.");
+        Recipe requestedRecipe = recipeRepository.findById(recipeId)
+            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
+        Recipe recipe = resolveApprovalCandidate(requestedRecipe, userId);
+
+        if (userId == null || !userId.equals(recipe.getCreatedBy())) {
+            throw new MealAppDomainException("Bu işlemi yapmak için yetkiniz yok.");
         }
 
         if (recipe.getStatus() == RecipeStatus.DRAFT || recipe.getStatus() == RecipeStatus.REJECTED) {
             if (recipe.getParentId() != null) {
-                supersedePendingRevisions(recipe.getParentId());
+                supersedePriorUserRevisions(recipe.getParentId(), userId, recipe.getId());
+                supersedePendingRevisions(recipe.getParentId(), recipe.getId());
             }
             recipe.setStatus(RecipeStatus.PENDING);
             recipeRepository.save(recipe);
             notifyAdminsForApproval(recipe);
+            return;
         }
+
+        if (recipe.getStatus() == RecipeStatus.PENDING) {
+            throw new MealAppDomainException("Tarif zaten onay bekliyor.");
+        }
+
+        throw new MealAppDomainException("Sadece taslak veya reddedilmiş tarifler onaya gönderilebilir.");
+    }
+
+    private Recipe resolveApprovalCandidate(Recipe requestedRecipe, String userId) {
+        if (requestedRecipe.getParentId() == null && requestedRecipe.getStatus() == RecipeStatus.APPROVED) {
+            return findLatestUserRevision(requestedRecipe.getId(), userId)
+                .filter(revision -> revision.getStatus() == RecipeStatus.DRAFT
+                    || revision.getStatus() == RecipeStatus.REJECTED
+                    || revision.getStatus() == RecipeStatus.PENDING)
+                .orElse(requestedRecipe);
+        }
+        return requestedRecipe;
     }
 
     private void notifyAdminsForApproval(Recipe recipe) {
@@ -250,22 +284,40 @@ public class RecipeService {
     }
 
     private void supersedePriorUserRevisions(Long rootId, String userId) {
+        supersedePriorUserRevisions(rootId, userId, null);
+    }
+
+    private void supersedePriorUserRevisions(Long rootId, String userId, Long excludedRecipeId) {
         if (userId == null || userId.isBlank()) return;
         List<Recipe> prior = recipeRepository.findByParentIdAndCreatedByAndStatusInAndActiveTrue(
             rootId, userId, List.of(RecipeStatus.DRAFT, RecipeStatus.PENDING, RecipeStatus.REJECTED)
         );
         if (prior == null || prior.isEmpty()) return;
-        prior.forEach(r -> r.setStatus(RecipeStatus.SUPERSEDED));
-        recipeRepository.saveAll(prior);
+        List<Recipe> revisionsToSupersede = prior.stream()
+            .filter(r -> excludedRecipeId == null || !excludedRecipeId.equals(r.getId()))
+            .toList();
+        if (revisionsToSupersede.isEmpty()) return;
+        revisionsToSupersede.forEach(r -> r.setStatus(RecipeStatus.SUPERSEDED));
+        recipeRepository.saveAll(revisionsToSupersede);
     }
 
     private void supersedePendingRevisions(Long rootId) {
+        supersedePendingRevisions(rootId, null);
+    }
+
+    private void supersedePendingRevisions(Long rootId, Long excludedRecipeId) {
         List<Recipe> pendingRevisions = recipeRepository.findByParentIdAndStatusAndActiveTrue(rootId, RecipeStatus.PENDING);
         if (pendingRevisions == null || pendingRevisions.isEmpty()) {
             return;
         }
-        pendingRevisions.forEach(revision -> revision.setStatus(RecipeStatus.SUPERSEDED));
-        recipeRepository.saveAll(pendingRevisions);
+        List<Recipe> revisionsToSupersede = pendingRevisions.stream()
+            .filter(revision -> excludedRecipeId == null || !excludedRecipeId.equals(revision.getId()))
+            .toList();
+        if (revisionsToSupersede.isEmpty()) {
+            return;
+        }
+        revisionsToSupersede.forEach(revision -> revision.setStatus(RecipeStatus.SUPERSEDED));
+        recipeRepository.saveAll(revisionsToSupersede);
     }
 
     private int nextVersionNumber(Long rootId) {
@@ -292,7 +344,7 @@ public class RecipeService {
                     .orElse(null); // Taslaklar için esnek olalım
                 
                 if (ingredient == null && recipe.getStatus() == RecipeStatus.APPROVED) {
-                    throw new RuntimeException("Onaylı tarif için geçerli malzeme gerekli (ID): " + ri.getIngredient().getId());
+                    throw new MealAppDomainException("Onaylı tarif için geçerli malzeme gerekli (ID): " + ri.getIngredient().getId());
                 }
             } else if (ri.getIngredient() != null && ri.getIngredient().getName() != null) {
                 // İsim verilmişse isim üzerinden bul
@@ -301,7 +353,7 @@ public class RecipeService {
                     .orElse(null);
                 
                 if (ingredient == null && recipe.getStatus() == RecipeStatus.APPROVED) {
-                    throw new RuntimeException("Onaylı tarif için geçerli malzeme gerekli (İsim): " + ingredientName);
+                    throw new MealAppDomainException("Onaylı tarif için geçerli malzeme gerekli (İsim): " + ingredientName);
                 }
             } else {
                 ingredient = null;
@@ -314,7 +366,7 @@ public class RecipeService {
                  // Eğer malzeme yoksa, bu ingredient kaydını DB'ye eklemeyebiliriz veya hata verebiliriz.
                  // Mevcut tabloda ingredient_id nullable=false olduğu için bir dummy veya hata şart.
                  // Şimdilik hata vermeye devam edelim ama sadece APPROVED için.
-                 throw new RuntimeException("Onaylı tarifler için geçerli malzeme veritabanında kayıtlı olmalıdır.");
+                 throw new MealAppDomainException("Onaylı tarifler için geçerli malzeme veritabanında kayıtlı olmalıdır.");
             }
             
             // PENDING (Onay Bekleyen) tariflerde malzeme yoksa, isminden bulmaya çalışıyoruz. 
@@ -366,15 +418,15 @@ public class RecipeService {
     @Transactional
     public void approveRecipe(Long recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
-            .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + recipeId));
+            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
 
         if (recipe.getStatus() != RecipeStatus.PENDING) {
-            throw new RuntimeException("Sadece onay bekleyen tarifler onaylanabilir.");
+            throw new MealAppDomainException("Sadece onay bekleyen tarifler onaylanabilir.");
         }
         
         if (recipe.getParentId() != null) {
             Recipe original = recipeRepository.findById(recipe.getParentId())
-                .orElseThrow(() -> new RuntimeException("Orijinal tarif bulunamadı: " + recipe.getParentId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Orijinal tarif bulunamadı: " + recipe.getParentId()));
             
             // Verileri kopyala
             original.setTitle(recipe.getTitle());
@@ -441,8 +493,8 @@ public class RecipeService {
     @Transactional
     public void rejectRecipe(Long recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
-            .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + recipeId));
-        
+            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
+
         if (recipe.getParentId() != null) {
             // Eğer bir güncellemeyi reddediyorsak, sadece bu güncelleme kaydını silebiliriz
             // veya statüsünü REJECTED yapabiliriz. Kullanıcı görsün diye REJECTED yapalım.
@@ -472,7 +524,7 @@ public class RecipeService {
 
     public String uploadRecipeImage(Long recipeId, InputStream inputStream, String originalFilename, String contentType, String userId, boolean isAdmin) {
         Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new RuntimeException("Tarif bulunamadı: " + recipeId));
+                .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
         assertCanEdit(recipe, userId, isAdmin);
 
         // Dosya adı formatı: recipes/{recipeId}/image_{timestamp}.{ext}
@@ -657,11 +709,12 @@ public class RecipeService {
         if (userId == null || userId.isBlank()) {
             return Optional.empty();
         }
-        return recipeRepository.findFirstByParentIdAndCreatedByAndStatusInAndActiveTrueOrderByVersionNumberDescCreatedAtDescIdDesc(
+        return recipeRepository.findUserRevisionsWithIngredients(
             parentId,
             userId,
-            List.of(RecipeStatus.PENDING, RecipeStatus.DRAFT, RecipeStatus.REJECTED)
-        );
+            List.of(RecipeStatus.PENDING, RecipeStatus.DRAFT, RecipeStatus.REJECTED),
+            PageRequest.of(0, 1)
+        ).stream().findFirst();
     }
 
     private Recipe ensureNutritionCalculated(Recipe recipe) {

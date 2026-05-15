@@ -256,8 +256,10 @@ export const getRecipeService = (api: AxiosInstance) => {
       const { title, category, favoritesOnly, page = 0, size = 12, signal } = params || {};
       const key = `GET:/v1/recipes|${title ?? ''}|${category ?? ''}|${favoritesOnly ?? false}|${page}|${size}`;
 
-      // Return existing in-flight promise if present (dedupe)
-      const existing = inFlight.get(key);
+      // Abortable list requests should not share promises: one canceled caller can
+      // otherwise poison a same-key refresh that still needs to load the page.
+      const shouldDedupe = !signal;
+      const existing = shouldDedupe ? inFlight.get(key) : undefined;
       if (existing) {
         return await existing;
       }
@@ -300,12 +302,22 @@ export const getRecipeService = (api: AxiosInstance) => {
 
       return mapped; })();
 
-      inFlight.set(key, promise);
-      const result = await promise;
-      inFlight.delete(key);
-      return result;
+      if (shouldDedupe) {
+        inFlight.set(key, promise);
+      }
+
+      try {
+        return await promise;
+      } finally {
+        if (shouldDedupe) {
+          inFlight.delete(key);
+        }
+      }
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+          throw error;
+        }
         if (!error.response) {
           throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
         }

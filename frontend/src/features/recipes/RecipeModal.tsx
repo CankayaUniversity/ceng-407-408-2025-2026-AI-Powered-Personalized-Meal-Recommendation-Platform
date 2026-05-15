@@ -13,6 +13,7 @@ type EditableRecipe = Partial<Recipe> & {
     id?: number;
     preparationTime?: number | null;
     status?: string | null;
+    editExactVersion?: boolean;
 };
 
 type RecipeIngredientFormItem = {
@@ -92,10 +93,10 @@ const RecipeModal: React.FC = () => {
 
                 try {
                     setIsLoadingDetails(true);
-                    // Root recipes: load user's active working copy if one exists.
-                    const fullRecipe = recipeToEdit.parentId == null
-                        ? await recipeService.getPreferredRecipe(recipeToEdit.id)
-                        : await recipeService.getRecipeById(recipeToEdit.id);
+                    const shouldLoadExactVersion = Boolean((recipeToEdit as EditableRecipe).editExactVersion);
+                    const fullRecipe = shouldLoadExactVersion || recipeToEdit.parentId != null
+                        ? await recipeService.getRecipeById(recipeToEdit.id)
+                        : await recipeService.getPreferredRecipe(recipeToEdit.id);
                     if (!cancelled) {
                         applyRecipeToForm(fullRecipe);
                     }

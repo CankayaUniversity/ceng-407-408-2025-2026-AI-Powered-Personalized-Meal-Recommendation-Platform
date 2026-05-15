@@ -375,6 +375,62 @@ class RecipeRepositoryTest {
     }
 
     @Test
+    void findAllVersions_fetchesIngredientsForVersionResponses() {
+        Ingredient tomato = em.persist(Ingredient.builder()
+                .name("Version Tomato")
+                .category(Ingredient.Category.VEGETABLE)
+                .build());
+        recipeIngredient(approvedMain, tomato);
+        recipeIngredient(user1PendingRevision, tomato);
+        em.flush();
+        em.clear();
+
+        List<Recipe> versions = recipeRepository.findAllVersions(approvedMain.getId(), USER1, false);
+
+        Recipe rootVersion = versions.stream()
+                .filter(recipe -> recipe.getId().equals(approvedMain.getId()))
+                .findFirst()
+                .orElseThrow();
+        var persistenceUnitUtil = em.getEntityManager()
+                .getEntityManagerFactory()
+                .getPersistenceUnitUtil();
+
+        assertThat(persistenceUnitUtil.isLoaded(rootVersion, "recipeIngredients")).isTrue();
+        assertThat(rootVersion.getRecipeIngredients()).hasSize(1);
+        assertThat(rootVersion.getRecipeIngredients().get(0).getIngredient().getName())
+                .isEqualTo("Version Tomato");
+    }
+
+    @Test
+    void findUserRevisionsWithIngredients_fetchesPreferredDraftIngredients() {
+        Ingredient tomato = em.persist(Ingredient.builder()
+                .name("Preferred Draft Tomato")
+                .category(Ingredient.Category.VEGETABLE)
+                .build());
+        recipeIngredient(user1PendingRevision, tomato);
+        em.flush();
+        em.clear();
+
+        List<Recipe> revisions = recipeRepository.findUserRevisionsWithIngredients(
+                approvedMain.getId(),
+                USER1,
+                List.of(RecipeStatus.PENDING, RecipeStatus.DRAFT, RecipeStatus.REJECTED),
+                PageRequest.of(0, 1)
+        );
+
+        assertThat(revisions).hasSize(1);
+        Recipe revision = revisions.get(0);
+        var persistenceUnitUtil = em.getEntityManager()
+                .getEntityManagerFactory()
+                .getPersistenceUnitUtil();
+
+        assertThat(persistenceUnitUtil.isLoaded(revision, "recipeIngredients")).isTrue();
+        assertThat(revision.getRecipeIngredients()).hasSize(1);
+        assertThat(revision.getRecipeIngredients().get(0).getIngredient().getName())
+                .isEqualTo("Preferred Draft Tomato");
+    }
+
+    @Test
     void findByTitleContainingIgnoreCase_dedupExcludesRootWhenUserHasRevision() {
         // "pizza" matches approvedMain AND user1PendingRevision; user1 should see only revision
         Page<Recipe> result = recipeRepository.findByTitleContainingIgnoreCase("pizza", USER1, PAGE);

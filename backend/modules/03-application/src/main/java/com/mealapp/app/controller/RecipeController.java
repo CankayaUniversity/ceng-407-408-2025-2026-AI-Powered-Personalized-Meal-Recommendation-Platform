@@ -58,7 +58,6 @@ public class RecipeController {
     }
 
     @GetMapping("/{id}")
-    @Transactional(readOnly = true)
     public RecipeResponse getRecipeById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         String userId = jwt != null ? jwt.getSubject() : null;
         Recipe recipe = recipeService.findVisibleById(id, userId, isAdmin(jwt))
@@ -74,7 +73,6 @@ public class RecipeController {
      * yoksa kök tarifi döner. Düzenleme akışları bu endpoint'i kullanabilir.
      */
     @GetMapping("/{id}/preferred")
-    @Transactional(readOnly = true)
     public RecipeResponse getPreferredRecipe(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         String userId = jwt != null ? jwt.getSubject() : null;
         Recipe recipe = recipeService.findPreferred(id, userId, isAdmin(jwt));

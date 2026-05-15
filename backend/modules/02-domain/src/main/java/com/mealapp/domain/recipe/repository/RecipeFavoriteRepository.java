@@ -20,7 +20,7 @@ public interface RecipeFavoriteRepository extends JpaRepository<RecipeFavorite, 
     boolean existsByUserIdAndRecipeFamily(@Param("userId") String userId, @Param("rootId") Long rootId);
 
     @Modifying
-    @Query("DELETE FROM RecipeFavorite rf WHERE rf.userId = :userId AND " +
+    @Query("DELETE FROM RecipeFavorite rf WHERE rf.active = true AND rf.userId = :userId AND " +
            "(rf.recipe.id = :rootId OR rf.recipe.parentId = :rootId)")
     void deleteByUserIdAndRecipeFamily(@Param("userId") String userId, @Param("rootId") Long rootId);
 }
