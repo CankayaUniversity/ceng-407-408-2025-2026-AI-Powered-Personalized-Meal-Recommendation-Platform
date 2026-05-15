@@ -5,6 +5,7 @@ import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeRating;
 import com.mealapp.domain.recipe.repository.RecipeFavoriteRepository;
 import com.mealapp.domain.recipe.repository.RecipeRatingRepository;
+import com.mealapp.domain.recipe.service.RecipeNutritionCalculator;
 import com.mealapp.domain.recipe.service.UnitConverterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -47,6 +48,7 @@ public class RecipeMapper {
             .title(recipe.getTitle())
             .category(recipe.getCategory())
             .calories(recipe.getTotalCalories())
+            .kcalPerServing(RecipeNutritionCalculator.kcalPerServing(recipe))
             .protein(recipe.getTotalProtein())
             .carbs(recipe.getTotalCarbs())
             .fat(recipe.getTotalFat())

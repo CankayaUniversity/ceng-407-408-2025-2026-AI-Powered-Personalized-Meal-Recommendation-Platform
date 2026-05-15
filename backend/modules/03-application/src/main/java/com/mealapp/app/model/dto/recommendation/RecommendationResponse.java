@@ -24,6 +24,7 @@ public class RecommendationResponse {
         private List<String> matchedIngredients;
         private List<String> missingIngredients;
         private Double calories;
+        private Double kcalPerServing;
         private Double protein;
         private Double carbs;
         private Double fat;

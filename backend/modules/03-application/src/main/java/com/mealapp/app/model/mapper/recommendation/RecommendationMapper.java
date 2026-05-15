@@ -4,6 +4,7 @@ import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
 import com.mealapp.domain.recommendation.entity.Recommendation;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
+import com.mealapp.domain.recipe.service.RecipeNutritionCalculator;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
@@ -50,6 +51,7 @@ public class RecommendationMapper {
                             .filter(name -> !inventoryKeys.contains(normalizeKey(name)))
                             .toList());
                     dto.setCalories(recipe.getTotalCalories());
+                    dto.setKcalPerServing(RecipeNutritionCalculator.kcalPerServing(recipe));
                     dto.setProtein(recipe.getTotalProtein());
                     dto.setCarbs(recipe.getTotalCarbs());
                     dto.setFat(recipe.getTotalFat());

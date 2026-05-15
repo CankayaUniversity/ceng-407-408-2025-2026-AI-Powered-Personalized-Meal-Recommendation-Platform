@@ -129,6 +129,7 @@ export interface RecipeListItem {
   parentId?: number | null;
   versionNumber?: number | null;
   isFavorite?: boolean;
+  kcalPerServing?: number | null;
 }
 
 export interface Recipe extends Omit<RecipeListItem, 'difficulty'> {
@@ -140,6 +141,7 @@ export interface Recipe extends Omit<RecipeListItem, 'difficulty'> {
   ratings?: RecipeRating[];
   dietType?: DietType | null;
   calories?: number | null;
+  kcalPerServing?: number | null;
   protein?: number | null;
   carbs?: number | null;
   fat?: number | null;
@@ -259,6 +261,7 @@ export interface RecommendedRecipe {
   userRating?: number | null;
   userComment?: string | null;
   calories?: number | null;
+  kcalPerServing?: number | null;
   protein?: number | null;
   carbs?: number | null;
   fat?: number | null;

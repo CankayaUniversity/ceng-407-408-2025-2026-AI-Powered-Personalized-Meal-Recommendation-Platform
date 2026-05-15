@@ -25,6 +25,7 @@ type RecipeListItemDto = {
   title: string;
   category?: string;
   calories?: number;
+  kcalPerServing?: number;
   protein?: number;
   carbs?: number;
   fat?: number;
@@ -44,6 +45,7 @@ type RecipeListItemDto = {
 
 type RecipeDto = Omit<RecipeListItemDto, 'difficulty'> & {
   totalCalories?: number | null;
+  kcalPerServing?: number | null;
   totalProtein?: number | null;
   totalCarbs?: number | null;
   totalFat?: number | null;

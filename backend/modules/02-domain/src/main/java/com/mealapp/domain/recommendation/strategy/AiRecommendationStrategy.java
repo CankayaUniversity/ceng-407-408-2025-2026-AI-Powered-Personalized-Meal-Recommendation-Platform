@@ -6,6 +6,7 @@ import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
+import com.mealapp.domain.recipe.service.RecipeNutritionCalculator;
 import com.mealapp.domain.recipe.service.RecipeService;
 import com.mealapp.domain.recommendation.service.IngredientMatchService;
 import com.mealapp.domain.recommendation.service.RecipeCompatibilityService;
@@ -65,7 +66,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
 
         List<String> dislikedIngredients = normalizeValues(user.getDislikedIngredients());
         String normalizedCravings = normalizeValue(cravings);
-        List<Recipe> topRecipes = getTopRecipes(safeRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, dailySummary, history);
+        List<Recipe> topRecipes = getTopRecipes(safeRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, history);
 
         Recommendation recommendation = Recommendation.builder()
                 .user(user)
@@ -79,7 +80,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
             return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, recommendation);
         }
 
-        String recipesData = formatRecipesData(topRecipes, currentInventory, dislikedIngredients, normalizedCravings);
+        String recipesData = formatRecipesData(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user);
         String finalPrompt = generateFinalPrompt(user, currentInventory, dailySummary, recipesData, normalizedCravings);
 
         try {
@@ -162,14 +163,14 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 .toList();
     }
 
-    private List<Recipe> getTopRecipes(List<Recipe> safeRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user, DailyConsumptionService.DailyNutritionSummary dailySummary, List<RecipeUsageHistory> history) {
+    private List<Recipe> getTopRecipes(List<Recipe> safeRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user, List<RecipeUsageHistory> history) {
         return safeRecipes.stream()
-                .sorted(Comparator.comparingDouble((Recipe r) -> calculateRankingScore(r, currentInventory, dislikedIngredients, cravings, user, dailySummary, history)).reversed())
+                .sorted(Comparator.comparingDouble((Recipe r) -> calculateRankingScore(r, currentInventory, dislikedIngredients, cravings, user, history)).reversed())
                 .limit(RANKED_RECIPE_LIMIT)
                 .toList();
     }
 
-    private double calculateRankingScore(Recipe recipe, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user, DailyConsumptionService.DailyNutritionSummary dailySummary, List<RecipeUsageHistory> history) {
+    private double calculateRankingScore(Recipe recipe, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user, List<RecipeUsageHistory> history) {
         double matchScore = ingredientMatchService.calculateMatchScore(recipe, currentInventory);
         // Eğer puan yoksa nötr (5/10) bir puan verelim ki yeni tarifler çok geride kalmasın
         double ratingScore = (recipe.getAverageRating() != null && recipe.getRatingCount() != null && recipe.getRatingCount() > 0) 
@@ -177,7 +178,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 : 0.5;
         double tastePreferenceScore = calculateTastePreferenceScore(recipe, dislikedIngredients);
         double cravingScore = calculateCravingScore(recipe, cravings);
-        double nutritionScore = calculateNutritionScore(recipe, user, dailySummary);
+        double nutritionScore = calculateNutritionScore(recipe, user);
         double cookHistoryScore = calculateCookHistoryScore(recipe);
         double timeScore = calculateTimeScore(recipe);
         double diversityScore = calculateDiversityScore(recipe, history);
@@ -240,27 +241,21 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return 0.4;
     }
 
-    private double calculateNutritionScore(Recipe recipe, User user, DailyConsumptionService.DailyNutritionSummary dailySummary) {
+    private double calculateNutritionScore(Recipe recipe, User user) {
         if (user.getDailyCalorieTarget() == null || user.getDailyCalorieTarget() <= 0) {
             return 1.0;
         }
 
-        double remainingCalories = user.getDailyCalorieTarget() - (dailySummary != null ? dailySummary.totalCalories() : 0);
-        if (remainingCalories <= 0) {
-            // Hedef aşılmışsa düşük kalorili tariflere daha yüksek puan ver
-            return recipe.getTotalCalories() != null && recipe.getTotalCalories() < 400 ? 0.8 : 0.2;
+        Double targetKcalPerMeal = calculateTargetKcalPerMeal(user);
+        Double recipeKcalPerServing = RecipeNutritionCalculator.kcalPerServing(recipe);
+        double score = RecipeNutritionCalculator.calorieProximityScore(recipeKcalPerServing, targetKcalPerMeal);
+        if (recipeKcalPerServing == null) {
+            return score;
         }
 
-        // Kalan kaloriye yakınlık puanı (ideal bir öğün kalan kalorinin %30-40'ı olmalı)
-        double idealMealCalories = remainingCalories * 0.35;
-        double recipeCalories = recipe.getTotalCalories() != null ? recipe.getTotalCalories() : 500;
-        
-        double diffRatio = Math.abs(recipeCalories - idealMealCalories) / idealMealCalories;
-        double score = Math.max(0.0, 1.0 - diffRatio);
-
         // Hedefe göre bonuslar
-        if (user.getDietaryGoal() == User.DietaryGoal.LOSE_WEIGHT && recipeCalories < 600) score += 0.2;
-        if (user.getDietaryGoal() == User.DietaryGoal.GAIN_WEIGHT && recipeCalories > 600) score += 0.2;
+        if (user.getDietaryGoal() == User.DietaryGoal.LOSE_WEIGHT && recipeKcalPerServing < targetKcalPerMeal) score += 0.2;
+        if (user.getDietaryGoal() == User.DietaryGoal.GAIN_WEIGHT && recipeKcalPerServing > targetKcalPerMeal) score += 0.2;
         if (user.getDietaryGoal() == User.DietaryGoal.BUILD_MUSCLE && recipe.getTotalProtein() != null && recipe.getTotalProtein() > 25) score += 0.3;
 
         return Math.min(1.0, score);
@@ -296,16 +291,14 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         return Math.max(0.0, 1.0 - ((double) overlapCount / ingredientNames.size()));
     }
 
-    private String formatRecipesData(List<Recipe> topRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings) {
+    private String formatRecipesData(List<Recipe> topRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user) {
+        Double targetKcalPerMeal = calculateTargetKcalPerMeal(user);
         return topRecipes.stream()
-                .map(r -> String.format("- %s (Rating: %.1f/10 (%d reviews), Nutrition: %.0f kcal, P: %.1fg, C: %.1fg, F: %.1fg. Time: %d min. Difficulty: %s. Ingredients: %s. Inventory match: %s. Missing: %s. Disliked overlap: %s. Cook count: %d. Relevance: %.2f)",
+                .map(r -> String.format("- %s (Rating: %.1f/10 (%d reviews), Nutrition: %s. Time: %d min. Difficulty: %s. Ingredients: %s. Inventory match: %s. Missing: %s. Disliked overlap: %s. Cook count: %d. Relevance: %.2f)",
                         r.getTitle(),
                         r.getAverageRating() != null ? r.getAverageRating() : 0.0,
                         r.getRatingCount() != null ? r.getRatingCount() : 0,
-                        r.getTotalCalories() != null ? r.getTotalCalories() : 0.0,
-                        r.getTotalProtein() != null ? r.getTotalProtein() : 0.0,
-                        r.getTotalCarbs() != null ? r.getTotalCarbs() : 0.0,
-                        r.getTotalFat() != null ? r.getTotalFat() : 0.0,
+                        formatNutritionContext(r, targetKcalPerMeal),
                         r.getPreparationTimeMinutes() != null ? r.getPreparationTimeMinutes() : 0,
                         r.getDifficulty() != null ? r.getDifficulty() : "MEDIUM",
                         String.join(", ", getRecipeIngredientNames(r)),
@@ -317,6 +310,30 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 .collect(Collectors.joining("\n"));
     }
 
+    private String formatNutritionContext(Recipe recipe, Double targetKcalPerMeal) {
+        Double kcalPerServing = RecipeNutritionCalculator.kcalPerServing(recipe);
+        if (kcalPerServing == null) {
+            return String.format(Locale.ROOT, "calorie data unavailable, neutral nutrition score %.1f. P: %.1fg, C: %.1fg, F: %.1fg",
+                    RecipeNutritionCalculator.NEUTRAL_SCORE,
+                    recipe.getTotalProtein() != null ? recipe.getTotalProtein() : 0.0,
+                    recipe.getTotalCarbs() != null ? recipe.getTotalCarbs() : 0.0,
+                    recipe.getTotalFat() != null ? recipe.getTotalFat() : 0.0);
+        }
+
+        Double targetPercentage = RecipeNutritionCalculator.percentageOfTarget(kcalPerServing, targetKcalPerMeal);
+        String targetContext = targetPercentage != null
+                ? String.format(Locale.ROOT, ", %.0f%% of %.0f kcal meal target", targetPercentage, targetKcalPerMeal)
+                : ", meal target not set";
+
+        return String.format(Locale.ROOT, "%.0f kcal/serving (%.0f total kcal%s), P: %.1fg, C: %.1fg, F: %.1fg",
+                kcalPerServing,
+                recipe.getTotalCalories(),
+                targetContext,
+                recipe.getTotalProtein() != null ? recipe.getTotalProtein() : 0.0,
+                recipe.getTotalCarbs() != null ? recipe.getTotalCarbs() : 0.0,
+                recipe.getTotalFat() != null ? recipe.getTotalFat() : 0.0);
+    }
+
     private String generateFinalPrompt(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary, String recipesData, String cravings) {
         String promptTemplate = "As a personal nutritionist, provide meal recommendations based on the following user profile and data. " +
                 "CRITICAL: Tailor your 'insight' for each recipe to explain EXACTLY why it fits their dietary goal, diet type, and preferences. " +
@@ -325,6 +342,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 "- Dietary Goal: %s (STRICTLY prioritize recipes helping this goal)\n" +
                 "- Diet Type: %s (MANDATORY: only suggest recipes compatible with this)\n" +
                 "- Daily Calorie Target: %d kcal\n" +
+                "- Per-Meal Calorie Target: %.0f kcal\n" +
                 "- Hard Constraints (Allergies): %s (NEVER suggest these)\n" +
                 "- Soft Constraints (Disliked Ingredients): %s (Avoid these if possible)\n" +
                 "- Current Cravings: %s (Highly prioritize if matches)\n" +
@@ -340,6 +358,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 user.getDietaryGoal() != null ? user.getDietaryGoal() : "Not set",
                 user.getDietType() != null ? user.getDietType() : "Not set",
                 user.getDailyCalorieTarget() != null ? user.getDailyCalorieTarget() : 2000,
+                calculateTargetKcalPerMeal(user) != null ? calculateTargetKcalPerMeal(user) : 0.0,
                 formatConstraintList(user.getAllergies()),
                 formatConstraintList(user.getDislikedIngredients()),
                 summarizeCravings(cravings),
@@ -406,6 +425,17 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
             insight.append(String.format("Ayrıca canınızın çektiği %s için de çok tatmin edici bir tercih. ", cravings.toLowerCase(Locale.ROOT)));
         }
 
+        Double kcalPerServing = RecipeNutritionCalculator.kcalPerServing(recipe);
+        Double targetKcalPerMeal = calculateTargetKcalPerMeal(user);
+        Double targetPercentage = RecipeNutritionCalculator.percentageOfTarget(kcalPerServing, targetKcalPerMeal);
+        if (kcalPerServing != null && targetKcalPerMeal != null && targetPercentage != null) {
+            insight.append(String.format(Locale.ROOT,
+                    "Porsiyon başına %.0f kcal ile %.0f kcal öğün hedefinizin yaklaşık %.0f%%'ini karşılar. ",
+                    kcalPerServing,
+                    targetKcalPerMeal,
+                    targetPercentage));
+        }
+
         // Puan bilgisine göre ek bilgi
         if (recipe.getAverageRating() != null && recipe.getAverageRating() >= 8.0 && recipe.getRatingCount() != null && recipe.getRatingCount() > 0) {
             insight.append(String.format("Kullanıcılar tarafından oldukça beğenilmiş (%.1f puan) ve güvenilir bir tarif. ", recipe.getAverageRating()));
@@ -414,7 +444,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         // Besin değerlerine göre ek bilgi
         if (recipe.getTotalProtein() != null && recipe.getTotalProtein() > 25) {
             insight.append("Yüksek protein içeriğiyle tokluk hissinizi destekler ve kas gelişiminize yardımcı olur. ");
-        } else if (recipe.getTotalCalories() != null && recipe.getTotalCalories() < 400) {
+        } else if (kcalPerServing != null && kcalPerServing < 400) {
             insight.append("Hafif ve düşük kalorili olmasıyla günlük hedefinizi aşmadan doyurucu bir seçenek sunar. ");
         }
 
@@ -431,6 +461,13 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
         insight.append("Beslenme çeşitliliğinizi korumak adına son dönemdeki tercihlerinizden farklı bir seçenek olarak öne çıkarılmıştır. ");
 
         return insight.toString().trim();
+    }
+
+    private Double calculateTargetKcalPerMeal(User user) {
+        if (user == null || user.getDailyCalorieTarget() == null || user.getDailyCalorieTarget() <= 0) {
+            return null;
+        }
+        return user.getDailyCalorieTarget() / 3.0;
     }
 
     private String getDislikedOverlapSummary(Recipe recipe, List<String> dislikedIngredients) {

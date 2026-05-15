@@ -89,6 +89,15 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     @Query("SELECT DISTINCT r FROM Recipe r JOIN r.recipeIngredients ri JOIN ri.ingredient i WHERE r.active = true AND i.name IN :ingredients")
     List<Recipe> findByIngredientNamesIn(List<String> ingredients);
 
+    @Query("SELECT r FROM Recipe r WHERE r.active = true " +
+           "AND r.totalCalories IS NOT NULL " +
+           "AND (r.totalCalories / CASE WHEN r.servings IS NULL OR r.servings <= 0 THEN 1 ELSE r.servings END) " +
+           "BETWEEN :minCaloriesPerServing AND :maxCaloriesPerServing")
+    List<Recipe> findActiveByCaloriesPerServingBetween(
+            @Param("minCaloriesPerServing") double minCaloriesPerServing,
+            @Param("maxCaloriesPerServing") double maxCaloriesPerServing
+    );
+
     @Query("SELECT DISTINCT r FROM Recipe r JOIN r.recipeIngredients ri WHERE r.active = true AND ri.ingredient.id = :ingredientId")
     List<Recipe> findByIngredientId(Long ingredientId);
 

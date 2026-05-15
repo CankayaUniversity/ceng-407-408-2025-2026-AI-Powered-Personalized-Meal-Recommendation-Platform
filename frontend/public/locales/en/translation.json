@@ -88,6 +88,7 @@
       "reviews": "{{count}} reviews",
       "metrics": {
         "calories": "Calories",
+        "kcalPerServing": "kcal/serving",
         "protein": "Protein",
         "prep": "Prep",
         "rating": "Rating",

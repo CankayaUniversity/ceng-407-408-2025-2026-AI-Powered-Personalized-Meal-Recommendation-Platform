@@ -62,7 +62,7 @@ class RecommendationAppServiceTest {
         when(userService.findById("user-1")).thenReturn(Optional.of(user));
         when(ingredientRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
         Recommendation recommendation = new Recommendation();
-        when(recommendationService.getRecommendations(any(), anyList(), any(), any())).thenReturn(recommendation);
+        when(recommendationService.getRecommendations(any(), anyList(), any(), any(), any())).thenReturn(recommendation);
         when(recommendationMapper.toResponse(any(), anyList())).thenReturn(new RecommendationResponse());
 
         RecommendationResponse response = recommendationAppService.getRecommendations(request);
@@ -70,7 +70,7 @@ class RecommendationAppServiceTest {
         assertNotNull(response);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(recommendationService).getRecommendations(userCaptor.capture(), anyList(), eq("Something spicy"), any());
+        verify(recommendationService).getRecommendations(userCaptor.capture(), anyList(), eq("Something spicy"), any(), any());
         assertEquals(List.of("Cilantro"), userCaptor.getValue().getDislikedIngredients());
     }
     @Test

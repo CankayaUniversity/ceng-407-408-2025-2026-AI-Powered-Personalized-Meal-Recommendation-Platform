@@ -15,7 +15,7 @@ class RecommendationMapperTest {
     @Test
     void toResponse_mapsRecipeTitlesAndInsight() {
         // Arrange
-        Recipe r1 = Recipe.builder().id(1L).title("Menemen").build();
+        Recipe r1 = Recipe.builder().id(1L).title("Menemen").totalCalories(700.0).servings(2).build();
         Recipe r2 = Recipe.builder().id(2L).title("Mercimek Çorbası").build();
 
         Recommendation recommendation = Recommendation.builder()
@@ -37,8 +37,27 @@ class RecommendationMapperTest {
         assertEquals(1L, response.getRecommendedRecipes().get(0).getRecipeId());
         assertEquals("Menemen", response.getRecommendedRecipes().get(0).getRecipeTitle());
         assertEquals("Harika bir seçim", response.getRecommendedRecipes().get(0).getInsight());
+        assertEquals(350.0, response.getRecommendedRecipes().get(0).getKcalPerServing());
         assertEquals("Mercimek Çorbası", response.getRecommendedRecipes().get(1).getRecipeTitle());
         assertTrue(response.isAiGenerated());
+    }
+
+    @Test
+    void toResponse_defaultsServingDivisorToOneForInvalidServings() {
+        Recipe recipe = Recipe.builder()
+                .id(1L)
+                .title("Single Safe Serving")
+                .totalCalories(420.0)
+                .servings(0)
+                .build();
+        Recommendation recommendation = Recommendation.builder().build();
+        recommendation.addRecommendedRecipe(RecommendedRecipe.builder().id(1L).recipe(recipe).build());
+
+        RecommendationMapper mapper = new RecommendationMapper();
+
+        RecommendationResponse response = mapper.toResponse(recommendation, List.of());
+
+        assertEquals(420.0, response.getRecommendedRecipes().get(0).getKcalPerServing());
     }
 
     @Test

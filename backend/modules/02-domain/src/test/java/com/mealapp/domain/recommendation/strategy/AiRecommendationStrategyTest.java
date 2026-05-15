@@ -218,6 +218,45 @@ class AiRecommendationStrategyTest {
     }
 
     @Test
+    void shouldRankNutritionByKcalPerServingInsteadOfTotalCalories() {
+        user.setDailyCalorieTarget(1500);
+
+        Recipe multiServingFit = Recipe.builder()
+                .id(1L)
+                .title("Family Fit")
+                .averageRating(8.0)
+                .ratingCount(1)
+                .totalCalories(2000.0)
+                .servings(4)
+                .recipeIngredients(List.of())
+                .build();
+
+        Recipe singleServingHigh = Recipe.builder()
+                .id(2L)
+                .title("Single High")
+                .averageRating(8.0)
+                .ratingCount(1)
+                .totalCalories(900.0)
+                .servings(1)
+                .recipeIngredients(List.of())
+                .build();
+
+        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyString(), anyList(), any(Pageable.class)))
+                .thenReturn(List.of(singleServingHigh, multiServingFit));
+
+        lenient().when(recipeCompatibilityService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);
+        when(ingredientMatchService.calculateMatchScore(any(), anyList())).thenReturn(1.0);
+
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(0, 0, 0.0, 0.0, 0.0);
+
+        Recommendation recommendations = strategy.recommend(user, inventory, dailySummary, "", "FREE", null, Collections.emptyList());
+
+        assertFalse(recommendations.getRecommendedRecipes().isEmpty());
+        assertEquals(1L, recommendations.getRecommendedRecipes().get(0).getRecipe().getId());
+        assertTrue(recommendations.getRecommendedRecipes().get(0).getAiInsight().contains("Porsiyon başına 500 kcal"));
+    }
+
+    @Test
     void shouldHandleTurkishNegativeCravingsInScoring() {
         Recipe withOnion = recipeWithIngredients(10L, "Soganli Corba", 5.0, "Sogan", "Su");
         Recipe withoutOnion = recipeWithIngredients(11L, "Sade Corba", 5.0, "Su");

@@ -470,6 +470,7 @@ const RecommendationPage: React.FC = () => {
       id: recipe.recipeId,
       title: recipe.recipeTitle,
       calories: recipe.calories,
+      kcalPerServing: recipe.kcalPerServing,
       protein: recipe.protein,
       carbs: recipe.carbs,
       fat: recipe.fat,
@@ -960,7 +961,7 @@ const RecommendationPage: React.FC = () => {
 
                           <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 lg:max-w-[460px]">
                             {[
-                              { label: t('recommendations.results.metrics.calories'), value: formatMetric(recipe.calories), tone: 'text-terracotta' },
+                              { label: t('recommendations.results.metrics.kcalPerServing'), value: formatMetric(recipe.kcalPerServing), tone: 'text-terracotta' },
                               { label: t('recommendations.results.metrics.protein'), value: formatMetric(recipe.protein, 'g'), tone: 'text-moss-forest dark:text-moss-sage' },
                               { label: t('recommendations.results.metrics.prep'), value: formatMetric(recipe.preparationTimeMinutes, 'm'), tone: 'text-ochre-soft' },
                               { label: t('recommendations.results.metrics.rating'), value: recipe.averageRating != null ? recipe.averageRating.toFixed(1) : '-', tone: 'text-espresso-midnight dark:text-alabaster', icon: true }
