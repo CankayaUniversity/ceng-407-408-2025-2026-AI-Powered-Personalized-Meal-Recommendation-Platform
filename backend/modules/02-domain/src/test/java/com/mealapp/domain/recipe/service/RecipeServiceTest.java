@@ -178,6 +178,51 @@ class RecipeServiceTest {
     }
 
     @Test
+    void updateRecipe_preservesManagedIngredientCollectionReference() {
+        Long recipeId = 1L;
+        String userId = "user123";
+        Ingredient oldIngredient = Ingredient.builder().id(9L).name("Old Tomato").build();
+        RecipeIngredient oldRi = RecipeIngredient.builder()
+            .ingredient(oldIngredient)
+            .amount(1.0)
+            .unit("piece")
+            .grams(50.0)
+            .build();
+        java.util.ArrayList<RecipeIngredient> managedIngredients = new java.util.ArrayList<>(List.of(oldRi));
+        Recipe existingRecipe = Recipe.builder()
+            .id(recipeId)
+            .title("Old Title")
+            .createdBy(userId)
+            .status(RecipeStatus.DRAFT)
+            .recipeIngredients(managedIngredients)
+            .build();
+
+        Recipe updatedData = Recipe.builder()
+            .title("New Title")
+            .status(RecipeStatus.DRAFT)
+            .build();
+
+        Ingredient newIngredient = Ingredient.builder().id(10L).name("New Tomato").build();
+        RecipeIngredient newRi = RecipeIngredient.builder()
+            .ingredient(Ingredient.builder().id(10L).build())
+            .amount(2.0)
+            .unit("piece")
+            .grams(100.0)
+            .build();
+
+        when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(existingRecipe));
+        when(ingredientRepository.findByIdAndActiveTrue(10L)).thenReturn(Optional.of(newIngredient));
+        when(recipeRepository.saveAndFlush(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Recipe result = recipeService.updateRecipe(recipeId, updatedData, List.of(newRi), userId);
+
+        assertSame(managedIngredients, result.getRecipeIngredients());
+        assertEquals(1, result.getRecipeIngredients().size());
+        assertEquals(10L, result.getRecipeIngredients().get(0).getIngredient().getId());
+    }
+
+    @Test
     void shouldUpdateRecipeWithEmptyIngredients() {
         Long recipeId = 1L;
         String userId = "user123";

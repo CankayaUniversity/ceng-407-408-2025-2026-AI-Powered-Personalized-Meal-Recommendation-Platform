@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChefHat, Clock, Users, Plus, Trash2, Save, Send, Loader2, Camera, Image as ImageIcon } from 'lucide-react';
 import { IngredientSelector } from '../../shared/components/IngredientSelector';
-import { Ingredient, type Recipe, type RecipeRequest } from '../../types';
+import { Ingredient, RecipeStatus, type Recipe, type RecipeRequest } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useRecipeService } from '../../services/recipeService';
@@ -258,7 +258,7 @@ const RecipeModal: React.FC = () => {
                 unit: i.unit,
                 grams: i.grams
             })),
-            status: isPublishing ? 'PENDING' : 'DRAFT'
+            status: isPublishing ? RecipeStatus.PENDING : RecipeStatus.DRAFT
         } as RecipeRequest;
 
         try {
@@ -267,16 +267,37 @@ const RecipeModal: React.FC = () => {
             let savedRecipe: any;
             if (recipeToEdit) {
                 const targetId = editTargetId ?? recipeToEdit.id;
-                savedRecipe = await recipeService.updateRecipe(targetId, request);
-                showToast(isPublishing ? 'Tarif güncellendi ve onaya gönderildi.' : 'Taslak güncellendi.', 'success');
+                const isDraftLikeRecipe = status === RecipeStatus.DRAFT || status === RecipeStatus.REJECTED;
+
+                if (isPublishing && isDraftLikeRecipe) {
+                    savedRecipe = await recipeService.updateRecipe(targetId, {
+                        ...request,
+                        status: RecipeStatus.DRAFT
+                    });
+
+                    if (imageFile && savedRecipe?.id) {
+                        await recipeService.uploadRecipeImage(savedRecipe.id, imageFile);
+                    }
+
+                    await recipeService.sendToApproval(savedRecipe?.id ?? targetId);
+                    showToast('Taslak onaya gönderildi.', 'success');
+                } else {
+                    savedRecipe = await recipeService.updateRecipe(targetId, request);
+
+                    if (imageFile && savedRecipe?.id) {
+                        await recipeService.uploadRecipeImage(savedRecipe.id, imageFile);
+                    }
+
+                    showToast(isPublishing ? 'Tarif güncellendi ve onaya gönderildi.' : 'Taslak güncellendi.', 'success');
+                }
             } else {
                 savedRecipe = await recipeService.createRecipe(request);
-                showToast(isPublishing ? 'Tarif oluşturuldu ve onaya gönderildi.' : 'Tarif taslak olarak kaydedildi.', 'success');
-            }
 
-            // Görsel varsa yükle
-            if (imageFile && savedRecipe?.id) {
-                await recipeService.uploadRecipeImage(savedRecipe.id, imageFile);
+                if (imageFile && savedRecipe?.id) {
+                    await recipeService.uploadRecipeImage(savedRecipe.id, imageFile);
+                }
+
+                showToast(isPublishing ? 'Tarif oluşturuldu ve onaya gönderildi.' : 'Tarif taslak olarak kaydedildi.', 'success');
             }
 
             closeRecipeModal();

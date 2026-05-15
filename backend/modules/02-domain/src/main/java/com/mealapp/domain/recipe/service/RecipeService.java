@@ -330,10 +330,18 @@ public class RecipeService {
     }
 
     private void setupIngredients(Recipe recipe, List<RecipeIngredient> ingredients) {
+        List<RecipeIngredient> targetIngredients = recipe.getRecipeIngredients();
+        if (targetIngredients == null) {
+            targetIngredients = new java.util.ArrayList<>();
+            recipe.setRecipeIngredients(targetIngredients);
+        } else {
+            targetIngredients.clear();
+        }
+
         if (ingredients == null || ingredients.isEmpty()) {
-            recipe.setRecipeIngredients(new java.util.ArrayList<>());
             return;
         }
+
         for (RecipeIngredient ri : ingredients) {
             ri.setRecipe(recipe);
             
@@ -399,8 +407,9 @@ public class RecipeService {
                 Double grams = unitConverterService.convertToGrams(ri.getAmount(), ri.getUnit(), ingredient);
                 ri.setGrams(grams);
             }
+
+            targetIngredients.add(ri);
         }
-        recipe.setRecipeIngredients(ingredients);
     }
 
     /**
