@@ -42,6 +42,36 @@ type RecipeListItemDto = {
   versionNumber?: number | null;
 };
 
+type RecipeDto = Omit<RecipeListItemDto, 'difficulty'> & {
+  totalCalories?: number | null;
+  totalProtein?: number | null;
+  totalCarbs?: number | null;
+  totalFat?: number | null;
+  preparationTimeMinutes?: number | null;
+  preparationTime?: number | null;
+  averageRating?: number | null;
+  userRating?: number | null;
+  instructions?: string | null;
+  ingredients?: Recipe['ingredients'];
+  difficulty?: Recipe['difficulty'] | string | null;
+  calories?: number | null;
+  protein?: number | null;
+  carbs?: number | null;
+  fat?: number | null;
+};
+
+const mapRecipeDto = <T extends RecipeListItem>(recipe: RecipeDto): T => ({
+  ...recipe,
+  totalCalories: recipe.totalCalories ?? recipe.calories,
+  totalProtein: recipe.totalProtein ?? recipe.protein,
+  totalCarbs: recipe.totalCarbs ?? recipe.carbs,
+  totalFat: recipe.totalFat ?? recipe.fat,
+  preparationTimeMinutes: recipe.preparationTimeMinutes ?? recipe.preparationTime,
+  averageRating: recipe.averageRating ?? recipe.rating,
+  ratingCount: recipe.ratingCount,
+  isFavorite: recipe.isFavorite || false
+} as T);
+
 /**
  * Tarif servisi factory fonksiyonu
  * Tip-güvenli tarif işlemleri için servis objesi oluşturur
@@ -277,28 +307,7 @@ export const getRecipeService = (api: AxiosInstance) => {
         signal
       });
 
-      // DTO -> UI tipi dönüştürme
-      const mapped: RecipeListItem[] = response.data.map((r) => ({
-        id: r.id,
-        title: r.title,
-        category: r.category,
-        totalCalories: r.calories,
-        totalProtein: r.protein,
-        totalCarbs: r.carbs,
-        totalFat: r.fat,
-        preparationTimeMinutes: r.preparationTime,
-        servings: r.servings,
-        averageRating: r.rating,
-        ratingCount: r.ratingCount,
-        imageUrl: r.imageUrl,
-        status: r.status,
-        difficulty: r.difficulty,
-        createdBy: r.createdBy,
-        createdAt: r.createdAt,
-        parentId: r.parentId,
-        versionNumber: r.versionNumber,
-        isFavorite: r.isFavorite || false
-      }));
+      const mapped: RecipeListItem[] = response.data.map((r) => mapRecipeDto<RecipeListItem>(r));
 
       return mapped; })();
 
@@ -351,8 +360,8 @@ export const getRecipeService = (api: AxiosInstance) => {
      * @param id - Tarifin benzersiz kimlik numarası
      */
     getRecipeById: async (id: number): Promise<Recipe> => {
-      const response = await api.get<Recipe>(`/v1/recipes/${id}`);
-      return response.data;
+      const response = await api.get<RecipeDto>(`/v1/recipes/${id}`);
+      return mapRecipeDto<Recipe>(response.data);
     },
 
     /**
@@ -361,16 +370,16 @@ export const getRecipeService = (api: AxiosInstance) => {
      * Düzenleme akışları bu endpoint'i kullanabilir.
      */
     getPreferredRecipe: async (id: number): Promise<Recipe> => {
-      const response = await api.get<Recipe>(`/v1/recipes/${id}/preferred`);
-      return response.data;
+      const response = await api.get<RecipeDto>(`/v1/recipes/${id}/preferred`);
+      return mapRecipeDto<Recipe>(response.data);
     },
 
     /**
      * Tarifin tüm versiyonlarını getirir.
      */
     getRecipeVersions: async (id: number): Promise<Recipe[]> => {
-      const response = await api.get<Recipe[]>(`/v1/recipes/${id}/versions`);
-      return response.data;
+      const response = await api.get<RecipeDto[]>(`/v1/recipes/${id}/versions`);
+      return response.data.map((recipe) => mapRecipeDto<Recipe>(recipe));
     },
 
     /**
@@ -384,12 +393,12 @@ export const getRecipeService = (api: AxiosInstance) => {
         const formData = new FormData();
         formData.append('file', file);
         
-        const response = await api.post<Recipe>(`/v1/recipes/${id}/image`, formData, {
+        const response = await api.post<RecipeDto>(`/v1/recipes/${id}/image`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
-        return response.data;
+        return mapRecipeDto<Recipe>(response.data);
       } catch (error) {
         if (axios.isAxiosError(error)) {
           const message = error.response?.data?.message || 'Tarif görseli yüklenemedi';
@@ -405,8 +414,8 @@ export const getRecipeService = (api: AxiosInstance) => {
      */
     createRecipe: async (request: RecipeRequest): Promise<Recipe> => {
       try {
-        const response = await api.post<Recipe>('/v1/recipes', request);
-        return response.data;
+        const response = await api.post<RecipeDto>('/v1/recipes', request);
+        return mapRecipeDto<Recipe>(response.data);
       } catch (error) {
         if (axios.isAxiosError(error)) {
           const status = error.response?.status;
@@ -427,8 +436,8 @@ export const getRecipeService = (api: AxiosInstance) => {
      */
     updateRecipe: async (id: number, request: RecipeRequest): Promise<Recipe> => {
       try {
-        const response = await api.put<Recipe>(`/v1/recipes/${id}`, request);
-        return response.data;
+        const response = await api.put<RecipeDto>(`/v1/recipes/${id}`, request);
+        return mapRecipeDto<Recipe>(response.data);
       } catch (error) {
         if (axios.isAxiosError(error)) {
           const status = error.response?.status;

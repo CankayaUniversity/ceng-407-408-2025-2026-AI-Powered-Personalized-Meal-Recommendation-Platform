@@ -42,6 +42,7 @@ const RecipeModal: React.FC = () => {
     const [status, setStatus] = useState<string | null>(null);
     const [editTargetId, setEditTargetId] = useState<number | null>(null);
     const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
+    const [hasLoadedEditDetails, setHasLoadedEditDetails] = useState(false);
     
     // UI states
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -90,6 +91,7 @@ const RecipeModal: React.FC = () => {
             if (recipeToEdit && isRecipeModalOpen) {
                 applyRecipeToForm(recipeToEdit);
                 setImageFile(null);
+                setHasLoadedEditDetails(false);
 
                 try {
                     setIsLoadingDetails(true);
@@ -99,9 +101,13 @@ const RecipeModal: React.FC = () => {
                         : await recipeService.getPreferredRecipe(recipeToEdit.id);
                     if (!cancelled) {
                         applyRecipeToForm(fullRecipe);
+                        setHasLoadedEditDetails(true);
                     }
                 } catch (err) {
                     console.error("Failed to fetch recipe details:", err);
+                    if (!cancelled) {
+                        showToast('Tarif detayları yüklenemedi. Kaydetmeden önce tekrar deneyin.', 'error');
+                    }
                 } finally {
                     if (!cancelled) {
                         setIsLoadingDetails(false);
@@ -117,7 +123,7 @@ const RecipeModal: React.FC = () => {
         return () => {
             cancelled = true;
         };
-    }, [recipeToEdit, isRecipeModalOpen, recipeService]);
+    }, [recipeToEdit, isRecipeModalOpen, recipeService, showToast]);
 
     const resetForm = () => {
         setTitle('');
@@ -131,6 +137,7 @@ const RecipeModal: React.FC = () => {
         setStatus(null);
         setEditTargetId(null);
         setEditImageUrl(null);
+        setHasLoadedEditDetails(false);
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -228,6 +235,11 @@ const RecipeModal: React.FC = () => {
     };
 
     const handleSubmit = async (isPublishing: boolean) => {
+        if (recipeToEdit && (!hasLoadedEditDetails || isLoadingDetails)) {
+            showToast('Tarif detayları yüklenmeden kaydetme yapılamaz.', 'error');
+            return;
+        }
+
         if (!title.trim()) {
             showToast('Lütfen bir başlık girin.', 'error');
             return;
@@ -277,6 +289,8 @@ const RecipeModal: React.FC = () => {
     };
 
     if (!isRecipeModalOpen) return null;
+
+    const isSubmitDisabled = isSaving || isSending || isLoadingDetails || Boolean(recipeToEdit && !hasLoadedEditDetails);
 
     return (
         <ModalPortal>
@@ -530,7 +544,7 @@ const RecipeModal: React.FC = () => {
                     <div className="p-8 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 flex flex-col sm:flex-row gap-4">
                         <button
                             onClick={() => handleSubmit(false)}
-                            disabled={isSaving || isSending}
+                            disabled={isSubmitDisabled}
                             className="flex-1 py-4 bg-espresso-midnight text-white dark:bg-white/5 dark:text-white font-black text-[10px] rounded-2xl hover:bg-espresso-midnight/90 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-3 disabled:opacity-50"
                         >
                             {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
@@ -538,7 +552,7 @@ const RecipeModal: React.FC = () => {
                         </button>
                         <button
                             onClick={() => handleSubmit(true)}
-                            disabled={isSaving || isSending}
+                            disabled={isSubmitDisabled}
                             className="flex-[1.5] py-4 bg-terracotta text-white font-black text-[10px] rounded-2xl shadow-brand-hero hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-[0.2em] flex items-center justify-center gap-3 disabled:opacity-50"
                         >
                             {isSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
