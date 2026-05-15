@@ -60,8 +60,9 @@ export class KeycloakAuthService implements AuthService {
     private async doInit(): Promise<void> {
         try {
             const authenticated = await this.keycloak.init({
-                onLoad: 'check-sso',
-                silentCheckSsoRedirectUri: (globalThis.location?.origin ?? '') + '/silent-check-sso.html',
+                //onLoad: 'check-sso',
+                //silentCheckSsoRedirectUri: (globalThis.location?.origin ?? '') + '/silent-check-sso.html',
+                onLoad: 'login-required',
                 pkceMethod: 'S256',
                 checkLoginIframe: false,
                 enableLogging: this.config.logging,
