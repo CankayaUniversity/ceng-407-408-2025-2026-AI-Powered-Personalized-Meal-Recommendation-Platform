@@ -9,7 +9,7 @@ import {
   RecommendationResponse,
   RecipeRatingRequest,
   RecipeRatingResponse,
-  RecipeRequest
+  RecipeRequest, RecipeCategory
 } from '../types';
 import {
   ApiError,
@@ -23,7 +23,7 @@ import {
 type RecipeListItemDto = {
   id: number;
   title: string;
-  category?: string;
+  category?: RecipeCategory;
   calories?: number;
   kcalPerServing?: number;
   protein?: number;
@@ -60,6 +60,7 @@ type RecipeDto = Omit<RecipeListItemDto, 'difficulty'> & {
   protein?: number | null;
   carbs?: number | null;
   fat?: number | null;
+  category?: RecipeCategory | null;
 };
 
 const mapRecipeDto = <T extends RecipeListItem>(recipe: RecipeDto): T => ({
@@ -279,73 +280,81 @@ export const getRecipeService = (api: AxiosInstance) => {
     }
   },
 
-  /**
-   * Tarif listesini backend'den getirir.
-   * Response doğrudan backend liste DTO'suna hizalanır.
-   */
-  getRecipes: async (params?: { title?: string; category?: string; favoritesOnly?: boolean; page?: number; size?: number; signal?: AbortSignal }): Promise<RecipeListItem[]> => {
-    try {
-      const { title, category, favoritesOnly, page = 0, size = 12, signal } = params || {};
-      const key = `GET:/v1/recipes|${title ?? ''}|${category ?? ''}|${favoritesOnly ?? false}|${page}|${size}`;
-
-      // Abortable list requests should not share promises: one canceled caller can
-      // otherwise poison a same-key refresh that still needs to load the page.
-      const shouldDedupe = !signal;
-      const existing = shouldDedupe ? inFlight.get(key) : undefined;
-      if (existing) {
-        return await existing;
-      }
-
-      const promise = (async () => {
-        const response = await api.get<RecipeListItemDto[]>('/v1/recipes', {
-        params: {
-          page,
-          size,
-          ...(title ? { title } : {}),
-          ...(category && category !== 'all' && category !== 'favorites' ? { category } : {}),
-          ...(favoritesOnly ? { favoritesOnly: true } : {})
-        },
-        // Pass AbortSignal if provided (Axios >= 0.22)
-        signal
-      });
-
-      const mapped: RecipeListItem[] = response.data.map((r) => mapRecipeDto<RecipeListItem>(r));
-
-      return mapped; })();
-
-      if (shouldDedupe) {
-        inFlight.set(key, promise);
-      }
-
+    /**
+     * Tarif listesini backend'den getirir.
+     * Response doğrudan backend liste DTO'suna hizalanır.
+     */
+    getRecipes: async (params?: {
+      title?: string;
+      category?: RecipeCategory | 'all' | 'favorites'; // string yerine kesin tipler eklendi
+      favoritesOnly?: boolean;
+      page?: number;
+      size?: number;
+      signal?: AbortSignal
+    }): Promise<RecipeListItem[]> => {
       try {
-        return await promise;
-      } finally {
+        const { title, category, favoritesOnly, page = 0, size = 12, signal } = params || {};
+        const key = `GET:/v1/recipes|${title ?? ''}|${category ?? ''}|${favoritesOnly ?? false}|${page}|${size}`;
+
+        // Abortable list requests should not share promises: one canceled caller can
+        // otherwise poison a same-key refresh that still needs to load the page.
+        const shouldDedupe = !signal;
+        const existing = shouldDedupe ? inFlight.get(key) : undefined;
+        if (existing) {
+          return await existing;
+        }
+
+        const promise = (async () => {
+          const response = await api.get<RecipeListItemDto[]>('/v1/recipes', {
+            params: {
+              page,
+              size,
+              ...(title ? { title } : {}),
+              // 'all' veya 'favorites' harici geçerli bir RecipeCategory enum değeri ise backend'e gönderilir
+              ...(category && category !== 'all' && category !== 'favorites' ? { category } : {}),
+              ...(favoritesOnly ? { favoritesOnly: true } : {})
+            },
+            // Pass AbortSignal if provided (Axios >= 0.22)
+            signal
+          });
+
+          const mapped: RecipeListItem[] = response.data.map((r) => mapRecipeDto<RecipeListItem>(r));
+          return mapped;
+        })();
+
         if (shouldDedupe) {
-          inFlight.delete(key);
+          inFlight.set(key, promise);
         }
+
+        try {
+          return await promise;
+        } finally {
+          if (shouldDedupe) {
+            inFlight.delete(key);
+          }
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+            throw error;
+          }
+          if (!error.response) {
+            throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+          }
+          const status = error.response.status;
+          const message = error.response.data?.message || 'Tarifler alınamadı';
+          switch (status) {
+            case 401:
+              throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+            case 400:
+              throw new ValidationError(message, extractValidationFields(error.response.data));
+            default:
+              throw new ApiError(message, 'API_ERROR', status);
+          }
+        }
+        throw new ApiError('Beklenmeyen bir hata oluştu');
       }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
-          throw error;
-        }
-        if (!error.response) {
-          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
-        }
-        const status = error.response.status;
-        const message = error.response.data?.message || 'Tarifler alınamadı';
-        switch (status) {
-          case 401:
-            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
-          case 400:
-            throw new ValidationError(message, extractValidationFields(error.response.data));
-          default:
-            throw new ApiError(message, 'API_ERROR', status);
-        }
-      }
-      throw new ApiError('Beklenmeyen bir hata oluştu');
-    }
-  },
+    },
 
   /**
    * Başlığa göre tarif araması yapar.

@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import { Search, Filter, Clock, Star, ChevronRight, Plus, ChefHat, Flame, X, Info, Edit3, Users, History, CheckCircle2, Clock3, AlertCircle, UtensilsCrossed } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRecipeService } from '../../services/recipeService';
-import type { RecipeListItem, Recipe } from '../../types';
+import { RecipeCategory, DietType } from '../../types'; // Enum'lar normal değer olarak içeri alındı
+import type { RecipeListItem, Recipe } from '../../types'; // Saf tipler type import olarak kaldı
 import { useToast } from '../../shared/hooks/useToast';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { useUI } from '../../infrastructure/ui/UIContext';
@@ -31,12 +32,12 @@ const isSameRecipeFamily = (a?: RecipeFamilyRef | null, b?: RecipeFamilyRef | nu
 };
 
 const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
-  imageUrl,
-  title,
-  variant = 'card',
-  className = '',
-  mediaClassName = ''
-}) => {
+                                                       imageUrl,
+                                                       title,
+                                                       variant = 'card',
+                                                       className = '',
+                                                       mediaClassName = ''
+                                                     }) => {
   const { t } = useTranslation();
   const normalizedImageUrl = imageUrl?.trim() || null;
   const [hasImageError, setHasImageError] = useState(false);
@@ -48,60 +49,60 @@ const RecipeArtwork: React.FC<RecipeArtworkProps> = ({
 
   if (!hasImageError && normalizedImageUrl) {
     return (
-      <div className={className}>
-        <img
-          key={normalizedImageUrl}
-          src={normalizedImageUrl}
-          alt={title}
-          className={mediaClassName}
-          onError={() => setHasImageError(true)}
-        />
-      </div>
+        <div className={className}>
+          <img
+              key={normalizedImageUrl}
+              src={normalizedImageUrl}
+              alt={title}
+              className={mediaClassName}
+              onError={() => setHasImageError(true)}
+          />
+        </div>
     );
   }
 
   return (
-    <div className={className}>
-      <div
-        role="img"
-        aria-label={t('recipes.defaultImageAlt', { title })}
-        className={`relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-alabaster via-white to-terracotta/10 dark:from-espresso-midnight dark:via-espresso-midnight dark:to-terracotta/20 ${mediaClassName}`}
-      >
-        <div className="absolute inset-0">
-          <div className="absolute -left-8 top-6 h-28 w-28 rounded-full bg-terracotta/20 blur-3xl dark:bg-terracotta/25" />
-          <div className="absolute -right-8 bottom-0 h-24 w-24 rounded-full bg-moss-sage/25 blur-3xl dark:bg-moss-sage/20" />
-          <div className="absolute left-8 right-8 top-8 h-px bg-terracotta/15 dark:bg-white/10" />
-          <div className="absolute left-10 right-10 bottom-8 h-px bg-espresso-midnight/8 dark:bg-white/8" />
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center">
-          <div
-            className={`flex items-center justify-center rounded-[1.8rem] border border-white/50 bg-white/70 text-terracotta shadow-lg shadow-terracotta/10 backdrop-blur-md dark:border-white/10 dark:bg-white/5 ${
-              isHero ? 'h-20 w-20' : 'h-16 w-16'
-            }`}
-          >
-            <ChefHat size={isHero ? 40 : 30} strokeWidth={1.8} />
+      <div className={className}>
+        <div
+            role="img"
+            aria-label={t('recipes.defaultImageAlt', { title })}
+            className={`relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-alabaster via-white to-terracotta/10 dark:from-espresso-midnight dark:via-espresso-midnight dark:to-terracotta/20 ${mediaClassName}`}
+        >
+          <div className="absolute inset-0">
+            <div className="absolute -left-8 top-6 h-28 w-28 rounded-full bg-terracotta/20 blur-3xl dark:bg-terracotta/25" />
+            <div className="absolute -right-8 bottom-0 h-24 w-24 rounded-full bg-moss-sage/25 blur-3xl dark:bg-moss-sage/20" />
+            <div className="absolute left-8 right-8 top-8 h-px bg-terracotta/15 dark:bg-white/10" />
+            <div className="absolute left-10 right-10 bottom-8 h-px bg-espresso-midnight/8 dark:bg-white/8" />
           </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-espresso-midnight/35 dark:text-alabaster/35">
-              MealAI
-            </p>
-            <p
-              className={`font-serif font-bold text-espresso-midnight/70 dark:text-alabaster/70 ${
-                isHero ? 'text-2xl' : 'text-lg'
-              }`}
+
+          <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center">
+            <div
+                className={`flex items-center justify-center rounded-[1.8rem] border border-white/50 bg-white/70 text-terracotta shadow-lg shadow-terracotta/10 backdrop-blur-md dark:border-white/10 dark:bg-white/5 ${
+                    isHero ? 'h-20 w-20' : 'h-16 w-16'
+                }`}
             >
-              {t('recipes.chefTouch')}
-            </p>
+              <ChefHat size={isHero ? 40 : 30} strokeWidth={1.8} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-espresso-midnight/35 dark:text-alabaster/35">
+                MealAI
+              </p>
+              <p
+                  className={`font-serif font-bold text-espresso-midnight/70 dark:text-alabaster/70 ${
+                      isHero ? 'text-2xl' : 'text-lg'
+                  }`}
+              >
+                {t('recipes.chefTouch')}
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
   );
 };
 
-const RecipeRating: React.FC<{ 
-  recipeId: number; 
+const RecipeRating: React.FC<{
+  recipeId: number;
   initialRating?: number;
   averageRating?: number;
   ratingCount?: number;
@@ -122,7 +123,7 @@ const RecipeRating: React.FC<{
 
   const handleRate = async (value: number) => {
     if (readOnly || !user) return;
-    
+
     const oldRating = rating;
     setRating(value);
 
@@ -142,47 +143,47 @@ const RecipeRating: React.FC<{
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            disabled={readOnly}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRate(star);
-            }}
-            onMouseEnter={() => !readOnly && setHover(star)}
-            onMouseLeave={() => !readOnly && setHover(null)}
-            className={`transition-all duration-200 ${readOnly ? 'cursor-default' : 'hover:scale-125 active:scale-95'}`}
-          >
-            <Star
-              size={size}
-              className={`${
-                star <= (hover || rating)
-                  ? 'text-terracotta fill-terracotta'
-                  : 'text-espresso-midnight/10 dark:text-white/10'
-              } transition-colors`}
-              strokeWidth={2}
-            />
-          </button>
-        ))}
-        {averageRating !== undefined && showText && (
-          <span className="ml-2 text-xs font-bold text-foreground-muted">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                  key={star}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRate(star);
+                  }}
+                  onMouseEnter={() => !readOnly && setHover(star)}
+                  onMouseLeave={() => !readOnly && setHover(null)}
+                  className={`transition-all duration-200 ${readOnly ? 'cursor-default' : 'hover:scale-125 active:scale-95'}`}
+              >
+                <Star
+                    size={size}
+                    className={`${
+                        star <= (hover || rating)
+                            ? 'text-terracotta fill-terracotta'
+                            : 'text-espresso-midnight/10 dark:text-white/10'
+                    } transition-colors`}
+                    strokeWidth={2}
+                />
+              </button>
+          ))}
+          {averageRating !== undefined && showText && (
+              <span className="ml-2 text-xs font-bold text-foreground-muted">
             ({averageRating.toFixed(1)}) <span className="font-normal opacity-60 ml-0.5">• {ratingCount} oy</span>
           </span>
+          )}
+        </div>
+        {rating > 0 && !readOnly && showText && (
+            <p className="text-[10px] font-black uppercase tracking-widest text-terracotta">Puanınız: {rating}/5</p>
         )}
       </div>
-      {rating > 0 && !readOnly && showText && (
-        <p className="text-[10px] font-black uppercase tracking-widest text-terracotta">Puanınız: {rating}/5</p>
-      )}
-    </div>
   );
 };
 
 /**
- * MealAI Recipe Explorer - Custom Toast & Portal Integrated
+ * MealAI Recipe Explorer - Fully Type-Safe & Portal Integrated
  */
 const RecipeList: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -198,9 +199,10 @@ const RecipeList: React.FC = () => {
   const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [refreshToken, setRefreshToken] = useState(0);
 
+  // TS için hem Enum hem String Literal birleşimi doğru bir şekilde state'e atandı:
+  const [activeCategory, setActiveCategory] = useState<RecipeCategory | 'all' | 'favorites'>('all');
+  const [refreshToken, setRefreshToken] = useState(0);
 
   // --- Modal States ---
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeListItem | null>(null);
@@ -230,10 +232,10 @@ const RecipeList: React.FC = () => {
         if (isSameRecipeFamily(selectedRecipe, recipe)) handleCloseModal();
       } else {
         setRecipes(prev => prev.map(r =>
-          isSameRecipeFamily(r, recipe) ? { ...r, isFavorite: isFav } : r
+            isSameRecipeFamily(r, recipe) ? { ...r, isFavorite: isFav } : r
         ));
         setSelectedRecipe(prev =>
-          prev && isSameRecipeFamily(prev, recipe) ? { ...prev, isFavorite: isFav } : prev
+            prev && isSameRecipeFamily(prev, recipe) ? { ...prev, isFavorite: isFav } : prev
         );
         if (isSameRecipeFamily(recipeDetail, recipe)) {
           setRecipeDetail({ ...recipeDetail, isFavorite: isFav });
@@ -253,37 +255,41 @@ const RecipeList: React.FC = () => {
 
     const fetchData = async () => {
       const favoritesOnly = activeCategory === 'favorites';
-      const categoryParam = !favoritesOnly && activeCategory !== 'all' ? activeCategory : undefined;
-      const queryKey = `${debouncedSearch ?? ''}|${categoryParam ?? ''}|${favoritesOnly}|${page}|${size}|${user?.id || 'anonymous'}|${refreshToken}`;
-      if (lastQueryRef.current === queryKey) return;
+      const queryKey = `${debouncedSearch || ''}|${activeCategory}|${favoritesOnly}|${page}|${size}|${user?.id || 'anonymous'}|${refreshToken}`;
 
+      if (lastQueryRef.current === queryKey) return;
       lastQueryRef.current = queryKey;
       setLoading(true);
 
       try {
         const data = await recipeService.getRecipes({
           title: debouncedSearch || undefined,
-          category: categoryParam,
+          category: activeCategory,
           favoritesOnly: favoritesOnly || undefined,
           page,
           size,
           signal: abortController.signal
         });
+
         if (mounted) setRecipes(data);
       } catch (e: any) {
-        if (mounted && e?.name !== 'CanceledError' && e?.name !== 'AbortError') {
+        const isCanceled = e?.name === 'CanceledError' || e?.name === 'AbortError' || e?.code === 'ERR_CANCELED';
+
+        if (mounted && !isCanceled) {
           showToast(e?.message || t('toasts.recipes.loadError'), 'error');
         }
       } finally {
         if (mounted) setLoading(false);
       }
     };
+
     fetchData();
+
     return () => {
       mounted = false;
       abortController.abort();
     };
-  }, [debouncedSearch, page, activeCategory, refreshToken, recipeService, showToast, user?.id]);
+  }, [debouncedSearch, page, activeCategory, refreshToken, recipeService, showToast, user?.id, size, t]);
 
   useEffect(() => {
     if (isRecipeModalOpen) {
@@ -308,7 +314,6 @@ const RecipeList: React.FC = () => {
     lastQueryRef.current = '';
   }, [activeCategory]);
 
-  // Handle direct recipe link from notifications
   useEffect(() => {
     if (isRecipeViewOpen && recipeToView) {
       handleOpenDetail(recipeToView);
@@ -319,54 +324,49 @@ const RecipeList: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const recipeIdFromUrl = params.get('recipeId');
-    
+
     if (recipeIdFromUrl && !isModalOpen && !loading) {
       const rid = parseInt(recipeIdFromUrl);
-      // If the recipe is already in the list, open it
       const recipeInList = recipes.find(r => r.id === rid);
       if (recipeInList) {
         handleOpenDetail(recipeInList);
-        // Clear the query parameter so it doesn't reopen if modal is closed and navigated back
         const newParams = new URLSearchParams(location.search);
         newParams.delete('recipeId');
         const newSearch = newParams.toString();
         navigate({ search: newSearch ? `?${newSearch}` : '' }, { replace: true });
       } else if (!loading && recipes.length > 0) {
-          // If not in current page, we might need to fetch it explicitly or just show an error
-          // For now, let's try to fetch it if it's not in the list
-          const fetchAndOpen = async () => {
-              try {
-                  const details = await recipeService.getRecipeById(rid);
-                  if (details) {
-                      // We need to convert Recipe to RecipeListItem minimally
-                      const listItem: RecipeListItem = {
-                          id: details.id,
-                          title: details.title,
-                          imageUrl: details.imageUrl,
-                          preparationTimeMinutes: details.preparationTimeMinutes,
-                          totalCalories: details.totalCalories,
-                          averageRating: details.averageRating,
-                          ratingCount: details.ratingCount,
-                          isFavorite: details.isFavorite,
-                          status: details.status,
-                          createdBy: details.createdBy,
-                          createdAt: details.createdAt,
-                          parentId: details.parentId,
-                          versionNumber: details.versionNumber,
-                          category: details.category,
-                          dietType: details.dietType
-                      };
-                      handleOpenDetail(listItem);
-                      const newParams = new URLSearchParams(location.search);
-                      newParams.delete('recipeId');
-                      const newSearch = newParams.toString();
-                      navigate({ search: newSearch ? `?${newSearch}` : '' }, { replace: true });
-                  }
-              } catch (err) {
-                  console.error("Failed to fetch recipe from URL", err);
-              }
-          };
-          fetchAndOpen();
+        const fetchAndOpen = async () => {
+          try {
+            const details = await recipeService.getRecipeById(rid);
+            if (details) {
+              const listItem: RecipeListItem = {
+                id: details.id,
+                title: details.title,
+                imageUrl: details.imageUrl,
+                preparationTimeMinutes: details.preparationTimeMinutes,
+                totalCalories: details.totalCalories,
+                averageRating: details.averageRating,
+                ratingCount: details.ratingCount,
+                isFavorite: details.isFavorite,
+                status: details.status,
+                createdBy: details.createdBy,
+                createdAt: details.createdAt,
+                parentId: details.parentId,
+                versionNumber: details.versionNumber,
+                category: details.category,
+                dietType: details.dietType
+              };
+              handleOpenDetail(listItem);
+              const newParams = new URLSearchParams(location.search);
+              newParams.delete('recipeId');
+              const newSearch = newParams.toString();
+              navigate({ search: newSearch ? `?${newSearch}` : '' }, { replace: true });
+            }
+          } catch (err) {
+            console.error("Failed to fetch recipe from URL", err);
+          }
+        };
+        fetchAndOpen();
       }
     }
   }, [location.search, recipes, loading, isModalOpen]);
@@ -383,12 +383,11 @@ const RecipeList: React.FC = () => {
       ]);
       setRecipeDetail(details);
       setRecipeVersions(versions);
-      
-      // Sync favorite state from details
+
       if (details && details.isFavorite !== undefined) {
         const isFav = details.isFavorite;
-        setRecipes(prev => prev.map(r => 
-          isSameRecipeFamily(r, details) ? { ...r, isFavorite: isFav } : r
+        setRecipes(prev => prev.map(r =>
+            isSameRecipeFamily(r, details) ? { ...r, isFavorite: isFav } : r
         ));
         setSelectedRecipe(prev => {
           if (!prev) return null;
@@ -420,11 +419,11 @@ const RecipeList: React.FC = () => {
       setRecipeDetail(details);
       setSelectedRecipe(prev => {
         if (!prev) return null;
-        return { 
-          ...prev, 
-          id: details.id, 
-          title: details.title, 
-          imageUrl: details.imageUrl, 
+        return {
+          ...prev,
+          id: details.id,
+          title: details.title,
+          imageUrl: details.imageUrl,
           status: details.status,
           createdBy: details.createdBy,
           createdAt: details.createdAt,
@@ -458,16 +457,17 @@ const RecipeList: React.FC = () => {
     openConsumption(recipe);
   };
 
-  const categories = [
+  // Kategorilerin keys (anahtar) değerleri tam olarak Enum değerleriyle eşleştirildi
+  const categories: { key: RecipeCategory | 'all' | 'favorites'; label: string }[] = [
     { key: 'all', label: t('recipes.categories.all') },
-    { key: 'ANA_YEMEKLER', label: t('recipes.categories.ana_yemekler') },
-    { key: 'CORBALAR', label: t('recipes.categories.corbalar') },
-    { key: 'KAHVALTILIK_VE_BRANCH', label: t('recipes.categories.kahvaltilik_ve_branch') },
-    { key: 'HAMUR_ISLERI_VE_BOREKLER', label: t('recipes.categories.hamur_isleri_ve_borekler') },
-    { key: 'TATLILAR_VE_PASTALAR', label: t('recipes.categories.tatlilar_ve_pastalar') },
-    { key: 'SALATALAR_VE_MEZELER', label: t('recipes.categories.salatalar_ve_mezeler') },
-    { key: 'ATISTIRMALIKLAR_VE_APARATIFLER', label: t('recipes.categories.atistirmaliklar_ve_aparatifler') },
-    { key: 'ICECEKLER', label: t('recipes.categories.icecekler') },
+    { key: RecipeCategory.ANA_YEMEKLER, label: t('recipes.categories.ana_yemekler') },
+    { key: RecipeCategory.CORBALAR, label: t('recipes.categories.corbalar') },
+    { key: RecipeCategory.KAHVALTILIK_VE_BRANCH, label: t('recipes.categories.kahvaltilik_ve_branch') },
+    { key: RecipeCategory.HAMUR_ISLERI_VE_BOREKLER, label: t('recipes.categories.hamur_isleri_ve_borekler') },
+    { key: RecipeCategory.TATLILAR_VE_PASTALAR, label: t('recipes.categories.tatlilar_ve_pastalar') },
+    { key: RecipeCategory.SALATALAR_VE_MEZELER, label: t('recipes.categories.salatalar_ve_mezeler') },
+    { key: RecipeCategory.ATISTIRMALIKLAR_VE_APARATIFLER, label: t('recipes.categories.atistirmamalilar_ve_aparatifler') },
+    { key: RecipeCategory.ICECEKLER, label: t('recipes.categories.icecekler') },
     {
       key: 'favorites',
       label: t('recipes.categories.favorites', {
@@ -493,9 +493,9 @@ const RecipeList: React.FC = () => {
             <button className="flex items-center gap-2 px-5 py-3 glass-card rounded-2xl text-sm font-bold border-card-border hover:text-terracotta transition-all">
               <Filter size={18} /> Filtrele
             </button>
-            <button 
-              onClick={() => openRecipeModal()}
-              className="flex items-center gap-2 px-6 py-3 bg-terracotta text-white rounded-2xl text-sm font-bold shadow-brand-hero hover:scale-105 transition-all"
+            <button
+                onClick={() => openRecipeModal()}
+                className="flex items-center gap-2 px-6 py-3 bg-terracotta text-white rounded-2xl text-sm font-bold shadow-brand-hero hover:scale-105 transition-all"
             >
               <Plus size={18} /> {t('recipes.newRecipe')}
             </button>
@@ -543,16 +543,17 @@ const RecipeList: React.FC = () => {
               >
                 <div className="h-64 relative overflow-hidden">
                   <RecipeArtwork
-                    imageUrl={recipe.imageUrl}
-                    title={recipe.title}
-                    className="h-full w-full"
-                    mediaClassName="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-[1.04]"
+                      imageUrl={recipe.imageUrl}
+                      title={recipe.title}
+                      className="h-full w-full"
+                      mediaClassName="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-[1.04]"
                   />
                   <div className="absolute top-5 left-5 flex flex-col gap-2">
                     <div className="glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
                       {recipe.category ? t(`recipes.categories.${recipe.category.toLowerCase()}`) : 'Gurme'}
                     </div>
-                    {recipe.dietType && recipe.dietType !== 'NONE' && (
+                    {/* dietType kontrolü DietType.NONE Enum referansı ile güvenli hale getirildi */}
+                    {recipe.dietType && recipe.dietType !== DietType.NONE && (
                         <div className="bg-moss-forest/80 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-lg">
                           {t(`recipes.dietTypes.${recipe.dietType.toLowerCase()}`)}
                         </div>
@@ -563,43 +564,43 @@ const RecipeList: React.FC = () => {
                         </div>
                     )}
                     {recipe.status && (
-                      <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border shadow-lg ${
-                        recipe.status === 'APPROVED' ? 'bg-moss-forest/20 text-moss-forest border-moss-forest/30' :
-                        recipe.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' :
-                        recipe.status === 'DRAFT' ? 'bg-blue-500/20 text-blue-500 border-blue-500/30' :
-                        recipe.status === 'SUPERSEDED' ? 'bg-zinc-500/20 text-zinc-500 border-zinc-500/30' :
-                        'bg-red-500/20 text-red-500 border-red-500/30'
-                      }`}>
-                        {t(`recipes.status.${recipe.status.toLowerCase()}`)}
-                      </div>
+                        <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border shadow-lg ${
+                            recipe.status === 'APPROVED' ? 'bg-moss-forest/20 text-moss-forest border-moss-forest/30' :
+                                recipe.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' :
+                                    recipe.status === 'DRAFT' ? 'bg-blue-500/20 text-blue-500 border-blue-500/30' :
+                                        recipe.status === 'SUPERSEDED' ? 'bg-zinc-500/20 text-zinc-500 border-zinc-500/30' :
+                                            'bg-red-500/20 text-red-500 border-red-500/30'
+                        }`}>
+                          {t(`recipes.status.${recipe.status.toLowerCase()}`)}
+                        </div>
                     )}
                   </div>
-                  <button 
-                    onClick={(e) => handleToggleFavorite(recipe, e)}
-                    className={`absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl transition-all hover:scale-110 active:scale-90 ${recipe.isFavorite ? 'text-terracotta' : 'text-white/70 hover:text-terracotta'}`}
+                  <button
+                      onClick={(e) => handleToggleFavorite(recipe, e)}
+                      className={`absolute top-5 right-5 p-2.5 glass-card-dark rounded-xl transition-all hover:scale-110 active:scale-90 ${recipe.isFavorite ? 'text-terracotta' : 'text-white/70 hover:text-terracotta'}`}
                   >
                     <Star size={18} fill={recipe.isFavorite ? "currentColor" : "none"} />
                   </button>
                   <div className="absolute top-5 right-20 flex gap-2">
                     {user && (
-                      <button 
-                        onClick={(e) => handleCookThis(recipe, e)}
-                        className="p-2.5 bg-moss-forest text-white rounded-xl hover:bg-moss-forest/90 transition-colors shadow-lg"
-                        title="Bu Tarifi Yap"
-                      >
-                        <UtensilsCrossed size={18} />
-                      </button>
+                        <button
+                            onClick={(e) => handleCookThis(recipe, e)}
+                            className="p-2.5 bg-moss-forest text-white rounded-xl hover:bg-moss-forest/90 transition-colors shadow-lg"
+                            title="Bu Tarifi Yap"
+                        >
+                          <UtensilsCrossed size={18} />
+                        </button>
                     )}
                     {user && (
-                        <button 
+                        <button
                             onClick={(e) => {
-                                e.stopPropagation();
-                                openRecipeModal(recipe);
+                              e.stopPropagation();
+                              openRecipeModal(recipe);
                             }}
                             className="p-2.5 glass-card-dark rounded-xl text-white hover:text-terracotta transition-colors shadow-lg"
                             title={t('common.edit')}
                         >
-                            <Edit3 size={18} />
+                          <Edit3 size={18} />
                         </button>
                     )}
                   </div>
@@ -670,47 +671,47 @@ const RecipeList: React.FC = () => {
                 <div className="overflow-y-auto custom-scrollbar">
                   <div className="h-64 md:h-96 relative shrink-0">
                     <RecipeArtwork
-                      imageUrl={selectedRecipe.imageUrl}
-                      title={selectedRecipe.title}
-                      variant="hero"
-                      className="h-full w-full"
-                      mediaClassName="h-full w-full object-cover"
+                        imageUrl={selectedRecipe.imageUrl}
+                        title={selectedRecipe.title}
+                        variant="hero"
+                        className="h-full w-full"
+                        mediaClassName="h-full w-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-espresso-midnight via-transparent to-transparent" />
                     <div className="absolute bottom-10 left-10 right-10">
                       <div className="flex items-center justify-between">
                         <h2 className="text-4xl md:text-5xl font-serif font-bold text-white drop-shadow-lg">{selectedRecipe.title}</h2>
                         <div className="flex gap-3">
-                          <button 
-                            onClick={(e) => handleToggleFavorite(selectedRecipe, e)}
-                            className={`p-4 rounded-2xl backdrop-blur-md border border-white/20 transition-all hover:scale-105 active:scale-95 ${selectedRecipe.isFavorite ? 'bg-terracotta text-white' : 'bg-white/10 text-white/70 hover:text-white'}`}
+                          <button
+                              onClick={(e) => handleToggleFavorite(selectedRecipe, e)}
+                              className={`p-4 rounded-2xl backdrop-blur-md border border-white/20 transition-all hover:scale-105 active:scale-95 ${selectedRecipe.isFavorite ? 'bg-terracotta text-white' : 'bg-white/10 text-white/70 hover:text-white'}`}
                           >
                             <Star size={24} fill={selectedRecipe.isFavorite ? "currentColor" : "none"} />
                           </button>
                           {user && (
-                            <button 
-                              onClick={(e) => {
-                                handleCloseModal();
-                                handleCookThis(selectedRecipe, e);
-                              }}
-                              className="px-6 py-4 bg-moss-forest text-white rounded-2xl hover:bg-moss-forest/90 transition-all hover:scale-105 flex items-center gap-2 font-bold shadow-lg shadow-moss-forest/20"
-                            >
-                              <UtensilsCrossed size={20} />
-                              Bu Tarifi Yap
-                            </button>
+                              <button
+                                  onClick={(e) => {
+                                    handleCloseModal();
+                                    handleCookThis(selectedRecipe, e);
+                                  }}
+                                  className="px-6 py-4 bg-moss-forest text-white rounded-2xl hover:bg-moss-forest/90 transition-all hover:scale-105 flex items-center gap-2 font-bold shadow-lg shadow-moss-forest/20"
+                              >
+                                <UtensilsCrossed size={20} />
+                                Bu Tarifi Yap
+                              </button>
                           )}
                           {user && (
-                            <button 
-                              onClick={() => {
-                                const recipeToEdit = recipeDetail ?? selectedRecipe;
-                                handleCloseModal();
-                                openRecipeModal({ ...recipeToEdit, editExactVersion: true });
-                              }}
-                              className="p-4 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl hover:bg-terracotta transition-all hover:scale-105"
-                              title={t('common.edit')}
-                            >
-                              <Edit3 size={24} />
-                            </button>
+                              <button
+                                  onClick={() => {
+                                    const recipeToEdit = recipeDetail ?? selectedRecipe;
+                                    handleCloseModal();
+                                    openRecipeModal({ ...recipeToEdit, editExactVersion: true });
+                                  }}
+                                  className="p-4 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl hover:bg-terracotta transition-all hover:scale-105"
+                                  title={t('common.edit')}
+                              >
+                                <Edit3 size={24} />
+                              </button>
                           )}
                         </div>
                       </div>
@@ -725,55 +726,55 @@ const RecipeList: React.FC = () => {
                           <Flame size={18} className="text-terracotta" /> {Math.round(selectedRecipe.totalCalories || 0)} KCAL
                         </div>
                         {selectedRecipe.status && (
-                          <div className={`flex items-center gap-2 text-white/90 text-[10px] font-black uppercase bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 ${
-                            selectedRecipe.status === 'APPROVED' ? 'text-moss-sage' :
-                            selectedRecipe.status === 'PENDING' ? 'text-yellow-400' :
-                            selectedRecipe.status === 'DRAFT' ? 'text-blue-400' :
-                            selectedRecipe.status === 'SUPERSEDED' ? 'text-zinc-300' :
-                            'text-red-400'
-                          }`}>
-                            {t(`recipes.status.${selectedRecipe.status.toLowerCase()}`)}
-                          </div>
+                            <div className={`flex items-center gap-2 text-white/90 text-[10px] font-black uppercase bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 ${
+                                selectedRecipe.status === 'APPROVED' ? 'text-moss-sage' :
+                                    selectedRecipe.status === 'PENDING' ? 'text-yellow-400' :
+                                        selectedRecipe.status === 'DRAFT' ? 'text-blue-400' :
+                                            selectedRecipe.status === 'SUPERSEDED' ? 'text-zinc-300' :
+                                                'text-red-400'
+                            }`}>
+                              {t(`recipes.status.${selectedRecipe.status.toLowerCase()}`)}
+                            </div>
                         )}
                         {recipeVersions.length > 1 && (
-                          <div className="relative group/versions">
-                            <button className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all">
-                              <History size={16} className="text-terracotta" />
-                              VERSİYON {selectedRecipe.versionNumber ?? recipeVersions.find(v => v.id === selectedRecipe.id)?.versionNumber ?? recipeVersions.findIndex(v => v.id === selectedRecipe.id) + 1}
-                            </button>
-                            <div className="absolute top-full right-0 mt-2 w-64 glass-card-dark rounded-2xl border border-white/10 shadow-2xl opacity-0 invisible group-hover/versions:opacity-100 group-hover/versions:visible transition-all z-50 overflow-hidden">
-                              <div className="p-4 border-b border-white/5 bg-white/5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Tüm Versiyonlar</p>
-                              </div>
-                              <div className="max-h-64 overflow-y-auto">
-                                {recipeVersions.map((v, idx) => (
-                                  <button
-                                    key={v.id}
-                                    onClick={() => handleVersionChange(v.id)}
-                                    className={`w-full flex items-center gap-3 p-4 hover:bg-white/10 transition-all text-left border-b border-white/5 last:border-0 ${v.id === selectedRecipe.id ? 'bg-terracotta/20' : ''}`}
-                                  >
-                                    <div className="flex-none w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-white/60">
-                                      V{v.versionNumber ?? idx + 1}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <p className="text-sm font-bold text-white truncate">
-                                          {v.parentId ? `Revizyon V${v.versionNumber ?? idx + 1}` : `Yayındaki V${v.versionNumber ?? idx + 1}`}
-                                        </p>
-                                        {v.status === 'APPROVED' && <CheckCircle2 size={12} className="text-moss-sage" />}
-                                        {v.status === 'PENDING' && <Clock3 size={12} className="text-yellow-400" />}
-                                        {v.status === 'REJECTED' && <AlertCircle size={12} className="text-red-400" />}
-                                        {v.status === 'SUPERSEDED' && <History size={12} className="text-zinc-300" />}
-                                      </div>
-                                      <p className="text-[10px] text-white/40 font-medium">
-                                        {v.createdAt ? new Date(v.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tarih Belirtilmemiş'}
-                                      </p>
-                                    </div>
-                                  </button>
-                                ))}
+                            <div className="relative group/versions">
+                              <button className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all">
+                                <History size={16} className="text-terracotta" />
+                                VERSİYON {selectedRecipe.versionNumber ?? recipeVersions.find(v => v.id === selectedRecipe.id)?.versionNumber ?? recipeVersions.findIndex(v => v.id === selectedRecipe.id) + 1}
+                              </button>
+                              <div className="absolute top-full right-0 mt-2 w-64 glass-card-dark rounded-2xl border border-white/10 shadow-2xl opacity-0 invisible group-hover/versions:opacity-100 group-hover/versions:visible transition-all z-50 overflow-hidden">
+                                <div className="p-4 border-b border-white/5 bg-white/5">
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Tüm Versiyonlar</p>
+                                </div>
+                                <div className="max-h-64 overflow-y-auto">
+                                  {recipeVersions.map((v, idx) => (
+                                      <button
+                                          key={v.id}
+                                          onClick={() => handleVersionChange(v.id)}
+                                          className={`w-full flex items-center gap-3 p-4 hover:bg-white/10 transition-all text-left border-b border-white/5 last:border-0 ${v.id === selectedRecipe.id ? 'bg-terracotta/20' : ''}`}
+                                      >
+                                        <div className="flex-none w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-white/60">
+                                          V{v.versionNumber ?? idx + 1}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <p className="text-sm font-bold text-white truncate">
+                                              {v.parentId ? `Revizyon V${v.versionNumber ?? idx + 1}` : `Yayındaki V${v.versionNumber ?? idx + 1}`}
+                                            </p>
+                                            {v.status === 'APPROVED' && <CheckCircle2 size={12} className="text-moss-sage" />}
+                                            {v.status === 'PENDING' && <Clock3 size={12} className="text-yellow-400" />}
+                                            {v.status === 'REJECTED' && <AlertCircle size={12} className="text-red-400" />}
+                                            {v.status === 'SUPERSEDED' && <History size={12} className="text-zinc-300" />}
+                                          </div>
+                                          <p className="text-[10px] text-white/40 font-medium">
+                                            {v.createdAt ? new Date(v.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tarih Belirtilmemiş'}
+                                          </p>
+                                        </div>
+                                      </button>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
                         )}
                       </div>
                     </div>
@@ -787,7 +788,6 @@ const RecipeList: React.FC = () => {
                         </div>
                     ) : (
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-12">
-                          {/* Rating Section in Detail */}
                           <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-terracotta/5 rounded-[2rem] border border-terracotta/10 gap-6">
                             <div className="space-y-1 text-center md:text-left">
                               <h4 className="text-lg font-bold text-espresso-midnight dark:text-white">Bu tarifi nasıl buldunuz?</h4>
@@ -795,12 +795,12 @@ const RecipeList: React.FC = () => {
                                 Genel Ortalanma: {selectedRecipe.averageRating?.toFixed(1) || '0.0'} / 10
                               </p>
                             </div>
-                            <RecipeRating 
-                              recipeId={selectedRecipe.id} 
-                              initialRating={recipeDetail?.userRating ? Math.round(recipeDetail.userRating / 2) : 0}
-                              averageRating={selectedRecipe.averageRating ? selectedRecipe.averageRating / 2 : 0}
-                              ratingCount={selectedRecipe.ratingCount || 0}
-                              size={32}
+                            <RecipeRating
+                                recipeId={selectedRecipe.id}
+                                initialRating={recipeDetail?.userRating ? Math.round(recipeDetail.userRating / 2) : 0}
+                                averageRating={selectedRecipe.averageRating ? selectedRecipe.averageRating / 2 : 0}
+                                ratingCount={selectedRecipe.ratingCount || 0}
+                                size={32}
                             />
                           </div>
 

@@ -134,6 +134,7 @@ export interface RecipeListItem {
 }
 
 export interface Recipe extends Omit<RecipeListItem, 'difficulty'> {
+  category?: RecipeCategory | null;
   description?: string | null;
   difficulty?: Difficulty | null;
   servings?: number | null;

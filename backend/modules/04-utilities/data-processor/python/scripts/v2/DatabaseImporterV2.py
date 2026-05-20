@@ -45,7 +45,6 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
     df_units = pd.read_excel(xls, 'ingredient_units')
 
     print("[2/7] Veriler filtreleniyor ve hazırlanıyor...")
-    # Sadece geçerli ID'lere sahip olanları tut
     valid_ing_ids = set(df_ing['id'])
     valid_rec_ids = set(df_rec['id'])
 
@@ -53,7 +52,7 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
     df_units = df_units[df_units['ingredient_id'].isin(valid_ing_ids)].copy()
     df_ri = df_ri[df_ri['ingredient_id'].isin(valid_ing_ids) & df_ri['recipe_id'].isin(valid_rec_ids)].copy()
 
-    # Veri Temizliği: Virgüllü sayıları (1,5) noktalı (1.5) yap ve float'a çevir
+    # Veri Temizliği: Virgüllü sayıları noktalı yap ve float'a çevir
     def clean_float(val):
         if pd.isna(val): return 0.0
         if isinstance(val, (int, float)): return float(val)
@@ -66,7 +65,6 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
 
     def calculate_density(row):
         """Kategori, isim ve fiziksel duruma göre akıllı yoğunluk tahmini yapar."""
-        # Eğer Excel'de zaten bir yoğunluk girilmişse ve geçerliyse onu kullan
         if 'density' in row and pd.notna(row['density']) and row['density'] > 0:
             return float(row['density'])
 
@@ -74,75 +72,32 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
         category = str(row['category']).upper()
         state = str(row.get('physical_state', 'SOLID')).upper()
 
-        # 1. SIVI VE YARI SIVI MALZEMELER (LIQUID / SEMI_SOLID)
         if state in ['LIQUID', 'SEMI_SOLID']:
-            # Süt ve Süt Alternatifleri (Öncelikli)
-            if any(word in name for word in ['süt', 'milk', 'krema', 'cream', 'kefir', 'ayran']):
-                return 1.03
-            # Yağlar
-            if 'OIL' in category or any(word in name for word in ['yağ', 'oil', 'zeytinyağ', 'margarin', 'tereyağ']):
-                return 0.92
-            # Şuruplar ve Bal (Ağır sıvılar)
-            if any(word in name for word in ['bal', 'honey', 'pekmez', 'molasses', 'şurup', 'syrup', 'reçel', 'jam']):
-                return 1.40
-            # Soslar ve Macunlar
-            if any(word in name for word in ['sos', 'sauce', 'ketçap', 'ketchup', 'mayonez', 'mayo', 'hardal', 'mustard', 'salça', 'ezme']):
-                return 1.15
-            if any(word in name for word in ['sirke', 'vinegar', 'limon suyu', 'lemon juice']):
-                return 1.01
-            # Su bazlılar
-            if any(word in name for word in ['su', 'water', 'çay', 'tea', 'kahve', 'coffee', 'meyve suyu']):
-                return 1.0
+            if any(word in name for word in ['süt', 'milk', 'krema', 'cream', 'kefir', 'ayran']): return 1.03
+            if 'OIL' in category or any(word in name for word in ['yağ', 'oil', 'zeytinyağ', 'margarin', 'tereyağ']): return 0.92
+            if any(word in name for word in ['bal', 'honey', 'pekmez', 'molasses', 'şurup', 'syrup', 'reçel', 'jam']): return 1.40
+            if any(word in name for word in ['sos', 'sauce', 'ketçap', 'ketchup', 'mayonez', 'mayo', 'hardal', 'mustard', 'salça', 'ezme']): return 1.15
+            if any(word in name for word in ['sirke', 'vinegar', 'limon suyu', 'lemon juice']): return 1.01
+            if any(word in name for word in ['su', 'water', 'çay', 'tea', 'kahve', 'coffee', 'meyve suyu']): return 1.0
             return 1.0
 
-        # 2. KATI / TOZ MALZEMELER (SOLID)
-        
-        # Un, Nişasta ve Tozlar (Hafif ve boşluklu)
         is_powder = any(word in name for word in ['flour', 'un', 'nişasta', 'starch', 'pudra', 'toz', 'kakao', 'cocoa', 'karbonat', 'kabartma tozu']) or \
                     (name == 'un') or (' un ' in f' {name} ') or (' unu' in name) or (' unlu' in name)
-        if is_powder:
-            return 0.6
-
-        # Şeker (Kristal şeker toza göre daha yoğundur)
-        if any(word in name for word in ['şeker', 'sugar']) and 'pudra' not in name:
-            return 0.85
-
-        # Tuz
-        if 'tuz' in name or 'salt' in name:
-            return 1.2
-
-        # Bakliyat (Pirinç, mercimek, fasulye vb.)
-        if any(word in name for word in ['pirinç', 'rice', 'mercimek', 'lentil', 'fasulye', 'bean', 'nohut', 'chickpea', 'bulgur', 'makarna', 'pasta']):
-            return 0.80
-
-        # Baharatlar (Çok hafif)
-        if 'SPICE' in category or any(word in name for word in ['nane', 'kekik', 'pul biber', 'karabiber', 'kimyon', 'sumak', 'tarçın', 'biberiye']):
-            return 0.4
-
-        # Kuruyemişler
-        if 'NUT' in category or any(word in name for word in ['ceviz', 'walnut', 'fındık', 'hazelnut', 'fıstık', 'peanut', 'badem', 'almond']):
-            return 0.55
-
-        # Et ve Şarküteri
-        if 'MEAT' in category or any(word in name for word in ['et', 'kıyma', 'tavuk', 'chicken', 'balık', 'fish', 'sucuk', 'salam', 'sosis']):
-            return 1.05
-
-        # Peynirler
-        if any(word in name for word in ['peynir', 'cheese', 'kaşar', 'lor', 'çökelek']):
-            return 0.65
-
-        # Sebze ve Meyveler (Genelde su yoğunluğuna yakın ama boşluklu)
-        if 'VEGETABLE' in category or 'FRUIT' in category:
-            return 0.9
-
-        # Varsayılan katı yoğunluğu
+        if is_powder: return 0.6
+        if any(word in name for word in ['şeker', 'sugar']) and 'pudra' not in name: return 0.85
+        if 'tuz' in name or 'salt' in name: return 1.2
+        if any(word in name for word in ['pirinç', 'rice', 'mercimek', 'lentil', 'fasulye', 'bean', 'nohut', 'chickpea', 'bulgur', 'makarna', 'pasta']): return 0.80
+        if 'SPICE' in category or any(word in name for word in ['nane', 'kekik', 'pul biber', 'karabiber', 'kimyon', 'sumak', 'tarçın', 'biberiye']): return 0.4
+        if 'NUT' in category or any(word in name for word in ['ceviz', 'walnut', 'fındık', 'hazelnut', 'fıstık', 'peanut', 'badem', 'almond']): return 0.55
+        if 'MEAT' in category or any(word in name for word in ['et', 'kıyma', 'tavuk', 'chicken', 'balık', 'fish', 'sucuk', 'salam', 'sosis']): return 1.05
+        if any(word in name for word in ['peynir', 'cheese', 'kaşar', 'lor', 'çökelek']): return 0.65
+        if 'VEGETABLE' in category or 'FRUIT' in category: return 0.9
         return 1.0
 
     df_ri['amount'] = df_ri['amount'].apply(clean_float)
     if 'grams' in df_ri.columns:
         df_ri['grams'] = df_ri['grams'].apply(clean_float)
 
-    # Sütun isimlerini DB şemasına uyarla (nutrition tablosu için)
     df_nutr = df_nutr.rename(columns={
         'calories_100g': 'calories_per100g',
         'protein_100g':  'protein_per100g',
@@ -150,13 +105,9 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
         'fat_100g':      'fat_per100g',
     })
 
-    # Nutrition tablosu için eksik değerleri 0 ile doldur
     nutr_cols = ['calories_per100g', 'protein_per100g', 'carbs_per100g', 'fat_per100g']
     for col in nutr_cols:
-        if col not in df_nutr.columns:
-            df_nutr[col] = 0.0
-        else:
-            df_nutr[col] = df_nutr[col].fillna(0.0)
+        df_nutr[col] = df_nutr[col].fillna(0.0) if col in df_nutr.columns else 0.0
 
     print("[3/7] Ön kontroller (Pre-flight) yapılıyor...")
     preflight_check(df_ing, df_nutr, df_rec, df_ri, df_units)
@@ -168,7 +119,6 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
     print(f"[4/7] Veritabanına bağlanılıyor...")
     try:
         engine = create_engine(db_url)
-        # Bağlantı testi
         with engine.connect() as t_conn: t_conn.execute(text("SELECT 1"))
     except Exception as e:
         print(f"[ERROR] Bağlantı başarısız: {e}")
@@ -177,56 +127,38 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
     print("[5/7] Veriler aktarılıyor (Single Transaction)...")
     try:
         with engine.begin() as conn:
-            # Önce mevcut verileri temizle (kullanıcı onayı varsayılıyor veya test ortamı)
             conn.execute(text("TRUNCATE TABLE recipe_ingredients, ingredient_nutrition, ingredient_units, recipes, ingredients RESTART IDENTITY CASCADE"))
             print("       🧹 Mevcut veriler temizlendi (Truncate).")
 
-            # 1. Ingredients (density ve physical_state ve preferred_unit akıllı atama)
-            if 'physical_state' not in df_ing.columns: 
-                df_ing['physical_state'] = 'SOLID'
-            
-            # preferred_unit kolonu yoksa ekle
-            if 'preferred_unit' not in df_ing.columns:
-                df_ing['preferred_unit'] = None
+            # 1. Ingredients Yükleme
+            if 'physical_state' not in df_ing.columns: df_ing['physical_state'] = 'SOLID'
+            if 'preferred_unit' not in df_ing.columns: df_ing['preferred_unit'] = None
 
-            # Excel'deki physical_state verisini koru, sadece boşsa kategori bazlı tahmin et
             def predict_state(row):
-                if pd.notna(row.get('physical_state')):
-                    return str(row['physical_state']).upper()
-                if str(row['category']).upper() in ['OIL', 'SAUCE', 'BEVERAGE']:
-                    return 'LIQUID'
+                if pd.notna(row.get('physical_state')): return str(row['physical_state']).upper()
+                if str(row['category']).upper() in ['OIL', 'SAUCE', 'BEVERAGE']: return 'LIQUID'
                 return 'SOLID'
 
             def predict_preferred_unit(row):
-                if pd.notna(row.get('preferred_unit')):
-                    return str(row['preferred_unit'])
-                
+                if pd.notna(row.get('preferred_unit')): return str(row['preferred_unit'])
                 name = str(row['name']).lower()
                 category = str(row['category']).upper()
                 state = str(row.get('physical_state', 'SOLID')).upper()
-
                 if 'sarımsak' in name: return 'diş'
                 if any(word in name for word in ['yumurta', 'egg']): return 'adet'
                 if any(word in name for word in ['domates', 'biber', 'salatalık', 'patlıcan', 'kabak']): return 'adet'
                 if any(word in name for word in ['maydanoz', 'dereotu', 'nane', 'taze']): return 'dal'
                 if any(word in name for word in ['tuz', 'karabiber', 'pul biber']): return 'tutam'
-                
-                if category == 'BEVERAGE' or (category == 'DAIRY' and state == 'LIQUID') or category == 'SAUCE':
-                    return 'su bardağı'
-                
+                if category == 'BEVERAGE' or (category == 'DAIRY' and state == 'LIQUID') or category == 'SAUCE': return 'su bardağı'
                 if state == 'LIQUID' or category == 'SAUCE':
                     if any(word in name for word in ['su', 'süt', 'meyve suyu']): return 'L'
                     return 'ml'
-                
                 return 'g'
 
             df_ing['physical_state'] = df_ing.apply(predict_state, axis=1)
             df_ing['preferred_unit'] = df_ing.apply(predict_preferred_unit, axis=1)
-
-            # Akıllı density hesaplama
             df_ing['density'] = df_ing.apply(calculate_density, axis=1)
-            
-            # BaseEntity ve zorunlu kolonlar
+
             now = pd.Timestamp.now()
             df_ing['active'] = True
             df_ing['created_at'] = now
@@ -237,45 +169,66 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
             conn.execute(text("SELECT setval('ingredients_id_seq', (SELECT COALESCE(MAX(id), 1) FROM ingredients))"))
             print(f"       ✅ ingredients")
 
-            # 2. Nutrition
+            # 2. Nutrition Yükleme
             if not df_nutr.empty:
                 df_nutr.to_sql('ingredient_nutrition', conn, if_exists='append', index=False)
                 print(f"       ✅ ingredient_nutrition")
-            else:
-                print(f"       ℹ️ ingredient_nutrition (Boş - Atlandı)")
 
-            # 3. Ingredient Units (Yeni Tablo)
+            # 3. Ingredient Units Yükleme
             if not df_units.empty:
                 df_units[['ingredient_id', 'unit_name', 'grams']].to_sql(
                     'ingredient_units', conn, if_exists='append', index=False)
                 conn.execute(text("SELECT setval('ingredient_units_id_seq', (SELECT COALESCE(MAX(id), 1) FROM ingredient_units))"))
                 print(f"       ✅ ingredient_units")
-            else:
-                print(f"       ℹ️ ingredient_units (Boş - Atlandı)")
 
-            # 4. Recipes
-            # average_rating ve rating_count gibi alanlar Excel'de yoksa varsayılan 0 ata
+            # 4. Recipes Yükleme
             if 'average_rating' not in df_rec.columns: df_rec['average_rating'] = 0.0
             if 'rating_count' not in df_rec.columns: df_rec['rating_count'] = 0
-            
-            # BaseEntity ve zorunlu kolonlar
-            now = pd.Timestamp.now()
-            df_rec['active'] = True
-            df_rec['created_at'] = now
-            df_rec['updated_at'] = now
             if 'status' not in df_rec.columns: df_rec['status'] = 'APPROVED'
-            df_rec['status'] = df_rec['status'].fillna('APPROVED')
 
-            df_rec.to_sql('recipes', conn, if_exists='append', index=False)
+            # Excel'den temizlenmiş olarak gelen sütun varyasyonlarını yakala
+            excel_category = None
+            excel_diet_type = None
+
+            for col in df_rec.columns:
+                c_clean = col.strip().lower()
+                if c_clean == 'category':
+                    excel_category = df_rec[col]
+                elif c_clean in ['diettype', 'diet_type', 'diet type']:
+                    excel_diet_type = df_rec[col]
+
+            # Verileri normalize et
+            df_rec['category_final'] = excel_category if excel_category is not None else 'ANA_YEMEKLER'
+            df_rec['diet_type_final'] = excel_diet_type if excel_diet_type is not None else 'NONE'
+
+            df_rec['category_final'] = df_rec['category_final'].fillna('ANA_YEMEKLER').astype(str).str.strip().str.upper()
+            df_rec['diet_type_final'] = df_rec['diet_type_final'].fillna('NONE').astype(str).str.strip().str.upper()
+            df_rec['status'] = df_rec['status'].fillna('APPROVED').astype(str).str.strip().str.upper()
+
+            # Sadece DB'nin tam olarak beklediği kolonları filtrele
+            db_recipe_columns = [
+                'id', 'title', 'instructions', 'preparation_time_minutes',
+                'servings', 'difficulty', 'status', 'average_rating', 'rating_count'
+            ]
+
+            valid_cols = [c for c in db_recipe_columns if c in df_rec.columns]
+            df_rec_db = df_rec[valid_cols].copy()
+
+            # Nihai şema eşlemesi
+            df_rec_db['category'] = df_rec['category_final']
+            df_rec_db['diet_type'] = df_rec['diet_type_final']
+            df_rec_db['active'] = True
+            df_rec_db['created_at'] = now
+            df_rec_db['updated_at'] = now
+
+            df_rec_db.to_sql('recipes', conn, if_exists='append', index=False)
             conn.execute(text("SELECT setval('recipes_id_seq', (SELECT COALESCE(MAX(id), 1) FROM recipes))"))
-            print(f"       ✅ recipes")
+            print(f"       ✅ recipes (Kayıt şeması temizlendi ve başarıyla yüklendi)")
 
-            # 5. Recipe Ingredients (amount, unit, grams)
-            if 'grams' not in df_ri.columns:
-                df_ri['grams'] = 0.0
-            else:
-                df_ri['grams'] = df_ri['grams'].fillna(0.0)
-            
+            # 5. Recipe Ingredients Yükleme
+            if 'grams' not in df_ri.columns: df_ri['grams'] = 0.0
+            df_ri['grams'] = df_ri['grams'].fillna(0.0)
+
             df_ri[['recipe_id', 'ingredient_id', 'amount', 'unit', 'grams']].to_sql(
                 'recipe_ingredients', conn, if_exists='append', index=False)
             conn.execute(text("SELECT setval('recipe_ingredients_id_seq', (SELECT COALESCE(MAX(id), 1) FROM recipe_ingredients))"))
@@ -290,7 +243,6 @@ def import_data(file_path: str, db_url: str, dry_run: bool = False):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    # Varsayılan olarak iki üst dizindeki temizlenmiş dosyayı arar
     default_file = os.path.join(script_dir, "..", "..", "mealai_database_cleaned.xlsx")
 
     parser = argparse.ArgumentParser(description='MealAI PostgreSQL Importer V2')
