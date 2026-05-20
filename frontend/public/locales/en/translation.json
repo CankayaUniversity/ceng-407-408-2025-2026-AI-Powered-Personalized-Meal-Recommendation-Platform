@@ -657,12 +657,23 @@
     "page": "PAGE",
     "categories": {
       "all": "All",
-      "main": "Main Course",
-      "breakfast": "Breakfast",
-      "salad": "Salad",
-      "dessert": "Dessert",
-      "fit": "Fit & Healthy",
+      "ana_yemekler": "Main Course",
+      "corbalar": "Soups",
+      "kahvaltilik_ve_branch": "Breakfast & Brunch",
+      "hamur_isleri_ve_borekler": "Pastries & Böreks",
+      "tatlilar_ve_pastalar": "Desserts & Cakes",
+      "salatalar_ve_mezeler": "Salads & Appetizers",
+      "atistirmaliklar_ve_aparatifler": "Snacks & Appetizers",
+      "icecekler": "Beverages",
       "favorites": "Favorites"
+    },
+    "dietTypes": {
+      "none": "None",
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarian",
+      "keto": "Keto",
+      "paleo": "Paleo",
+      "gluten_free": "Gluten-Free"
     },
     "status": {
       "draft": "Draft",
@@ -682,6 +693,7 @@
       "servingsLabel": "Servings",
       "caloriesLabel": "Calories (Kcal)",
       "categoryLabel": "Category",
+      "dietTypeLabel": "Diet Type",
       "ingredients": "Ingredients",
       "addIngredient": "Add Ingredient",
       "grams": "Grams",

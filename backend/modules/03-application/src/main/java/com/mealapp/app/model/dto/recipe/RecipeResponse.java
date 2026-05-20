@@ -1,6 +1,9 @@
 package com.mealapp.app.model.dto.recipe;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mealapp.domain.recipe.entity.RecipeCategory;
+
+import com.mealapp.domain.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +18,8 @@ import java.util.List;
 public class RecipeResponse {
     private Long id;
     private String title;
-    private String category;
+    private RecipeCategory category;
+    private User.DietType dietType;
     private Double calories;
     private Double kcalPerServing;
     private Double protein;

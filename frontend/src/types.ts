@@ -111,7 +111,8 @@ export interface Notification {
 export interface RecipeListItem {
   id: number;
   title: string;
-  category?: string | null;
+  category?: RecipeCategory | null;
+  dietType?: DietType | null;
   totalCalories?: number | null;
   totalProtein?: number | null;
   totalCarbs?: number | null;
@@ -404,6 +405,17 @@ export enum RecipeStatus {
   SUPERSEDED = 'SUPERSEDED'
 }
 
+export enum RecipeCategory {
+  ANA_YEMEKLER = 'ANA_YEMEKLER',
+  CORBALAR = 'CORBALAR',
+  KAHVALTILIK_VE_BRANCH = 'KAHVALTILIK_VE_BRANCH',
+  HAMUR_ISLERI_VE_BOREKLER = 'HAMUR_ISLERI_VE_BOREKLER',
+  TATLILAR_VE_PASTALAR = 'TATLILAR_VE_PASTALAR',
+  SALATALAR_VE_MEZELER = 'SALATALAR_VE_MEZELER',
+  ATISTIRMALIKLAR_VE_APARATIFLER = 'ATISTIRMALIKLAR_VE_APARATIFLER',
+  ICECEKLER = 'ICECEKLER'
+}
+
 export interface RecipeIngredientRequest {
   ingredientId?: number;
   ingredientName?: string;
@@ -414,7 +426,8 @@ export interface RecipeIngredientRequest {
 
 export interface RecipeRequest {
   title: string;
-  category?: string;
+  category?: RecipeCategory;
+  dietType?: DietType;
   instructions?: string;
   preparationTimeMinutes?: number;
   servings?: number;
@@ -447,6 +460,7 @@ export interface EnumDefinitions {
   genders: EnumDefinition[];
   activityLevels: EnumDefinition[];
   difficulties: EnumDefinition[];
+  recipeCategories: EnumDefinition[];
   ingredientCategories: EnumDefinition[];
   physicalStates: EnumDefinition[];
   mealTypes: EnumDefinition[];

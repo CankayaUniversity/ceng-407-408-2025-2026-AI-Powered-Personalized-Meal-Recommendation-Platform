@@ -74,7 +74,7 @@ services:
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: postgres
     ports:
-      - "8080:8080"
+      - "0.0.0.0:8080:8080"  # Sadece 8080:8080 yazmak yerine 0.0.0.0 eklemek tüm IP'leri dinlemesini sağlar.
     volumes:
       - ./keycloak/meal-app-realm.json:/opt/keycloak/data/import/meal-app-realm.json
       - ./keycloak/themes:/opt/keycloak/themes

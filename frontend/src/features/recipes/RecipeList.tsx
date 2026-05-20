@@ -353,7 +353,8 @@ const RecipeList: React.FC = () => {
                           createdAt: details.createdAt,
                           parentId: details.parentId,
                           versionNumber: details.versionNumber,
-                          category: details.category
+                          category: details.category,
+                          dietType: details.dietType
                       };
                       handleOpenDetail(listItem);
                       const newParams = new URLSearchParams(location.search);
@@ -433,6 +434,7 @@ const RecipeList: React.FC = () => {
           preparationTimeMinutes: details.preparationTimeMinutes,
           servings: details.servings,
           category: details.category,
+          dietType: details.dietType,
           isFavorite: details.isFavorite
         };
       });
@@ -458,11 +460,14 @@ const RecipeList: React.FC = () => {
 
   const categories = [
     { key: 'all', label: t('recipes.categories.all') },
-    { key: 'main', label: t('recipes.categories.main') },
-    { key: 'breakfast', label: t('recipes.categories.breakfast') },
-    { key: 'salad', label: t('recipes.categories.salad') },
-    { key: 'dessert', label: t('recipes.categories.dessert') },
-    { key: 'fit', label: t('recipes.categories.fit') },
+    { key: 'ANA_YEMEKLER', label: t('recipes.categories.ana_yemekler') },
+    { key: 'CORBALAR', label: t('recipes.categories.corbalar') },
+    { key: 'KAHVALTILIK_VE_BRANCH', label: t('recipes.categories.kahvaltilik_ve_branch') },
+    { key: 'HAMUR_ISLERI_VE_BOREKLER', label: t('recipes.categories.hamur_isleri_ve_borekler') },
+    { key: 'TATLILAR_VE_PASTALAR', label: t('recipes.categories.tatlilar_ve_pastalar') },
+    { key: 'SALATALAR_VE_MEZELER', label: t('recipes.categories.salatalar_ve_mezeler') },
+    { key: 'ATISTIRMALIKLAR_VE_APARATIFLER', label: t('recipes.categories.atistirmaliklar_ve_aparatifler') },
+    { key: 'ICECEKLER', label: t('recipes.categories.icecekler') },
     {
       key: 'favorites',
       label: t('recipes.categories.favorites', {
@@ -545,8 +550,13 @@ const RecipeList: React.FC = () => {
                   />
                   <div className="absolute top-5 left-5 flex flex-col gap-2">
                     <div className="glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
-                      {recipe.category || 'Gurme'}
+                      {recipe.category ? t(`recipes.categories.${recipe.category.toLowerCase()}`) : 'Gurme'}
                     </div>
+                    {recipe.dietType && recipe.dietType !== 'NONE' && (
+                        <div className="bg-moss-forest/80 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-lg">
+                          {t(`recipes.dietTypes.${recipe.dietType.toLowerCase()}`)}
+                        </div>
+                    )}
                     {recipe.parentId && (
                         <div className="bg-terracotta text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-lg animate-pulse">
                           {t('recipes.status.updated_version')}

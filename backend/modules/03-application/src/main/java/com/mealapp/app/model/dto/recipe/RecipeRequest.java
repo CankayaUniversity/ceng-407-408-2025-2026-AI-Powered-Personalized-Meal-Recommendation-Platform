@@ -1,7 +1,9 @@
 package com.mealapp.app.model.dto.recipe;
 
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeCategory;
 import com.mealapp.domain.recipe.entity.RecipeStatus;
+import com.mealapp.domain.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +17,8 @@ import java.util.List;
 @AllArgsConstructor
 public class RecipeRequest {
     private String title;
-    private String category;
+    private RecipeCategory category;
+    private User.DietType dietType;
     private String instructions;
     private Integer preparationTime;
     private Integer preparationTimeMinutes; // Frontend compatibility

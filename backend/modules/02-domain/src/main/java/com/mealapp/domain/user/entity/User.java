@@ -103,12 +103,12 @@ public class User extends BaseEntity {
      */
     private Integer dailyCalorieTarget;
 
-    public enum DietType {
-        NONE, VEGAN, VEGETARIAN, KETO, PALEO, GLUTEN_FREE
-    }
-
     public enum DietaryGoal {
         LOSE_WEIGHT, MAINTAIN_WEIGHT, GAIN_WEIGHT, BUILD_MUSCLE
+    }
+
+    public enum DietType {
+        NONE, VEGAN, VEGETARIAN, KETO, PALEO, GLUTEN_FREE
     }
 
     public enum Gender {

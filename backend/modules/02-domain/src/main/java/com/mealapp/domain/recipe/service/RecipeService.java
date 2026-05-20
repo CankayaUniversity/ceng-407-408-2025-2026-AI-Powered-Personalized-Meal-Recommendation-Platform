@@ -269,6 +269,7 @@ public class RecipeService {
         target.setServings(updatedData.getServings() != null ? updatedData.getServings() : source.getServings());
         target.setDifficulty(updatedData.getDifficulty() != null ? updatedData.getDifficulty() : source.getDifficulty());
         target.setCategory(updatedData.getCategory() != null ? updatedData.getCategory() : source.getCategory());
+        target.setDietType(updatedData.getDietType() != null ? updatedData.getDietType() : source.getDietType());
         target.setImageUrl(updatedData.getImageUrl() != null ? updatedData.getImageUrl() : source.getImageUrl());
     }
 
@@ -838,7 +839,15 @@ public class RecipeService {
     @Transactional
     public Page<Recipe> findFiltered(String userId, String title, String category, boolean favoritesOnly, Pageable pageable) {
         boolean hasTitle = title != null && !title.isBlank();
-        boolean hasCategory = category != null && !category.isBlank();
+        com.mealapp.domain.recipe.entity.RecipeCategory recipeCategory = null;
+        if (category != null && !category.isBlank()) {
+            try {
+                recipeCategory = com.mealapp.domain.recipe.entity.RecipeCategory.valueOf(category.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid category filter: {}", category);
+            }
+        }
+        boolean hasCategory = recipeCategory != null;
 
         Page<Recipe> recipes;
         if (favoritesOnly) {
@@ -848,8 +857,8 @@ public class RecipeService {
                 : recipeRepository.findAllFavoritesByUserId(userId, pageable);
         } else if (hasCategory) {
             recipes = hasTitle
-                ? recipeRepository.findByTitleAndCategory(title, category, userId, pageable)
-                : recipeRepository.findAllActiveByCategory(userId, category, pageable);
+                ? recipeRepository.findByTitleAndCategory(title, recipeCategory, userId, pageable)
+                : recipeRepository.findAllActiveByCategory(userId, recipeCategory, pageable);
         } else {
             recipes = hasTitle
                 ? recipeRepository.findByTitleContainingIgnoreCase(title, userId, pageable)

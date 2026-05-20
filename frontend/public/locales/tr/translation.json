@@ -657,12 +657,23 @@
     "page": "SAYFA",
     "categories": {
       "all": "Hepsi",
-      "main": "Ana Yemek",
-      "breakfast": "Kahvaltı",
-      "salad": "Salata",
-      "dessert": "Tatlı",
-      "fit": "Fit & Sağlıklı",
+      "ana_yemekler": "Ana Yemekler",
+      "corbalar": "Çorbalar",
+      "kahvaltilik_ve_branch": "Kahvaltılıklar & Branç",
+      "hamur_isleri_ve_borekler": "Hamur İşleri & Börekler",
+      "tatlilar_ve_pastalar": "Tatlılar & Pastalar",
+      "salatalar_ve_mezeler": "Salatalar & Mezeler",
+      "atistirmaliklar_ve_aparatifler": "Atıştırmalıklar & Aparatifler",
+      "icecekler": "İçecekler",
       "favorites": "Favoriler"
+    },
+    "dietTypes": {
+      "none": "Belirtilmemiş",
+      "vegan": "Vegan",
+      "vegetarian": "Vejetaryen",
+      "keto": "Keto",
+      "paleo": "Paleo",
+      "gluten_free": "Glutensiz"
     },
     "status": {
       "draft": "Taslak",
@@ -682,6 +693,7 @@
       "servingsLabel": "Kaç Kişilik?",
       "caloriesLabel": "Kalori (Kcal)",
       "categoryLabel": "Kategori",
+      "dietTypeLabel": "Diyet Tipi",
       "ingredients": "Malzemeler",
       "addIngredient": "Malzeme Ekle",
       "grams": "Gram",

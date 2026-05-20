@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChefHat, Clock, Users, Plus, Trash2, Save, Send, Loader2, Camera, Image as ImageIcon } from 'lucide-react';
 import { IngredientSelector } from '../../shared/components/IngredientSelector';
-import { Ingredient, RecipeStatus, type Recipe, type RecipeRequest } from '../../types';
+import { Ingredient, RecipeStatus, type Recipe, type RecipeRequest, RecipeCategory, DietType } from '../../types';
 import { useTranslation } from 'react-i18next';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useRecipeService } from '../../services/recipeService';
@@ -32,7 +32,8 @@ const RecipeModal: React.FC = () => {
 
     // Form states
     const [title, setTitle] = useState('');
-    const [category, setCategory] = useState('main');
+    const [category, setCategory] = useState<RecipeCategory>(RecipeCategory.ANA_YEMEKLER);
+    const [dietType, setDietType] = useState<DietType>(DietType.NONE);
     const [prepTime, setPrepTime] = useState<number>(30);
     const [servings, setServings] = useState<number>(2);
     const [instructions, setInstructions] = useState('');
@@ -73,7 +74,8 @@ const RecipeModal: React.FC = () => {
 
     const applyRecipeToForm = (recipe: EditableRecipe) => {
         setTitle(recipe.title || '');
-        setCategory(recipe.category || 'main');
+        setCategory((recipe.category as RecipeCategory) || RecipeCategory.ANA_YEMEKLER);
+        setDietType(recipe.dietType || DietType.NONE);
         setPrepTime(recipe.preparationTimeMinutes ?? recipe.preparationTime ?? 30);
         setServings(recipe.servings || 2);
         setInstructions(recipe.instructions || '');
@@ -127,7 +129,8 @@ const RecipeModal: React.FC = () => {
 
     const resetForm = () => {
         setTitle('');
-        setCategory('main');
+        setCategory(RecipeCategory.ANA_YEMEKLER);
+        setDietType(DietType.NONE);
         setPrepTime(30);
         setServings(2);
         setInstructions('');
@@ -248,6 +251,7 @@ const RecipeModal: React.FC = () => {
         const request: RecipeRequest = {
             title,
             category,
+            dietType,
             preparationTimeMinutes: prepTime,
             servings,
             instructions,
@@ -428,14 +432,31 @@ const RecipeModal: React.FC = () => {
                                         </label>
                                         <select
                                             value={category}
-                                            onChange={(e) => setCategory(e.target.value)}
+                                            onChange={(e) => setCategory(e.target.value as RecipeCategory)}
                                             className="base-input w-full py-4 px-6 bg-black/5 dark:bg-white/5 border-transparent focus:border-terracotta/50 font-bold appearance-none cursor-pointer"
                                         >
-                                            <option value="main">{t('recipes.categories.main')}</option>
-                                            <option value="breakfast">{t('recipes.categories.breakfast')}</option>
-                                            <option value="salad">{t('recipes.categories.salad')}</option>
-                                            <option value="dessert">{t('recipes.categories.dessert')}</option>
-                                            <option value="fit">{t('recipes.categories.fit')}</option>
+                                            {Object.values(RecipeCategory).map((cat) => (
+                                                <option key={cat} value={cat}>
+                                                    {t(`recipes.categories.${cat.toLowerCase()}`)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">
+                                            {t('recipes.modal.dietTypeLabel')}
+                                        </label>
+                                        <select
+                                            value={dietType}
+                                            onChange={(e) => setDietType(e.target.value as DietType)}
+                                            className="base-input w-full py-4 px-6 bg-black/5 dark:bg-white/5 border-transparent focus:border-terracotta/50 font-bold appearance-none cursor-pointer"
+                                        >
+                                            {Object.values(DietType).map((dt) => (
+                                                <option key={dt} value={dt}>
+                                                    {t(`recipes.dietTypes.${dt.toLowerCase()}`)}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
 

@@ -543,7 +543,7 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 .toList();
 
         String recipeText = Stream.concat(
-                        Stream.of(recipe.getTitle(), recipe.getInstructions(), recipe.getCategory()),
+                        Stream.of(recipe.getTitle(), recipe.getInstructions(), recipe.getCategory() != null ? recipe.getCategory().name() : null),
                         recipeIngredients.stream()
                 )
                 .filter(Objects::nonNull)

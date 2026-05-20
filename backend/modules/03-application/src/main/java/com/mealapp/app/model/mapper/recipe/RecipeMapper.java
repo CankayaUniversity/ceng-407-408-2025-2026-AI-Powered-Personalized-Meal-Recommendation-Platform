@@ -47,6 +47,7 @@ public class RecipeMapper {
             .id(recipe.getId())
             .title(recipe.getTitle())
             .category(recipe.getCategory())
+            .dietType(recipe.getDietType())
             .calories(recipe.getTotalCalories())
             .kcalPerServing(RecipeNutritionCalculator.kcalPerServing(recipe))
             .protein(recipe.getTotalProtein())

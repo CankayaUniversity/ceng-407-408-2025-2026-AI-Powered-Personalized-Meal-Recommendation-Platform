@@ -173,15 +173,15 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
                    "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED' " +
                    "  AND NOT EXISTS (SELECT newer.id FROM Recipe newer WHERE newer.parentId = r.parentId AND newer.createdBy = :userId AND newer.status <> 'SUPERSEDED' AND newer.active = true " +
                    "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
-                   "LOWER(r.category) = LOWER(:category)",
-           countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
-                        "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
-                        "  AND NOT EXISTS (SELECT rev.id FROM Recipe rev WHERE rev.parentId = r.id AND rev.createdBy = :userId AND rev.status <> 'SUPERSEDED' AND rev.active = true)) OR " +
-                        "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED' " +
-                        "  AND NOT EXISTS (SELECT newer.id FROM Recipe newer WHERE newer.parentId = r.parentId AND newer.createdBy = :userId AND newer.status <> 'SUPERSEDED' AND newer.active = true " +
-                        "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
-                        "LOWER(r.category) = LOWER(:category)")
-    Page<Recipe> findAllActiveByCategory(@Param("userId") String userId, @Param("category") String category, Pageable pageable);
+                   "r.category = :category",
+          countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
+                       "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
+                       "  AND NOT EXISTS (SELECT rev.id FROM Recipe rev WHERE rev.parentId = r.id AND rev.createdBy = :userId AND rev.status <> 'SUPERSEDED' AND rev.active = true)) OR " +
+                       "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED' " +
+                       "  AND NOT EXISTS (SELECT newer.id FROM Recipe newer WHERE newer.parentId = r.parentId AND newer.createdBy = :userId AND newer.status <> 'SUPERSEDED' AND newer.active = true " +
+                       "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
+                       "r.category = :category")
+    Page<Recipe> findAllActiveByCategory(@Param("userId") String userId, @Param("category") com.mealapp.domain.recipe.entity.RecipeCategory category, Pageable pageable);
 
     @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
                    "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
@@ -210,16 +210,16 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
                    "  AND NOT EXISTS (SELECT newer.id FROM Recipe newer WHERE newer.parentId = r.parentId AND newer.createdBy = :userId AND newer.status <> 'SUPERSEDED' AND newer.active = true " +
                    "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
                    "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
-                   "LOWER(r.category) = LOWER(:category)",
-           countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
-                        "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
-                        "  AND NOT EXISTS (SELECT rev.id FROM Recipe rev WHERE rev.parentId = r.id AND rev.createdBy = :userId AND rev.status <> 'SUPERSEDED' AND rev.active = true)) OR " +
-                        "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED' " +
-                        "  AND NOT EXISTS (SELECT newer.id FROM Recipe newer WHERE newer.parentId = r.parentId AND newer.createdBy = :userId AND newer.status <> 'SUPERSEDED' AND newer.active = true " +
-                        "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
-                        "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
-                        "LOWER(r.category) = LOWER(:category)")
-    Page<Recipe> findByTitleAndCategory(@Param("title") String title, @Param("category") String category, @Param("userId") String userId, Pageable pageable);
+                   "r.category = :category",
+          countQuery = "SELECT count(r) FROM Recipe r WHERE r.active = true AND " +
+                       "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
+                       "  AND NOT EXISTS (SELECT rev.id FROM Recipe rev WHERE rev.parentId = r.id AND rev.createdBy = :userId AND rev.status <> 'SUPERSEDED' AND rev.active = true)) OR " +
+                       "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED' " +
+                       "  AND NOT EXISTS (SELECT newer.id FROM Recipe newer WHERE newer.parentId = r.parentId AND newer.createdBy = :userId AND newer.status <> 'SUPERSEDED' AND newer.active = true " +
+                       "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
+                       "LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')) AND " +
+                       "r.category = :category")
+    Page<Recipe> findByTitleAndCategory(@Param("title") String title, @Param("category") com.mealapp.domain.recipe.entity.RecipeCategory category, @Param("userId") String userId, Pageable pageable);
 
     @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
                    "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +

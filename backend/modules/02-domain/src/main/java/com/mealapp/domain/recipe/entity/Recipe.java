@@ -1,6 +1,7 @@
 package com.mealapp.domain.recipe.entity;
 
 import com.mealapp.domain.common.entity.BaseEntity;
+import com.mealapp.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
@@ -34,7 +35,14 @@ public class Recipe extends BaseEntity {
     /**
      * Tarifin kategorisi (Örn: Çorba, Ana Yemek, Tatlı).
      */
-    private String category;
+    @Enumerated(EnumType.STRING)
+    private RecipeCategory category;
+
+    /**
+     * Tarifin diyet tipi (Örn: VEGAN, VEGETARIAN).
+     */
+    @Enumerated(EnumType.STRING)
+    private User.DietType dietType;
 
     /**
      * Adım adım hazırlama talimatları.
