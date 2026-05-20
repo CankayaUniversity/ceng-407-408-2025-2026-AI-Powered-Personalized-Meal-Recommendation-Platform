@@ -1,7 +1,9 @@
 package com.mealapp.domain.recipe.repository;
 
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeCategory;
 import com.mealapp.domain.recipe.entity.RecipeStatus;
+import com.mealapp.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -120,6 +122,29 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
            "                WHERE ri2.recipe = r AND i2.name IN :allergies) " +
            "ORDER BY r.averageRating DESC, r.versionNumber DESC, r.createdAt DESC, r.id DESC")
     List<Recipe> findTopRecipesSafeForUser(@Param("userId") String userId, @Param("dietType") String dietType, @Param("allergies") List<String> allergies, org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT DISTINCT r FROM Recipe r " +
+           "LEFT JOIN FETCH r.recipeIngredients ri " +
+           "LEFT JOIN FETCH ri.ingredient i " +
+           "LEFT JOIN FETCH i.nutrition " +
+           "WHERE r.active = true AND r.category = :category AND " +
+           "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
+           "  AND NOT EXISTS (SELECT rev.id FROM Recipe rev WHERE rev.parentId = r.id AND rev.createdBy = :userId AND rev.status <> 'SUPERSEDED' AND rev.active = true)) OR " +
+           "(r.parentId IS NOT NULL AND r.createdBy = :userId AND r.status <> 'SUPERSEDED' " +
+           "  AND NOT EXISTS (SELECT newer.id FROM Recipe newer WHERE newer.parentId = r.parentId AND newer.createdBy = :userId AND newer.status <> 'SUPERSEDED' AND newer.active = true " +
+           "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) " +
+           "AND (:dietType IS NULL OR r.dietType = :dietType) " +
+           "AND NOT EXISTS (SELECT 1 FROM RecipeIngredient ri2 " +
+           "                JOIN ri2.ingredient i2 " +
+           "                WHERE ri2.recipe = r AND LOWER(i2.name) IN :allergies) " +
+           "ORDER BY r.averageRating DESC, r.versionNumber DESC, r.createdAt DESC, r.id DESC")
+    List<Recipe> findMenuCandidatesForUser(
+            @Param("userId") String userId,
+            @Param("category") RecipeCategory category,
+            @Param("dietType") User.DietType dietType,
+            @Param("allergies") List<String> allergies,
+            Pageable pageable
+    );
 
     @Query("SELECT DISTINCT r FROM Recipe r " +
            "LEFT JOIN FETCH r.recipeIngredients ri " +

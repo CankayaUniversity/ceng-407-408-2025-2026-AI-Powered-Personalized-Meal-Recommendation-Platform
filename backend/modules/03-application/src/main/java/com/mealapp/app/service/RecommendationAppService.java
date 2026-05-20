@@ -2,12 +2,18 @@ package com.mealapp.app.service;
 
 import com.mealapp.app.model.dto.recommendation.RecommendationRequest;
 import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
+import com.mealapp.app.model.dto.recommendation.MenuRecommendationRequest;
+import com.mealapp.app.model.dto.recommendation.MenuRecommendationResponse;
 import com.mealapp.app.model.mapper.recommendation.RecommendationMapper;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.inventory.entity.Inventory;
+import com.mealapp.domain.inventory.service.InventoryService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeIngredient;
+import com.mealapp.domain.recipe.service.RecipeNutritionCalculator;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
+import com.mealapp.domain.recommendation.dto.MenuRecommendationResult;
 import com.mealapp.domain.recommendation.entity.Recommendation;
 import com.mealapp.domain.recommendation.entity.RecommendedRecipe;
 import com.mealapp.domain.recommendation.repository.RecommendedRecipeRepository;
@@ -23,8 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.stream.Collectors;
 
 /**
  * Bu sınıf "Orchestrator" görevini üstlenir.
@@ -35,6 +43,7 @@ public class RecommendationAppService {
     private final RecommendationService recommendationService;
     private final UserService userService;
     private final IngredientRepository ingredientRepository;
+    private final InventoryService inventoryService;
     private final RecommendationMapper recommendationMapper;
     private final RecommendedRecipeRepository recommendedRecipeRepository;
     private final RecipeRatingService recipeRatingService;
@@ -86,6 +95,26 @@ public class RecommendationAppService {
                         .filter(name -> name != null && !name.isBlank())
                         .toList()
         );
+    }
+
+    @Transactional
+    public MenuRecommendationResponse getMenuRecommendations(String authenticatedUserId, MenuRecommendationRequest request) {
+        User user = userService.findById(authenticatedUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
+
+        List<Inventory> userInventory = inventoryService.getUserInventory(authenticatedUserId);
+        String decryptedApiKey = decryptApiKey(request.getApiKey());
+
+        MenuRecommendationResult result = recommendationService.getMenuRecommendations(
+                user,
+                userInventory,
+                request.getSelectedCategories(),
+                normalizeValue(request.getCravings()),
+                request.getAiModel(),
+                decryptedApiKey
+        );
+
+        return toMenuResponse(result, userInventory);
     }
 
     /**
@@ -197,5 +226,98 @@ public class RecommendationAppService {
             // Ama kullanıcıya "API anahtarı geçersiz" uyarısı vermek için hata da fırlatılabilir.
             throw new IllegalArgumentException("API anahtarı çözülemedi. Lütfen anahtarınızı kontrol edin.", e);
         }
+    }
+
+    private MenuRecommendationResponse toMenuResponse(MenuRecommendationResult result, List<Inventory> inventory) {
+        MenuRecommendationResponse response = new MenuRecommendationResponse();
+        response.setGeneratedAt(java.time.LocalDateTime.now());
+        response.setAiGenerated(result.isAiGenerated());
+
+        response.setMenus(result.getMenus().stream()
+                .map(menu -> {
+                    MenuRecommendationResponse.MenuDto dto = new MenuRecommendationResponse.MenuDto();
+                    dto.setRank(menu.getRank());
+                    dto.setTitle(menu.getTitle());
+                    dto.setInsight(menu.getInsight());
+                    dto.setTotalKcal(menu.getTotalKcal());
+                    dto.setTotalProtein(menu.getTotalProtein());
+                    dto.setTotalCarbs(menu.getTotalCarbs());
+                    dto.setTotalFat(menu.getTotalFat());
+                    dto.setTotalPreparationTime(menu.getTotalPreparationTime());
+                    dto.setCourses(menu.getCourses().entrySet().stream()
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    entry -> toMenuCourseDto(entry.getKey(), entry.getValue(), inventory),
+                                    (existing, replacement) -> existing,
+                                    java.util.LinkedHashMap::new
+                            )));
+                    return dto;
+                })
+                .toList());
+
+        return response;
+    }
+
+    private MenuRecommendationResponse.MenuCourseRecipeDto toMenuCourseDto(
+            com.mealapp.domain.recipe.entity.RecipeCategory category,
+            Recipe recipe,
+            List<Inventory> inventory
+    ) {
+        MenuRecommendationResponse.MenuCourseRecipeDto dto = new MenuRecommendationResponse.MenuCourseRecipeDto();
+        Set<String> inventoryKeys = inventory == null
+                ? Set.of()
+                : inventory.stream()
+                .map(Inventory::getIngredient)
+                .filter(java.util.Objects::nonNull)
+                .map(Ingredient::getName)
+                .filter(name -> name != null && !name.isBlank())
+                .map(this::normalizeKey)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        dto.setRecipeId(recipe.getId());
+        dto.setRecipeTitle(recipe.getTitle());
+        dto.setCategory(category);
+        dto.setImageUrl(recipe.getImageUrl());
+        dto.setKcalPerServing(RecipeNutritionCalculator.kcalPerServing(recipe));
+        dto.setProteinPerServing(perServing(recipe.getTotalProtein(), recipe));
+        dto.setCarbsPerServing(perServing(recipe.getTotalCarbs(), recipe));
+        dto.setFatPerServing(perServing(recipe.getTotalFat(), recipe));
+        dto.setPreparationTimeMinutes(recipe.getPreparationTimeMinutes());
+        dto.setServings(recipe.getServings());
+        dto.setAverageRating(recipe.getAverageRating());
+        dto.setRatingCount(recipe.getRatingCount());
+
+        List<String> ingredientNames = getIngredientNames(recipe);
+        dto.setMatchedIngredients(ingredientNames.stream()
+                .filter(name -> inventoryKeys.contains(normalizeKey(name)))
+                .toList());
+        dto.setMissingIngredients(ingredientNames.stream()
+                .filter(name -> !inventoryKeys.contains(normalizeKey(name)))
+                .toList());
+        return dto;
+    }
+
+    private List<String> getIngredientNames(Recipe recipe) {
+        if (recipe.getRecipeIngredients() == null || recipe.getRecipeIngredients().isEmpty()) {
+            return List.of();
+        }
+
+        return recipe.getRecipeIngredients().stream()
+                .map(RecipeIngredient::getIngredient)
+                .filter(java.util.Objects::nonNull)
+                .map(Ingredient::getName)
+                .filter(name -> name != null && !name.isBlank())
+                .toList();
+    }
+
+    private Double perServing(Double value, Recipe recipe) {
+        if (value == null) {
+            return null;
+        }
+        return Math.round((value / RecipeNutritionCalculator.safeServings(recipe)) * 10.0) / 10.0;
+    }
+
+    private String normalizeKey(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 }

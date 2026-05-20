@@ -5,7 +5,10 @@ import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Malzeme eşleşme skorunu (Match Score) hesaplayan domain servisi.
@@ -26,16 +29,34 @@ public class IngredientMatchService {
             return 0.0;
         }
 
-        java.util.Map<Long, Inventory> inventoryMap = inventory.stream()
-                .collect(java.util.stream.Collectors.toMap(
+        List<Inventory> safeInventory = inventory == null ? List.of() : inventory;
+        java.util.Map<Long, Inventory> inventoryMap = safeInventory.stream()
+                .filter(inv -> inv.getIngredient() != null && inv.getIngredient().getId() != null)
+                .collect(Collectors.toMap(
                         inv -> inv.getIngredient().getId(),
+                        inv -> inv,
+                        (existing, replacement) -> existing
+                ));
+        java.util.Map<String, Inventory> inventoryByName = safeInventory.stream()
+                .filter(inv -> inv.getIngredient() != null && inv.getIngredient().getName() != null)
+                .collect(Collectors.toMap(
+                        inv -> normalizeKey(inv.getIngredient().getName()),
                         inv -> inv,
                         (existing, replacement) -> existing
                 ));
 
         double totalScore = 0.0;
         for (RecipeIngredient ri : recipe.getRecipeIngredients()) {
-            Inventory inv = inventoryMap.get(ri.getIngredient().getId());
+            if (ri.getIngredient() == null) {
+                continue;
+            }
+
+            Inventory inv = ri.getIngredient().getId() != null
+                    ? inventoryMap.get(ri.getIngredient().getId())
+                    : null;
+            if (inv == null && ri.getIngredient().getName() != null) {
+                inv = inventoryByName.get(normalizeKey(ri.getIngredient().getName()));
+            }
             if (inv != null) {
                 if (inv.getQuantity() != null && inv.getQuantity() >= ri.getGrams()) {
                     totalScore += 1.0;
@@ -47,5 +68,9 @@ public class IngredientMatchService {
         }
 
         return totalScore / recipe.getRecipeIngredients().size();
+    }
+
+    private String normalizeKey(String value) {
+        return Objects.toString(value, "").trim().toLowerCase(Locale.ROOT);
     }
 }

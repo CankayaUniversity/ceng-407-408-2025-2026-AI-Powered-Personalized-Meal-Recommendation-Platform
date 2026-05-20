@@ -11,13 +11,17 @@ import { useRecipeService } from '../../services/recipeService';
 import { useUserService } from '../../services/userService';
 import { useDefinitions } from '../../infrastructure/ui/DefinitionContext';
 import { encryptText, decryptText } from '../../shared/utils/encryption';
+import MenuSelectionToggle from './components/MenuSelectionToggle';
+import MenuRecommendationTabs from './components/MenuRecommendationTabs';
 import { 
   type User, 
   type InventoryGroup, 
   type RecommendedRecipe, 
   type RecipeRatingResponse,
   type Inventory,
-  type RecommendationResponse
+  type RecommendationResponse,
+  type MenuRecommendationResponse,
+  RecipeCategory
 } from '../../types';
 
 type RatingDraft = {
@@ -121,8 +125,14 @@ const RecommendationPage: React.FC = () => {
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [selectedAiModel, setSelectedAiModel] = useState<string>('FREE');
   const [recommendations, setRecommendations] = useState<RecommendedRecipe[]>([]);
+  const [menuResponse, setMenuResponse] = useState<MenuRecommendationResponse | null>(null);
   const [history, setHistory] = useState<RecommendationResponse[]>([]);
   const [cravings, setCravings] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<RecipeCategory[]>([
+    RecipeCategory.CORBALAR,
+    RecipeCategory.ANA_YEMEKLER,
+    RecipeCategory.TATLILAR_VE_PASTALAR
+  ]);
   const [loading, setLoading] = useState(true);
   const [recommending, setRecommending] = useState(false);
   const [ratingsByRecipe, setRatingsByRecipe] = useState<Record<number, RecipeRatingResponse>>({});
@@ -332,6 +342,11 @@ const RecommendationPage: React.FC = () => {
       return;
     }
 
+    if (selectedCategories.length === 0) {
+      showToast('Menü için en az bir kategori seçmelisiniz.', 'warning');
+      return;
+    }
+
     // Seçilen model için API key kontrolü (FREE hariç)
     if (selectedAiModel !== 'FREE' && !apiKeys[selectedAiModel]) {
       handleOpenApiKeyModal(selectedAiModel);
@@ -348,29 +363,20 @@ const RecommendationPage: React.FC = () => {
         ? await encryptText(apiKeys[selectedAiModel]) 
         : undefined;
 
-      const response = await recipeService.getRecommendations({
-        userId: user.id,
-        availableIngredients,
+      const response = await recipeService.getMenuRecommendations({
+        selectedCategories,
         cravings: cravings.trim() || undefined,
         aiModel: selectedAiModel,
         apiKey: encryptedApiKey
       });
 
-      setRecommendations(response.recommendedRecipes);
-      setHistory((current) => [response, ...current]);
-      setRatingDrafts((current: Record<number, RatingDraft>) => {
-        const nextDrafts = { ...current };
-
-        response.recommendedRecipes.forEach((recipe: RecommendedRecipe) => {
-          nextDrafts[recipe.recipeId] = current[recipe.recipeId] ?? createRatingDraft(ratingsByRecipe[recipe.recipeId]);
-        });
-
-        return nextDrafts;
-      });
-      showToast(t('toasts.recommendations.generationSuccess', { count: response.recommendedRecipes.length }), 'success');
+      setMenuResponse(response);
+      setRecommendations([]);
+      showToast(t('toasts.recommendations.generationSuccess', { count: response.menus.length }), 'success');
     } catch (error) {
       showToast(getErrorMessage(error, t('toasts.recommendations.generationError')), 'error');
       setRecommendations([]);
+      setMenuResponse(null);
     } finally {
       setRecommending(false);
     }
@@ -855,12 +861,21 @@ const RecommendationPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          <div className="mt-6">
+            <MenuSelectionToggle
+              selectedCategories={selectedCategories}
+              onChange={setSelectedCategories}
+            />
+          </div>
         </section>
       </div>
 
       {/* 4. Alt: Sonuçlar */}
       <section className="mt-8 space-y-6">
-        {recommendations.length === 0 ? (
+        {menuResponse?.menus.length ? (
+          <MenuRecommendationTabs menus={menuResponse.menus} isAiGenerated={menuResponse.isAiGenerated} />
+        ) : recommendations.length === 0 ? (
           <div className="meal-card border-dashed border-moss-sage/25 px-8 py-10 text-center shadow-[0_24px_60px_-30px_rgba(40,36,33,0.28)]">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-terracotta/10 text-terracotta">
               <Sparkles size={28} />
@@ -1180,6 +1195,7 @@ const RecommendationPage: React.FC = () => {
                 key={item.id} 
                 className="meal-card group cursor-pointer border-card-border bg-white/50 p-5 transition-all hover:border-terracotta/30 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10"
                 onClick={() => {
+                  setMenuResponse(null);
                   setRecommendations(item.recommendedRecipes);
                   setCravings(item.cravings || '');
                   window.scrollTo({ top: 0, behavior: 'smooth' });

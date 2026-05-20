@@ -5,6 +5,8 @@ import { HttpClientKey } from '../infrastructure/services';
 import {
   Recipe,
   RecipeListItem,
+  MenuRecommendationRequest,
+  MenuRecommendationResponse,
   RecommendationRequest,
   RecommendationResponse,
   RecipeRatingRequest,
@@ -121,6 +123,33 @@ export const getRecipeService = (api: AxiosInstance) => {
       }
 
       // Axios dışı hata
+      throw new ApiError('Beklenmeyen bir hata oluştu');
+    }
+  },
+
+  getMenuRecommendations: async (request: MenuRecommendationRequest): Promise<MenuRecommendationResponse> => {
+    try {
+      const response = await api.post<MenuRecommendationResponse>('/v1/recommendations/menu', request);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Menü önerileri alınamadı';
+
+        switch (status) {
+          case 401:
+            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          case 400:
+            throw new ValidationError(message, extractValidationFields(error.response.data));
+          default:
+            throw new ApiError(message, 'API_ERROR', status);
+        }
+      }
+
       throw new ApiError('Beklenmeyen bir hata oluştu');
     }
   },

@@ -1,11 +1,17 @@
 package com.mealapp.app.controller;
 
+import com.mealapp.app.model.dto.recommendation.MenuRecommendationRequest;
+import com.mealapp.app.model.dto.recommendation.MenuRecommendationResponse;
 import com.mealapp.app.model.dto.recommendation.RecommendationRequest;
 import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
+import com.mealapp.domain.common.exception.MealAppDomainException;
+import jakarta.validation.Valid;
 import com.mealapp.app.service.RecommendationAppService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +32,14 @@ public class RecommendationController {
     @PostMapping
     public RecommendationResponse getRecommendation(@RequestBody RecommendationRequest request) {
         return recommendationAppService.getRecommendations(request);
+    }
+
+    @PostMapping("/menu")
+    public MenuRecommendationResponse getMenuRecommendations(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody MenuRecommendationRequest request
+    ) {
+        return recommendationAppService.getMenuRecommendations(requireAuthenticatedUserId(jwt), request);
     }
 
     /**
@@ -65,5 +79,13 @@ public class RecommendationController {
         private Long recommendedRecipeId;
         private Integer rating;
         private String comment;
+    }
+
+    private String requireAuthenticatedUserId(Jwt jwt) {
+        if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
+            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+        }
+
+        return jwt.getSubject();
     }
 }

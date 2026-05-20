@@ -284,6 +284,48 @@ export interface RecommendationResponse {
   recommendedRecipes: RecommendedRecipe[];
 }
 
+export interface MenuRecommendationRequest {
+  selectedCategories: RecipeCategory[];
+  cravings?: string | null;
+  aiModel?: string | null;
+  apiKey?: string | null;
+}
+
+export interface MenuCourseRecipe {
+  recipeId: number;
+  recipeTitle: string;
+  category: RecipeCategory;
+  imageUrl?: string | null;
+  kcalPerServing?: number | null;
+  proteinPerServing?: number | null;
+  carbsPerServing?: number | null;
+  fatPerServing?: number | null;
+  preparationTimeMinutes?: number | null;
+  servings?: number | null;
+  averageRating?: number | null;
+  ratingCount?: number | null;
+  matchedIngredients: string[];
+  missingIngredients: string[];
+}
+
+export interface MenuRecommendation {
+  rank: number;
+  title: string;
+  courses: Partial<Record<RecipeCategory, MenuCourseRecipe>>;
+  insight: string;
+  totalKcal: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  totalPreparationTime: number;
+}
+
+export interface MenuRecommendationResponse {
+  generatedAt: string;
+  isAiGenerated: boolean;
+  menus: MenuRecommendation[];
+}
+
 export interface ConsumptionRequest {
   userId?: string | null;
   recipeId?: number;
