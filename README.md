@@ -1,329 +1,255 @@
+
 # AI-Powered Personalized Meal Recommendation Platform / AI Destekli Kişiselleştirilmiş Yemek Önerisi Platformu
 
-[English](#english) | [Türkçe](#türkçe)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/meal_logo_dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="frontend/src/assets/meal_logo_light.png">
+    <img alt="Me-Al Logo" src="frontend/src/assets/meal_amblem.png" width="320">
+  </picture>
+</p>
 
+<h1 align="center">Me-Al (MealAI)</h1>
+
+<p align="center">
+  <strong>Advanced Software Architecture & Multi-Provider AI Integration Framework</strong><br>
+  Developed as a Senior Graduation Project (CENG 407 & CENG 408)
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21"/>
+  <img src="https://img.shields.io/badge/Spring_Boot-3.4.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot"/>
+  <img src="https://img.shields.io/badge/React-18-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 18"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Keycloak-OIDC-CH0000?style=for-the-badge&logo=keycloak&logoColor=white" alt="Keycloak"/>
+  <img src="https://img.shields.io/badge/Docker-Infrastructure-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
+</p>
+
+---
+
+## 🗺️ Navigation / Dil Seçimi
+[English Documentation](#english) | [Türkçe Dokümantasyon](#türkçe)
 ---
 
 <a name="english"></a>
-## English
+## 🇺🇸 / 🇬🇧 EN - English Documentation
 
-This project is a web-based application that provides personalized meal and diet recommendations based on users’ available ingredients, dietary preferences, and nutrition goals. The system aims to combine recipe management, nutritional analysis, and AI-assisted recommendations within a single integrated platform.
+**Me-Al** is a web-based, production-ready application that delivers personalized meal and diet recommendations based on real-time ingredient inventories, explicit dietary preferences, and distinct user nutrition goals. 
 
-### 🚀 Quick Start for Developers (Step-by-Step)
+Instead of relying on static filtering or basic data science models, this project showcases a rigorous approach to **enterprise software engineering**: standardizing complex multi-provider AI communication, enforcing a strict backend-driven business layer, and managing a robust containerized infrastructure environment.
 
-If you are new to the project, follow these steps to get everything running on your local machine:
+### 🚀 Quick Start for Developers
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git
-   cd AI-Powered-Personalized-Meal-Recommendation-Platform
-   ```
+#### 1. Clone the Repository
+```bash
+git clone [https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git](https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git)
+cd AI-Powered-Personalized-Meal-Recommendation-Platform
 
-2. **Setup & Run Everything (Docker):**
-   Ensure Docker is running, then start all services (Frontend, Backend, DB, Keycloak, MinIO) with a single command:
-   ```bash
-   docker compose --profile full up --build -d
-   ```
+```
 
-3. **Access the App:**
-   - **Frontend:** [http://localhost:3030](http://localhost:3030)
-   - **Backend API:** [http://localhost:8081](http://localhost:8081)
-   - **Keycloak:** [http://localhost:8080](http://localhost:8080) (Admin: `admin/admin`)
-   - **Database:** `localhost:5432`
+#### 2. Full Stack Bootstrapping (All-in-One Docker)
 
-4. **Test Credentials:**
-   - **Username:** `user`
-   - **Password:** `password`
+Ensure Docker is active, then execute the following profile command to launch the entire ecosystem (Frontend, Backend, DB, Keycloak, MinIO) simultaneously:
+
+```bash
+docker compose --profile full up --build -d
+
+```
+
+#### 3. Access Matrix & Default Credentials
+
+* **Frontend Client:** [http://localhost:3030](https://www.google.com/search?q=http://localhost:3030)
+* **Backend REST API:** [http://localhost:8081](https://www.google.com/search?q=http://localhost:8081)
+* **Keycloak Server:** [http://localhost:8080](https://www.google.com/search?q=http://localhost:8080) (Admin: `admin/admin`)
+* **PostgreSQL Instance:** `localhost:5432`
+* **Default App Account:** Username: `user` | Password: `password`
 
 ---
 
-### 💻 Infrastructure-Only Setup (For Local Development)
+### 💻 Infrastructure-Isolated Local Development
 
-If you want to run the frontend or backend in **development mode** (Vite/IDE) while keeping the databases and auth server in Docker:
+If you prefer executing the frontend or backend in **hot-reload development mode** (via IDE / Vite) while maintaining structural storage and auth servers inside Docker:
 
-1. **Start Infrastructure Services:**
-   ```bash
-   docker compose --profile infra up -d
-   ```
-   *This starts only: PostgreSQL, Keycloak, and MinIO.*
+```bash
+# Step 1: Spin up only the auxiliary infrastructure
+docker compose --profile infra up -d
 
-2. **Run Backend (IDE):** Run `MealRecommendationApplication` from your IDE.
-3. **Run Frontend (Vite):**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   *The app will be available at [http://localhost:3000](http://localhost:3000).*
+# Step 2: Run Backend Application
+# Execute 'MealRecommendationApplication' from your favorite Java IDE (IntelliJ/Eclipse)
+
+# Step 3: Run Frontend Client
+cd frontend
+npm install
+npm run dev
+# The client runtime shifts to: http://localhost:3000
+
+```
 
 ---
 
-### Project Motivation
-Many existing meal recommendation platforms rely on static recipe lists or simple filtering mechanisms. Nutritional analysis is often handled by separate tools, and personalization is usually limited. This project aims to bring these features together in a unified system that adapts recommendations according to individual user profiles.
+### 🌟 Core Architecture & Engineering Highlights
 
-### Key Features
-- User profile management (diet goals, liked/disliked foods)
-- Ingredient-based recipe recommendations
-- **Hybrid AI Recommendation Engine:** SQL Filtering + Mathematical Scoring + LLM Refinement with fallback states
-- **Negative Craving Detection:** Smart scoring penalizes recipes matching exclusion preferences (e.g., "no onion")
-- **Craving Matching Against Full Ingredient List:** User cravings compared to complete recipe ingredient sets, not just titles
-- **Persistent Recommendation History:** AI-generated insights and per-recommendation user ratings stored separately from recipes
-- **"Prepare This Recipe" Flow:** Direct consumption modal triggered from recipe cards
-- **Admin Panel:** User/role management, ingredient material editing, test inventory seeding
-- Daily Food Logging and Consumption Tracking (Flexible stock deduction: home-made vs external meals)
-- Inventory management with sharing/invitation support
-- Notification center with sidebar integration
-- Dynamic Dataset Support (Efficiently handling 50,000+ recipes)
-- Nutritional value calculation (calories, protein, fat, carbohydrates)
-- **Multi-Provider AI:** OpenAI GPT-4o, Google Gemini, Anthropic Claude, Mistral, DeepSeek, Local LLM — dynamic switching with fallback
-- Integrated File Storage (MinIO) for recipe images and user uploads
-- **Thin Client Architecture:** All business logic and calculations centralized in backend (Single Source of Truth)
-- **Expanded Unit Converter:** Covers all units present in the 50,000+ recipe dataset
-- Web-based, modular and extensible architecture
-- **Multi-language Support (i18n):** Full internationalization and localization support for both Backend and Frontend.
+* **Thin Client Architecture:** Absolute centralization of business parameters, nutritional conversions, and computational state. The React client functions strictly as a presentation tier (Single Source of Truth paradigm).
+* **Hybrid AI Recommendation Engine:** Executes a three-tiered evaluation pipeline:
+1. Fast relational SQL pre-filtering against available datasets.
+2. Dynamic algorithmic scoring based on nutritional thresholds.
+3. LLM Refinement utilizing context-aware prompt payloads.
 
-### Technology Stack
-#### Backend
-- Java 21
-- Spring Boot 3.4.3
-- Gradle 8.14 (Wrapper), 8.14.3 (SDKMAN) (buildSrc structure for central management and libs.versions.toml support)
-- RESTful API architecture
-- PostgreSQL (Database)
-- MinIO (Object Storage)
-- Keycloak (Identity Management)
-- OpenAI API (GPT-4o integration with Spring Retry)
-- JaCoCo & SonarQube (Code Quality and Test Coverage)
-- Testcontainers (For PostgreSQL, MinIO, Keycloak integration tests)
 
-#### Frontend
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- Axios for API communication
-- Keycloak JS (Centralized Auth)
+* **Negative Craving & Deep Matching:** Negative filters (e.g., *"no onion"*) actively penalize scores rather than breaking queries. Cravings are mapped across the complete, nested structural ingredient manifests of **50,000+ recipes**, bypassing superficial title string matches.
+* **Multi-Provider Multi-Model AI Client:** Built-in dynamic runtime switching and reliable fallback handling across OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, and DeepSeek. Integrated with `Spring Retry` mechanisms to counteract external throttling.
+* **Isolated Ephemeral Testing:** Implements `Testcontainers` within the integration testing suite to programmatically manage real PostgreSQL, MinIO, and Keycloak behaviors during continuous integration.
 
-#### Database & Infrastructure
-- PostgreSQL
-- MinIO (Object Storage)
-- Keycloak (Identity & Access Management)
+---
 
-### AI Integration
-- Prompt-based communication with OpenAI (GPT-4o)
-- Integrated with Spring Retry for robust connectivity
-- Token usage logging and monitoring
-- All prompt construction and result processing are handled in the backend (AiPromptEngine & AiServiceClient)
+### 📂 Technical Project Structure
 
-### Project Structure
-- `backend/`: Java Spring Boot backend application (Multi-module Architecture)
-  - `buildSrc/`: Centralized Gradle configuration and dependency management
-  - `modules/01-infrastructure/`: Technical infrastructure, external service clients, and test utilities
-  - `modules/02-domain/`: Business logic, entities, and repository interfaces
-  - `modules/03-application/`: API layer, configuration, and application entry point
-  - `modules/04-utilities/`: Common utility tools and data population
-- `frontend/`: React-based frontend application (Modular Architecture with DI)
-  - `src/infrastructure/`: Core services (DI, Auth, API clients)
-  - `src/features/`: Functional modules (Dashboard, Recipes, etc.)
-  - `src/shared/`: Common components and layouts
-- `docs/`: Architecture and AI design documentation
+The project explicitly ditches generic monolithic styles for a highly decoupled, modular application footprint:
 
-### Development and Deployment
-#### Prerequisites
-- Docker & Docker Compose
-- Java 21 (SDKMAN recommended: `.sdkmanrc` available)
-- Gradle 8.14 (Wrapper) / 8.14.3 (SDKMAN) (Wrapper is included)
-- Node.js 18+ & npm (For frontend development)
+```markdown
+├── backend/                             # Multi-Module Gradle Enterprise Architecture
+│   ├── buildSrc/                        # Structural build plugins & centralized dependency tracking (libs.versions.toml)
+│   └── modules/
+│       ├── 01-infrastructure/           # Drivers, object clients (MinIO), and external LLM API abstractions
+│       ├── 02-domain/                   # Isolated Pure Core Business Entities & Domain Contracts
+│       ├── 03-application/              # Web Controller endpoints, global security filters, & application main runner
+│       └── 04-utilities/                # Shared data-seeding engines & migration scripts
+├── frontend/                            # Modular UI Framework via TypeScript & Vite
+│   └── src/
+│       ├── infrastructure/              # Contextual DI containers, Auth providers, and API Interceptors
+│       ├── features/                    # Independent domain visual units (Dashboard, Inventory, Recipes)
+│       └── shared/                      # Global UI building blocks & theme layouts
+└── docs/                                # Technical Blueprints & AI Interaction schemas
 
-#### Local Setup (Full Stack with Docker)
-Follow the **"🚀 Quick Start for Developers"** section above for a fast setup. Alternatively, manual steps are:
-
-1. Start all services in the root directory:
-   ```bash
-   docker compose --profile full up --build -d
-   ```
-2. Create `application.yml` for the backend (copy from example):
-   `backend/modules/03-application/src/main/resources/application.yml`
-3. Start the Frontend:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-#### Backend Manual Run
-1. Ensure your infrastructure is running via Docker (`docker compose --profile infra up -d`).
-2. Build and package:
-```bash
-cd backend
-./gradlew clean bootJar -x test
-```
-3. Run:
-```bash
-java -jar modules/03-application/build/libs/03-application-1.0-SNAPSHOT.jar
 ```
 
-### Project Scope
-This project is developed as a senior graduation project (CENG 407 & CENG 408) and focuses on software architecture, system design, and applied AI integration rather than large-scale data science or model training.
+---
+
+### 🛠️ Production Technology Stack
+
+#### Backend Tier
+
+* **Runtime & Framework:** Java 21, Spring Boot 3.4.3, Gradle 8.14+ (Wrapper structure)
+* **Data Layout:** PostgreSQL, MinIO (Object Storage framework for image distribution)
+* **Security Architecture:**  Keycloak OIDC (Standalone custom client themes embedded)
+* **Quality Metrics:** JaCoCo & SonarQube automation for target assertion tracking
+
+#### Frontend Tier
+
+* **Core UI Engine:** React 18, TypeScript, Vite Bundler
+* **Styles & Interactivity:** Tailwind CSS, Axios Client, Keycloak JS Adaptor, Full client-side Internationalization (i18n)
 
 ---
 
 <a name="türkçe"></a>
-## Türkçe
+## 🇹🇷 TR - Türkçe Dokümantasyon
 
-Bu proje, kullanıcıların ellerindeki malzemelere, diyet tercihlerine ve beslenme hedeflerine göre kişiselleştirilmiş yemek ve diyet önerileri sunan web tabanlı bir uygulamadır. Sistem, tarif yönetimini, besinsel analizi ve yapay zeka destekli önerileri tek bir entegre platformda birleştirmeyi amaçlamaktadır.
+**Me-Al**, kullanıcıların anlık malzeme envanterlerine, beslenme tercihlerine ve kişisel sağlık hedeflerine göre uyarlanmış dinamik yemek önerileri sunan, üretime hazır bir web uygulamasıdır.
 
-### 🚀 Geliştiriciler İçin Hızlı Başlangıç (Adım Adım)
+Statik filtrelemeler veya geleneksel veri bilimi yaklaşımları yerine bu proje, **ileri düzey yazılım mühendisliği** prensiplerine odaklanır: Çoklu yapay zeka servis sağlayıcılarının standartlaştırılması, iş mantığının tamamen backend odaklı yönetimi ve izole dockerize edilmiş altyapı mimarisi projenin temelini oluşturur.
 
-Projeye yeniyseniz, her şeyi yerel makinenizde çalıştırmak için şu adımları izleyin:
+### 🚀 Geliştiriciler İçin Hızlı Başlangıç
 
-1. **Depoyu Klonlayın:**
-   ```bash
-   git clone https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git
-   cd AI-Powered-Personalized-Meal-Recommendation-Platform
-   ```
+#### 1. Depoyu Klonlayın
 
-2. **Her Şeyi Kurun ve Çalıştırın (Docker):**
-   Docker'ın çalıştığından emin olun, ardından tüm servisleri (Frontend, Backend, DB, Keycloak, MinIO) tek bir komutla başlatın:
-   ```bash
-   docker compose --profile full up --build -d
-   ```
+```bash
+git clone [https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git](https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git)
+cd AI-Powered-Personalized-Meal-Recommendation-Platform
 
-3. **Uygulamaya Erişin:**
-   - **Frontend:** [http://localhost:3030](http://localhost:3030)
-   - **Backend API:** [http://localhost:8081](http://localhost:8081)
-   - **Keycloak:** [http://localhost:8080](http://localhost:8080) (Admin: `admin/admin`)
-   - **Veritabanı:** `localhost:5432`
+```
 
-4. **Test Kullanıcı Bilgileri:**
-   - **Kullanıcı Adı:** `user`
-   - **Şifre:** `password`
+#### 2. Tam Yığın Kurulumu (Docker ile Tek Seferde)
+
+Docker'ın çalıştığından emin olduktan sonra, tüm ekosistemi (Frontend, Backend, DB, Keycloak, MinIO) tek bir hamlede ayağa kaldırmak için aşağıdaki profilli komutu çalıştırın:
+
+```bash
+docker compose --profile full up --build -d
+
+```
+
+#### 3. Erişim Matrisi ve Varsayılan Bilgiler
+
+* **Frontend Arayüzü:** [http://localhost:3030](https://www.google.com/search?q=http://localhost:3030)
+* **Backend REST API:** [http://localhost:8081](https://www.google.com/search?q=http://localhost:8081)
+* **Keycloak Paneli:** [http://localhost:8080](https://www.google.com/search?q=http://localhost:8080) (Admin: `admin/admin`)
+* **PostgreSQL Veritabanı:** `localhost:5432`
+* **Varsayılan Test Hesabı:** Kullanıcı Adı: `user` | Şifre: `password`
 
 ---
 
 ### 💻 Sadece Altyapı Kurulumu (Yerel Geliştirme İçin)
 
-Frontend veya backend'i **geliştirme modunda** (Vite/IDE) çalıştırırken veritabanı ve auth sunucusunu Docker'da tutmak isterseniz:
+Frontend veya backend kodlarında **anlık değişim takibiyle** (IDE veya Vite üzerinden) çalışırken, veritabanı ve kimlik doğrulama sunucularını Docker üzerinde sabit tutmak isterseniz:
 
-1. **Altyapı Servislerini Başlatın:**
-   ```bash
-   docker compose --profile infra up -d
-   ```
-   *Bu sadece PostgreSQL, Keycloak ve MinIO bileşenlerini başlatır.*
+```bash
+# 1. Adım: Sadece yapısal altyapı servislerini başlatın
+docker compose --profile infra up -d
 
-2. **Backend'i Çalıştırın (IDE):** IDE'nizden `MealRecommendationApplication` sınıfını çalıştırın.
-3. **Frontend'i Çalıştırın (Vite):**
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-   *Uygulama [http://localhost:3000](http://localhost:3000) adresinde hazır olacaktır.*
+# 2. Adım: Backend'i Çalıştırın
+# Favori Java IDE'niz üzerinden 'MealRecommendationApplication' sınıfını doğrudan çalıştırın
+
+# 3. Adım: Frontend'i Çalıştırın
+cd frontend
+npm install
+npm run dev
+# Yerel arayüz çalışma adresi: http://localhost:3000
+
+```
 
 ---
 
-### Proje Motivasyonu
-Mevcut birçok yemek öneri platformu, statik tarif listelerine veya basit filtreleme mekanizmalarına dayanmaktadır. Besinsel analiz genellikle ayrı araçlar tarafından yönetilir ve kişiselleştirme genellikle sınırlıdır. Bu proje, bu özellikleri bireysel kullanıcı profillerine göre önerileri uyarlayan birleşik bir sistemde bir araya getirmeyi amaçlamaktadır.
+### 🌟 Öne Çıkan Mimari ve Mühendislik Detayları
 
-### Temel Özellikler
-- Kullanıcı profil yönetimi (diyet hedefleri, sevilen/sevilmeyen yiyecekler)
-- Malzeme bazlı tarif önerileri
-- **Hibrit AI Öneri Motoru:** SQL Filtreleme + Matematiksel Puanlama + LLM Rafine Etme, fallback durumları dahil
-- **Negatif Arzu Tespiti:** "Soğansız" gibi dışlama tercihlerine uyan tarifleri penalize eden akıllı puanlama
-- **Tam Malzeme Listesiyle Arzu Eşleştirmesi:** Kullanıcı arzuları yalnızca başlık/kategori değil, tarifin tüm malzeme listesiyle karşılaştırılır
-- **Kalıcı Öneri Geçmişi:** AI tarafından üretilen içgörüler ve öneriye özel kullanıcı değerlendirmeleri, tariflerden ayrı olarak saklanır
-- **"Bu Tarifi Hazırla" Akışı:** Tarif kartlarından doğrudan tüketim modalı açılır
-- **Admin Paneli:** Kullanıcı/rol yönetimi, malzeme düzenleme, test envanteri oluşturma
-- Günlük Yemek Günlüğü ve Tüketim Takibi (Esnek stok düşümü: Evde yapım vs. dışarıdan tüketim)
-- Envanter yönetimi ve paylaşım/davet desteği
-- Bildirim merkezi ve sidebar entegrasyonu
-- Dinamik Veri Seti Desteği (50.000+ tarifin verimli yönetimi)
-- Besin değeri hesaplama (kalori, protein, yağ, karbonhidrat)
-- **Çoklu AI Sağlayıcı:** OpenAI GPT-4o, Google Gemini, Anthropic Claude, Mistral, DeepSeek, Yerel LLM — dinamik geçiş ve fallback desteği
-- Entegre Dosya Depolama (MinIO) - Tarif görselleri ve kullanıcı yüklemeleri için
-- **İnce İstemci (Thin Client) Mimarisi:** Tüm iş mantığı ve hesaplamalar backend'de merkezi olarak yönetilir (Tek Doğruluk Kaynağı)
-- **Genişletilmiş Birim Dönüştürücü:** 50.000+ tarif veri setindeki tüm birimleri kapsar
-- Web tabanlı, modüler ve genişletilebilir mimari
-- **Çok Dilli Destek (i18n):** Backend ve Frontend için tam uluslararasılaştırma ve yerelleştirme desteği.
+* **İnce İstemci (Thin Client) Mimarisi:** Tüm iş kuralları, kalori/besin hesaplamaları ve birim dönüşüm metrikleri tamamen backend üzerinde merkezileştirilmiştir. React arayüzü yalnızca veriyi görselleştirmekle yükümlüdür (Single Source of Truth).
+* **Hibrit Yapay Zeka Öneri Motoru:** Öneriler üç aşamalı bir hattan geçer:
+1. İlişkisel veritabanı (SQL) üzerinde hızlı ön filtreleme.
+2. Besinsel eşiklere göre matematiksel puanlama.
+3. LLM (Büyük Dil Modeli) katmanında bağlama uygun prompt rafine etme süreci.
 
-### Teknoloji Yığını
-#### Backend
-- Java 21
-- Spring Boot 3.4.3
-- Gradle 8.14 (Wrapper), 8.14.3 (SDKMAN) (Merkezi yönetim ve libs.versions.toml desteği için buildSrc yapısı)
-- RESTful API mimarisi
-- PostgreSQL (Veritabanı)
-- MinIO (Nesne Depolama)
-- Keycloak (Kimlik Yönetimi)
-- OpenAI API (GPT-4o entegrasyonu ve Spring Retry)
-- JaCoCo & SonarQube (Kod Kalitesi ve Test Kapsamı)
-- Testcontainers (PostgreSQL, MinIO, Keycloak entegrasyon testleri için)
 
-#### Frontend
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- API iletişimi için Axios
-- Keycloak JS (Merkezi Kimlik Doğrulama)
+* **Negatif Arzu Tespiti (Negative Craving):** Kullanıcının istemediği malzemeler (*Örn: "soğan istemiyorum"*) listeyi tamamen bozmaz, akıllı penalizasyon algoritmasıyla ilgili tariflerin puanını düşürür. Eşleştirmeler tarif başlıklarından değil, **50.000+ tarifin** derin malzeme ağaçları taranarak yapılır.
+* **Çoklu AI Sağlayıcı ve Akıllı Geçiş (Multi-Provider):** OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral ve DeepSeek modelleri arasında çalışma zamanında dinamik geçiş ve hata durumlarında bir sonrakine devretme (fallback) mekanizması. Dış servis kesintilerine karşı `Spring Retry` entegrasyonu mevcuttur.
+* **Testcontainers ile İzole Test Ortamı:** Entegrasyon testleri sırasında gerçek PostgreSQL, MinIO ve Keycloak davranışları, lokal bağımlılık yaratılmaksızın `Testcontainers` kütüphanesi aracılığıyla dockerize edilerek ayağa kaldırılır ve test edilir.
 
-#### Veritabanı ve Altyapı
-- PostgreSQL
-- MinIO (Nesne Depolama)
-- Keycloak (Kimlik ve Erişim Yönetimi)
+---
 
-### Yapay Zeka Entegrasyonu
-- OpenAI (GPT-4o) ile prompt tabanlı iletişim
-- Kesintisiz bağlantı için Spring Retry entegrasyonu
-- Token kullanım takibi ve loglama
-- Tüm prompt oluşturma ve sonuç işleme süreçleri backend (AiPromptEngine & AiServiceClient) tarafında yönetilir
+### 📂 Proje Klasör Yapısı
 
-### Proje Yapısı
-- `backend/`: Java Spring Boot backend uygulaması (Çok Modüllü Mimari)
-  - `buildSrc/`: Merkezi Gradle yapılandırması ve bağımlılık yönetimi
-  - `modules/01-infrastructure/`: Teknik altyapı, harici servis istemcileri ve test araçları
-  - `modules/02-domain/`: İş mantığı, entity'ler ve repository arayüzleri
-  - `modules/03-application/`: API katmanı, yapılandırma ve uygulama giriş noktası
-  - `modules/04-utilities/`: Ortak yardımcı araçlar ve veri popülasyonu
-- `frontend/`: React tabanlı frontend uygulaması (DI ile Modüler Mimari)
-  - `src/infrastructure/`: Çekirdek servisler (DI, Auth, API istemcileri)
-  - `src/features/`: Fonksiyonel modüller (Dashboard, Tarifler vb.)
-  - `src/shared/`: Ortak bileşenler ve layout'lar
-- `docs/`: Mimari ve yapay zeka tasarım dokümantasyonu
+Geleneksel monolitik katmanlı yapılar yerine, sorumlulukların net ayrıldığı çok modüllü (multi-module) bir yapı tercih edilmiştir:
 
-### Geliştirme ve Dağıtım
-#### Ön Koşullar
-- Docker & Docker Compose
-- Java 21 (SDKMAN önerilir: `.sdkmanrc` mevcuttur)
-- Gradle 8.14 (Wrapper) / 8.14.3 (SDKMAN) (Wrapper dahildir)
-- Node.js 18+ & npm (Frontend geliştirme için)
+```markdown
+├── backend/                             # Çok Modüllü Kurumsal Gradle Mimarisi
+│   ├── buildSrc/                        # Merkezi Gradle eklentileri & merkezi bağımlılık yönetimi (libs.versions.toml)
+│   └── modules/
+│       ├── 01-infrastructure/           # Sürücüler, nesne depolama (MinIO) ve dış LLM API soyutlamaları
+│       ├── 02-domain/                   # Dış dünyadan tamamen izole Saf İş Mantığı Modeli ve Repository Arayüzleri
+│       ├── 03-application/              # REST Kontrolörleri, global güvenlik filtreleri ve uygulama ana tetikleyicisi
+│       └── 04-utilities/                # Veritabanı popülasyon motorları ve migrasyon betikleri
+├── frontend/                            # Bağımlılık Enjeksiyonlu (DI) Modüler TypeScript & Vite Yapısı
+│   └── src/
+│       ├── infrastructure/              # Global DI konteynerleri, Auth sağlayıcıları ve API Interceptor katmanları
+│       ├── features/                    # Birbirinden bağımsız çalışan işlevsel modüller (Dashboard, Stok, Tarifler)
+│       └── shared/                      # Ortak UI bileşenleri, logolar ve tema şablonları
+└── docs/                                # Sistem mimarisi ve yapay zeka entegrasyon şemaları
 
-#### Yerel Kurulum (Docker ile Tam Yığın)
-Hızlı kurulum için yukarıdaki **"🚀 Geliştiriciler İçin Hızlı Başlangıç"** bölümünü takip edin. Alternatif olarak, manuel adımlar şunlardır:
-
-1. Kök dizinde tüm servisleri başlatın:
-   ```bash
-   docker compose --profile full up --build -d
-   ```
-2. Backend için `application.yml` dosyasını oluşturun (örnekten kopyalayarak):
-   `backend/modules/03-application/src/main/resources/application.yml`
-3. Frontend'i başlatın:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-#### Backend Manuel Çalıştırma
-1. Altyapınızın Docker üzerinden çalıştığından emin olun (`docker compose --profile infra up -d`).
-2. Derleyin ve paketleyin:
-```bash
-cd backend
-./gradlew clean bootJar -x test
-```
-3. Çalıştırın:
-```bash
-java -jar modules/03-application/build/libs/03-application-1.0-SNAPSHOT.jar
 ```
 
-### Proje Kapsamı
-Bu proje, bir bitirme projesi (CENG 407 & CENG 408) olarak geliştirilmiştir ve büyük ölçekli veri bilimi veya model eğitiminden ziyade yazılım mimarisi, sistem tasarımı ve uygulamalı yapay zeka entegrasyonuna odaklanmaktadır.
+---
 
+### 🛠️ Kullanılan Teknoloji Yığını
 
+#### Backend Katmanı
+
+* **Çalışma Zamanı ve Framework:** Java 21, Spring Boot 3.4.3, Gradle 8.14+ (Wrapper sistemi)
+* **Veri Yönetimi:** PostgreSQL, MinIO (Görsel ve kullanıcı yüklemeleri için yerel nesne depolama katmanı)
+* **Güvenlik:**  Keycloak OIDC (Projeye özel entegre edilmiş yerel kullanıcı temaları ile)
+* **Kalite Metrikleri:** Sürekli entegrasyon hatları için JaCoCo ve SonarQube test kapsamı otomasyonu
+
+#### Frontend Katmanı
+
+* **Arayüz Motoru:** React 18, TypeScript, Vite Derleyicisi
+* **Tasarım ve İletişim:** Tailwind CSS, Axios İstemcisi, Keycloak JS Adaptörü, Frontend ve Backend genelinde tam çoklu dil (i18n) desteği.
+
+```
+
+```
