@@ -1,15 +1,21 @@
 
+
 # AI-Powered Personalized Meal Recommendation Platform / AI Destekli Kişiselleştirilmiş Yemek Önerisi Platformu
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/meal_logo_dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="frontend/src/assets/meal_logo_light.png">
-    <img alt="Me-Al Logo" src="frontend/src/assets/meal_amblem.png" width="320">
-  </picture>
+  <!-- Sola Amblem (Yüksekliği sabitlendi, genişlik otomatik oranlandı) -->
+  <img alt="Me-Al Amblem" src="frontend/src/assets/meal_amblem.png" height="140" style="vertical-align: middle; margin-right: 25px; display: inline-block;">
+  <!-- Sağa Temaya Duyarlı Logo (Yüksekliği amblem ile birebir eşitlendi) -->
+  <span style="display: inline-block; vertical-align: middle;">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/meal_logo_dark.png">
+      <source media="(prefers-color-scheme: light)" srcset="frontend/src/assets/meal_logo_light.png">
+      <img alt="Me-Al Logo" src="frontend/src/assets/meal_logo_light.png" height="140" style="vertical-align: middle;">
+    </picture>
+  </span>
 </p>
 
-<h1 align="center">Me-Al (MealAI)</h1>
+
 
 <p align="center">
   <strong>Advanced Software Architecture & Multi-Provider AI Integration Framework</strong><br>
@@ -249,7 +255,4 @@ Geleneksel monolitik katmanlı yapılar yerine, sorumlulukların net ayrıldığ
 
 * **Arayüz Motoru:** React 18, TypeScript, Vite Derleyicisi
 * **Tasarım ve İletişim:** Tailwind CSS, Axios İstemcisi, Keycloak JS Adaptörü, Frontend ve Backend genelinde tam çoklu dil (i18n) desteği.
-
-```
-
-```
+---
