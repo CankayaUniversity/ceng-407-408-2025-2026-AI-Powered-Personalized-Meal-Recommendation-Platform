@@ -1,11 +1,8 @@
 
-
 # AI-Powered Personalized Meal Recommendation Platform / AI Destekli Kişiselleştirilmiş Yemek Önerisi Platformu
 
 <p align="center">
-  <!-- Sola Amblem (Yüksekliği sabitlendi, genişlik otomatik oranlandı) -->
   <img alt="Me-Al Amblem" src="frontend/src/assets/meal_amblem.png" height="140" style="vertical-align: middle; margin-right: 25px; display: inline-block;">
-  <!-- Sağa Temaya Duyarlı Logo (Yüksekliği amblem ile birebir eşitlendi) -->
   <span style="display: inline-block; vertical-align: middle;">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="frontend/src/assets/meal_logo_dark.png">
@@ -14,8 +11,6 @@
     </picture>
   </span>
 </p>
-
-
 
 <p align="center">
   <strong>Advanced Software Architecture & Multi-Provider AI Integration Framework</strong><br>
@@ -33,16 +28,64 @@
 
 ---
 
+### 🖼️ Project Presentation Poster / Proje Tanıtım Posteri
+<p align="center">
+  <img alt="Me-Al Project Presentation Poster" src="docs/meal_ai_poster.png" width="90%" style="border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);">
+</p>
+
+<p align="center">
+  🎯 <strong>"What should I cook today?" answered intelligently.</strong><br>
+  Combines ingredients in your pantry, nutrition goals and personal preferences to deliver actionable, nutrient-visible and personalized meal recommendations.
+</p>
+
+---
+
 ## 🗺️ Navigation / Dil Seçimi
 [English Documentation](#english) | [Türkçe Dokümantasyon](#türkçe)
+
 ---
 
 <a name="english"></a>
 ## 🇺🇸 / 🇬🇧 EN - English Documentation
 
-**Me-Al** is a web-based, production-ready application that delivers personalized meal and diet recommendations based on real-time ingredient inventories, explicit dietary preferences, and distinct user nutrition goals. 
+### 🚀 Next-Gen Kitchen Experience
+> 🌐 **"MealAI, which brings traditional kitchen habits together with the technology of the future, is not just a recipe application, but the next-generation operating system of your kitchen."**
 
-Instead of relying on static filtering or basic data science models, this project showcases a rigorous approach to **enterprise software engineering**: standardizing complex multi-provider AI communication, enforcing a strict backend-driven business layer, and managing a robust containerized infrastructure environment.
+#### 🎯 Our Mission & Vision
+* **Our Mission:** To ensure everyone has a healthy and sustainable diet by blending traditional kitchen habits with modern technology.
+* **Our Vision:** To become a global platform that prevents food waste and maximizes individual health by becoming the operating system of kitchens with our AI assistant.
+
+#### 📊 System Execution Metrics & Architecture Foundations
+| Metric | Domain | Architectural Purpose |
+| :--- | :--- | :--- |
+| **Smart** | **Active Inventory** | Real-time multi-location synchronization across shared household nodes. |
+| **AI** | **Prediction Score** | Algorithmic pantry fitness calculation combined with downstream LLM optimization. |
+| **Data** | **Kitchen Analysis** | Decentralized logging of historical consumption, macro bounds, and physical charts. |
+
+#### 🌟 Intelligent Core FEATURES
+* 🔄 **Smart Inventory Management:** Forget old-school notebooks and lists. Easily manage your inventory digitally and keep your shared kitchen in sync with family, roommates, or colleagues.
+* 🧠 **Data-Driven, Personalized Kitchen for You:** An approach that goes beyond static lists and deeply analyzes every detail from your allergens to your diet goals.
+* 📊 **Analysis-Oriented Approach:** An analysis structure that examines your past consumption, preferences, and physical traits; offering personalized guidance with charts and smart calculations.
+* ⚡ **AI-Powered Recommendation:** An AI-powered system that analyzes every detail from allergens to diet goals, providing ideal recommendations considering your current inventory.
+* 🌐 **Digitalized Kitchen Experience:** Your smartest kitchen partner that manages your kitchen with data, personalizes every meal, and digitalizes your nutritional habits with an analytical approach.
+
+---
+
+### 🔄 How It Works & Core Execution Pipeline
+
+The platform is engineered around a **Decoupled Hybrid Execution** model. Core user profiling, dietary calculations, and relational database filtering operate entirely on our local backend without external dependencies. Advanced LLM refinement acts as a modular, plug-and-play scaling tier.
+
+1. **Create Your Profile & Dynamic Provisioning:** Users establish core biological metrics (weight, height, age, gender, activity level). The backend service layer autonomously computes the **Body Mass Index (BMI)** and maps target calorie limits (**TDEE**) based on the chosen `DietaryGoal`.
+2. **Add Your Ingredients & Live Sync:** Real-time digital tracking of shared inventories (`InventoryGroup`) across multi-member households. The system fetches the precise active pantry manifest to serve as the structural data foundation.
+3. **Establish Constraints & Filters:**
+   * **Hard Constraints (Allergies):** Relational SQL pre-filtering isolates allergen ingredients at the database level, ensuring 100% user safety before any AI involvement.
+   * **Soft Constraints (Disliked Ingredients):** Ingredients the user prefers to avoid are passed to the local algorithmic engine to penalize recipe match scores rather than breaking queries.
+4. **Me-Al Recommends (Dual-Engine Framework):**
+   * **Standard Tier (Local & Free):** The system immediately processes the active inventory fit against **50,000+ nested recipe manifests**, executing mathematical macro-matching. **The app is fully functional out-of-the-box in this layer with zero cost.**
+   * **AI-Enhanced Tier (BYOK - Bring Your Own Key):** Users can optionally choose their preferred AI provider (OpenAI, Gemini, Claude, DeepSeek) and securely save their personal API key via a client modal. The backend dynamic routing engine then injects the LLM into the tail-end of the pipeline to refine matches and generate natural-language context explanations (*"Why this meal fits your day"*).
+5. **Shop, Cook & Track:** Automatically populates missing ingredients into localized shopping lists, logs consumed meals into the daily nutrition summary journal, and decrements live inventory stocks upon compilation.
+
+---
 
 ### 🚀 Quick Start for Developers
 
@@ -64,9 +107,9 @@ docker compose --profile full up --build -d
 
 #### 3. Access Matrix & Default Credentials
 
-* **Frontend Client:** [http://localhost:3030](https://www.google.com/search?q=http://localhost:3030)
-* **Backend REST API:** [http://localhost:8081](https://www.google.com/search?q=http://localhost:8081)
-* **Keycloak Server:** [http://localhost:8080](https://www.google.com/search?q=http://localhost:8080) (Admin: `admin/admin`)
+* **Frontend Client:** http://localhost:3030
+* **Backend REST API:** http://localhost:8081
+* **Keycloak Server:** http://localhost:8080 (Admin: `admin/admin`)
 * **PostgreSQL Instance:** `localhost:5432`
 * **Default App Account:** Username: `user` | Password: `password`
 
@@ -102,7 +145,7 @@ npm run dev
 3. LLM Refinement utilizing context-aware prompt payloads.
 
 
-* **Negative Craving & Deep Matching:** Negative filters (e.g., *"no onion"*) actively penalize scores rather than breaking queries. Cravings are mapped across the complete, nested structural ingredient manifests of **50,000+ recipes**, bypassing superficial title string matches.
+* **Negative Craving & Deep Matching:** Negative filters actively penalize scores rather than breaking queries. Cravings are mapped across the complete, nested structural ingredient manifests of **50,000+ recipes**, bypassing superficial title string matches.
 * **Multi-Provider Multi-Model AI Client:** Built-in dynamic runtime switching and reliable fallback handling across OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, and DeepSeek. Integrated with `Spring Retry` mechanisms to counteract external throttling.
 * **Isolated Ephemeral Testing:** Implements `Testcontainers` within the integration testing suite to programmatically manage real PostgreSQL, MinIO, and Keycloak behaviors during continuous integration.
 
@@ -137,7 +180,7 @@ The project explicitly ditches generic monolithic styles for a highly decoupled,
 
 * **Runtime & Framework:** Java 21, Spring Boot 3.4.3, Gradle 8.14+ (Wrapper structure)
 * **Data Layout:** PostgreSQL, MinIO (Object Storage framework for image distribution)
-* **Security Architecture:**  Keycloak OIDC (Standalone custom client themes embedded)
+* **Security Architecture:** Keycloak OIDC (Standalone custom client themes embedded)
 * **Quality Metrics:** JaCoCo & SonarQube automation for target assertion tracking
 
 #### Frontend Tier
@@ -147,12 +190,62 @@ The project explicitly ditches generic monolithic styles for a highly decoupled,
 
 ---
 
-<a name="türkçe"></a>
+### 👥 Project Framework & Demographics
+
+* **Development Team:** Berk MEMİŞ, Burak METİN, Yiğit Efe SALGIN
+* **Academic Advisor:** Dr. Instructor Abdül Kadir GÖRÜR
+* **Department & Course:** Computer Engineering Department — CENG 407/408
+
+---
+
 ## 🇹🇷 TR - Türkçe Dokümantasyon
 
-**Me-Al**, kullanıcıların anlık malzeme envanterlerine, beslenme tercihlerine ve kişisel sağlık hedeflerine göre uyarlanmış dinamik yemek önerileri sunan, üretime hazır bir web uygulamasıdır.
+### 🚀 Yeni Nesil Mutfak Deneyimi
 
-Statik filtrelemeler veya geleneksel veri bilimi yaklaşımları yerine bu proje, **ileri düzey yazılım mühendisliği** prensiplerine odaklanır: Çoklu yapay zeka servis sağlayıcılarının standartlaştırılması, iş mantığının tamamen backend odaklı yönetimi ve izole dockerize edilmiş altyapı mimarisi projenin temelini oluşturur.
+> 🌐 **"Geleneksel alışkanlıkları geleceğin teknolojisiyle buluşturan MealAI, sadece bir tarif uygulaması değil, mutfağınızın yeni nesil işletim sistemidir."**
+
+#### 🎯 Misyonumuz ve Vizyonumuz
+
+* **Misyonumuz:** Geleneksel mutfak alışkanlıklarını modern teknolojiyle harmanlayarak, herkesin sağlıklı ve sürdürülebilir bir beslenme düzenine sahip olmasını sağlamak.
+* **Vizyonumuz:** Yapay zeka asistanımızla mutfakların işletim sistemi haline gelerek, gıda israfını önleyen ve bireysel sağlığı maksimize eden küresel bir platform olmak.
+
+#### 📊 Sistem Çalışma Metrikleri ve Mimari Temeller
+
+| Metrik | Çalışma Alanı | Mühendislik Amacı |
+| --- | --- | --- |
+| **Smart** | **Aktif Envanter** | Paylaşımlı ev, yurt veya iş yerlerindeki mutfak stoklarının anlık dijital senkronizasyonu. |
+| **AI** | **Tahmin Skoru** | Envanter uyumluluğu, matematiksel makro puanlaması ve LLM süzgecinin ortak hibrit çıktısı. |
+| **Data** | **Mutfak Analizi** | Geçmiş tüketimlerin, fiziksel metrik değişimlerinin grafikler ve akıllı hesaplamalarla takibi. |
+
+#### 🌟 Intelligent Core Öne Çıkan Özellikler
+
+* 🔄 **Akıllı Envanter Yönetimi:** Eski usul defterleri ve listeleri unutun. Mutfak asistanınızla envanterinizi dijitalde kolayca yönetin; aileniz, ev veya iş arkadaşlarınızla ortak mutfağınızı senkronize tutun.
+* 🧠 **Veriyle Yönetilen, Sizin İçin Kişiselleşen Mutfak:** Statik listelerin ötesine geçerek; alerjenlerinizden diyet hedeflerinize kadar her detayı derinlemesine analiz eden bir yaklaşım.
+* 📊 **Analiz Odaklı Yaklaşım:** Geçmiş tüketimlerinizi, tercihlerinizi ve fiziksel özelliklerinizi analiz eden; grafikler ve akıllı hesaplamalarla size özel yönlendirmeler sunan analiz yapısı.
+* ⚡ **Yapay Zeka Destekli Öneri:** Alerjenlerinizden diyet hedeflerinize kadar her detayı analiz ederek envanterinizdeki malzemeleri göz önüne alan ve size en ideal önerileri hazırlayan AI destekli yapı.
+* 🌐 **Dijitalleşen Mutfak Deneyimi:** Mutfağınızı veriyle yöneten, her öğünü sizin için kişiselleştiren ve analiz odaklı yaklaşımıyla beslenme alışkanlıklarınızı dijitalleştiren en akıllı mutfak ortağınız.
+
+---
+
+### 🔄 Nasıl Çalışır ve Sistem İşleyişi
+
+Platform, **Ayrık Hibrit Çalışma (Decoupled Hybrid Execution)** modeli üzerine kurulmuştur. Kullanıcı profilleme, besin hesaplamaları ve ilişkisel veritabanı filtrelemeleri hiçbir dış bağımlılık olmaksızın tamamen yerel backend üzerinde koşar. İleri düzey yapay zeka (LLM) katmanı ise sisteme modüler olarak takılıp çıkarılabilen (plug-and-play) bir süzgeç katmanıdır.
+
+1. **Profil Yapılandırması ve Otonom Hesaplama:** Kullanıcılar temel fiziksel metriklerini (boy, kilo, yaş, cinsiyet, aktivite seviyesi) girer. Backend servis katmanı, bu verilerden hareketle **Vücut Kitle İndeksini (BMI)** otonom hesaplar ve seçilen `DietaryGoal` (kilo verme, kas yapma vb.) doğrultusunda günlük hedef kaloriyi dinamik olarak belirler.
+2. **Canlı Envanter Senkronizasyonu:** Paylaşımlı envanter gruplarındaki (`InventoryGroup`) mutfak stokları anlık taranır. Aile, ev veya iş arkadaşları arasındaki ortak mutfaklar gerçek zamanlı olarak senkronize edilir.
+3. **Kısıtlamaların ve Filtrelerin İşlenmesi:**
+* **Sert Kısıtlamalar (Alerjiler):** Kullanıcının alerji listesi, ilişkisel veritabanı (SQL) seviyesinde kesin filtre olarak çalışır; alerjen içeren tarifler yapay zekaya dahi gitmeden **ilk aşamada %100 güvenlik amacıyla elenir**.
+* **Esnek Kısıtlamalar (Sevmediği Malzemeler):** Kullanıcının tercih etmediği malzemeler sorguyu bozmaz; yerel algoritma tarafından ilgili tariflerin **tahmin skorunu (Prediction Score) düşürmek** üzere soft-constraint olarak işlenir.
+
+
+4. **Me-Al Önerir (Çift Motorlu Süreç):**
+* **Standart Seviye (Yerel ve Ücretsiz):** Sistemimiz, aktif envanter durumunu **50.000'den fazla tarifin** derin malzeme ağaçlarıyla eşleştirir ve makro hedeflere göre matematiksel puanlama yapar. **Uygulama bu haliyle tamamen ücretsiz ve dışa bağımsız çalışabilir.**
+* **Yapay Zeka Destekli Seviye (BYOK - Kendi Anahtarını Getir):** Kullanıcılar istedikleri takdirde arayüzden tercih ettikleri yapay zeka sağlayıcısını (OpenAI, Gemini, Claude, DeepSeek) seçip açılan modal üzerinden kendi API anahtarını sisteme güvenlice tanımlayabilir. Backend dinamik yönlendirme motoru, bu anahtarı kullanarak yapay zekayı boru hattının (pipeline) sonuna ekler; tarifleri rafine ederek kullanıcıya doğal dilde gerekçeli açıklamalar üretir (*"Bu yemek hedeflerinize neden uygun?"*).
+
+
+5. **Alışveriş, Pişirme ve Takip Döngüsü:** Eksik veya azalan malzemeler otomatik alışveriş listesine aktarılır, tüketilen öğünler günlük beslenme özet günlüğüne (Daily Nutrition Summary) kaydedilir ve mutfak stoku otonom olarak düşürülür.
+
+---
 
 ### 🚀 Geliştiriciler İçin Hızlı Başlangıç
 
@@ -175,9 +268,9 @@ docker compose --profile full up --build -d
 
 #### 3. Erişim Matrisi ve Varsayılan Bilgiler
 
-* **Frontend Arayüzü:** [http://localhost:3030](https://www.google.com/search?q=http://localhost:3030)
-* **Backend REST API:** [http://localhost:8081](https://www.google.com/search?q=http://localhost:8081)
-* **Keycloak Paneli:** [http://localhost:8080](https://www.google.com/search?q=http://localhost:8080) (Admin: `admin/admin`)
+* **Frontend Arayüzü:** http://localhost:3030
+* **Backend REST API:** http://localhost:8081
+* **Keycloak Paneli:** http://localhost:8080 (Admin: `admin/admin`)
 * **PostgreSQL Veritabanı:** `localhost:5432`
 * **Varsayılan Test Hesabı:** Kullanıcı Adı: `user` | Şifre: `password`
 
@@ -213,7 +306,7 @@ npm run dev
 3. LLM (Büyük Dil Modeli) katmanında bağlama uygun prompt rafine etme süreci.
 
 
-* **Negatif Arzu Tespiti (Negative Craving):** Kullanıcının istemediği malzemeler (*Örn: "soğan istemiyorum"*) listeyi tamamen bozmaz, akıllı penalizasyon algoritmasıyla ilgili tariflerin puanını düşürür. Eşleştirmeler tarif başlıklarından değil, **50.000+ tarifin** derin malzeme ağaçları taranarak yapılır.
+* **Negatif Arzu Tespiti (Negative Craving):** Kullanıcının istemediği malzemeler listeyi tamamen bozmaz, akıllı penalizasyon algoritmasıyla ilgili tariflerin puanını düşürür. Eşleştirmeler tarif başlıklarından değil, **50.000+ tarifin** derin malzeme ağaçları taranarak yapılır.
 * **Çoklu AI Sağlayıcı ve Akıllı Geçiş (Multi-Provider):** OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral ve DeepSeek modelleri arasında çalışma zamanında dinamik geçiş ve hata durumlarında bir sonrakine devretme (fallback) mekanizması. Dış servis kesintilerine karşı `Spring Retry` entegrasyonu mevcuttur.
 * **Testcontainers ile İzole Test Ortamı:** Entegrasyon testleri sırasında gerçek PostgreSQL, MinIO ve Keycloak davranışları, lokal bağımlılık yaratılmaksızın `Testcontainers` kütüphanesi aracılığıyla dockerize edilerek ayağa kaldırılır ve test edilir.
 
@@ -234,7 +327,7 @@ Geleneksel monolitik katmanlı yapılar yerine, sorumlulukların net ayrıldığ
 ├── frontend/                            # Bağımlılık Enjeksiyonlu (DI) Modüler TypeScript & Vite Yapısı
 │   └── src/
 │       ├── infrastructure/              # Global DI konteynerleri, Auth sağlayıcıları ve API Interceptor katmanları
-│       ├── features/                    # Birbirinden bağımsız çalışan işlevsel modüller (Dashboard, Stok, Tarifler)
+│       ├── features/                    # Birbirinden bağımsız çalışan işlevsel modüller (Dashboard, Envanter, Tarifler)
 │       └── shared/                      # Ortak UI bileşenleri, logolar ve tema şablonları
 └── docs/                                # Sistem mimarisi ve yapay zeka entegrasyon şemaları
 
@@ -248,11 +341,20 @@ Geleneksel monolitik katmanlı yapılar yerine, sorumlulukların net ayrıldığ
 
 * **Çalışma Zamanı ve Framework:** Java 21, Spring Boot 3.4.3, Gradle 8.14+ (Wrapper sistemi)
 * **Veri Yönetimi:** PostgreSQL, MinIO (Görsel ve kullanıcı yüklemeleri için yerel nesne depolama katmanı)
-* **Güvenlik:**  Keycloak OIDC (Projeye özel entegre edilmiş yerel kullanıcı temaları ile)
+* **Güvenlik:** Keycloak OIDC (Projeye özel entegre edilmiş yerel kullanıcı temaları ile)
 * **Kalite Metrikleri:** Sürekli entegrasyon hatları için JaCoCo ve SonarQube test kapsamı otomasyonu
 
 #### Frontend Katmanı
 
 * **Arayüz Motoru:** React 18, TypeScript, Vite Derleyicisi
 * **Tasarım ve İletişim:** Tailwind CSS, Axios İstemcisi, Keycloak JS Adaptörü, Frontend ve Backend genelinde tam çoklu dil (i18n) desteği.
+
+---
+
+### 👥 Proje Yapısı ve Ekip
+
+* **Geliştirici Ekip:** Berk MEMİŞ, Burak METİN, Yiğit Efe SALGIN
+* **Akademik Danışman:** Dr. Öğr. Üyesi Abdül Kadir GÖRÜR
+* **Bölüm ve Ders:** Bilgisayar Mühendisliği Bölümü — CENG 407/408
+
 ---
