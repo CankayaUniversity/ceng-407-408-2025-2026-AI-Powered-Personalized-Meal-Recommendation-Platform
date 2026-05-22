@@ -197,7 +197,7 @@ The project explicitly ditches generic monolithic styles for a highly decoupled,
 * **Department & Course:** Computer Engineering Department — CENG 407/408
 
 ---
-
+<a name="türkçe"></a>
 ## 🇹🇷 TR - Türkçe Dokümantasyon
 
 ### 🚀 Yeni Nesil Mutfak Deneyimi
