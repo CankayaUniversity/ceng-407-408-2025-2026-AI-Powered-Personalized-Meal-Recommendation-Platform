@@ -1,4 +1,3 @@
-
 # AI-Powered Personalized Meal Recommendation Platform / AI Destekli Kişiselleştirilmiş Yemek Önerisi Platformu
 
 <p align="center">
@@ -28,7 +27,7 @@
 
 ---
 
-### 🖼️ Project Presentation Poster / Proje Tanıtım Posteri
+###  Project Presentation Poster / Proje Tanıtım Posteri
 <p align="center">
   <img alt="Me-Al Project Presentation Poster" src="docs/meal_ai_poster.png" width="90%" style="border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);">
 </p>
@@ -40,34 +39,56 @@
 
 ---
 
+
 ## 🗺️ Navigation / Dil Seçimi
-[English Documentation](#english) | [Türkçe Dokümantasyon](#türkçe)
+
+[English Documentation](https://www.google.com/search?q=%23english) | [Türkçe Dokümantasyon](https://www.google.com/search?q=%23t%C3%BCrk%C3%A7e)
 
 ---
 
-<a name="english"></a>
 ## 🇺🇸 / 🇬🇧 EN - English Documentation
 
 ### 🚀 Next-Gen Kitchen Experience
+
 > 🌐 **"MealAI, which brings traditional kitchen habits together with the technology of the future, is not just a recipe application, but the next-generation operating system of your kitchen."**
 
 #### 🎯 Our Mission & Vision
+
 * **Our Mission:** To ensure everyone has a healthy and sustainable diet by blending traditional kitchen habits with modern technology.
 * **Our Vision:** To become a global platform that prevents food waste and maximizes individual health by becoming the operating system of kitchens with our AI assistant.
 
 #### 📊 System Execution Metrics & Architecture Foundations
+
 | Metric | Domain | Architectural Purpose |
-| :--- | :--- | :--- |
+| --- | --- | --- |
 | **Smart** | **Active Inventory** | Real-time multi-location synchronization across shared household nodes. |
 | **AI** | **Prediction Score** | Algorithmic pantry fitness calculation combined with downstream LLM optimization. |
 | **Data** | **Kitchen Analysis** | Decentralized logging of historical consumption, macro bounds, and physical charts. |
 
-#### 🌟 Intelligent Core FEATURES
+#### 🌟 Intelligent Core Features
+
 * 🔄 **Smart Inventory Management:** Forget old-school notebooks and lists. Easily manage your inventory digitally and keep your shared kitchen in sync with family, roommates, or colleagues.
 * 🧠 **Data-Driven, Personalized Kitchen for You:** An approach that goes beyond static lists and deeply analyzes every detail from your allergens to your diet goals.
-* 📊 **Analysis-Oriented Approach:** An analysis structure that examines your past consumption, preferences, and physical traits; offering personalized guidance with charts and smart calculations.
+* 📊 **Analysis-Oriented Approach:** An analysis structure that examines your past consumption, preferences, and physical traits; offering personalized guidance with charts and smart calculations (calories, protein, fat, carbohydrates).
+
+
 * ⚡ **AI-Powered Recommendation:** An AI-powered system that analyzes every detail from allergens to diet goals, providing ideal recommendations considering your current inventory.
 * 🌐 **Digitalized Kitchen Experience:** Your smartest kitchen partner that manages your kitchen with data, personalizes every meal, and digitalizes your nutritional habits with an analytical approach.
+
+
+
+---
+
+### ⚙️ Extended Engineering Highlights
+
+* **Thin Client Architecture:** Absolute centralization of business parameters, nutritional conversions, and computational state. The React client functions strictly as a presentation tier (Single Source of Truth paradigm).
+* **Hybrid AI Recommendation Engine:** Executes a three-tiered evaluation pipeline: Relational SQL pre-filtering against available datasets -> Dynamic algorithmic scoring based on nutritional thresholds -> LLM Refinement utilizing context-aware prompt payloads.
+* **Negative Craving & Deep Matching:** Negative filters (e.g., *"no onion"*) actively penalize scores rather than breaking queries. Cravings are mapped across the complete, nested structural ingredient manifests of **50,000+ recipes**, bypassing superficial title string matches.
+* **Persistent Recommendation History:** AI-generated insights, prompt metadata, token usage metrics, and per-recommendation user ratings are explicitly stored separately from base recipes to guarantee rich behavioral tracking.
+* **"Prepare This Recipe" Flow & Flexible Stock Deduction:** An interactive consumption modal logs direct meal completion into the daily food journal, triggering downstream calculations and offering a choice between homemade (updates active inventory balances) or external consumption.
+* **Multi-Provider Multi-Model AI Client:** Built-in dynamic runtime switching and reliable fallback handling across OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, and DeepSeek. Integrated with `Spring Retry` mechanisms to counteract external throttling.
+* **Expanded Unit Converter:** An extensible conversion utility natively built into the core backend module to flawlessly translate all heterogeneous unit metrics scattered across the 50,000+ recipe records.
+* **Isolated Ephemeral Testing:** Implements `Testcontainers` within the integration testing suite to programmatically manage real PostgreSQL, MinIO, and Keycloak behaviors during continuous integration.
 
 ---
 
@@ -78,11 +99,15 @@ The platform is engineered around a **Decoupled Hybrid Execution** model. Core u
 1. **Create Your Profile & Dynamic Provisioning:** Users establish core biological metrics (weight, height, age, gender, activity level). The backend service layer autonomously computes the **Body Mass Index (BMI)** and maps target calorie limits (**TDEE**) based on the chosen `DietaryGoal`.
 2. **Add Your Ingredients & Live Sync:** Real-time digital tracking of shared inventories (`InventoryGroup`) across multi-member households. The system fetches the precise active pantry manifest to serve as the structural data foundation.
 3. **Establish Constraints & Filters:**
-   * **Hard Constraints (Allergies):** Relational SQL pre-filtering isolates allergen ingredients at the database level, ensuring 100% user safety before any AI involvement.
-   * **Soft Constraints (Disliked Ingredients):** Ingredients the user prefers to avoid are passed to the local algorithmic engine to penalize recipe match scores rather than breaking queries.
+* **Hard Constraints (Allergies):** Relational SQL pre-filtering isolates allergen ingredients at the database level, ensuring 100% user safety before any AI involvement.
+* **Soft Constraints (Disliked Ingredients):** Ingredients the user prefers to avoid are passed to the local algorithmic engine to penalize recipe match scores rather than breaking queries.
+
+
 4. **Me-Al Recommends (Dual-Engine Framework):**
-   * **Standard Tier (Local & Free):** The system immediately processes the active inventory fit against **50,000+ nested recipe manifests**, executing mathematical macro-matching. **The app is fully functional out-of-the-box in this layer with zero cost.**
-   * **AI-Enhanced Tier (BYOK - Bring Your Own Key):** Users can optionally choose their preferred AI provider (OpenAI, Gemini, Claude, DeepSeek) and securely save their personal API key via a client modal. The backend dynamic routing engine then injects the LLM into the tail-end of the pipeline to refine matches and generate natural-language context explanations (*"Why this meal fits your day"*).
+* **Standard Tier (Local & Free):** The system immediately processes the active inventory fit against **50,000+ nested recipe manifests**, executing mathematical macro-matching. **The app is fully functional out-of-the-box in this layer with zero cost.**
+* **AI-Enhanced Tier (BYOK - Bring Your Own Key):** Users can optionally choose their preferred AI provider (OpenAI, Gemini, Claude, DeepSeek) and securely save their personal API key via a client modal. The backend dynamic routing engine then injects the LLM into the tail-end of the pipeline to refine matches and generate natural-language context explanations (*"Why this meal fits your day"*).
+
+
 5. **Shop, Cook & Track:** Automatically populates missing ingredients into localized shopping lists, logs consumed meals into the daily nutrition summary journal, and decrements live inventory stocks upon compilation.
 
 ---
@@ -90,8 +115,9 @@ The platform is engineered around a **Decoupled Hybrid Execution** model. Core u
 ### 🚀 Quick Start for Developers
 
 #### 1. Clone the Repository
+
 ```bash
-git clone [https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git](https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git)
+git clone https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git
 cd AI-Powered-Personalized-Meal-Recommendation-Platform
 
 ```
@@ -136,21 +162,6 @@ npm run dev
 
 ---
 
-### 🌟 Core Architecture & Engineering Highlights
-
-* **Thin Client Architecture:** Absolute centralization of business parameters, nutritional conversions, and computational state. The React client functions strictly as a presentation tier (Single Source of Truth paradigm).
-* **Hybrid AI Recommendation Engine:** Executes a three-tiered evaluation pipeline:
-1. Fast relational SQL pre-filtering against available datasets.
-2. Dynamic algorithmic scoring based on nutritional thresholds.
-3. LLM Refinement utilizing context-aware prompt payloads.
-
-
-* **Negative Craving & Deep Matching:** Negative filters actively penalize scores rather than breaking queries. Cravings are mapped across the complete, nested structural ingredient manifests of **50,000+ recipes**, bypassing superficial title string matches.
-* **Multi-Provider Multi-Model AI Client:** Built-in dynamic runtime switching and reliable fallback handling across OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral, and DeepSeek. Integrated with `Spring Retry` mechanisms to counteract external throttling.
-* **Isolated Ephemeral Testing:** Implements `Testcontainers` within the integration testing suite to programmatically manage real PostgreSQL, MinIO, and Keycloak behaviors during continuous integration.
-
----
-
 ### 📂 Technical Project Structure
 
 The project explicitly ditches generic monolithic styles for a highly decoupled, modular application footprint:
@@ -190,14 +201,18 @@ The project explicitly ditches generic monolithic styles for a highly decoupled,
 
 ---
 
-### 👥 Project Framework & Demographics
+### 📋 Project Scope & Boundaries
+
+This project is developed as a senior graduation project (CENG 407 & CENG 408) and focuses heavily on **software architecture, distributed system design, and applied clean code integration** rather than large-scale data science, custom model training, or algorithmic weights fine-tuning.
+
+#### 👥 Development Team & Demographics
 
 * **Development Team:** Berk MEMİŞ, Burak METİN, Yiğit Efe SALGIN
 * **Academic Advisor:** Dr. Instructor Abdül Kadir GÖRÜR
 * **Department & Course:** Computer Engineering Department — CENG 407/408
 
 ---
-<a name="türkçe"></a>
+
 ## 🇹🇷 TR - Türkçe Dokümantasyon
 
 ### 🚀 Yeni Nesil Mutfak Deneyimi
@@ -221,9 +236,26 @@ The project explicitly ditches generic monolithic styles for a highly decoupled,
 
 * 🔄 **Akıllı Envanter Yönetimi:** Eski usul defterleri ve listeleri unutun. Mutfak asistanınızla envanterinizi dijitalde kolayca yönetin; aileniz, ev veya iş arkadaşlarınızla ortak mutfağınızı senkronize tutun.
 * 🧠 **Veriyle Yönetilen, Sizin İçin Kişiselleşen Mutfak:** Statik listelerin ötesine geçerek; alerjenlerinizden diyet hedeflerinize kadar her detayı derinlemesine analiz eden bir yaklaşım.
-* 📊 **Analiz Odaklı Yaklaşım:** Geçmiş tüketimlerinizi, tercihlerinizi ve fiziksel özelliklerinizi analiz eden; grafikler ve akıllı hesaplamalarla size özel yönlendirmeler sunan analiz yapısı.
+* 📊 **Analiz Odaklı Yaklaşım:** Geçmiş tüketimlerinizi, tercihlerinizi ve fiziksel özelliklerinizi analiz eden; gelişmiş grafikler ve otonom kalori hesaplamalarıyla (kalori, protein, yağ, karbonhidrat) size özel yönlendirmeler sunan analiz yapısı.
+
+
 * ⚡ **Yapay Zeka Destekli Öneri:** Alerjenlerinizden diyet hedeflerinize kadar her detayı analiz ederek envanterinizdeki malzemeleri göz önüne alan ve size en ideal önerileri hazırlayan AI destekli yapı.
 * 🌐 **Dijitalleşen Mutfak Deneyimi:** Mutfağınızı veriyle yöneten, her öğünü sizin için kişiselleştiren ve analiz odaklı yaklaşımıyla beslenme alışkanlıklarınızı dijitalleştiren en akıllı mutfak ortağınız.
+
+
+
+---
+
+### ⚙️ Öne Çıkan Mimari ve Mühendislik Detayları
+
+* **İnce İstemci (Thin Client) Mimarisi:** Tüm iş kuralları, kalori/besin hesaplamaları ve birim dönüşüm metrikleri tamamen backend üzerinde merkezileştirilmiştir. React arayüzü yalnızca veriyi görselleştirmekle yükümlüdür (Single Source of Truth).
+* **Hibrit Yapay Zeka Öneri Motoru:** Öneriler üç aşamalı bir hattan geçer: İlişkisel veritabanı (SQL) üzerinde hızlı ön filtreleme -> Besinsel eşiklere göre matematiksel puanlama -> LLM (Büyük Dil Modeli) katmanında bağlama uygun prompt rafine etme süreci.
+* **Negatif Kuruntu Tespiti (Negative Craving):** Kullanıcının istemediği malzemeler (*Örn: "soğan istemiyorum"*) listeyi tamamen bozmaz, akıllı penalizasyon algoritmasıyla ilgili tariflerin puanını düşürür. Eşleştirmeler tarif başlıklarından değil, **50.000+ tarifin** derin malzeme ağaçları taranarak yapılır.
+* **Kalıcı Öneri Geçmişi:** AI tarafından üretilen içgörüler, prompt meta verileri, token tüketim metrikleri ve öneriye özel kullanıcı puanlamaları/değerlendirmeleri, tariflerden tamamen bağımsız tablolarda kalıcı olarak saklanır.
+* **"Bu Tarifi Hazırla" Akışı ve Esnek Stok Yönetimi:** Tarif kartlarından tetiklenen interaktif tüketim modalı, öğünü günlük yemek günlüğüne işlerken; evde yapım (envanter stok bakiyelerini otonom düşürür) veya dışarıdan hazır tüketim seçeneklerine göre esnek çalışır.
+* **Çoklu AI Sağlayıcı ve Akıllı Geçiş (Multi-Provider):** OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral ve DeepSeek modelleri arasında çalışma zamanında dinamik geçiş ve fallback mekanizması. Dış servis kesintilerine karşı `Spring Retry` entegrasyonu mevocuttur.
+* **Genişletilmiş Birim Dönüştürücü:** Çok modüllü mimarinin backend çekirdeğine gömülü, 50.000+ tariflik devasa veri setinde geçen tüm heterojen birim ölçülerini (kaşık, gram, oz, adet vb.) otonom olarak birbirine çeviren dönüşüm motoru.
+* **Testcontainers ile İzole Test Ortamı:** Entegrasyon testleri sırasında gerçek PostgreSQL, MinIO ve Keycloak davranışları, lokal bağımlılık yaratılmaksızın `Testcontainers` kütüphanesi aracılığıyla dockerize edilerek ayağa kaldırılır ve test edilir.
 
 ---
 
@@ -252,7 +284,7 @@ Platform, **Ayrık Hibrit Çalışma (Decoupled Hybrid Execution)** modeli üzer
 #### 1. Depoyu Klonlayın
 
 ```bash
-git clone [https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git](https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git)
+git clone https://github.com/your-username/AI-Powered-Personalized-Meal-Recommendation-Platform.git
 cd AI-Powered-Personalized-Meal-Recommendation-Platform
 
 ```
@@ -297,21 +329,6 @@ npm run dev
 
 ---
 
-### 🌟 Öne Çıkan Mimari ve Mühendislik Detayları
-
-* **İnce İstemci (Thin Client) Mimarisi:** Tüm iş kuralları, kalori/besin hesaplamaları ve birim dönüşüm metrikleri tamamen backend üzerinde merkezileştirilmiştir. React arayüzü yalnızca veriyi görselleştirmekle yükümlüdür (Single Source of Truth).
-* **Hibrit Yapay Zeka Öneri Motoru:** Öneriler üç aşamalı bir hattan geçer:
-1. İlişkisel veritabanı (SQL) üzerinde hızlı ön filtreleme.
-2. Besinsel eşiklere göre matematiksel puanlama.
-3. LLM (Büyük Dil Modeli) katmanında bağlama uygun prompt rafine etme süreci.
-
-
-* **Negatif Arzu Tespiti (Negative Craving):** Kullanıcının istemediği malzemeler listeyi tamamen bozmaz, akıllı penalizasyon algoritmasıyla ilgili tariflerin puanını düşürür. Eşleştirmeler tarif başlıklarından değil, **50.000+ tarifin** derin malzeme ağaçları taranarak yapılır.
-* **Çoklu AI Sağlayıcı ve Akıllı Geçiş (Multi-Provider):** OpenAI (GPT-4o), Google Gemini, Anthropic Claude, Mistral ve DeepSeek modelleri arasında çalışma zamanında dinamik geçiş ve hata durumlarında bir sonrakine devretme (fallback) mekanizması. Dış servis kesintilerine karşı `Spring Retry` entegrasyonu mevcuttur.
-* **Testcontainers ile İzole Test Ortamı:** Entegrasyon testleri sırasında gerçek PostgreSQL, MinIO ve Keycloak davranışları, lokal bağımlılık yaratılmaksızın `Testcontainers` kütüphanesi aracılığıyla dockerize edilerek ayağa kaldırılır ve test edilir.
-
----
-
 ### 📂 Proje Klasör Yapısı
 
 Geleneksel monolitik katmanlı yapılar yerine, sorumlulukların net ayrıldığı çok modüllü (multi-module) bir yapı tercih edilmiştir:
@@ -351,7 +368,11 @@ Geleneksel monolitik katmanlı yapılar yerine, sorumlulukların net ayrıldığ
 
 ---
 
-### 👥 Proje Yapısı ve Ekip
+### 📋 Proje Kapsamı ve Sınırları
+
+Bu proje, bir bitirme projesi (CENG 407 & CENG 408) olarak geliştirilmiştir. Projenin ana odağı büyük ölçekli veri bilimi, sıfırdan model eğitme veya algoritma ağırlık optimizasyonları (fine-tuning) olmayıp; **yazılım mimarisi, dağıtık sistem tasarımı, clean code standartları ve uygulamalı yapay zeka entegrasyonu** süreçleridir.
+
+#### 👥 Proje Yapısı ve Ekip
 
 * **Geliştirici Ekip:** Berk MEMİŞ, Burak METİN, Yiğit Efe SALGIN
 * **Akademik Danışman:** Dr. Öğr. Üyesi Abdül Kadir GÖRÜR
