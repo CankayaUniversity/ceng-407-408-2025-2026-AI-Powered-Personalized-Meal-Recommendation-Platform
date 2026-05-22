@@ -86,9 +86,11 @@ const App: React.FC = () => {
                     <Route
                         path="/dashboard"
                         element={
-                          <MainLayout>
-                            <Dashboard />
-                          </MainLayout>
+                          <PrivateRoute>
+                            <MainLayout>
+                              <Dashboard />
+                            </MainLayout>
+                          </PrivateRoute>
                         }
                     />
                     <Route
