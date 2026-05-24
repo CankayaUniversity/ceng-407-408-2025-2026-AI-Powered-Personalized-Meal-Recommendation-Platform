@@ -286,6 +286,7 @@ export interface RecommendationResponse {
 
 export interface MenuRecommendationRequest {
   selectedCategories: RecipeCategory[];
+  inventoryGroupId?: number | null;
   cravings?: string | null;
   aiModel?: string | null;
   apiKey?: string | null;

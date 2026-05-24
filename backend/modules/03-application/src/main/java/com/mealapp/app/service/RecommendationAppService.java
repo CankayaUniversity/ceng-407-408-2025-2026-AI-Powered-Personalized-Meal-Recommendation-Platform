@@ -10,7 +10,6 @@ import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.service.InventoryService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
-import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.service.RecipeNutritionCalculator;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.recommendation.dto.MenuRecommendationResult;
@@ -18,6 +17,7 @@ import com.mealapp.domain.recommendation.entity.Recommendation;
 import com.mealapp.domain.recommendation.entity.RecommendedRecipe;
 import com.mealapp.domain.recommendation.repository.RecommendationRepository;
 import com.mealapp.domain.recommendation.repository.RecommendedRecipeRepository;
+import com.mealapp.domain.recommendation.service.IngredientMatchService;
 import com.mealapp.domain.recommendation.service.RecommendationService;
 import com.mealapp.domain.recipe.service.RecipeRatingService;
 import com.mealapp.domain.user.entity.User;
@@ -49,6 +49,7 @@ public class RecommendationAppService {
     private final RecommendationRepository recommendationRepository;
     private final RecommendedRecipeRepository recommendedRecipeRepository;
     private final RecipeRatingService recipeRatingService;
+    private final IngredientMatchService ingredientMatchService;
 
     @Value("${com.mealapp.ai.security.encryption-key}")
     private String encryptionKey;
@@ -81,6 +82,8 @@ public class RecommendationAppService {
                                     .build());
                     return Inventory.builder()
                             .ingredient(ingredient)
+                            .quantity(Double.MAX_VALUE)
+                            .unit("g")
                             .build();
                     })
                     .toList();
@@ -104,7 +107,9 @@ public class RecommendationAppService {
         User user = userService.findById(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
 
-        List<Inventory> userInventory = inventoryService.getUserInventory(authenticatedUserId);
+        List<Inventory> userInventory = request.getInventoryGroupId() == null
+                ? inventoryService.getUserInventory(authenticatedUserId)
+                : inventoryService.getUserInventory(authenticatedUserId, request.getInventoryGroupId());
         String decryptedApiKey = decryptApiKey(request.getApiKey());
 
         String normalizedCravings = normalizeValue(request.getCravings());
@@ -278,16 +283,6 @@ public class RecommendationAppService {
             Map<Long, RecommendedRecipe> trackedRecipes
     ) {
         MenuRecommendationResponse.MenuCourseRecipeDto dto = new MenuRecommendationResponse.MenuCourseRecipeDto();
-        Set<String> inventoryKeys = inventory == null
-                ? Set.of()
-                : inventory.stream()
-                .map(Inventory::getIngredient)
-                .filter(java.util.Objects::nonNull)
-                .map(Ingredient::getName)
-                .filter(name -> name != null && !name.isBlank())
-                .map(this::normalizeKey)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
         RecommendedRecipe trackedRecipe = recipe.getId() == null || trackedRecipes == null
                 ? null
                 : trackedRecipes.get(recipe.getId());
@@ -308,13 +303,8 @@ public class RecommendationAppService {
         dto.setRatingCount(recipe.getRatingCount());
         dto.setTotalCookCount(recipe.getTotalCookCount());
 
-        List<String> ingredientNames = getIngredientNames(recipe);
-        dto.setMatchedIngredients(ingredientNames.stream()
-                .filter(name -> inventoryKeys.contains(normalizeKey(name)))
-                .toList());
-        dto.setMissingIngredients(ingredientNames.stream()
-                .filter(name -> !inventoryKeys.contains(normalizeKey(name)))
-                .toList());
+        dto.setMatchedIngredients(ingredientMatchService.getMatchedIngredientNames(recipe, inventory));
+        dto.setMissingIngredients(ingredientMatchService.getMissingIngredientNames(recipe, inventory));
         return dto;
     }
 
@@ -384,27 +374,10 @@ public class RecommendationAppService {
                 .orElse("Bu tarif seçilen menü kombinasyonlarından birinde önerildi.");
     }
 
-    private List<String> getIngredientNames(Recipe recipe) {
-        if (recipe.getRecipeIngredients() == null || recipe.getRecipeIngredients().isEmpty()) {
-            return List.of();
-        }
-
-        return recipe.getRecipeIngredients().stream()
-                .map(RecipeIngredient::getIngredient)
-                .filter(java.util.Objects::nonNull)
-                .map(Ingredient::getName)
-                .filter(name -> name != null && !name.isBlank())
-                .toList();
-    }
-
     private Double perServing(Double value, Recipe recipe) {
         if (value == null) {
             return null;
         }
         return Math.round((value / RecipeNutritionCalculator.safeServings(recipe)) * 10.0) / 10.0;
-    }
-
-    private String normalizeKey(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 }

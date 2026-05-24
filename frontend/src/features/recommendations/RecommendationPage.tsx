@@ -60,6 +60,8 @@ const normalizeIngredients = (group: InventoryGroup | null): string[] => {
   const seen = new Set<string>();
 
   return group.items.reduce<string[]>((acc: string[], item: Inventory) => {
+    if (item.quantity == null || item.quantity <= 0) return acc;
+
     const name = item.ingredient?.name?.trim();
     if (!name) return acc;
 
@@ -366,6 +368,7 @@ const RecommendationPage: React.FC = () => {
 
       const response = await recipeService.getMenuRecommendations({
         selectedCategories,
+        inventoryGroupId: selectedGroupId,
         cravings: cravings.trim() || undefined,
         aiModel: selectedAiModel,
         apiKey: encryptedApiKey

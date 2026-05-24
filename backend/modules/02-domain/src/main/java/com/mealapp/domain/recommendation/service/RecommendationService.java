@@ -713,13 +713,19 @@ public class RecommendationService {
     }
 
     private String summarizeInventory(List<Inventory> inventory) {
-        return safeInventory(inventory).stream()
-                .map(Inventory::getIngredient)
-                .filter(Objects::nonNull)
-                .map(Ingredient::getName)
-                .filter(name -> name != null && !name.isBlank())
+        String summary = safeInventory(inventory).stream()
+                .filter(item -> item.getIngredient() != null)
+                .filter(item -> item.getQuantity() != null && item.getQuantity() > 0)
+                .map(this::formatInventoryItem)
                 .distinct()
                 .collect(Collectors.joining(", "));
+        return summary.isBlank() ? "none" : summary;
+    }
+
+    private String formatInventoryItem(Inventory item) {
+        String name = item.getIngredient().getName() == null ? "Unknown" : item.getIngredient().getName().trim();
+        String unit = item.getUnit() == null || item.getUnit().isBlank() ? "unit" : item.getUnit().trim();
+        return "%s %.1f %s".formatted(name, item.getQuantity(), unit);
     }
 
     private String escapePrompt(String value) {
