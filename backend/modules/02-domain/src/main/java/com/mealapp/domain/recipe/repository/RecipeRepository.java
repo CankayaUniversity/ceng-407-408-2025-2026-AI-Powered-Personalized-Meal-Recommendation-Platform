@@ -127,6 +127,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
            "LEFT JOIN FETCH r.recipeIngredients ri " +
            "LEFT JOIN FETCH ri.ingredient i " +
            "LEFT JOIN FETCH i.nutrition " +
+           "LEFT JOIN FETCH i.ingredientUnits " +
            "WHERE r.active = true AND r.category = :category AND " +
            "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +
            "  AND NOT EXISTS (SELECT rev.id FROM Recipe rev WHERE rev.parentId = r.id AND rev.createdBy = :userId AND rev.status <> 'SUPERSEDED' AND rev.active = true)) OR " +
@@ -206,7 +207,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
                        "  AND NOT EXISTS (SELECT newer.id FROM Recipe newer WHERE newer.parentId = r.parentId AND newer.createdBy = :userId AND newer.status <> 'SUPERSEDED' AND newer.active = true " +
                        "      AND (newer.versionNumber > r.versionNumber OR (newer.versionNumber = r.versionNumber AND (newer.createdAt > r.createdAt OR (newer.createdAt = r.createdAt AND newer.id > r.id))))))) AND " +
                        "r.category = :category")
-    Page<Recipe> findAllActiveByCategory(@Param("userId") String userId, @Param("category") com.mealapp.domain.recipe.entity.RecipeCategory category, Pageable pageable);
+    Page<Recipe> findAllActiveByCategory(@Param("userId") String userId, @Param("category") RecipeCategory category, Pageable pageable);
 
     @Query(value = "SELECT r FROM Recipe r WHERE r.active = true AND " +
                    "((r.parentId IS NULL AND (r.status = 'APPROVED' OR r.createdBy = :userId) " +

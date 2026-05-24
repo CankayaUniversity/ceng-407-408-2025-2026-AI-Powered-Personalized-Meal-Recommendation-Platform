@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Clock3, Flame, MessageSquareText, Sparkles, Star, UtensilsCrossed } from 'lucide-react';
-import { MenuRecommendation, RecipeCategory } from '../../../types';
+import { CheckCircle2, Clock3, Flame, MessageSquareText, Sparkles, Star, UtensilsCrossed } from 'lucide-react';
+import { type MenuCourseRecipe, type MenuRecommendation, RecipeCategory } from '../../../types';
 
 type MenuRecommendationTabsProps = {
   menus: MenuRecommendation[];
   isAiGenerated: boolean;
+  onCookRecipe: (recipe: MenuCourseRecipe) => void;
 };
 
 const CATEGORY_LABELS: Record<RecipeCategory, string> = {
@@ -28,7 +29,7 @@ const formatMetric = (value?: number | null, unit?: string): string => {
   return unit ? `${formatted}${unit}` : formatted;
 };
 
-const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, isAiGenerated }) => {
+const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, isAiGenerated, onCookRecipe }) => {
   const [activeRank, setActiveRank] = useState<number>(menus[0]?.rank ?? 1);
   const activeMenu = useMemo(
     () => menus.find((menu) => menu.rank === activeRank) ?? menus[0],
@@ -37,7 +38,7 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
 
   if (!activeMenu) return null;
 
-  const courses = Object.entries(activeMenu.courses).filter(([, recipe]) => recipe != null);
+  const courses = Object.entries(activeMenu.courses).filter(([, recipe]) => recipe != null) as Array<[RecipeCategory, MenuCourseRecipe]>;
 
   return (
     <section className="space-y-5">
@@ -155,6 +156,26 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <IngredientPills title="Pantry match" items={recipe?.matchedIngredients ?? []} tone="moss" />
                     <IngredientPills title="Missing" items={recipe?.missingIngredients ?? []} tone="ochre" />
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <button
+                      type="button"
+                      onClick={() => onCookRecipe(recipe)}
+                      className={`inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[1.35rem] px-4 py-3 text-sm font-bold shadow-sm transition-all hover:-translate-y-0.5 ${
+                        recipe.isCooked
+                          ? 'border border-moss-sage/30 bg-moss-sage/20 text-moss-forest dark:text-moss-sage'
+                          : 'bg-moss-forest text-white shadow-moss-forest/20 hover:bg-moss-forest/90 dark:bg-moss-sage dark:text-espresso-midnight'
+                      }`}
+                    >
+                      {recipe.isCooked ? <CheckCircle2 size={17} /> : <UtensilsCrossed size={17} />}
+                      {recipe.isCooked ? 'Bu Tarifi Yaptınız!' : 'Bu Tarifi Yap'}
+                    </button>
+                    {recipe.totalCookCount != null && recipe.totalCookCount > 0 ? (
+                      <span className="text-center text-[10px] font-bold uppercase tracking-[0.14em] text-espresso-midnight/40 dark:text-alabaster/40 sm:w-40 sm:text-right">
+                        {recipe.totalCookCount} kez yapıldı
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </div>

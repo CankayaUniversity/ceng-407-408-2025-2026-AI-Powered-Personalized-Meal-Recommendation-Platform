@@ -20,6 +20,7 @@ import {
   type RecipeRatingResponse,
   type Inventory,
   type RecommendationResponse,
+  type MenuCourseRecipe,
   type MenuRecommendationResponse,
   RecipeCategory
 } from '../../types';
@@ -59,6 +60,8 @@ const normalizeIngredients = (group: InventoryGroup | null): string[] => {
   const seen = new Set<string>();
 
   return group.items.reduce<string[]>((acc: string[], item: Inventory) => {
+    if (item.quantity == null || item.quantity <= 0) return acc;
+
     const name = item.ingredient?.name?.trim();
     if (!name) return acc;
 
@@ -365,6 +368,7 @@ const RecommendationPage: React.FC = () => {
 
       const response = await recipeService.getMenuRecommendations({
         selectedCategories,
+        inventoryGroupId: selectedGroupId,
         cravings: cravings.trim() || undefined,
         aiModel: selectedAiModel,
         apiKey: encryptedApiKey
@@ -486,6 +490,63 @@ const RecommendationPage: React.FC = () => {
       rating: recipe.averageRating
     };
     
+    openConsumption(recipeListItem);
+  };
+
+  const markMenuRecipeCookedInState = (recipe: MenuCourseRecipe) => {
+    setMenuResponse((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        menus: current.menus.map((menu) => {
+          const nextCourses = { ...menu.courses };
+
+          (Object.keys(nextCourses) as RecipeCategory[]).forEach((category) => {
+            const course = nextCourses[category];
+            const matchesRecommendation = recipe.recommendationRecipeId != null
+              && course?.recommendationRecipeId === recipe.recommendationRecipeId;
+            const matchesRecipe = course?.recipeId === recipe.recipeId;
+
+            if (course && (matchesRecommendation || matchesRecipe)) {
+              nextCourses[category] = {
+                ...course,
+                isCooked: true,
+                totalCookCount: (course.totalCookCount ?? 0) + 1
+              };
+            }
+          });
+
+          return { ...menu, courses: nextCourses };
+        })
+      };
+    });
+  };
+
+  const handleCookMenuRecipe = async (recipe: MenuCourseRecipe) => {
+    if (!recipe.isCooked && recipe.recommendationRecipeId != null) {
+      try {
+        await recipeService.markAsCooked(recipe.recommendationRecipeId);
+        markMenuRecipeCookedInState(recipe);
+        showToast(t('toasts.recommendations.cookMarked', { defaultValue: 'Tarif pişirildi olarak işaretlendi ve istatistiklere eklendi!' }), 'success');
+      } catch (error) {
+        console.error('Menu cook mark error:', error);
+      }
+    }
+
+    const recipeListItem = {
+      id: recipe.recipeId,
+      title: recipe.recipeTitle,
+      kcalPerServing: recipe.kcalPerServing,
+      protein: recipe.proteinPerServing,
+      carbs: recipe.carbsPerServing,
+      fat: recipe.fatPerServing,
+      preparationTime: recipe.preparationTimeMinutes,
+      servings: recipe.servings,
+      imageUrl: recipe.imageUrl,
+      rating: recipe.averageRating
+    };
+
     openConsumption(recipeListItem);
   };
 
@@ -874,7 +935,11 @@ const RecommendationPage: React.FC = () => {
       {/* 4. Alt: Sonuçlar */}
       <section className="mt-8 space-y-6">
         {menuResponse?.menus.length ? (
-          <MenuRecommendationTabs menus={menuResponse.menus} isAiGenerated={menuResponse.isAiGenerated} />
+          <MenuRecommendationTabs
+            menus={menuResponse.menus}
+            isAiGenerated={menuResponse.isAiGenerated}
+            onCookRecipe={handleCookMenuRecipe}
+          />
         ) : recommendations.length === 0 ? (
           <div className="meal-card border-dashed border-moss-sage/25 px-8 py-10 text-center shadow-[0_24px_60px_-30px_rgba(40,36,33,0.28)]">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-terracotta/10 text-terracotta">

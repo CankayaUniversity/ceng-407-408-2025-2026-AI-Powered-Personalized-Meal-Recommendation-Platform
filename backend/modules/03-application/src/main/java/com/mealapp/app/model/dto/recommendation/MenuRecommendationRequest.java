@@ -10,6 +10,7 @@ import java.util.List;
 public class MenuRecommendationRequest {
     @NotEmpty(message = "At least one menu category must be selected.")
     private List<RecipeCategory> selectedCategories;
+    private Long inventoryGroupId;
     private String cravings;
     private String aiModel;
     private String apiKey;

@@ -10,13 +10,14 @@ import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.service.InventoryService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
-import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.service.RecipeNutritionCalculator;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.recommendation.dto.MenuRecommendationResult;
 import com.mealapp.domain.recommendation.entity.Recommendation;
 import com.mealapp.domain.recommendation.entity.RecommendedRecipe;
+import com.mealapp.domain.recommendation.repository.RecommendationRepository;
 import com.mealapp.domain.recommendation.repository.RecommendedRecipeRepository;
+import com.mealapp.domain.recommendation.service.IngredientMatchService;
 import com.mealapp.domain.recommendation.service.RecommendationService;
 import com.mealapp.domain.recipe.service.RecipeRatingService;
 import com.mealapp.domain.user.entity.User;
@@ -45,8 +46,10 @@ public class RecommendationAppService {
     private final IngredientRepository ingredientRepository;
     private final InventoryService inventoryService;
     private final RecommendationMapper recommendationMapper;
+    private final RecommendationRepository recommendationRepository;
     private final RecommendedRecipeRepository recommendedRecipeRepository;
     private final RecipeRatingService recipeRatingService;
+    private final IngredientMatchService ingredientMatchService;
 
     @Value("${com.mealapp.ai.security.encryption-key}")
     private String encryptionKey;
@@ -79,6 +82,8 @@ public class RecommendationAppService {
                                     .build());
                     return Inventory.builder()
                             .ingredient(ingredient)
+                            .quantity(Double.MAX_VALUE)
+                            .unit("g")
                             .build();
                     })
                     .toList();
@@ -102,19 +107,28 @@ public class RecommendationAppService {
         User user = userService.findById(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
 
-        List<Inventory> userInventory = inventoryService.getUserInventory(authenticatedUserId);
+        List<Inventory> userInventory = request.getInventoryGroupId() == null
+                ? inventoryService.getUserInventory(authenticatedUserId)
+                : inventoryService.getUserInventory(authenticatedUserId, request.getInventoryGroupId());
         String decryptedApiKey = decryptApiKey(request.getApiKey());
 
+        String normalizedCravings = normalizeValue(request.getCravings());
         MenuRecommendationResult result = recommendationService.getMenuRecommendations(
                 user,
                 userInventory,
                 request.getSelectedCategories(),
-                normalizeValue(request.getCravings()),
+                normalizedCravings,
                 request.getAiModel(),
                 decryptedApiKey
         );
 
-        return toMenuResponse(result, userInventory);
+        Map<Long, RecommendedRecipe> trackedRecipes = persistMenuRecommendationSession(
+                user,
+                result,
+                normalizedCravings,
+                request.getAiModel()
+        );
+        return toMenuResponse(result, userInventory, trackedRecipes);
     }
 
     /**
@@ -228,7 +242,11 @@ public class RecommendationAppService {
         }
     }
 
-    private MenuRecommendationResponse toMenuResponse(MenuRecommendationResult result, List<Inventory> inventory) {
+    private MenuRecommendationResponse toMenuResponse(
+            MenuRecommendationResult result,
+            List<Inventory> inventory,
+            Map<Long, RecommendedRecipe> trackedRecipes
+    ) {
         MenuRecommendationResponse response = new MenuRecommendationResponse();
         response.setGeneratedAt(java.time.LocalDateTime.now());
         response.setAiGenerated(result.isAiGenerated());
@@ -247,7 +265,7 @@ public class RecommendationAppService {
                     dto.setCourses(menu.getCourses().entrySet().stream()
                             .collect(Collectors.toMap(
                                     Map.Entry::getKey,
-                                    entry -> toMenuCourseDto(entry.getKey(), entry.getValue(), inventory),
+                                    entry -> toMenuCourseDto(entry.getKey(), entry.getValue(), inventory, trackedRecipes),
                                     (existing, replacement) -> existing,
                                     java.util.LinkedHashMap::new
                             )));
@@ -261,22 +279,19 @@ public class RecommendationAppService {
     private MenuRecommendationResponse.MenuCourseRecipeDto toMenuCourseDto(
             com.mealapp.domain.recipe.entity.RecipeCategory category,
             Recipe recipe,
-            List<Inventory> inventory
+            List<Inventory> inventory,
+            Map<Long, RecommendedRecipe> trackedRecipes
     ) {
         MenuRecommendationResponse.MenuCourseRecipeDto dto = new MenuRecommendationResponse.MenuCourseRecipeDto();
-        Set<String> inventoryKeys = inventory == null
-                ? Set.of()
-                : inventory.stream()
-                .map(Inventory::getIngredient)
-                .filter(java.util.Objects::nonNull)
-                .map(Ingredient::getName)
-                .filter(name -> name != null && !name.isBlank())
-                .map(this::normalizeKey)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        RecommendedRecipe trackedRecipe = recipe.getId() == null || trackedRecipes == null
+                ? null
+                : trackedRecipes.get(recipe.getId());
 
+        dto.setRecommendationRecipeId(trackedRecipe != null ? trackedRecipe.getId() : null);
         dto.setRecipeId(recipe.getId());
         dto.setRecipeTitle(recipe.getTitle());
         dto.setCategory(category);
+        dto.setCooked(trackedRecipe != null && trackedRecipe.isCooked());
         dto.setImageUrl(recipe.getImageUrl());
         dto.setKcalPerServing(RecipeNutritionCalculator.kcalPerServing(recipe));
         dto.setProteinPerServing(perServing(recipe.getTotalProtein(), recipe));
@@ -286,28 +301,77 @@ public class RecommendationAppService {
         dto.setServings(recipe.getServings());
         dto.setAverageRating(recipe.getAverageRating());
         dto.setRatingCount(recipe.getRatingCount());
+        dto.setTotalCookCount(recipe.getTotalCookCount());
 
-        List<String> ingredientNames = getIngredientNames(recipe);
-        dto.setMatchedIngredients(ingredientNames.stream()
-                .filter(name -> inventoryKeys.contains(normalizeKey(name)))
-                .toList());
-        dto.setMissingIngredients(ingredientNames.stream()
-                .filter(name -> !inventoryKeys.contains(normalizeKey(name)))
-                .toList());
+        dto.setMatchedIngredients(ingredientMatchService.getMatchedIngredientNames(recipe, inventory));
+        dto.setMissingIngredients(ingredientMatchService.getMissingIngredientNames(recipe, inventory));
         return dto;
     }
 
-    private List<String> getIngredientNames(Recipe recipe) {
-        if (recipe.getRecipeIngredients() == null || recipe.getRecipeIngredients().isEmpty()) {
-            return List.of();
+    private Map<Long, RecommendedRecipe> persistMenuRecommendationSession(
+            User user,
+            MenuRecommendationResult result,
+            String cravings,
+            String aiModel
+    ) {
+        if (result == null || result.getMenus() == null || result.getMenus().isEmpty()) {
+            return Map.of();
         }
 
-        return recipe.getRecipeIngredients().stream()
-                .map(RecipeIngredient::getIngredient)
-                .filter(java.util.Objects::nonNull)
-                .map(Ingredient::getName)
-                .filter(name -> name != null && !name.isBlank())
-                .toList();
+        Recommendation recommendation = Recommendation.builder()
+                .user(user)
+                .cravings(cravings)
+                .aiModel(aiModel)
+                .isAiGenerated(result.isAiGenerated())
+                .build();
+
+        Set<Long> seenRecipeIds = new LinkedHashSet<>();
+        for (MenuRecommendationResult.MenuAlternative menu : result.getMenus()) {
+            if (menu == null || menu.getCourses() == null) {
+                continue;
+            }
+
+            for (Recipe recipe : menu.getCourses().values()) {
+                if (recipe == null || recipe.getId() == null || !seenRecipeIds.add(recipe.getId())) {
+                    continue;
+                }
+
+                recommendation.addRecommendedRecipe(RecommendedRecipe.builder()
+                        .recipe(recipe)
+                        .aiInsight(resolveMenuRecipeInsight(recipe, result))
+                        .build());
+            }
+        }
+
+        if (recommendation.getRecommendedRecipes().isEmpty()) {
+            return Map.of();
+        }
+
+        Recommendation saved = recommendationRepository.save(recommendation);
+        return saved.getRecommendedRecipes().stream()
+                .filter(recommendedRecipe -> recommendedRecipe.getRecipe() != null && recommendedRecipe.getRecipe().getId() != null)
+                .collect(Collectors.toMap(
+                        recommendedRecipe -> recommendedRecipe.getRecipe().getId(),
+                        recommendedRecipe -> recommendedRecipe,
+                        (existing, replacement) -> existing,
+                        java.util.LinkedHashMap::new
+                ));
+    }
+
+    private String resolveMenuRecipeInsight(Recipe recipe, MenuRecommendationResult result) {
+        if (recipe == null || recipe.getId() == null || result == null || result.getMenus() == null) {
+            return "Bu tarif seçilen menü kombinasyonlarından birinde önerildi.";
+        }
+
+        return result.getMenus().stream()
+                .filter(menu -> menu != null && menu.getCourses() != null)
+                .filter(menu -> menu.getCourses().values().stream()
+                        .anyMatch(candidate -> candidate != null && recipe.getId().equals(candidate.getId())))
+                .map(MenuRecommendationResult.MenuAlternative::getInsight)
+                .map(this::normalizeValue)
+                .filter(value -> value != null)
+                .findFirst()
+                .orElse("Bu tarif seçilen menü kombinasyonlarından birinde önerildi.");
     }
 
     private Double perServing(Double value, Recipe recipe) {
@@ -315,9 +379,5 @@ public class RecommendationAppService {
             return null;
         }
         return Math.round((value / RecipeNutritionCalculator.safeServings(recipe)) * 10.0) / 10.0;
-    }
-
-    private String normalizeKey(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
     }
 }

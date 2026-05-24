@@ -666,6 +666,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
                   portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
                   portionAmount: item.kind === 'INGREDIENT' ? item.portion.amount : undefined,
                   portionUnit: item.kind === 'INGREDIENT' ? (item.portion.unit || item.unit) : undefined,
+                  portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
               };
           }))
       };
@@ -780,7 +781,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
     const inventoryMap: Record<number, number> = {};
     (selectedGroup.items || []).forEach((item: any) => {
       if (item.ingredient?.id) {
-        inventoryMap[item.ingredient.id] = (inventoryMap[item.ingredient.id] || 0) + (item.totalGrams || 0);
+        inventoryMap[item.ingredient.id] = (inventoryMap[item.ingredient.id] || 0) + (item.grams ?? item.quantity ?? 0);
       }
     });
 
@@ -808,7 +809,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
     const inventoryMap: Record<number, number> = {};
     (selectedGroup.items || []).forEach((invItem: any) => {
       if (invItem.ingredient?.id) {
-        inventoryMap[invItem.ingredient.id] = (inventoryMap[invItem.ingredient.id] || 0) + (invItem.totalGrams || 0);
+        inventoryMap[invItem.ingredient.id] = (inventoryMap[invItem.ingredient.id] || 0) + (invItem.grams ?? invItem.quantity ?? 0);
       }
     });
 
