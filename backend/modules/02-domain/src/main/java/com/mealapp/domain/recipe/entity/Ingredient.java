@@ -1,8 +1,15 @@
 package com.mealapp.domain.recipe.entity;
 
 import com.mealapp.domain.common.entity.BaseEntity;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.BatchSize;
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * Tariflerdeki her bir malzemeyi temsil eden varlık sınıfı.
@@ -34,7 +41,9 @@ public class Ingredient extends BaseEntity {
 
     @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private java.util.List<IngredientUnit> ingredientUnits = new java.util.ArrayList<>();
+    @Fetch(FetchMode.SUBSELECT)
+    @BatchSize(size = 20)
+    private Set<IngredientUnit> ingredientUnits = new HashSet<>();
 
     @OneToMany(mappedBy = "ingredient")
     private java.util.List<RecipeIngredient> recipeIngredients;
