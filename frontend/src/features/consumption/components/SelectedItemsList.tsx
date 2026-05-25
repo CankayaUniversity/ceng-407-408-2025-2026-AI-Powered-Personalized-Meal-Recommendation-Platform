@@ -10,6 +10,7 @@ import {
 import { 
   getSelectedItemName, 
   getSelectedItemCategory,
+  isValidSelectedConsumptionItem,
 } from '../utils/SmartConsumption.utils';
 import { type Ingredient } from '../../../types';
 
@@ -51,7 +52,8 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
   title
 }) => {
   const { t } = useTranslation();
-  if (selectedItems.length === 0) return null;
+  const visibleItems = selectedItems.filter(isValidSelectedConsumptionItem);
+  if (visibleItems.length === 0) return null;
 
   const InventoryWarning: React.FC<{ item: SelectedConsumptionItem }> = ({ item }) => {
     const status = getItemInventoryStatus?.(item);
@@ -126,8 +128,10 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
   return (
     <div className="space-y-4">
       <p className="meal-overline tracking-[0.18em]">{title || t('consumption.selectedItems.defaultTitle')}</p>
-      {selectedItems.map((item) => {
+      {visibleItems.map((item) => {
         const isManual = manualInputs.has(item.key);
+        const category = getSelectedItemCategory(item);
+        const shouldShowCategory = category.trim().length > 0 && category !== 'Genel';
 
         return (
           <div key={item.key} className="rounded-[2rem] border border-card-border bg-card p-5">
@@ -136,11 +140,13 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
                 <div className="flex items-center gap-2">
                   <h4 className="font-serif text-xl font-bold text-foreground">{getSelectedItemName(item)}</h4>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-terracotta/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-terracotta">
-                    {getSelectedItemCategory(item)}
-                  </span>
-                </div>
+                {shouldShowCategory && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-terracotta/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-terracotta">
+                      {category}
+                    </span>
+                  </div>
+                )}
                 <InventoryWarning item={item} />
               </div>
               <button
