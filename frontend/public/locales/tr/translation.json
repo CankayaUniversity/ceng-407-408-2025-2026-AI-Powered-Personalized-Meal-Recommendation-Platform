@@ -30,6 +30,7 @@
       "locked": "Kilitli",
       "unlocked": "Aktif",
       "apiKeyRequired": "API Anahtarı Gerekli",
+      "changeApiKey": "API anahtarını değiştir",
       "apiKeyModal": {
         "title": "{{model}} API Anahtarı Tanımla",
         "description": "Bu modeli kullanabilmek için kendi API anahtarınızı tanımlamanız gerekmektedir. Anahtarınız tarayıcınızda güvenli bir şekilde saklanır.",

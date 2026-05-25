@@ -30,6 +30,7 @@
       "locked": "Locked",
       "unlocked": "Active",
       "apiKeyRequired": "API Key Required",
+      "changeApiKey": "Change API key",
       "apiKeyModal": {
         "title": "Define {{model}} API Key",
         "description": "To use this model, you must define your own API key. Your key is stored securely in your browser.",

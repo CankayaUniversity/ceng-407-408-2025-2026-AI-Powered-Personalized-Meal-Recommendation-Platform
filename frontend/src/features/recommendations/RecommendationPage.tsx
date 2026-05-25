@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Trash2, Loader2, Sparkles, Cpu, Boxes, MapPin, CheckCircle2, ShieldAlert, ChefHat, MessageSquareText, Star, Clock3, History, Calendar, Lock, UtensilsCrossed, Flame } from 'lucide-react';
+import { X, Trash2, Loader2, Sparkles, Cpu, Boxes, MapPin, CheckCircle2, ShieldAlert, ChefHat, MessageSquareText, Star, Clock3, History, Calendar, Lock, UtensilsCrossed, Flame, KeyRound } from 'lucide-react';
 import { useAuth, type AuthUser } from '../../infrastructure/auth/AuthContext';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useToast } from '../../shared/hooks/useToast';
@@ -801,52 +801,68 @@ const RecommendationPage: React.FC = () => {
             {availableModels.map((model) => {
               const isLocked = model.requiresApiKey && !apiKeys[model.id];
               const isSelected = selectedAiModel === model.id;
+              const hasStoredApiKey = model.requiresApiKey && Boolean(apiKeys[model.id]);
               
               return (
-                <button
-                  key={model.id}
-                  type="button"
-                  onClick={() => {
-                    if (isLocked) {
-                      handleOpenApiKeyModal(model.id);
-                    } else {
-                      setSelectedAiModel(model.id);
-                      localStorage.setItem('ai-last-selected-model', model.id);
-                    }
-                  }}
-                  className={`group relative flex items-center justify-between rounded-2xl border p-4 text-sm font-semibold transition-all sm:flex-col sm:items-start sm:gap-4 ${
-                    isSelected
-                      ? 'border-terracotta bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                      : isLocked
-                        ? 'border-card-border bg-white/40 text-espresso-midnight/40 dark:border-white/5 dark:bg-white/5 dark:text-alabaster/30 grayscale opacity-80'
-                        : 'border-card-border bg-white text-espresso-midnight hover:border-terracotta/50 dark:border-white/10 dark:bg-white/5 dark:text-alabaster'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <model.icon size={16} className={isSelected ? 'text-white' : isLocked ? 'text-foreground/20' : 'text-terracotta'} />
-                    {getModelLabel(model.id)}
-                  </div>
-                  
-                  <div className="flex items-center gap-2 sm:absolute sm:right-3 sm:top-3">
-                    {isLocked ? (
-                      <div className="rounded-full bg-foreground/10 p-1.5 text-foreground/40 dark:bg-white/10 dark:text-white/40">
-                        <Lock size={12} />
-                      </div>
-                    ) : isSelected && (
-                      <div className="rounded-full bg-white/20 p-1">
-                        <CheckCircle2 size={16} />
+                <div key={model.id} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isLocked) {
+                        handleOpenApiKeyModal(model.id);
+                      } else {
+                        setSelectedAiModel(model.id);
+                        localStorage.setItem('ai-last-selected-model', model.id);
+                      }
+                    }}
+                    className={`group relative flex h-full w-full items-center justify-between rounded-2xl border p-4 text-sm font-semibold transition-all sm:flex-col sm:items-start sm:gap-4 ${
+                      isSelected
+                        ? 'border-terracotta bg-terracotta text-white shadow-lg shadow-terracotta/20'
+                        : isLocked
+                          ? 'border-card-border bg-white/40 text-espresso-midnight/40 dark:border-white/5 dark:bg-white/5 dark:text-alabaster/30 grayscale opacity-80'
+                          : 'border-card-border bg-white text-espresso-midnight hover:border-terracotta/50 dark:border-white/10 dark:bg-white/5 dark:text-alabaster'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <model.icon size={16} className={isSelected ? 'text-white' : isLocked ? 'text-foreground/20' : 'text-terracotta'} />
+                      {getModelLabel(model.id)}
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:absolute sm:right-3 sm:top-3">
+                      {isLocked ? (
+                        <div className="rounded-full bg-foreground/10 p-1.5 text-foreground/40 dark:bg-white/10 dark:text-white/40">
+                          <Lock size={12} />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {isLocked && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/0 opacity-0 group-hover:bg-white/5 group-hover:opacity-100 transition-all rounded-2xl">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-terracotta bg-white px-2 py-1 rounded shadow-sm border border-terracotta/20">
+                          {t('recommendations.algorithm.apiKeyRequired')}
+                        </span>
                       </div>
                     )}
-                  </div>
-
-                  {isLocked && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/0 opacity-0 group-hover:bg-white/5 group-hover:opacity-100 transition-all rounded-2xl">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-terracotta bg-white px-2 py-1 rounded shadow-sm border border-terracotta/20">
-                        {t('recommendations.algorithm.apiKeyRequired')}
-                      </span>
-                    </div>
+                  </button>
+                  {hasStoredApiKey && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenApiKeyModal(model.id);
+                      }}
+                      title={t('recommendations.algorithm.changeApiKey')}
+                      aria-label={t('recommendations.algorithm.changeApiKey')}
+                      className={`absolute right-3 top-3 rounded-full border p-1.5 transition-colors ${
+                        isSelected
+                          ? 'border-white/20 bg-white/20 text-white hover:bg-white/30'
+                          : 'border-card-border bg-white text-terracotta hover:border-terracotta/40 hover:bg-terracotta/5 dark:border-white/10 dark:bg-espresso-midnight/80 dark:text-alabaster dark:hover:bg-white/10'
+                      }`}
+                    >
+                      <KeyRound size={12} />
+                    </button>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
