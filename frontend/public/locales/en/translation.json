@@ -42,7 +42,7 @@
       },
       "models": {
         "free": "Free",
-        "gpt_oss": "GPT-OSS 120B",
+        "gpt_oss": "GPT-OSS",
         "gemini": "Gemini",
         "openai": "OpenAI",
         "claude": "Claude"
