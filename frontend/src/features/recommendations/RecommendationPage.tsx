@@ -145,6 +145,20 @@ const RecommendationPage: React.FC = () => {
   const [modalModel, setModalModel] = useState<string | null>(null);
   const [tempKey, setTempKey] = useState('');
 
+  const availableModels = [
+    { id: 'FREE', icon: Sparkles, color: 'bg-moss-forest', requiresApiKey: false },
+    { id: 'GPT_OSS', icon: Cpu, color: 'bg-primary', requiresApiKey: true },
+    { id: 'GEMINI', icon: Cpu, color: 'bg-terracotta', requiresApiKey: true },
+    { id: 'OPENAI', icon: Cpu, color: 'bg-primary', requiresApiKey: true },
+    { id: 'CLAUDE', icon: Cpu, color: 'bg-ochre-soft', requiresApiKey: true }
+  ];
+  const getModelLabel = (modelId: string | null | undefined) => {
+    if (!modelId) return '';
+    return t(`recommendations.algorithm.models.${modelId.toLowerCase()}`, {
+      defaultValue: modelId.replace(/_/g, '-')
+    });
+  };
+
   // Sayfa yüklendiğinde API anahtarlarını çözerek yükle ve seçimi koru
   useEffect(() => {
     const loadKeys = async () => {
@@ -165,11 +179,11 @@ const RecommendationPage: React.FC = () => {
           }
           setApiKeys(decryptedKeys);
 
-          // Eğer kaydedilmiş bir model varsa ve anahtarı mevcutsa seç
-          if (savedLastModel && decryptedKeys[savedLastModel]) {
+          const savedModel = availableModels.find((model) => model.id === savedLastModel);
+
+          // Eğer kaydedilmiş model hala destekleniyorsa seçimi koru
+          if (savedLastModel && savedModel && (!savedModel.requiresApiKey || decryptedKeys[savedLastModel])) {
             setSelectedAiModel(savedLastModel);
-          } else if (savedLastModel === 'FREE') {
-            setSelectedAiModel('FREE');
           }
         } catch (err) {
           console.error('Failed to parse saved API keys:', err);
@@ -178,13 +192,6 @@ const RecommendationPage: React.FC = () => {
     };
     void loadKeys();
   }, []);
-
-  const availableModels = [
-    { id: 'FREE', icon: Sparkles, color: 'bg-moss-forest' },
-    { id: 'GEMINI', icon: Cpu, color: 'bg-terracotta' },
-    { id: 'OPENAI', icon: Cpu, color: 'bg-primary' },
-    { id: 'CLAUDE', icon: Cpu, color: 'bg-ochre-soft' }
-  ];
 
   const handleOpenApiKeyModal = (model: string) => {
     setModalModel(model);
@@ -351,7 +358,8 @@ const RecommendationPage: React.FC = () => {
     }
 
     // Seçilen model için API key kontrolü (FREE hariç)
-    if (selectedAiModel !== 'FREE' && !apiKeys[selectedAiModel]) {
+    const selectedModel = availableModels.find((model) => model.id === selectedAiModel);
+    if (selectedModel?.requiresApiKey && !apiKeys[selectedAiModel]) {
       handleOpenApiKeyModal(selectedAiModel);
       return;
     }
@@ -576,7 +584,7 @@ const RecommendationPage: React.FC = () => {
           <div className="meal-card w-full max-w-md border-card-border shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-serif text-2xl font-bold text-foreground">
-                {t('recommendations.algorithm.apiKeyModal.title', { model: modalModel })}
+                {t('recommendations.algorithm.apiKeyModal.title', { model: getModelLabel(modalModel) })}
               </h3>
               <button 
                 onClick={() => setModalModel(null)}
@@ -587,7 +595,7 @@ const RecommendationPage: React.FC = () => {
             </div>
             
             <p className="text-sm text-foreground-muted mb-6 leading-relaxed">
-              {t('recommendations.algorithm.apiKeyModal.description', { model: modalModel })}
+              {t('recommendations.algorithm.apiKeyModal.description', { model: getModelLabel(modalModel) })}
             </p>
 
             <div className="space-y-4">
@@ -649,7 +657,7 @@ const RecommendationPage: React.FC = () => {
             <div>
               <h1 className="font-serif text-4xl font-bold leading-tight text-foreground dark:text-white sm:text-5xl">{t('recommendations.hero.title')}</h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-foreground-muted dark:text-alabaster/70 sm:text-lg">
-                {t('recommendations.hero.subtitle', { model: selectedAiModel.charAt(0) + selectedAiModel.slice(1).toLowerCase() })}
+                {t('recommendations.hero.subtitle', { model: getModelLabel(selectedAiModel) })}
               </p>
             </div>
           </div>
@@ -749,7 +757,7 @@ const RecommendationPage: React.FC = () => {
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {availableModels.map((model) => {
-              const isLocked = model.id !== 'FREE' && !apiKeys[model.id];
+              const isLocked = model.requiresApiKey && !apiKeys[model.id];
               const isSelected = selectedAiModel === model.id;
               
               return (
@@ -774,7 +782,7 @@ const RecommendationPage: React.FC = () => {
                 >
                   <div className="flex items-center gap-3">
                     <model.icon size={16} className={isSelected ? 'text-white' : isLocked ? 'text-foreground/20' : 'text-terracotta'} />
-                    {t(`recommendations.algorithm.models.${model.id.toLowerCase()}`)}
+                    {getModelLabel(model.id)}
                   </div>
                   
                   <div className="flex items-center gap-2 sm:absolute sm:right-3 sm:top-3">
