@@ -121,6 +121,40 @@
         "page": "Sonuçlar"
       }
     },
+    "menu": {
+      "overline": "Akıllı Menü",
+      "title": "3 Alternatif Menü",
+      "aiPersonalization": "AI Kişiselleştirme",
+      "algorithmicFallback": "Algoritmik Fallback",
+      "favoriteTab": "Önerilen Menü 1 (Favori)",
+      "tab": "Menü {{rank}}",
+      "heading": "Menü {{rank}}",
+      "insight": "Analiz",
+      "pantryMatch": "Envanter uyumu",
+      "missing": "Eksik",
+      "cook": "Bu Tarifi Yap",
+      "cooked": "Bu Tarifi Yaptınız!",
+      "usageCount": "{{count}} kez yapıldı",
+      "metrics": {
+        "totalKcal": "Toplam kcal",
+        "prep": "Hazırlama",
+        "protein": "Protein",
+        "carbsFat": "Karb / Yağ",
+        "carbs": "Karb",
+        "fat": "Yağ",
+        "servings": "Porsiyon"
+      }
+    },
+    "history": {
+      "overline": "Önceki Seçimler",
+      "title": "Öneri Geçmişi",
+      "empty": "Henüz bir öneri geçmişiniz bulunmuyor.",
+      "menuFallbackTitle": "Akıllı Menü",
+      "menuBadge": "Menü",
+      "aiTitle": "AI Tarafından Oluşturuldu",
+      "menuCount": "{{count}} Menü / {{courses}} Tarif",
+      "viewDetail": "Detayları Gör"
+    },
     "loading": {
       "title": "Öneri motoru yükleniyor",
       "desc": "Profil, envanter ve geçmiş puanlama bilgileri eşleniyor."

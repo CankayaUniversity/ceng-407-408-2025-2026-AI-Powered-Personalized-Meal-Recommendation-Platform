@@ -45,7 +45,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 .ingredient(ingredient)
                 .build();
         
-        ingredient.setIngredientUnits(List.of(specialUnit));
+        ingredient.setIngredientUnits(java.util.Set.of(specialUnit));
 
         Inventory inventory = Inventory.builder()
                 .id(10L)

@@ -85,7 +85,7 @@ class UnitConverterServiceTest {
                 .preferredUnit("diş")
                 .physicalState(Ingredient.PhysicalState.SOLID)
                 .density(1.0)
-                .ingredientUnits(new java.util.ArrayList<>(List.of(customUnit)))
+                .ingredientUnits(new java.util.LinkedHashSet<>(List.of(customUnit)))
                 .build();
 
         when(ingredientRepository.findByIdWithUnits(10L)).thenReturn(Optional.of(garlic));

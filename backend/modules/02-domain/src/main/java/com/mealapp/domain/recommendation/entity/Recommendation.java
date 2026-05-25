@@ -50,8 +50,18 @@ public class Recommendation extends BaseEntity {
     @Builder.Default
     private List<RecommendedRecipe> recommendedRecipes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "recommendation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("rank ASC")
+    @Builder.Default
+    private List<RecommendationMenu> menus = new ArrayList<>();
+
     public void addRecommendedRecipe(RecommendedRecipe recommendedRecipe) {
         recommendedRecipes.add(recommendedRecipe);
         recommendedRecipe.setRecommendation(this);
+    }
+
+    public void addMenu(RecommendationMenu menu) {
+        menus.add(menu);
+        menu.setRecommendation(this);
     }
 }
