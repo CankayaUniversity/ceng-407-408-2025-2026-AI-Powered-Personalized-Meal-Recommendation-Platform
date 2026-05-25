@@ -31,22 +31,19 @@ const ConsumptionModal: React.FC = () => {
             <div
                 className="relative w-full max-w-4xl max-h-[90vh] bg-alabaster dark:bg-espresso-midnight rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col"
             >
-                {/* Modal Header / Kapatma Butonu */}
-                <div className="absolute top-6 right-6 z-[110]">
+                {/* Sticky Header Bar */}
+                <div className="shrink-0 flex items-center justify-end px-6 py-4 border-b border-black/[0.05] dark:border-white/[0.06] bg-alabaster dark:bg-espresso-midnight">
                     <button
                         onClick={closeConsumption}
-                        className="p-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-terracotta hover:text-white transition-all duration-300 group"
+                        className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-terracotta hover:text-white transition-all duration-300 group"
                     >
-                        <X size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                        <X size={18} className="group-hover:rotate-90 transition-transform duration-300" />
                     </button>
                 </div>
 
                 {/* Panel İçeriği - Kaydırılabilir Alan */}
-                <div className="flex-1 overflow-y-auto p-8 md:p-12 scrollbar-thin scrollbar-thumb-terracotta/20">
-                    <div className="max-w-3xl mx-auto">
-                        {/* 666 Satırlık Dev Buraya Geliyor */}
-                        <SmartConsumptionPanel initialRecipe={consumptionInitialRecipe} />
-                    </div>
+                <div className="flex-1 overflow-y-auto px-6 py-6 md:px-10 md:py-8 scrollbar-thin scrollbar-thumb-terracotta/20">
+                    <SmartConsumptionPanel initialRecipe={consumptionInitialRecipe} />
                 </div>
             </div>
         </div>

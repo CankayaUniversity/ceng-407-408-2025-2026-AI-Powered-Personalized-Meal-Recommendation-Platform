@@ -1,6 +1,7 @@
 package com.mealapp.app.controller;
 
 import com.mealapp.app.model.dto.recommendation.MenuRecommendationRequest;
+import com.mealapp.app.model.dto.recommendation.MenuRecommendationHistoryResponse;
 import com.mealapp.app.model.dto.recommendation.MenuRecommendationResponse;
 import com.mealapp.app.model.dto.recommendation.RecommendationRequest;
 import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
@@ -48,6 +49,11 @@ public class RecommendationController {
     @GetMapping("/history/{userId}")
     public List<RecommendationResponse> getHistory(@PathVariable String userId) {
         return recommendationAppService.getRecommendationHistory(userId);
+    }
+
+    @GetMapping("/menu/history/{userId}")
+    public List<MenuRecommendationHistoryResponse> getMenuHistory(@PathVariable String userId) {
+        return recommendationAppService.getMenuRecommendationHistory(userId);
     }
 
     /**

@@ -166,10 +166,10 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   if (!user) return null;
 
   return (
-    <section className="meal-card shadow-brand-hero">
+    <section>
       <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl">
+        <div className="flex flex-col gap-5">
+          <div>
             <div className="meal-badge-neon px-4 text-[11px] font-bold tracking-[0.22em]">
               <Sparkles size={14} />
               Smart Consumption
@@ -180,18 +180,18 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
             </p>
           </div>
 
-          <div className="flex min-w-0 w-full flex-col gap-3 sm:max-w-[27rem]">
-            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between px-4 py-2">
-              <p className="meal-overline tracking-[0.18em]">Mode</p>
-              <p className="mt-1.5 line-clamp-2 min-h-[1.6rem] font-serif text-[1.02rem] font-bold text-foreground">{activeEntryModeLabel}</p>
+          <div className="flex flex-wrap gap-2">
+            <div className="meal-metric-card flex items-center gap-3 px-4 py-2.5">
+              <p className="meal-overline text-[10px] tracking-[0.18em]">Mode</p>
+              <p className="font-serif text-sm font-bold text-foreground">{activeEntryModeLabel}</p>
             </div>
-            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between px-4 py-2">
-              <p className="meal-overline tracking-[0.18em]">Location</p>
-              <p className="mt-1.5 line-clamp-2 min-h-[1.6rem] font-serif text-[1.02rem] font-bold text-foreground">{locationLabel(selectedGroup)}</p>
+            <div className="meal-metric-card flex items-center gap-3 px-4 py-2.5">
+              <p className="meal-overline text-[10px] tracking-[0.18em]">Location</p>
+              <p className="font-serif text-sm font-bold text-foreground">{locationLabel(selectedGroup)}</p>
             </div>
-            <div className="meal-metric-card flex min-h-[3.8rem] w-full min-w-0 flex-col justify-between border-terracotta/20 px-4 py-2">
-              <p className="meal-overline tracking-[0.18em]">Selected</p>
-              <p className="mt-1.5 line-clamp-2 min-h-[1.6rem] font-serif text-[1.02rem] font-bold text-terracotta">{selectionLabel}</p>
+            <div className="meal-metric-card flex items-center gap-3 border-terracotta/20 px-4 py-2.5">
+              <p className="meal-overline text-[10px] tracking-[0.18em]">Selected</p>
+              <p className="font-serif text-sm font-bold text-terracotta">{selectionLabel}</p>
             </div>
           </div>
         </div>

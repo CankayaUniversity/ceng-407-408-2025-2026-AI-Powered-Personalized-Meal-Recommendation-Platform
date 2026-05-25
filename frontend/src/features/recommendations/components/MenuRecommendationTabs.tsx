@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Clock3, Flame, MessageSquareText, Sparkles, Star, UtensilsCrossed } from 'lucide-react';
 import { type MenuCourseRecipe, type MenuRecommendation, RecipeCategory } from '../../../types';
 
@@ -30,6 +31,7 @@ const formatMetric = (value?: number | null, unit?: string): string => {
 };
 
 const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, isAiGenerated, onCookRecipe }) => {
+  const { t } = useTranslation();
   const [activeRank, setActiveRank] = useState<number>(menus[0]?.rank ?? 1);
   const activeMenu = useMemo(
     () => menus.find((menu) => menu.rank === activeRank) ?? menus[0],
@@ -44,12 +46,12 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
     <section className="space-y-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="meal-overline">Smart Menu</p>
-          <h2 className="meal-section-title mt-1">3 Alternatif Menü</h2>
+          <p className="meal-overline">{t('recommendations.menu.overline')}</p>
+          <h2 className="meal-section-title mt-1">{t('recommendations.menu.title')}</h2>
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-primary">
           {isAiGenerated ? <Sparkles size={14} /> : <UtensilsCrossed size={14} />}
-          {isAiGenerated ? 'AI Personalization' : 'Algorithmic Fallback'}
+          {isAiGenerated ? t('recommendations.menu.aiPersonalization') : t('recommendations.menu.algorithmicFallback')}
         </span>
       </div>
 
@@ -65,7 +67,9 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
                 : 'border-card-border bg-white/70 text-espresso-midnight hover:border-terracotta/30 dark:border-white/10 dark:bg-white/5 dark:text-alabaster'
             }`}
           >
-            {menu.rank === 1 ? 'Recommended Menu 1 (Favorite)' : `Menu ${menu.rank}`}
+            {menu.rank === 1
+              ? t('recommendations.menu.favoriteTab')
+              : t('recommendations.menu.tab', { rank: menu.rank })}
           </button>
         ))}
       </div>
@@ -74,26 +78,26 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
         <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="bg-espresso-midnight p-6 text-white dark:bg-black/30">
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/50">{activeMenu.title}</p>
-            <h3 className="mt-3 font-serif text-3xl font-bold leading-tight">Menu {activeMenu.rank}</h3>
+            <h3 className="mt-3 font-serif text-3xl font-bold leading-tight">{t('recommendations.menu.heading', { rank: activeMenu.rank })}</h3>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">Total kcal</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{t('recommendations.menu.metrics.totalKcal')}</p>
                 <p className="mt-1 text-2xl font-bold text-terracotta">{formatMetric(activeMenu.totalKcal)}</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">Prep</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{t('recommendations.menu.metrics.prep')}</p>
                 <p className="mt-1 flex items-center gap-1 text-2xl font-bold">
                   <Clock3 size={18} className="text-ochre-soft" />
                   {formatMetric(activeMenu.totalPreparationTime, 'm')}
                 </p>
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">Protein</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{t('recommendations.menu.metrics.protein')}</p>
                 <p className="mt-1 text-xl font-bold text-moss-sage">{formatMetric(activeMenu.totalProtein, 'g')}</p>
               </div>
               <div className="rounded-2xl bg-white/10 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">Carbs / Fat</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/45">{t('recommendations.menu.metrics.carbsFat')}</p>
                 <p className="mt-1 text-xl font-bold">{formatMetric(activeMenu.totalCarbs, 'g')} / {formatMetric(activeMenu.totalFat, 'g')}</p>
               </div>
             </div>
@@ -101,7 +105,7 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-4">
               <div className="flex items-center gap-2 text-terracotta">
                 <MessageSquareText size={17} />
-                <span className="text-xs font-black uppercase tracking-[0.16em]">Insight</span>
+                <span className="text-xs font-black uppercase tracking-[0.16em]">{t('recommendations.menu.insight')}</span>
               </div>
               <p className="mt-3 text-sm leading-6 text-white/76">{activeMenu.insight}</p>
             </div>
@@ -127,7 +131,7 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
                   <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.18em] text-terracotta">
-                        {CATEGORY_LABELS[category as RecipeCategory] ?? category}
+                        {t(`recipes.categories.${category.toLowerCase()}`, { defaultValue: CATEGORY_LABELS[category as RecipeCategory] ?? category })}
                       </p>
                       <h4 className="mt-1 font-serif text-2xl font-bold text-foreground">{recipe?.recipeTitle}</h4>
                     </div>
@@ -147,15 +151,15 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <Metric label="Protein" value={formatMetric(recipe?.proteinPerServing, 'g')} />
-                    <Metric label="Carbs" value={formatMetric(recipe?.carbsPerServing, 'g')} />
-                    <Metric label="Fat" value={formatMetric(recipe?.fatPerServing, 'g')} />
-                    <Metric label="Servings" value={recipe?.servings ? String(recipe.servings) : '-'} />
+                    <Metric label={t('recommendations.menu.metrics.protein')} value={formatMetric(recipe?.proteinPerServing, 'g')} />
+                    <Metric label={t('recommendations.menu.metrics.carbs')} value={formatMetric(recipe?.carbsPerServing, 'g')} />
+                    <Metric label={t('recommendations.menu.metrics.fat')} value={formatMetric(recipe?.fatPerServing, 'g')} />
+                    <Metric label={t('recommendations.menu.metrics.servings')} value={recipe?.servings ? String(recipe.servings) : '-'} />
                   </div>
 
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <IngredientPills title="Pantry match" items={recipe?.matchedIngredients ?? []} tone="moss" />
-                    <IngredientPills title="Missing" items={recipe?.missingIngredients ?? []} tone="ochre" />
+                    <IngredientPills title={t('recommendations.menu.pantryMatch')} items={recipe?.matchedIngredients ?? []} tone="moss" />
+                    <IngredientPills title={t('recommendations.menu.missing')} items={recipe?.missingIngredients ?? []} tone="ochre" />
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -169,11 +173,11 @@ const MenuRecommendationTabs: React.FC<MenuRecommendationTabsProps> = ({ menus, 
                       }`}
                     >
                       {recipe.isCooked ? <CheckCircle2 size={17} /> : <UtensilsCrossed size={17} />}
-                      {recipe.isCooked ? 'Bu Tarifi Yaptınız!' : 'Bu Tarifi Yap'}
+                      {recipe.isCooked ? t('recommendations.menu.cooked') : t('recommendations.menu.cook')}
                     </button>
                     {recipe.totalCookCount != null && recipe.totalCookCount > 0 ? (
                       <span className="text-center text-[10px] font-bold uppercase tracking-[0.14em] text-espresso-midnight/40 dark:text-alabaster/40 sm:w-40 sm:text-right">
-                        {recipe.totalCookCount} kez yapıldı
+                        {t('recommendations.menu.usageCount', { count: recipe.totalCookCount })}
                       </span>
                     ) : null}
                   </div>

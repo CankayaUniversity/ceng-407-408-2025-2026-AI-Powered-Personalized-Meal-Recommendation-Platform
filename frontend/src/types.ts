@@ -330,6 +330,15 @@ export interface MenuRecommendationResponse {
   menus: MenuRecommendation[];
 }
 
+export interface MenuRecommendationHistoryItem {
+  id: number;
+  createdAt: string;
+  cravings?: string | null;
+  aiModel?: string | null;
+  isAiGenerated: boolean;
+  menus: MenuRecommendation[];
+}
+
 export interface ConsumptionRequest {
   userId?: string | null;
   recipeId?: number;
