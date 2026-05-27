@@ -42,8 +42,8 @@
 
 ## 🗺️ Navigation / Dil Seçimi
 
-[English Documentation](https://www.google.com/search?q=%23english) | [Türkçe Dokümantasyon](https://www.google.com/search?q=%23t%C3%BCrk%C3%A7e)
-
+<a name="english"></a>
+[English Documentation](#english) | [Türkçe Dokümantasyon](#türkçe)
 ---
 
 ## 🇺🇸 / 🇬🇧 EN - English Documentation
@@ -213,6 +213,7 @@ This project is developed as a senior graduation project (CENG 407 & CENG 408) a
 
 ---
 
+<a name="türkçe"></a>
 ## 🇹🇷 TR - Türkçe Dokümantasyon
 
 ### 🚀 Yeni Nesil Mutfak Deneyimi
