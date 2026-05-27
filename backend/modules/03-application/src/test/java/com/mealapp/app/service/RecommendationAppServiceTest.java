@@ -6,6 +6,7 @@ import com.mealapp.app.model.dto.recommendation.MenuRecommendationResponse;
 import com.mealapp.app.model.dto.recommendation.RecommendationRequest;
 import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
 import com.mealapp.app.model.mapper.recommendation.RecommendationMapper;
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.inventory.service.InventoryService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
@@ -36,11 +37,14 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -116,6 +120,96 @@ class RecommendationAppServiceTest {
         assertEquals(comment, rr.getUserComment());
         verify(recipeRatingService).rateRecipe(userId, recipeId, 9, comment);
         verify(recommendedRecipeRepository).save(rr);
+    }
+
+    @Test
+    void shouldRejectRecommendationRatingOutsideAllowedRange() {
+        RecommendedRecipe rr = RecommendedRecipe.builder()
+                .id(1L)
+                .recipe(Recipe.builder().id(100L).build())
+                .build();
+        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> recommendationAppService.rateRecommendation("user-1", 1L, 11, "Too high"));
+
+        assertEquals("Puan 1 ile 10 arasında olmalıdır.", exception.getMessage());
+        verifyNoInteractions(recipeRatingService);
+        verify(recommendedRecipeRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowWhenRatedRecommendationDoesNotExist() {
+        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> recommendationAppService.rateRecommendation("user-1", 1L, 8, "Good"));
+
+        verifyNoInteractions(recipeRatingService);
+    }
+
+    @Test
+    void shouldMarkRecommendationAsCookedAndIncrementRecipeCookCount() {
+        Recipe recipe = Recipe.builder()
+                .id(100L)
+                .totalCookCount(2)
+                .build();
+        RecommendedRecipe rr = RecommendedRecipe.builder()
+                .id(1L)
+                .recipe(recipe)
+                .build();
+        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
+
+        recommendationAppService.markAsCooked(1L);
+
+        assertTrue(rr.isCooked());
+        assertEquals(3, recipe.getTotalCookCount());
+        verify(recommendedRecipeRepository).save(rr);
+    }
+
+    @Test
+    void shouldInitializeRecipeCookCountWhenMarkingAsCooked() {
+        Recipe recipe = Recipe.builder()
+                .id(100L)
+                .build();
+        RecommendedRecipe rr = RecommendedRecipe.builder()
+                .id(1L)
+                .recipe(recipe)
+                .build();
+        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
+
+        recommendationAppService.markAsCooked(1L);
+
+        assertTrue(rr.isCooked());
+        assertEquals(1, recipe.getTotalCookCount());
+        verify(recommendedRecipeRepository).save(rr);
+    }
+
+    @Test
+    void shouldNotIncrementCookCountWhenRecommendationAlreadyCooked() {
+        Recipe recipe = Recipe.builder()
+                .id(100L)
+                .totalCookCount(3)
+                .build();
+        RecommendedRecipe rr = RecommendedRecipe.builder()
+                .id(1L)
+                .recipe(recipe)
+                .build();
+        rr.setCooked(true);
+        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
+
+        recommendationAppService.markAsCooked(1L);
+
+        assertEquals(3, recipe.getTotalCookCount());
+        verify(recommendedRecipeRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowWhenCookedRecommendationDoesNotExist() {
+        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> recommendationAppService.markAsCooked(1L));
     }
 
     @Test
