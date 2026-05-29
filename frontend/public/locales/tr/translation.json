@@ -30,6 +30,7 @@
       "locked": "Kilitli",
       "unlocked": "Aktif",
       "apiKeyRequired": "API Anahtarı Gerekli",
+      "changeApiKey": "API anahtarını değiştir",
       "apiKeyModal": {
         "title": "{{model}} API Anahtarı Tanımla",
         "description": "Bu modeli kullanabilmek için kendi API anahtarınızı tanımlamanız gerekmektedir. Anahtarınız tarayıcınızda güvenli bir şekilde saklanır.",
@@ -41,6 +42,7 @@
       },
       "models": {
         "free": "Ücretsiz",
+        "gpt_oss": "GPT-OSS",
         "gemini": "Gemini",
         "openai": "OpenAI",
         "claude": "Claude"
@@ -119,6 +121,40 @@
       "common": {
         "page": "Sonuçlar"
       }
+    },
+    "menu": {
+      "overline": "Akıllı Menü",
+      "title": "3 Alternatif Menü",
+      "aiPersonalization": "AI Kişiselleştirme",
+      "algorithmicFallback": "Algoritmik Fallback",
+      "favoriteTab": "Önerilen Menü 1 (Favori)",
+      "tab": "Menü {{rank}}",
+      "heading": "Menü {{rank}}",
+      "insight": "Analiz",
+      "pantryMatch": "Envanter uyumu",
+      "missing": "Eksik",
+      "cook": "Bu Tarifi Yap",
+      "cooked": "Bu Tarifi Yaptınız!",
+      "usageCount": "{{count}} kez yapıldı",
+      "metrics": {
+        "totalKcal": "Toplam kcal",
+        "prep": "Hazırlama",
+        "protein": "Protein",
+        "carbsFat": "Karb / Yağ",
+        "carbs": "Karb",
+        "fat": "Yağ",
+        "servings": "Porsiyon"
+      }
+    },
+    "history": {
+      "overline": "Önceki Seçimler",
+      "title": "Öneri Geçmişi",
+      "empty": "Henüz bir öneri geçmişiniz bulunmuyor.",
+      "menuFallbackTitle": "Akıllı Menü",
+      "menuBadge": "Menü",
+      "aiTitle": "AI Tarafından Oluşturuldu",
+      "menuCount": "{{count}} Menü / {{courses}} Tarif",
+      "viewDetail": "Detayları Gör"
     },
     "loading": {
       "title": "Öneri motoru yükleniyor",

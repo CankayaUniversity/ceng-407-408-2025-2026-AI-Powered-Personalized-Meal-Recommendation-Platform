@@ -290,7 +290,7 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     {authenticated && (
                         <div className="mr-auto flex items-center gap-2">
                             <button
-                                onClick={openConsumption}
+                                onClick={() => openConsumption()}
                                 className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-terracotta/20 bg-terracotta/5 hover:bg-terracotta hover:text-white transition-all text-terracotta font-bold text-xs shadow-sm hover:shadow-terracotta/20 active:scale-95"
                             >
                                 <Plus size={16} strokeWidth={3} />

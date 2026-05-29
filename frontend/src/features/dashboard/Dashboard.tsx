@@ -249,7 +249,7 @@ const Dashboard: React.FC = () => {
               <button onClick={() => navigate('/history')} className="btn-responsive btn-secondary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base bg-primary/10 text-primary border-primary/20">
                 <TrendingUp size={18} /> <span className="meal-no-wrap">{t('dashboard.hero.analyze')}</span>
               </button>
-              <button onClick={openConsumption} className="btn-responsive btn-primary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base">
+              <button onClick={() => openConsumption()} className="btn-responsive btn-primary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base">
                 <UtensilsCrossed size={18} /> <span className="meal-no-wrap">{t('dashboard.hero.addMeal')}</span>
               </button>
               <button onClick={() => navigate('/recommendations')} className="btn-responsive btn-secondary py-2.5 sm:py-3 px-4 sm:px-6 text-sm sm:text-base">

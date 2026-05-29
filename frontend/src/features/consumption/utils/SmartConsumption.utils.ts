@@ -34,6 +34,14 @@ export const getItemKey = (kind: EntryMode, id: number) => `${kind}-${id}`;
 export const getSelectedItemName = (item: SelectedConsumptionItem) =>
   item.kind === 'RECIPE' ? item.recipe.title : item.ingredient.name;
 
+export const isValidSelectedConsumptionItem = (item: SelectedConsumptionItem) => {
+  if (item.kind === 'RECIPE') {
+    return Number.isFinite(item.recipe.id) && item.recipe.title.trim().length > 0;
+  }
+
+  return Number.isFinite(item.ingredient.id) && item.ingredient.name.trim().length > 0;
+};
+
 export const getSelectedItemCategory = (item: SelectedConsumptionItem) =>
   item.kind === 'RECIPE'
     ? formatCategoryLabel(item.recipe.category)

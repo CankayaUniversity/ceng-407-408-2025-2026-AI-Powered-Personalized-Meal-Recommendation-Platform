@@ -5,6 +5,7 @@ import { HttpClientKey } from '../infrastructure/services';
 import {
   Recipe,
   RecipeListItem,
+  MenuRecommendationHistoryItem,
   MenuRecommendationRequest,
   MenuRecommendationResponse,
   RecommendationRequest,
@@ -241,6 +242,37 @@ export const getRecipeService = (api: AxiosInstance) => {
 
         const status = error.response.status;
         const message = error.response.data?.message || 'Geçmiş öneriler alınamadı';
+
+        switch (status) {
+          case 401:
+            throw new AuthenticationError('Oturum süreniz doldu. Lütfen tekrar giriş yapın.');
+          case 404:
+            throw new NotFoundError(message);
+          default:
+            throw new ApiError(message, 'API_ERROR', status);
+        }
+      }
+
+      throw new ApiError('Beklenmeyen bir hata oluştu');
+    }
+  },
+
+  /**
+   * Kullanıcının yeni menü tabanlı öneri geçmişini getirir.
+   * Yeni kayıtlar menüleri, eski kayıtlar legacy tarif listesini taşır.
+   */
+  getMenuRecommendationHistory: async (userId: string): Promise<MenuRecommendationHistoryItem[]> => {
+    try {
+      const response = await api.get<MenuRecommendationHistoryItem[]>(`/v1/recommendations/menu/history/${userId}`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (!error.response) {
+          throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
+        }
+
+        const status = error.response.status;
+        const message = error.response.data?.message || 'Menü geçmişi alınamadı';
 
         switch (status) {
           case 401:

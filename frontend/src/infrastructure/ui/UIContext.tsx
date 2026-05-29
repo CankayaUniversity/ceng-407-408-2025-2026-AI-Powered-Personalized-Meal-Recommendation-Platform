@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState } from 'react';
+import type { RecipeListItem } from '../../types';
 
 type UIContextType = {
     isConsumptionOpen: boolean;
-    consumptionInitialRecipe: any | null;
-    openConsumption: (recipe?: any) => void;
+    consumptionInitialRecipe: RecipeListItem | null;
+    openConsumption: (recipe?: RecipeListItem | null) => void;
     closeConsumption: () => void;
     isSettingsOpen: boolean;
     openSettings: () => void;
@@ -23,11 +24,21 @@ type UIContextType = {
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
+const isConsumptionInitialRecipe = (value: unknown): value is RecipeListItem => {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        typeof (value as RecipeListItem).id === 'number' &&
+        typeof (value as RecipeListItem).title === 'string' &&
+        (value as RecipeListItem).title.trim().length > 0
+    );
+};
+
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isConsumptionOpen, setIsConsumptionOpen] = useState(false);
-    const [consumptionInitialRecipe, setConsumptionInitialRecipe] = useState<any | null>(null);
-    const openConsumption = (recipe?: any) => {
-        setConsumptionInitialRecipe(recipe || null);
+    const [consumptionInitialRecipe, setConsumptionInitialRecipe] = useState<RecipeListItem | null>(null);
+    const openConsumption = (recipe?: RecipeListItem | null) => {
+        setConsumptionInitialRecipe(isConsumptionInitialRecipe(recipe) ? recipe : null);
         setIsConsumptionOpen(true);
     };
     const closeConsumption = () => {

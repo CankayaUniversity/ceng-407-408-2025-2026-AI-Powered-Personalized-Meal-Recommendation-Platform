@@ -5,6 +5,7 @@ import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.IngredientNutrition;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeCategory;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
 import com.mealapp.domain.recipe.repository.RecipeRepository;
@@ -560,22 +561,22 @@ class RecipeServiceTest {
     @Test
     void findFiltered_categoryOnly_callsFindAllActiveByCategory() {
         Pageable p = PageRequest.of(0, 10);
-        when(recipeRepository.findAllActiveByCategory("u1", "main", p)).thenReturn(emptyPage());
+        when(recipeRepository.findAllActiveByCategory("u1", RecipeCategory.ANA_YEMEKLER, p)).thenReturn(emptyPage());
 
-        recipeService.findFiltered("u1", null, "main", false, p);
+        recipeService.findFiltered("u1", null, "ANA_YEMEKLER", false, p);
 
-        verify(recipeRepository).findAllActiveByCategory("u1", "main", p);
+        verify(recipeRepository).findAllActiveByCategory("u1", RecipeCategory.ANA_YEMEKLER, p);
         verifyNoMoreInteractions(recipeRepository);
     }
 
     @Test
     void findFiltered_titleAndCategory_callsFindByTitleAndCategory() {
         Pageable p = PageRequest.of(0, 10);
-        when(recipeRepository.findByTitleAndCategory("pasta", "main", "u1", p)).thenReturn(emptyPage());
+        when(recipeRepository.findByTitleAndCategory("pasta", RecipeCategory.ANA_YEMEKLER, "u1", p)).thenReturn(emptyPage());
 
-        recipeService.findFiltered("u1", "pasta", "main", false, p);
+        recipeService.findFiltered("u1", "pasta", "ANA_YEMEKLER", false, p);
 
-        verify(recipeRepository).findByTitleAndCategory("pasta", "main", "u1", p);
+        verify(recipeRepository).findByTitleAndCategory("pasta", RecipeCategory.ANA_YEMEKLER, "u1", p);
         verifyNoMoreInteractions(recipeRepository);
     }
 

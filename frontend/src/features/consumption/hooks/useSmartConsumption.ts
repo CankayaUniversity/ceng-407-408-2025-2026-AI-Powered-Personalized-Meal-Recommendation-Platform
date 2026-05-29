@@ -23,7 +23,8 @@ import {
   getErrorMessage,
   normalizeSearchText,
   getSelectedItemName,
-  getRecipeIngredientName
+  getRecipeIngredientName,
+  isValidSelectedConsumptionItem
 } from '../utils/SmartConsumption.utils';
 import {
   type Recipe,
@@ -33,6 +34,25 @@ import {
   MealType
 } from '../../../types';
 
+const isSelectableInitialRecipe = (value: unknown): value is RecipeListItem => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as RecipeListItem).id === 'number' &&
+    typeof (value as RecipeListItem).title === 'string' &&
+    (value as RecipeListItem).title.trim().length > 0
+  );
+};
+
+const isSelectableIngredient = (value: unknown): value is Ingredient => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Ingredient).id === 'number' &&
+    typeof (value as Ingredient).name === 'string' &&
+    (value as Ingredient).name.trim().length > 0
+  );
+};
 
 export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRecipe?: any) => {
   const { t } = useTranslation();
@@ -78,9 +98,42 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
     [inventoryGroups, selectedLocationId]
   );
 
+  const validSelectedItems = useMemo(
+    () => selectedItems.filter(isValidSelectedConsumptionItem),
+    [selectedItems]
+  );
+
+  const validMemberSelections = useMemo(
+    () =>
+      Object.entries(memberSelections).reduce<Record<string, SelectedConsumptionItem[]>>((acc, [userId, items]) => {
+        const validItems = items.filter(isValidSelectedConsumptionItem);
+        if (validItems.length > 0) acc[userId] = validItems;
+        return acc;
+      }, {}),
+    [memberSelections]
+  );
+
+  useEffect(() => {
+    setSelectedItems((current) => {
+      const next = current.filter(isValidSelectedConsumptionItem);
+      return next.length === current.length ? current : next;
+    });
+
+    setMemberSelections((current) => {
+      let changed = false;
+      const next = Object.entries(current).reduce<Record<string, SelectedConsumptionItem[]>>((acc, [userId, items]) => {
+        const validItems = items.filter(isValidSelectedConsumptionItem);
+        if (validItems.length !== items.length) changed = true;
+        if (validItems.length > 0) acc[userId] = validItems;
+        return acc;
+      }, {});
+      return changed ? next : current;
+    });
+  }, [selectedItems, memberSelections]);
+
   // Auto-select initial recipe if provided
   useEffect(() => {
-    if (initialRecipe && authenticated) {
+    if (authenticated && isSelectableInitialRecipe(initialRecipe)) {
       handleRecipeSelect(initialRecipe);
     }
   }, [initialRecipe, authenticated]);
@@ -144,7 +197,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
 
   useEffect(() => {
     const fetchMissingRecipes = async () => {
-      const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
+      const allItems = [...validSelectedItems, ...Object.values(validMemberSelections).flat()];
       const recipeIds = Array.from(new Set(
         allItems
           .filter((item): item is SelectedRecipeItem => item.kind === 'RECIPE')
@@ -169,7 +222,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
     };
     
     void fetchMissingRecipes();
-  }, [selectedItems, memberSelections, recipeDetailsMap, recipeService]);
+  }, [validSelectedItems, validMemberSelections, recipeDetailsMap, recipeService]);
 
   useEffect(() => {
     if (!authenticated) return;
@@ -331,7 +384,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
   // --- Handlers ---
   // --- Nutrition Preview Sync ---
   useEffect(() => {
-    const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
+    const allItems = [...validSelectedItems, ...Object.values(validMemberSelections).flat()];
     if (allItems.length === 0) {
       setNutritionPreview(null);
       setIndividualPreviews({});
@@ -372,9 +425,11 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
 
     const timeout = setTimeout(updatePreview, 300);
     return () => clearTimeout(timeout);
-  }, [selectedItems, memberSelections, consumptionService]);
+  }, [validSelectedItems, validMemberSelections, consumptionService]);
 
   const handleRecipeSelect = (recipe: RecipeListItem, targetUserId?: string) => {
+    if (!isSelectableInitialRecipe(recipe)) return;
+
     const key = getItemKey('RECIPE', recipe.id);
     const item: SelectedRecipeItem = {
       key: targetUserId ? `${targetUserId}-${key}` : key,
@@ -414,6 +469,8 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
   };
 
   const handleIngredientSelect = (ingredient: Ingredient, targetUserId?: string) => {
+    if (!isSelectableIngredient(ingredient)) return;
+
     const key = getItemKey('INGREDIENT', ingredient.id);
 
     if (!ingredientSpecificWeights[ingredient.id]) {
@@ -604,11 +661,11 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
         Object.entries(activeLocationMembers)
             .filter(([_, isSelected]) => isSelected)
             .forEach(([userId]) => selectedMemberIds.add(userId));
-        if (selectedItems.length > 0 && user) selectedMemberIds.add(user.id);
+        if (validSelectedItems.length > 0 && user) selectedMemberIds.add(user.id);
     }
 
     const totalSelectedCount = Array.from(selectedMemberIds).reduce((acc, uid) => {
-        const items = uid === user?.id ? selectedItems : (memberSelections[uid] || []);
+        const items = uid === user?.id ? validSelectedItems : (validMemberSelections[uid] || []);
         return acc + items.length;
     }, 0);
 
@@ -627,10 +684,10 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
       const membersToLog: any[] = [];
       
       // Login olan kullanıcıyı ekle
-      if (selectedItems.length > 0 && user) {
+      if (validSelectedItems.length > 0 && user) {
           membersToLog.push({
               userId: user.id,
-              items: selectedItems
+              items: validSelectedItems
           });
       }
 
@@ -639,7 +696,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
           Object.entries(activeLocationMembers)
               .filter(([uid, isSelected]) => isSelected && uid !== user?.id)
               .forEach(([userId]) => {
-                  const items = memberSelections[userId] || [];
+                  const items = validMemberSelections[userId] || [];
                   if (items.length > 0) {
                       membersToLog.push({ userId, items });
                   }
@@ -666,6 +723,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
                   portionMultiplier: item.kind === 'RECIPE' ? item.portion.multiplier : undefined,
                   portionAmount: item.kind === 'INGREDIENT' ? item.portion.amount : undefined,
                   portionUnit: item.kind === 'INGREDIENT' ? (item.portion.unit || item.unit) : undefined,
+                  portionGrams: item.kind === 'INGREDIENT' ? item.portion.grams : undefined,
               };
           }))
       };
@@ -728,7 +786,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
   const inventoryDeductions = useMemo(() => {
     if (isOutside) return [];
     const summary: Record<number, { name: string; amount: number; unit: string; grams: number; id: number }> = {};
-    const allItems = [...selectedItems, ...Object.values(memberSelections).flat()];
+    const allItems = [...validSelectedItems, ...Object.values(validMemberSelections).flat()];
     
     allItems.forEach(item => {
       if (item.kind === 'INGREDIENT') {
@@ -769,7 +827,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
       }
     });
     return Object.values(summary).sort((a, b) => a.name.localeCompare(b.name, 'tr-TR'));
-  }, [selectedItems, memberSelections, recipeDetailsMap, isOutside, stockedIngredients]);
+  }, [validSelectedItems, validMemberSelections, recipeDetailsMap, isOutside, stockedIngredients]);
 
   const inventoryStatus = useMemo(() => {
     if (isOutside || !selectedGroup) return { isSufficient: true, missingIngredients: [] };
@@ -780,7 +838,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
     const inventoryMap: Record<number, number> = {};
     (selectedGroup.items || []).forEach((item: any) => {
       if (item.ingredient?.id) {
-        inventoryMap[item.ingredient.id] = (inventoryMap[item.ingredient.id] || 0) + (item.totalGrams || 0);
+        inventoryMap[item.ingredient.id] = (inventoryMap[item.ingredient.id] || 0) + (item.grams ?? item.quantity ?? 0);
       }
     });
 
@@ -808,7 +866,7 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
     const inventoryMap: Record<number, number> = {};
     (selectedGroup.items || []).forEach((invItem: any) => {
       if (invItem.ingredient?.id) {
-        inventoryMap[invItem.ingredient.id] = (inventoryMap[invItem.ingredient.id] || 0) + (invItem.totalGrams || 0);
+        inventoryMap[invItem.ingredient.id] = (inventoryMap[invItem.ingredient.id] || 0) + (invItem.grams ?? invItem.quantity ?? 0);
       }
     });
 
@@ -858,8 +916,8 @@ export const useSmartConsumption = (onConsumptionLogged?: () => void, initialRec
     setMemberQueries,
     memberResults,
     setMemberResults,
-    selectedItems,
-    memberSelections,
+    selectedItems: validSelectedItems,
+    memberSelections: validMemberSelections,
     nutritionPreview,
     individualPreviews,
     searching,

@@ -2,6 +2,7 @@ package com.mealapp.domain.recipe.repository;
 
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.Recipe;
+import com.mealapp.domain.recipe.entity.RecipeCategory;
 import com.mealapp.domain.recipe.entity.RecipeFavorite;
 import com.mealapp.domain.recipe.entity.RecipeIngredient;
 import com.mealapp.domain.recipe.entity.RecipeStatus;
@@ -74,21 +75,21 @@ class RecipeRepositoryTest {
         recipeRepository.deleteAllInBatch();
         em.flush();
 
-        approvedMain = persist(recipe("Approved Main Pizza", "main", RecipeStatus.APPROVED, null, null, true));
-        approvedBreakfast = persist(recipe("Approved Breakfast Eggs", "breakfast", RecipeStatus.APPROVED, null, null, true));
-        user1DraftMain = persist(recipe("User1 Draft Main", "main", RecipeStatus.DRAFT, USER1, null, true));
+        approvedMain = persist(recipe("Approved Main Pizza", RecipeCategory.ANA_YEMEKLER, RecipeStatus.APPROVED, null, null, true));
+        approvedBreakfast = persist(recipe("Approved Breakfast Eggs", RecipeCategory.KAHVALTILIK_VE_BRANCH, RecipeStatus.APPROVED, null, null, true));
+        user1DraftMain = persist(recipe("User1 Draft Main", RecipeCategory.ANA_YEMEKLER, RecipeStatus.DRAFT, USER1, null, true));
 
         // Revision of approvedMain
-        user1PendingRevision = persist(recipe("Approved Main Pizza Revision", "main", RecipeStatus.PENDING, USER1, approvedMain.getId(), true));
+        user1PendingRevision = persist(recipe("Approved Main Pizza Revision", RecipeCategory.ANA_YEMEKLER, RecipeStatus.PENDING, USER1, approvedMain.getId(), true));
 
         // Superseded revision — must not appear even for user1
-        supersededRevision = persist(recipe("Superseded Revision", "main", RecipeStatus.SUPERSEDED, USER1, approvedMain.getId(), true));
+        supersededRevision = persist(recipe("Superseded Revision", RecipeCategory.ANA_YEMEKLER, RecipeStatus.SUPERSEDED, USER1, approvedMain.getId(), true));
 
         // Inactive root recipe — must not appear
-        inactiveRecipe = persist(recipe("Inactive Main", "main", RecipeStatus.APPROVED, null, null, false));
+        inactiveRecipe = persist(recipe("Inactive Main", RecipeCategory.ANA_YEMEKLER, RecipeStatus.APPROVED, null, null, false));
 
         // Another user's draft — not visible to user1
-        user2DraftMain = persist(recipe("User2 Draft Main", "main", RecipeStatus.DRAFT, USER2, null, true));
+        user2DraftMain = persist(recipe("User2 Draft Main", RecipeCategory.ANA_YEMEKLER, RecipeStatus.DRAFT, USER2, null, true));
 
         em.flush();
         em.clear();
@@ -98,7 +99,7 @@ class RecipeRepositoryTest {
 
     @Test
     void findAllActiveByCategory_returnsOnlyMatchingCategory() {
-        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER1, "main", PAGE);
+        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER1, RecipeCategory.ANA_YEMEKLER, PAGE);
 
         // approvedMain excluded: user1 has an active non-superseded revision for it (dedup rule)
         assertThat(result.getContent())
@@ -118,7 +119,7 @@ class RecipeRepositoryTest {
 
     @Test
     void findAllActiveByCategory_breakfastReturnsOnlyBreakfast() {
-        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER1, "breakfast", PAGE);
+        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER1, RecipeCategory.KAHVALTILIK_VE_BRANCH, PAGE);
 
         assertThat(result.getContent())
                 .extracting(Recipe::getId)
@@ -128,7 +129,7 @@ class RecipeRepositoryTest {
     @Test
     void findAllActiveByCategory_countQueryMatchesContent() {
         // After dedup: user1 sees user1DraftMain + user1PendingRevision = 2 results for "main"
-        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER1, "main", PageRequest.of(0, 2));
+        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER1, RecipeCategory.ANA_YEMEKLER, PageRequest.of(0, 2));
 
         assertThat(result.getTotalElements()).isGreaterThanOrEqualTo(2);
         assertThat(result.getContent()).hasSize(2);
@@ -138,7 +139,7 @@ class RecipeRepositoryTest {
 
     @Test
     void findByTitleAndCategory_matchesTitleAndCategory() {
-        Page<Recipe> result = recipeRepository.findByTitleAndCategory("pizza", "main", USER1, PAGE);
+        Page<Recipe> result = recipeRepository.findByTitleAndCategory("pizza", RecipeCategory.ANA_YEMEKLER, USER1, PAGE);
 
         // approvedMain excluded by dedup (user1 has a pending revision for it)
         // user1PendingRevision title contains "pizza" and category is "main"
@@ -152,14 +153,14 @@ class RecipeRepositoryTest {
     @Test
     void findByTitleAndCategory_titleMatchInWrongCategoryReturnsEmpty() {
         // "eggs" matches approvedBreakfast but category filter is "main"
-        Page<Recipe> result = recipeRepository.findByTitleAndCategory("eggs", "main", USER1, PAGE);
+        Page<Recipe> result = recipeRepository.findByTitleAndCategory("eggs", RecipeCategory.ANA_YEMEKLER, USER1, PAGE);
 
         assertThat(result.getContent()).isEmpty();
     }
 
     @Test
     void findByTitleAndCategory_supersededNotReturned() {
-        Page<Recipe> result = recipeRepository.findByTitleAndCategory("superseded", "main", USER1, PAGE);
+        Page<Recipe> result = recipeRepository.findByTitleAndCategory("superseded", RecipeCategory.ANA_YEMEKLER, USER1, PAGE);
 
         assertThat(result.getContent()).isEmpty();
     }
@@ -302,7 +303,7 @@ class RecipeRepositoryTest {
         Recipe existingRevision = em.find(Recipe.class, user1PendingRevision.getId());
         existingRevision.setVersionNumber(5);
 
-        Recipe user1DraftRevision = recipe("Approved Main Pizza Draft", "main", RecipeStatus.DRAFT, USER1, approvedMain.getId(), true);
+        Recipe user1DraftRevision = recipe("Approved Main Pizza Draft", RecipeCategory.ANA_YEMEKLER, RecipeStatus.DRAFT, USER1, approvedMain.getId(), true);
         user1DraftRevision.setVersionNumber(2);
         persist(user1DraftRevision);
         em.flush();
@@ -321,7 +322,7 @@ class RecipeRepositoryTest {
         Recipe firstRevision = em.find(Recipe.class, user1PendingRevision.getId());
         firstRevision.setVersionNumber(7);
 
-        Recipe secondRevision = recipe("Approved Main Pizza Tie Breaker", "main", RecipeStatus.DRAFT, USER1, approvedMain.getId(), true);
+        Recipe secondRevision = recipe("Approved Main Pizza Tie Breaker", RecipeCategory.ANA_YEMEKLER, RecipeStatus.DRAFT, USER1, approvedMain.getId(), true);
         secondRevision.setVersionNumber(7);
         persist(secondRevision);
         em.flush();
@@ -454,7 +455,7 @@ class RecipeRepositoryTest {
     @Test
     void findAllActiveByCategory_rootVisibleToOtherUserWithNoRevision() {
         // user2 has no revision for approvedMain — root must appear in category filter
-        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER2, "main", PAGE);
+        Page<Recipe> result = recipeRepository.findAllActiveByCategory(USER2, RecipeCategory.ANA_YEMEKLER, PAGE);
 
         assertThat(result.getContent())
                 .extracting(Recipe::getId)
@@ -510,7 +511,7 @@ class RecipeRepositoryTest {
                 .build());
     }
 
-    private static Recipe recipe(String title, String category, RecipeStatus status,
+    private static Recipe recipe(String title, RecipeCategory category, RecipeStatus status,
                                   String createdBy, Long parentId, boolean active) {
         Recipe r = Recipe.builder()
                 .title(title)

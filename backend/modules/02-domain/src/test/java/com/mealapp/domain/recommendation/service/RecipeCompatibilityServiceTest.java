@@ -35,6 +35,12 @@ class RecipeCompatibilityServiceTest {
     }
 
     @Test
+    void shouldNotBeCompatibleWhenIngredientContainsAllergen() {
+        Recipe recipe = createRecipe("Chicken Bowl", Ingredient.Category.MEAT, "Tavuk Gogsu");
+        assertFalse(compatibilityService.isCompatibleWithDiet(recipe, "NONE", List.of("tavuk")));
+    }
+
+    @Test
     void shouldNotBeCompatibleWhenVeganHasDairy() {
         Recipe recipe = createRecipe("Cheesy Pasta", Ingredient.Category.DAIRY);
         assertFalse(compatibilityService.isCompatibleWithDiet(recipe, "VEGAN", List.of()));

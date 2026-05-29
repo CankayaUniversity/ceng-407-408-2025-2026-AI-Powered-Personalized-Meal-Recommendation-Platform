@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Trash2, Loader2, Sparkles, Cpu, Boxes, MapPin, CheckCircle2, ShieldAlert, ChefHat, MessageSquareText, Star, Clock3, History, Calendar, Lock, UtensilsCrossed, Flame } from 'lucide-react';
+import { X, Trash2, Loader2, Sparkles, Cpu, Boxes, MapPin, CheckCircle2, ShieldAlert, ChefHat, MessageSquareText, Star, Clock3, History, Calendar, Lock, UtensilsCrossed, Flame, KeyRound } from 'lucide-react';
 import { useAuth, type AuthUser } from '../../infrastructure/auth/AuthContext';
 import { useUI } from '../../infrastructure/ui/UIContext';
 import { useToast } from '../../shared/hooks/useToast';
@@ -19,7 +19,9 @@ import {
   type RecommendedRecipe, 
   type RecipeRatingResponse,
   type Inventory,
-  type RecommendationResponse,
+  type MenuCourseRecipe,
+  type MenuRecommendation,
+  type MenuRecommendationHistoryItem,
   type MenuRecommendationResponse,
   RecipeCategory
 } from '../../types';
@@ -59,6 +61,8 @@ const normalizeIngredients = (group: InventoryGroup | null): string[] => {
   const seen = new Set<string>();
 
   return group.items.reduce<string[]>((acc: string[], item: Inventory) => {
+    if (item.quantity == null || item.quantity <= 0) return acc;
+
     const name = item.ingredient?.name?.trim();
     if (!name) return acc;
 
@@ -91,6 +95,21 @@ const formatEnumLabel = (value?: string | null, enums?: any, type?: string): str
     }
   }
   return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+};
+
+const getMenuCourseCount = (menus: MenuRecommendation[]): number =>
+  menus.reduce((total, menu) => total + Object.values(menu.courses).filter(Boolean).length, 0);
+
+const getMenuCategories = (menus: MenuRecommendation[]): RecipeCategory[] => {
+  const categories = new Set<RecipeCategory>();
+  menus.forEach((menu) => {
+    (Object.keys(menu.courses) as RecipeCategory[]).forEach((category) => {
+      if (menu.courses[category]) {
+        categories.add(category);
+      }
+    });
+  });
+  return Array.from(categories);
 };
 
 const loadProfile = async (authUser: AuthUser, userService: ReturnType<typeof useUserService>): Promise<User> => {
@@ -126,7 +145,7 @@ const RecommendationPage: React.FC = () => {
   const [selectedAiModel, setSelectedAiModel] = useState<string>('FREE');
   const [recommendations, setRecommendations] = useState<RecommendedRecipe[]>([]);
   const [menuResponse, setMenuResponse] = useState<MenuRecommendationResponse | null>(null);
-  const [history, setHistory] = useState<RecommendationResponse[]>([]);
+  const [history, setHistory] = useState<MenuRecommendationHistoryItem[]>([]);
   const [cravings, setCravings] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<RecipeCategory[]>([
     RecipeCategory.CORBALAR,
@@ -141,6 +160,20 @@ const RecommendationPage: React.FC = () => {
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   const [modalModel, setModalModel] = useState<string | null>(null);
   const [tempKey, setTempKey] = useState('');
+
+  const availableModels = [
+    { id: 'FREE', icon: Sparkles, color: 'bg-moss-forest', requiresApiKey: false },
+    { id: 'GPT_OSS', icon: Cpu, color: 'bg-primary', requiresApiKey: true },
+    { id: 'GEMINI', icon: Cpu, color: 'bg-terracotta', requiresApiKey: true },
+    { id: 'OPENAI', icon: Cpu, color: 'bg-primary', requiresApiKey: true },
+    { id: 'CLAUDE', icon: Cpu, color: 'bg-ochre-soft', requiresApiKey: true }
+  ];
+  const getModelLabel = (modelId: string | null | undefined) => {
+    if (!modelId) return '';
+    return t(`recommendations.algorithm.models.${modelId.toLowerCase()}`, {
+      defaultValue: modelId.replace(/_/g, '-')
+    });
+  };
 
   // Sayfa yüklendiğinde API anahtarlarını çözerek yükle ve seçimi koru
   useEffect(() => {
@@ -162,11 +195,11 @@ const RecommendationPage: React.FC = () => {
           }
           setApiKeys(decryptedKeys);
 
-          // Eğer kaydedilmiş bir model varsa ve anahtarı mevcutsa seç
-          if (savedLastModel && decryptedKeys[savedLastModel]) {
+          const savedModel = availableModels.find((model) => model.id === savedLastModel);
+
+          // Eğer kaydedilmiş model hala destekleniyorsa seçimi koru
+          if (savedLastModel && savedModel && (!savedModel.requiresApiKey || decryptedKeys[savedLastModel])) {
             setSelectedAiModel(savedLastModel);
-          } else if (savedLastModel === 'FREE') {
-            setSelectedAiModel('FREE');
           }
         } catch (err) {
           console.error('Failed to parse saved API keys:', err);
@@ -175,13 +208,6 @@ const RecommendationPage: React.FC = () => {
     };
     void loadKeys();
   }, []);
-
-  const availableModels = [
-    { id: 'FREE', icon: Sparkles, color: 'bg-moss-forest' },
-    { id: 'GEMINI', icon: Cpu, color: 'bg-terracotta' },
-    { id: 'OPENAI', icon: Cpu, color: 'bg-primary' },
-    { id: 'CLAUDE', icon: Cpu, color: 'bg-ochre-soft' }
-  ];
 
   const handleOpenApiKeyModal = (model: string) => {
     setModalModel(model);
@@ -280,9 +306,9 @@ const RecommendationPage: React.FC = () => {
           console.error('Ratings load error:', error);
           return [] as RecipeRatingResponse[];
         }),
-        recipeService.getRecommendationHistory(user.id).catch((error) => {
+        recipeService.getMenuRecommendationHistory(user.id).catch((error) => {
           console.error('History load error:', error);
-          return [] as RecommendationResponse[];
+          return [] as MenuRecommendationHistoryItem[];
         })
       ]);
 
@@ -331,6 +357,17 @@ const RecommendationPage: React.FC = () => {
     }
   };
 
+  const refreshRecommendationHistory = async () => {
+    if (!user?.id) return;
+
+    try {
+      const recommendationHistory = await recipeService.getMenuRecommendationHistory(user.id);
+      setHistory(recommendationHistory);
+    } catch (error) {
+      console.error('History refresh error:', error);
+    }
+  };
+
   useEffect(() => {
     if (!authenticated) return;
     void loadPageData();
@@ -348,7 +385,8 @@ const RecommendationPage: React.FC = () => {
     }
 
     // Seçilen model için API key kontrolü (FREE hariç)
-    if (selectedAiModel !== 'FREE' && !apiKeys[selectedAiModel]) {
+    const selectedModel = availableModels.find((model) => model.id === selectedAiModel);
+    if (selectedModel?.requiresApiKey && !apiKeys[selectedAiModel]) {
       handleOpenApiKeyModal(selectedAiModel);
       return;
     }
@@ -365,6 +403,7 @@ const RecommendationPage: React.FC = () => {
 
       const response = await recipeService.getMenuRecommendations({
         selectedCategories,
+        inventoryGroupId: selectedGroupId,
         cravings: cravings.trim() || undefined,
         aiModel: selectedAiModel,
         apiKey: encryptedApiKey
@@ -372,6 +411,7 @@ const RecommendationPage: React.FC = () => {
 
       setMenuResponse(response);
       setRecommendations([]);
+      void refreshRecommendationHistory();
       showToast(t('toasts.recommendations.generationSuccess', { count: response.menus.length }), 'success');
     } catch (error) {
       showToast(getErrorMessage(error, t('toasts.recommendations.generationError')), 'error');
@@ -454,16 +494,6 @@ const RecommendationPage: React.FC = () => {
             : r
         ));
 
-        // History listesini de güncelle (isteğe bağlı ama tutarlılık için iyi olur)
-        setHistory(prev => prev.map(h => ({
-          ...h,
-          recommendedRecipes: h.recommendedRecipes.map(r => 
-            r.recommendationRecipeId === recipe.recommendationRecipeId 
-              ? { ...r, isCooked: true, totalCookCount: (r.totalCookCount || 0) + 1 } 
-              : r
-          )
-        })));
-
         showToast(t('toasts.recommendations.cookMarked', { defaultValue: 'Tarif pişirildi olarak işaretlendi ve istatistiklere eklendi!' }), 'success');
       } catch (error) {
         console.error('Cook mark error:', error);
@@ -486,6 +516,87 @@ const RecommendationPage: React.FC = () => {
       rating: recipe.averageRating
     };
     
+    openConsumption(recipeListItem);
+  };
+
+  const markMenuRecipeCookedInState = (recipe: MenuCourseRecipe) => {
+    setMenuResponse((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        menus: current.menus.map((menu) => {
+          const nextCourses = { ...menu.courses };
+
+          (Object.keys(nextCourses) as RecipeCategory[]).forEach((category) => {
+            const course = nextCourses[category];
+            const matchesRecommendation = recipe.recommendationRecipeId != null
+              && course?.recommendationRecipeId === recipe.recommendationRecipeId;
+            const matchesRecipe = course?.recipeId === recipe.recipeId;
+
+            if (course && (matchesRecommendation || matchesRecipe)) {
+              nextCourses[category] = {
+                ...course,
+                isCooked: true,
+                totalCookCount: (course.totalCookCount ?? 0) + 1
+              };
+            }
+          });
+
+          return { ...menu, courses: nextCourses };
+        })
+      };
+    });
+
+    setHistory((current) => current.map((item) => ({
+      ...item,
+      menus: (item.menus ?? []).map((menu) => {
+        const nextCourses = { ...menu.courses };
+
+        (Object.keys(nextCourses) as RecipeCategory[]).forEach((category) => {
+          const course = nextCourses[category];
+          const matchesRecommendation = recipe.recommendationRecipeId != null
+            && course?.recommendationRecipeId === recipe.recommendationRecipeId;
+          const matchesRecipe = course?.recipeId === recipe.recipeId;
+
+          if (course && (matchesRecommendation || matchesRecipe)) {
+            nextCourses[category] = {
+              ...course,
+              isCooked: true,
+              totalCookCount: (course.totalCookCount ?? 0) + 1
+            };
+          }
+        });
+
+        return { ...menu, courses: nextCourses };
+      })
+    })));
+  };
+
+  const handleCookMenuRecipe = async (recipe: MenuCourseRecipe) => {
+    if (!recipe.isCooked && recipe.recommendationRecipeId != null) {
+      try {
+        await recipeService.markAsCooked(recipe.recommendationRecipeId);
+        markMenuRecipeCookedInState(recipe);
+        showToast(t('toasts.recommendations.cookMarked', { defaultValue: 'Tarif pişirildi olarak işaretlendi ve istatistiklere eklendi!' }), 'success');
+      } catch (error) {
+        console.error('Menu cook mark error:', error);
+      }
+    }
+
+    const recipeListItem = {
+      id: recipe.recipeId,
+      title: recipe.recipeTitle,
+      kcalPerServing: recipe.kcalPerServing,
+      protein: recipe.proteinPerServing,
+      carbs: recipe.carbsPerServing,
+      fat: recipe.fatPerServing,
+      preparationTime: recipe.preparationTimeMinutes,
+      servings: recipe.servings,
+      imageUrl: recipe.imageUrl,
+      rating: recipe.averageRating
+    };
+
     openConsumption(recipeListItem);
   };
 
@@ -515,7 +626,7 @@ const RecommendationPage: React.FC = () => {
           <div className="meal-card w-full max-w-md border-card-border shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-serif text-2xl font-bold text-foreground">
-                {t('recommendations.algorithm.apiKeyModal.title', { model: modalModel })}
+                {t('recommendations.algorithm.apiKeyModal.title', { model: getModelLabel(modalModel) })}
               </h3>
               <button 
                 onClick={() => setModalModel(null)}
@@ -526,7 +637,7 @@ const RecommendationPage: React.FC = () => {
             </div>
             
             <p className="text-sm text-foreground-muted mb-6 leading-relaxed">
-              {t('recommendations.algorithm.apiKeyModal.description', { model: modalModel })}
+              {t('recommendations.algorithm.apiKeyModal.description', { model: getModelLabel(modalModel) })}
             </p>
 
             <div className="space-y-4">
@@ -588,7 +699,7 @@ const RecommendationPage: React.FC = () => {
             <div>
               <h1 className="font-serif text-4xl font-bold leading-tight text-foreground dark:text-white sm:text-5xl">{t('recommendations.hero.title')}</h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-foreground-muted dark:text-alabaster/70 sm:text-lg">
-                {t('recommendations.hero.subtitle', { model: selectedAiModel.charAt(0) + selectedAiModel.slice(1).toLowerCase() })}
+                {t('recommendations.hero.subtitle', { model: getModelLabel(selectedAiModel) })}
               </p>
             </div>
           </div>
@@ -688,54 +799,70 @@ const RecommendationPage: React.FC = () => {
 
           <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {availableModels.map((model) => {
-              const isLocked = model.id !== 'FREE' && !apiKeys[model.id];
+              const isLocked = model.requiresApiKey && !apiKeys[model.id];
               const isSelected = selectedAiModel === model.id;
+              const hasStoredApiKey = model.requiresApiKey && Boolean(apiKeys[model.id]);
               
               return (
-                <button
-                  key={model.id}
-                  type="button"
-                  onClick={() => {
-                    if (isLocked) {
-                      handleOpenApiKeyModal(model.id);
-                    } else {
-                      setSelectedAiModel(model.id);
-                      localStorage.setItem('ai-last-selected-model', model.id);
-                    }
-                  }}
-                  className={`group relative flex items-center justify-between rounded-2xl border p-4 text-sm font-semibold transition-all sm:flex-col sm:items-start sm:gap-4 ${
-                    isSelected
-                      ? 'border-terracotta bg-terracotta text-white shadow-lg shadow-terracotta/20'
-                      : isLocked
-                        ? 'border-card-border bg-white/40 text-espresso-midnight/40 dark:border-white/5 dark:bg-white/5 dark:text-alabaster/30 grayscale opacity-80'
-                        : 'border-card-border bg-white text-espresso-midnight hover:border-terracotta/50 dark:border-white/10 dark:bg-white/5 dark:text-alabaster'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <model.icon size={16} className={isSelected ? 'text-white' : isLocked ? 'text-foreground/20' : 'text-terracotta'} />
-                    {t(`recommendations.algorithm.models.${model.id.toLowerCase()}`)}
-                  </div>
-                  
-                  <div className="flex items-center gap-2 sm:absolute sm:right-3 sm:top-3">
-                    {isLocked ? (
-                      <div className="rounded-full bg-foreground/10 p-1.5 text-foreground/40 dark:bg-white/10 dark:text-white/40">
-                        <Lock size={12} />
-                      </div>
-                    ) : isSelected && (
-                      <div className="rounded-full bg-white/20 p-1">
-                        <CheckCircle2 size={16} />
+                <div key={model.id} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isLocked) {
+                        handleOpenApiKeyModal(model.id);
+                      } else {
+                        setSelectedAiModel(model.id);
+                        localStorage.setItem('ai-last-selected-model', model.id);
+                      }
+                    }}
+                    className={`group relative flex h-full w-full items-center justify-between rounded-2xl border p-4 text-sm font-semibold transition-all sm:flex-col sm:items-start sm:gap-4 ${
+                      isSelected
+                        ? 'border-terracotta bg-terracotta text-white shadow-lg shadow-terracotta/20'
+                        : isLocked
+                          ? 'border-card-border bg-white/40 text-espresso-midnight/40 dark:border-white/5 dark:bg-white/5 dark:text-alabaster/30 grayscale opacity-80'
+                          : 'border-card-border bg-white text-espresso-midnight hover:border-terracotta/50 dark:border-white/10 dark:bg-white/5 dark:text-alabaster'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <model.icon size={16} className={isSelected ? 'text-white' : isLocked ? 'text-foreground/20' : 'text-terracotta'} />
+                      {getModelLabel(model.id)}
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:absolute sm:right-3 sm:top-3">
+                      {isLocked ? (
+                        <div className="rounded-full bg-foreground/10 p-1.5 text-foreground/40 dark:bg-white/10 dark:text-white/40">
+                          <Lock size={12} />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {isLocked && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/0 opacity-0 group-hover:bg-white/5 group-hover:opacity-100 transition-all rounded-2xl">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-terracotta bg-white px-2 py-1 rounded shadow-sm border border-terracotta/20">
+                          {t('recommendations.algorithm.apiKeyRequired')}
+                        </span>
                       </div>
                     )}
-                  </div>
-
-                  {isLocked && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/0 opacity-0 group-hover:bg-white/5 group-hover:opacity-100 transition-all rounded-2xl">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-terracotta bg-white px-2 py-1 rounded shadow-sm border border-terracotta/20">
-                        {t('recommendations.algorithm.apiKeyRequired')}
-                      </span>
-                    </div>
+                  </button>
+                  {hasStoredApiKey && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenApiKeyModal(model.id);
+                      }}
+                      title={t('recommendations.algorithm.changeApiKey')}
+                      aria-label={t('recommendations.algorithm.changeApiKey')}
+                      className={`absolute right-3 top-3 rounded-full border p-1.5 transition-colors ${
+                        isSelected
+                          ? 'border-white/20 bg-white/20 text-white hover:bg-white/30'
+                          : 'border-card-border bg-white text-terracotta hover:border-terracotta/40 hover:bg-terracotta/5 dark:border-white/10 dark:bg-espresso-midnight/80 dark:text-alabaster dark:hover:bg-white/10'
+                      }`}
+                    >
+                      <KeyRound size={12} />
+                    </button>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -874,7 +1001,11 @@ const RecommendationPage: React.FC = () => {
       {/* 4. Alt: Sonuçlar */}
       <section className="mt-8 space-y-6">
         {menuResponse?.menus.length ? (
-          <MenuRecommendationTabs menus={menuResponse.menus} isAiGenerated={menuResponse.isAiGenerated} />
+          <MenuRecommendationTabs
+            menus={menuResponse.menus}
+            isAiGenerated={menuResponse.isAiGenerated}
+            onCookRecipe={handleCookMenuRecipe}
+          />
         ) : recommendations.length === 0 ? (
           <div className="meal-card border-dashed border-moss-sage/25 px-8 py-10 text-center shadow-[0_24px_60px_-30px_rgba(40,36,33,0.28)]">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-terracotta/10 text-terracotta">
@@ -1190,49 +1321,72 @@ const RecommendationPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {history.map((item) => (
-              <div 
-                key={item.id} 
-                className="meal-card group cursor-pointer border-card-border bg-white/50 p-5 transition-all hover:border-terracotta/30 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10"
-                onClick={() => {
-                  setMenuResponse(null);
-                  setRecommendations(item.recommendedRecipes);
-                  setCravings(item.cravings || '');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-terracotta uppercase">
-                    <Calendar size={12} />
-                    {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </div>
-                  {item.isAiGenerated && (
-                    <div className="rounded-full bg-primary/10 p-1 text-primary" title="AI Tarafından Oluşturuldu">
-                      <Cpu size={12} />
-                    </div>
-                  )}
-                </div>
+            {history.map((item) => {
+              const menus = item.menus ?? [];
+              const courseCount = getMenuCourseCount(menus);
+              const title = menus[0]?.title || t('recommendations.history.menuFallbackTitle', { defaultValue: 'Akıllı Menü' });
 
-                <div className="space-y-3">
-                  <h4 className="font-serif text-lg font-bold text-foreground line-clamp-1">
-                    {item.recommendedRecipes.map(r => r.recipeTitle).join(', ')}
-                  </h4>
-                  {item.cravings && (
-                    <p className="text-xs text-foreground-muted line-clamp-2 italic">
-                      "{item.cravings}"
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between pt-2 border-t border-card-border/50">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
-                      {t('recommendations.history.recipeCount', { count: item.recommendedRecipes.length, defaultValue: `${item.recommendedRecipes.length} Tarif` })}
-                    </span>
-                    <span className="text-[10px] font-bold text-terracotta group-hover:underline">
-                      {t('recommendations.history.viewDetail', { defaultValue: 'Detayları Gör' })} →
-                    </span>
+              return (
+                <div 
+                  key={item.id} 
+                  className="meal-card group cursor-pointer border-card-border bg-white/50 p-5 transition-all hover:border-terracotta/30 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10"
+                  onClick={() => {
+                    setRecommendations([]);
+                    setMenuResponse({
+                      generatedAt: item.createdAt,
+                      isAiGenerated: item.isAiGenerated,
+                      menus
+                    });
+                    const historyCategories = getMenuCategories(menus);
+                    if (historyCategories.length > 0) {
+                      setSelectedCategories(historyCategories);
+                    }
+                    setCravings(item.cravings || '');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-terracotta">
+                      <Calendar size={12} />
+                      {new Date(item.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border border-moss-sage/20 bg-moss-sage/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-moss-forest dark:text-moss-sage">
+                        {t('recommendations.history.menuBadge', { defaultValue: 'Menü' })}
+                      </span>
+                      {item.isAiGenerated && (
+                        <div className="rounded-full bg-primary/10 p-1 text-primary" title={t('recommendations.history.aiTitle', { defaultValue: 'AI Tarafından Oluşturuldu' })}>
+                          <Cpu size={12} />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="line-clamp-1 font-serif text-lg font-bold text-foreground">
+                      {title}
+                    </h4>
+                    {item.cravings && (
+                      <p className="line-clamp-2 text-xs italic text-foreground-muted">
+                        "{item.cravings}"
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between border-t border-card-border/50 pt-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+                        {t('recommendations.history.menuCount', {
+                          count: menus.length,
+                          courses: courseCount,
+                          defaultValue: `${menus.length} Menü / ${courseCount} Tarif`
+                        })}
+                      </span>
+                      <span className="text-[10px] font-bold text-terracotta group-hover:underline">
+                        {t('recommendations.history.viewDetail', { defaultValue: 'Detayları Gör' })} →
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Bir tarifin kullanıcının diyet tercihlerine, alerjilerine ve diğer kriterlerine 
@@ -29,7 +31,7 @@ public class RecipeCompatibilityService {
             boolean hasAllergen = recipe.getRecipeIngredients().stream()
                 .anyMatch(ri -> ri.getIngredient() != null &&
                     userAllergies.stream().anyMatch(allergen ->
-                        ri.getIngredient().getName().equalsIgnoreCase(allergen)));
+                        containsAllergen(ri.getIngredient().getName(), allergen)));
             if (hasAllergen) return false;
         }
 
@@ -79,5 +81,20 @@ public class RecipeCompatibilityService {
         Ingredient.Category cat = ingredient.getCategory();
         return cat == Ingredient.Category.MEAT ||
             cat == Ingredient.Category.SEAFOOD;
+    }
+
+    private boolean containsAllergen(String ingredientName, String allergen) {
+        String ingredientKey = normalizeKey(ingredientName);
+        String allergenKey = normalizeKey(allergen);
+
+        return !ingredientKey.isBlank()
+            && !allergenKey.isBlank()
+            && (ingredientKey.contains(allergenKey) || allergenKey.contains(ingredientKey));
+    }
+
+    private String normalizeKey(String value) {
+        return Objects.toString(value, "")
+            .trim()
+            .toLowerCase(Locale.ROOT);
     }
 }

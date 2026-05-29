@@ -56,7 +56,7 @@ com:
     ai:
       security:
         encryption-key: ${AI_ENCRYPTION_KEY:1234567890123456} # 16 byte AES key
-      provider-type: ${AI_PROVIDER_TYPE:OPENAI} # OPENAI, GEMINI, CLAUDE, MISTRAL, DEEPSEEK vb.
+      provider-type: ${AI_PROVIDER_TYPE:OPENAI} # OPENAI, GEMINI, CLAUDE, MISTRAL, GPT_OSS vb.
       service:
         openai:
           api-key: ${OPENAI_API_KEY:your-key-here}
@@ -71,6 +71,12 @@ com:
           model: ${CLAUDE_MODEL:claude-3-5-sonnet-20240620}
           url: ${CLAUDE_URL:https://api.anthropic.com/v1/messages}
           anthropic-version: ${ANTHROPIC_VERSION:2023-06-01}
+        gpt-oss:
+          api-key: ${GPT_OSS_API_KEY:your-key-here}
+          model: ${GPT_OSS_MODEL:openai/gpt-oss-120b:free}
+          url: ${GPT_OSS_URL:https://openrouter.ai/api/v1/chat/completions}
+          referer: ${GPT_OSS_REFERER:http://localhost:3030}
+          title: ${GPT_OSS_TITLE:Meal Recommendation Platform}
         generic:
           api-key: ${GENERIC_AI_API_KEY:your-key-here}
           model: ${GENERIC_AI_MODEL:default-model}

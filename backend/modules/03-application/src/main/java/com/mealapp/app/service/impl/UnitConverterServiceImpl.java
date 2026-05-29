@@ -151,6 +151,24 @@ public class UnitConverterServiceImpl implements UnitConverterService {
     private Double getWeightFromDatabase(String unit, Ingredient ingredient) {
         if (ingredient == null) return null;
 
+        // Hibernate proxy kontrolü veya initialize olup olmadığına bakmak yerine,
+        // JPA standardında yüklü olup olmadığını kontrol etmeye çalışabiliriz.
+        // Ancak en garantisi, eğer liste null değilse ve içi doluysa mevcut veriyi kullanmaktır.
+        // Ingredient entity'sinde list default ArrayList olarak atanmış olabilir.
+        
+        try {
+            // Eğer liste yüklü ise (LazyInitializationException fırlatmazsa) ve içi doluysa kullan
+            if (ingredient.getIngredientUnits() != null && !ingredient.getIngredientUnits().isEmpty()) {
+                return ingredient.getIngredientUnits().stream()
+                    .filter(iu -> normalizeUnit(iu.getUnitName()).equals(unit))
+                    .map(IngredientUnit::getGrams)
+                    .findFirst()
+                    .orElse(null);
+            }
+        } catch (Exception e) {
+            // Lazy loading hatası alırsak sessizce DB'ye git
+        }
+
         return ingredientRepository.findByIdWithUnits(ingredient.getId())
             .map(Ingredient::getIngredientUnits)
             .flatMap(units -> units.stream()

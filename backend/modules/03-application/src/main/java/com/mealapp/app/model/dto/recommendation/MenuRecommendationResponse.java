@@ -28,9 +28,11 @@ public class MenuRecommendationResponse {
 
     @Data
     public static class MenuCourseRecipeDto {
+        private Long recommendationRecipeId;
         private Long recipeId;
         private String recipeTitle;
         private RecipeCategory category;
+        private boolean isCooked;
         private String imageUrl;
         private Double kcalPerServing;
         private Double proteinPerServing;
@@ -40,6 +42,7 @@ public class MenuRecommendationResponse {
         private Integer servings;
         private Double averageRating;
         private Integer ratingCount;
+        private Integer totalCookCount;
         private List<String> matchedIngredients;
         private List<String> missingIngredients;
     }

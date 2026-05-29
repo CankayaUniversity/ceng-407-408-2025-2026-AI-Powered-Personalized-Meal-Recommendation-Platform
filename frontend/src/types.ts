@@ -286,15 +286,18 @@ export interface RecommendationResponse {
 
 export interface MenuRecommendationRequest {
   selectedCategories: RecipeCategory[];
+  inventoryGroupId?: number | null;
   cravings?: string | null;
   aiModel?: string | null;
   apiKey?: string | null;
 }
 
 export interface MenuCourseRecipe {
+  recommendationRecipeId?: number | null;
   recipeId: number;
   recipeTitle: string;
   category: RecipeCategory;
+  isCooked?: boolean;
   imageUrl?: string | null;
   kcalPerServing?: number | null;
   proteinPerServing?: number | null;
@@ -304,6 +307,7 @@ export interface MenuCourseRecipe {
   servings?: number | null;
   averageRating?: number | null;
   ratingCount?: number | null;
+  totalCookCount?: number | null;
   matchedIngredients: string[];
   missingIngredients: string[];
 }
@@ -322,6 +326,15 @@ export interface MenuRecommendation {
 
 export interface MenuRecommendationResponse {
   generatedAt: string;
+  isAiGenerated: boolean;
+  menus: MenuRecommendation[];
+}
+
+export interface MenuRecommendationHistoryItem {
+  id: number;
+  createdAt: string;
+  cravings?: string | null;
+  aiModel?: string | null;
   isAiGenerated: boolean;
   menus: MenuRecommendation[];
 }
