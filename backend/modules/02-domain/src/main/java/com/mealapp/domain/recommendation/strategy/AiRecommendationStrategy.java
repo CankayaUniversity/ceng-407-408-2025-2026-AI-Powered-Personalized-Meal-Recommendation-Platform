@@ -1,6 +1,7 @@
 package com.mealapp.domain.recommendation.strategy;
 
 import com.mealapp.domain.common.ai.PromptEngine;
+import com.mealapp.domain.common.ai.AiResponseParser;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.recipe.entity.Ingredient;
@@ -90,17 +91,24 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, recommendation);
             }
 
-            // Sanitize response: Remove markdown code blocks if present
-            String sanitizedResponse = aiResponseRaw.trim();
-            if (sanitizedResponse.startsWith("```")) {
-                sanitizedResponse = sanitizedResponse.replaceAll("(?s)^```(?:json)?\\s*(.*?)\\s*```$", "$1").trim();
-            }
-
             List<PromptEngine.AiResponse> aiChoices;
+            String sanitizedResponse = null;
             try {
-                aiChoices = objectMapper.readValue(sanitizedResponse, AI_RESPONSE_TYPE);
+                sanitizedResponse = AiResponseParser.sanitizeJsonArray(aiResponseRaw);
+                aiChoices = AiResponseParser.parseStrictJsonArray(
+                        sanitizedResponse,
+                        objectMapper,
+                        AI_RESPONSE_TYPE,
+                        this::validateAiRecommendationChoice
+                );
             } catch (Exception parseEx) {
-                log.error("AI response JSON parsing failed for user {}. Raw response: {}. Sanitized: {}", user.getId(), aiResponseRaw, sanitizedResponse, parseEx);
+                log.error(
+                        "AI response JSON parsing or validation failed for user {}. Raw response: {}. Sanitized: {}",
+                        user.getId(),
+                        preview(aiResponseRaw),
+                        preview(sanitizedResponse),
+                        parseEx
+                );
                 return buildFallbackRecommendations(topRecipes, currentInventory, dislikedIngredients, normalizedCravings, user, recommendation);
             }
 
@@ -337,6 +345,10 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
     private String generateFinalPrompt(User user, List<Inventory> currentInventory, DailyConsumptionService.DailyNutritionSummary dailySummary, String recipesData, String cravings) {
         String promptTemplate = "As a personal nutritionist, provide meal recommendations based on the following user profile and data. " +
                 "CRITICAL: Tailor your 'insight' for each recipe to explain EXACTLY why it fits their dietary goal, diet type, and preferences. " +
+                "Output ONLY valid JSON; no additional text, headers, preamble, markdown formatting, or code fences. " +
+                "Return a JSON array and every object must contain exactly these string fields: recipeTitle, insight. " +
+                "Do not include trailing commas or comments. " +
+                "Required schema example: [{\"recipeTitle\":\"Recipe title from Candidates Recipes\",\"insight\":\"Short personalized reason\"}]. " +
                 "\n\nUser Profile:\n" +
                 "- Name: %s\n" +
                 "- Dietary Goal: %s (STRICTLY prioritize recipes helping this goal)\n" +
@@ -371,6 +383,13 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                         .collect(Collectors.joining(", ")),
                 recipesData
         );
+    }
+
+    private void validateAiRecommendationChoice(com.fasterxml.jackson.databind.JsonNode item, int index) {
+        String context = "AI recommendation choice[" + index + "]";
+        AiResponseParser.requireExactObject(item, Set.of("recipeTitle", "insight"), context);
+        AiResponseParser.requireTextField(item, "recipeTitle", context);
+        AiResponseParser.requireTextField(item, "insight", context);
     }
 
     private Recommendation buildFallbackRecommendations(List<Recipe> topRecipes, List<Inventory> currentInventory, List<String> dislikedIngredients, String cravings, User user, Recommendation recommendation) {
@@ -667,5 +686,13 @@ public class AiRecommendationStrategy implements RecommendationStrategy {
                 .replace("ş", "s")
                 .replace("ö", "o")
                 .replace("ç", "c");
+    }
+
+    private String preview(String value) {
+        if (value == null) {
+            return "<null>";
+        }
+        String normalized = value.replace("\r", "\\r").replace("\n", "\\n");
+        return normalized.length() <= 2000 ? normalized : normalized.substring(0, 2000) + "...";
     }
 }

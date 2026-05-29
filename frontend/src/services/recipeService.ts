@@ -22,6 +22,12 @@ import {
   ValidationError,
   extractValidationFields
 } from './errors';
+import {
+  validateMenuRecommendationHistory,
+  validateMenuRecommendationResponse,
+  validateRecommendationHistory,
+  validateRecommendationResponse
+} from './recommendationSchemas';
 
 type RecipeListItemDto = {
   id: number;
@@ -99,8 +105,11 @@ export const getRecipeService = (api: AxiosInstance) => {
   getRecommendations: async (request: RecommendationRequest): Promise<RecommendationResponse> => {
     try {
       const response = await api.post<RecommendationResponse>('/v1/recommendations', request);
-      return response.data;
+      return validateRecommendationResponse(response.data);
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       if (axios.isAxiosError(error)) {
         // Ağ hatası (sunucudan yanıt yok)
         if (!error.response) {
@@ -131,8 +140,11 @@ export const getRecipeService = (api: AxiosInstance) => {
   getMenuRecommendations: async (request: MenuRecommendationRequest): Promise<MenuRecommendationResponse> => {
     try {
       const response = await api.post<MenuRecommendationResponse>('/v1/recommendations/menu', request);
-      return response.data;
+      return validateMenuRecommendationResponse(response.data);
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       if (axios.isAxiosError(error)) {
         if (!error.response) {
           throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
@@ -233,8 +245,11 @@ export const getRecipeService = (api: AxiosInstance) => {
   getRecommendationHistory: async (userId: string): Promise<RecommendationResponse[]> => {
     try {
       const response = await api.get<RecommendationResponse[]>(`/v1/recommendations/history/${userId}`);
-      return response.data;
+      return validateRecommendationHistory(response.data);
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       if (axios.isAxiosError(error)) {
         if (!error.response) {
           throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');
@@ -264,8 +279,11 @@ export const getRecipeService = (api: AxiosInstance) => {
   getMenuRecommendationHistory: async (userId: string): Promise<MenuRecommendationHistoryItem[]> => {
     try {
       const response = await api.get<MenuRecommendationHistoryItem[]>(`/v1/recommendations/menu/history/${userId}`);
-      return response.data;
+      return validateMenuRecommendationHistory(response.data);
     } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
       if (axios.isAxiosError(error)) {
         if (!error.response) {
           throw new NetworkError('Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol edin.');

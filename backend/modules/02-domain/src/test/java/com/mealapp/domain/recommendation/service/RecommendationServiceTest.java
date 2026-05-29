@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -196,6 +197,83 @@ class RecommendationServiceTest {
         verify(recipeService).calculateAndSetNutrition(soup);
         verify(recipeService).calculateAndSetNutrition(main);
         verifyNoInteractions(promptEngine);
+    }
+
+    @Test
+    void getMenuRecommendationsShouldSanitizeValidateAndUseAiMenus() {
+        Recipe soup = recipe(10L, "Tomato Soup", RecipeCategory.CORBALAR);
+        Recipe main = recipe(20L, "Rice Bowl", RecipeCategory.ANA_YEMEKLER);
+
+        mockMenuCandidates(soup, main);
+        when(dailyConsumptionService.getDailyNutritionSummary(eq(user.getId()), any(LocalDate.class)))
+                .thenReturn(new DailyConsumptionService.DailyNutritionSummary(300, 1, 20.0, 30.0, 10.0));
+        when(promptEngine.callAi(anyString(), eq("GEMINI"), eq("key")))
+                .thenReturn("""
+                        Here is the menu:
+                        ```json
+                        [{"rank":1,"title":"Balanced AI Menu","courseRecipeIds":{"CORBALAR":10,"ANA_YEMEKLER":20},"insight":"Fits your pantry."}]
+                        ```
+                        """);
+
+        MenuRecommendationResult result = recommendationService.getMenuRecommendations(
+                user,
+                List.of(),
+                List.of(RecipeCategory.CORBALAR, RecipeCategory.ANA_YEMEKLER),
+                "comfort",
+                "GEMINI",
+                "key"
+        );
+
+        assertTrue(result.isAiGenerated());
+        assertEquals(3, result.getMenus().size());
+        assertEquals("Balanced AI Menu", result.getMenus().get(0).getTitle());
+        assertSame(soup, result.getMenus().get(0).getCourses().get(RecipeCategory.CORBALAR));
+        assertSame(main, result.getMenus().get(0).getCourses().get(RecipeCategory.ANA_YEMEKLER));
+
+        ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
+        verify(promptEngine).callAi(promptCaptor.capture(), eq("GEMINI"), eq("key"));
+        assertTrue(promptCaptor.getValue().contains("Output ONLY valid JSON"));
+    }
+
+    @Test
+    void getMenuRecommendationsShouldFallbackWhenAiMenuSchemaIsIncomplete() {
+        Recipe soup = recipe(10L, "Tomato Soup", RecipeCategory.CORBALAR);
+        Recipe main = recipe(20L, "Rice Bowl", RecipeCategory.ANA_YEMEKLER);
+
+        mockMenuCandidates(soup, main);
+        when(dailyConsumptionService.getDailyNutritionSummary(eq(user.getId()), any(LocalDate.class)))
+                .thenReturn(new DailyConsumptionService.DailyNutritionSummary(300, 1, 20.0, 30.0, 10.0));
+        when(promptEngine.callAi(anyString(), eq("GEMINI"), eq("key")))
+                .thenReturn("[{\"rank\":1,\"title\":\"Incomplete\",\"courseRecipeIds\":{\"CORBALAR\":10},\"insight\":\"Missing one category.\"}]");
+
+        MenuRecommendationResult result = recommendationService.getMenuRecommendations(
+                user,
+                List.of(),
+                List.of(RecipeCategory.CORBALAR, RecipeCategory.ANA_YEMEKLER),
+                "comfort",
+                "GEMINI",
+                "key"
+        );
+
+        assertFalse(result.isAiGenerated());
+        assertEquals(3, result.getMenus().size());
+        assertEquals("Recommended Menu 1 (Favorite)", result.getMenus().get(0).getTitle());
+        assertSame(soup, result.getMenus().get(0).getCourses().get(RecipeCategory.CORBALAR));
+        assertSame(main, result.getMenus().get(0).getCourses().get(RecipeCategory.ANA_YEMEKLER));
+    }
+
+    private void mockMenuCandidates(Recipe soup, Recipe main) {
+        when(recommendationRepository.findByUserIdOrderByCreatedAtDesc(eq(user.getId()), eq(PageRequest.of(0, 3))))
+                .thenReturn(List.of());
+        when(dailyConsumptionService.getConsumptionsBetween(eq(user.getId()), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of());
+        when(recipeRepository.findMenuCandidatesForUser(eq(user.getId()), eq(RecipeCategory.CORBALAR), eq(null), eq(List.of("__mealai_no_allergy__")), any(Pageable.class)))
+                .thenReturn(List.of(soup));
+        when(recipeRepository.findMenuCandidatesForUser(eq(user.getId()), eq(RecipeCategory.ANA_YEMEKLER), eq(null), eq(List.of("__mealai_no_allergy__")), any(Pageable.class)))
+                .thenReturn(List.of(main));
+        when(recipeCompatibilityService.isCompatibleWithDiet(any(Recipe.class), eq(User.DietType.NONE.name()), eq(null)))
+                .thenReturn(true);
+        when(ingredientMatchService.calculateMatchScore(any(Recipe.class), anyList())).thenReturn(0.75);
     }
 
     private static Recipe recipe(Long id, String title, RecipeCategory category) {

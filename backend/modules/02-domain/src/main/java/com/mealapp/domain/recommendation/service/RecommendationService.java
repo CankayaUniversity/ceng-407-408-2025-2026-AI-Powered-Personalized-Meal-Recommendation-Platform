@@ -2,6 +2,8 @@ package com.mealapp.domain.recommendation.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.mealapp.domain.common.ai.AiResponseParser;
 import com.mealapp.domain.common.ai.PromptEngine;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.inventory.entity.Inventory;
@@ -226,7 +228,29 @@ public class RecommendationService {
             return List.of();
         }
 
-        List<AiMenuChoice> choices = objectMapper.readValue(sanitizeJson(rawResponse), AI_MENU_RESPONSE_TYPE);
+        List<AiMenuChoice> choices;
+        String sanitizedResponse = null;
+        try {
+            Set<String> requiredCategoryKeys = candidatePools.keySet().stream()
+                    .map(Enum::name)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            sanitizedResponse = AiResponseParser.sanitizeJsonArray(rawResponse);
+            choices = AiResponseParser.parseStrictJsonArray(
+                    sanitizedResponse,
+                    objectMapper,
+                    AI_MENU_RESPONSE_TYPE,
+                    (item, index) -> validateAiMenuChoice(item, index, requiredCategoryKeys)
+            );
+        } catch (Exception parseEx) {
+            log.error(
+                    "AI menu response JSON parsing or validation failed for user {}. Raw response: {}. Sanitized: {}",
+                    user.getId(),
+                    preview(rawResponse),
+                    preview(sanitizedResponse),
+                    parseEx
+            );
+            throw parseEx;
+        }
         if (choices == null || choices.isEmpty()) {
             return List.of();
         }
@@ -352,11 +376,18 @@ public class RecommendationService {
         DailyConsumptionService.DailyNutritionSummary dailySummary = dailyConsumptionService.getDailyNutritionSummary(user.getId(), LocalDate.now());
 
         return """
-                You are MealAI's menu planner. Return JSON only.
+                You are MealAI's menu planner.
+                Output ONLY valid JSON; no additional text, headers, preamble, markdown formatting, or code fences.
                 Select exactly 3 alternative menu combinations from the candidate pool.
                 Use only recipe IDs that appear under their category.
                 Optimize culinary pairing, macro balance, inventory usage, and total preparation time.
-                Output schema:
+                Return a JSON array. Every object must contain exactly these fields:
+                rank: positive integer
+                title: non-empty string
+                courseRecipeIds: object whose keys exactly match the selected category names and whose values are recipe IDs from those category pools
+                insight: non-empty string
+                Do not include trailing commas or comments.
+                Required schema example:
                 [{"rank":1,"title":"Recommended Menu 1 (Favorite)","courseRecipeIds":{"CORBALAR":101,"ANA_YEMEKLER":205},"insight":"..."}]
 
                 User:
@@ -410,6 +441,17 @@ public class RecommendationService {
                     return entry.getKey().name() + ":[" + recipes + "]";
                 })
                 .collect(Collectors.joining("\n"));
+    }
+
+    private void validateAiMenuChoice(JsonNode item, int index, Set<String> requiredCategoryKeys) {
+        String context = "AI menu choice[" + index + "]";
+        AiResponseParser.requireExactObject(item, Set.of("rank", "title", "courseRecipeIds", "insight"), context);
+        AiResponseParser.requirePositiveIntField(item, "rank", context);
+        AiResponseParser.requireTextField(item, "title", context);
+        AiResponseParser.requireTextField(item, "insight", context);
+        JsonNode courseRecipeIds = AiResponseParser.requireObjectField(item, "courseRecipeIds", context);
+        AiResponseParser.requireExactObjectKeys(courseRecipeIds, requiredCategoryKeys, context + ".courseRecipeIds");
+        AiResponseParser.requirePositiveLongValues(courseRecipeIds, context + ".courseRecipeIds");
     }
 
     private String buildFallbackInsight(
@@ -699,14 +741,6 @@ public class RecommendationService {
         return aiModel == null || aiModel.isBlank() || "FREE".equalsIgnoreCase(aiModel);
     }
 
-    private String sanitizeJson(String response) {
-        String sanitized = response.trim();
-        if (sanitized.startsWith("```")) {
-            sanitized = sanitized.replaceAll("(?s)^```(?:json)?\\s*(.*?)\\s*```$", "$1").trim();
-        }
-        return sanitized;
-    }
-
     private String summarizeValues(List<String> values) {
         List<String> normalized = normalizeValues(values);
         return normalized.isEmpty() ? "none" : String.join(", ", normalized);
@@ -734,6 +768,14 @@ public class RecommendationService {
                 .replace("\"", "\\\"")
                 .replace("\r", " ")
                 .replace("\n", " ");
+    }
+
+    private String preview(String value) {
+        if (value == null) {
+            return "<null>";
+        }
+        String normalized = value.replace("\r", "\\r").replace("\n", "\\n");
+        return normalized.length() <= 2000 ? normalized : normalized.substring(0, 2000) + "...";
     }
 
     private record ScoredRecipe(Recipe recipe, double score) {}

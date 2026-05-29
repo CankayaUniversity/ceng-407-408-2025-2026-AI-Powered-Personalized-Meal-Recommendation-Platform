@@ -115,6 +115,53 @@ class AiRecommendationStrategyTest {
     }
 
     @Test
+    void shouldSanitizeAndValidateAiRecipeResponseBeforeUsingIt() {
+        Recipe recipe = recipeWithIngredients(2L, "High Match", 8.0, "Chicken");
+
+        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyString(), anyList(), any(Pageable.class)))
+                .thenReturn(List.of(recipe));
+        lenient().when(recipeCompatibilityService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);
+        when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(promptEngine.callAi(anyString(), eq("gemini"), any())).thenReturn("""
+                Sure, here is the JSON:
+                ```json
+                [{"recipeTitle":"High Match","insight":"Clean JSON after sanitization."}]
+                ```
+                """);
+
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0, 50.0);
+
+        Recommendation recommendations = strategy.recommend(user, inventory, dailySummary, "chicken", "gemini", null, Collections.emptyList());
+
+        assertTrue(recommendations.isAiGenerated());
+        assertEquals("Clean JSON after sanitization.", recommendations.getRecommendedRecipes().get(0).getAiInsight());
+
+        ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
+        verify(promptEngine).callAi(promptCaptor.capture(), eq("gemini"), any());
+        assertTrue(promptCaptor.getValue().contains("Output ONLY valid JSON"));
+    }
+
+    @Test
+    void shouldFallbackWhenAiRecipeResponseHasInvalidSchema() {
+        Recipe recipe = recipeWithIngredients(2L, "High Match", 8.0, "Chicken");
+
+        when(recipeRepository.findTopRecipesSafeForUser(anyString(), anyString(), anyList(), any(Pageable.class)))
+                .thenReturn(List.of(recipe));
+        lenient().when(recipeCompatibilityService.isCompatibleWithDiet(any(), anyString(), any())).thenReturn(true);
+        when(ingredientMatchService.calculateMatchScore(eq(recipe), anyList())).thenReturn(1.0);
+        when(promptEngine.generatePrompt(anyString(), any(Object[].class))).thenReturn("mock prompt");
+        when(promptEngine.callAi(anyString(), eq("gemini"), any()))
+                .thenReturn("[{\"recipeTitle\":\"High Match\",\"insight\":\"Valid text\",\"extra\":\"not allowed\"}]");
+
+        DailyConsumptionService.DailyNutritionSummary dailySummary = new DailyConsumptionService.DailyNutritionSummary(1500, 10, 150.0, 50.0, 50.0);
+
+        Recommendation recommendations = strategy.recommend(user, inventory, dailySummary, "chicken", "gemini", null, Collections.emptyList());
+
+        assertFalse(recommendations.isAiGenerated());
+        assertTrue(recommendations.getRecommendedRecipes().get(0).getAiInsight().contains("Yapay zeka servisine şu an erişilemiyor"));
+    }
+
+    @Test
     void shouldDeprioritizeRecipesContainingDislikedIngredientsInFallbackRanking() {
         user.setDislikedIngredients(List.of("Onion"));
 
