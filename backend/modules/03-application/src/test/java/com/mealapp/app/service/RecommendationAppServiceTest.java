@@ -6,6 +6,7 @@ import com.mealapp.app.model.dto.recommendation.MenuRecommendationResponse;
 import com.mealapp.app.model.dto.recommendation.RecommendationRequest;
 import com.mealapp.app.model.dto.recommendation.RecommendationResponse;
 import com.mealapp.app.model.mapper.recommendation.RecommendationMapper;
+import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.inventory.service.InventoryService;
 import com.mealapp.domain.recipe.entity.Ingredient;
@@ -50,277 +51,284 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class RecommendationAppServiceTest {
 
-    @Mock
-    private RecommendationService recommendationService;
-    @Mock
-    private UserService userService;
-    @Mock
-    private IngredientRepository ingredientRepository;
-    @Mock
-    private InventoryService inventoryService;
-    @Mock
-    private RecommendationMapper recommendationMapper;
-    @Mock
-    private RecommendationRepository recommendationRepository;
-    @Mock
-    private RecommendedRecipeRepository recommendedRecipeRepository;
-    @Mock
-    private RecipeRatingService recipeRatingService;
-    @Mock
-    private IngredientMatchService ingredientMatchService;
+        @Mock
+        private RecommendationService recommendationService;
+        @Mock
+        private UserService userService;
+        @Mock
+        private IngredientRepository ingredientRepository;
+        @Mock
+        private InventoryService inventoryService;
+        @Mock
+        private RecommendationMapper recommendationMapper;
+        @Mock
+        private RecommendationRepository recommendationRepository;
+        @Mock
+        private RecommendedRecipeRepository recommendedRecipeRepository;
+        @Mock
+        private RecipeRatingService recipeRatingService;
+        @Mock
+        private IngredientMatchService ingredientMatchService;
 
-    @InjectMocks
-    private RecommendationAppService recommendationAppService;
+        @InjectMocks
+        private RecommendationAppService recommendationAppService;
 
-    @Test
-    void shouldGetRecommendations() {
-        RecommendationRequest request = new RecommendationRequest();
-        request.setUserId("user-1");
-        request.setAvailableIngredients(List.of("Tomato", "Onion", "Tomato"));
-        request.setDislikedIngredients(List.of("Cilantro", " cilantro "));
-        request.setCravings("Something spicy");
+        @Test
+        void shouldGetRecommendations() {
+                RecommendationRequest request = new RecommendationRequest();
+                request.setUserId("user-1");
+                request.setAvailableIngredients(List.of("Tomato", "Onion", "Tomato"));
+                request.setDislikedIngredients(List.of("Cilantro", " cilantro "));
+                request.setCravings("Something spicy");
 
-        User user = User.builder().id("user-1").build();
-        when(userService.findById("user-1")).thenReturn(Optional.of(user));
-        when(ingredientRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
-        Recommendation recommendation = new Recommendation();
-        when(recommendationService.getRecommendations(any(), anyList(), any(), any(), any())).thenReturn(recommendation);
-        when(recommendationMapper.toResponse(any(), anyList())).thenReturn(new RecommendationResponse());
+                User user = User.builder().id("user-1").build();
+                when(userService.findById("user-1")).thenReturn(Optional.of(user));
+                when(ingredientRepository.findByNameIgnoreCase(any())).thenReturn(Optional.empty());
+                Recommendation recommendation = new Recommendation();
+                when(recommendationService.getRecommendations(any(), anyList(), any(), any(), any()))
+                                .thenReturn(recommendation);
+                when(recommendationMapper.toResponse(any(), anyList())).thenReturn(new RecommendationResponse());
 
-        RecommendationResponse response = recommendationAppService.getRecommendations(request);
+                RecommendationResponse response = recommendationAppService.getRecommendations(request);
 
-        assertNotNull(response);
+                assertNotNull(response);
 
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(recommendationService).getRecommendations(userCaptor.capture(), anyList(), eq("Something spicy"), any(), any());
-        assertEquals(List.of("Cilantro"), userCaptor.getValue().getDislikedIngredients());
-    }
-    @Test
-    void shouldRateRecommendation() {
-        // Given
-        String userId = "user-1";
-        Long rrId = 1L;
-        Long recipeId = 100L;
-        Integer rating = 9;
-        String comment = "Great!";
+                ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+                verify(recommendationService).getRecommendations(userCaptor.capture(), anyList(), eq("Something spicy"),
+                                any(), any());
+                assertEquals(List.of("Cilantro"), userCaptor.getValue().getDislikedIngredients());
+        }
 
-        Recipe recipe = Recipe.builder().id(recipeId).build();
-        RecommendedRecipe rr = RecommendedRecipe.builder()
-                .id(rrId)
-                .recipe(recipe)
-                .build();
+        @Test
+        void shouldRateRecommendation() {
+                // Given
+                String userId = "user-1";
+                Long rrId = 1L;
+                Long recipeId = 100L;
+                Integer rating = 9;
+                String comment = "Great!";
 
-        when(recommendedRecipeRepository.findById(rrId)).thenReturn(Optional.of(rr));
+                Recipe recipe = Recipe.builder().id(recipeId).build();
+                RecommendedRecipe rr = RecommendedRecipe.builder()
+                                .id(rrId)
+                                .recipe(recipe)
+                                .build();
 
-        // When
-        recommendationAppService.rateRecommendation(userId, rrId, rating, comment);
+                when(recommendedRecipeRepository.findById(rrId)).thenReturn(Optional.of(rr));
 
-        // Then
-        assertEquals(9, rr.getUserRating());
-        assertEquals(comment, rr.getUserComment());
-        verify(recipeRatingService).rateRecipe(userId, recipeId, 9, comment);
-        verify(recommendedRecipeRepository).save(rr);
-    }
+                // When
+                recommendationAppService.rateRecommendation(userId, rrId, rating, comment);
 
-    @Test
-    void shouldRejectRecommendationRatingOutsideAllowedRange() {
-        RecommendedRecipe rr = RecommendedRecipe.builder()
-                .id(1L)
-                .recipe(Recipe.builder().id(100L).build())
-                .build();
-        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
+                // Then
+                assertEquals(9, rr.getUserRating());
+                assertEquals(comment, rr.getUserComment());
+                verify(recipeRatingService).rateRecipe(userId, recipeId, 9, comment);
+                verify(recommendedRecipeRepository).save(rr);
+        }
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> recommendationAppService.rateRecommendation("user-1", 1L, 11, "Too high"));
+        @Test
+        void shouldRejectRecommendationRatingOutsideAllowedRange() {
+                RecommendedRecipe rr = RecommendedRecipe.builder()
+                                .id(1L)
+                                .recipe(Recipe.builder().id(100L).build())
+                                .build();
+                when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
 
-        assertEquals("Puan 1 ile 10 arasında olmalıdır.", exception.getMessage());
-        verifyNoInteractions(recipeRatingService);
-        verify(recommendedRecipeRepository, never()).save(any());
-    }
+                MealAppDomainException exception = assertThrows(MealAppDomainException.class,
+                                () -> recommendationAppService.rateRecommendation("user-1", 1L, 11, "Too high"));
 
-    @Test
-    void shouldThrowWhenRatedRecommendationDoesNotExist() {
-        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.empty());
+                assertEquals("domain.recipe.rating_range", exception.getMessageCode());
+                verifyNoInteractions(recipeRatingService);
+                verify(recommendedRecipeRepository, never()).save(any());
+        }
 
-        assertThrows(ResourceNotFoundException.class,
-                () -> recommendationAppService.rateRecommendation("user-1", 1L, 8, "Good"));
+        @Test
+        void shouldThrowWhenRatedRecommendationDoesNotExist() {
+                when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.empty());
 
-        verifyNoInteractions(recipeRatingService);
-    }
+                assertThrows(ResourceNotFoundException.class,
+                                () -> recommendationAppService.rateRecommendation("user-1", 1L, 8, "Good"));
 
-    @Test
-    void shouldMarkRecommendationAsCookedAndIncrementRecipeCookCount() {
-        Recipe recipe = Recipe.builder()
-                .id(100L)
-                .totalCookCount(2)
-                .build();
-        RecommendedRecipe rr = RecommendedRecipe.builder()
-                .id(1L)
-                .recipe(recipe)
-                .build();
-        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
+                verifyNoInteractions(recipeRatingService);
+        }
 
-        recommendationAppService.markAsCooked(1L);
+        @Test
+        void shouldMarkRecommendationAsCookedAndIncrementRecipeCookCount() {
+                Recipe recipe = Recipe.builder()
+                                .id(100L)
+                                .totalCookCount(2)
+                                .build();
+                RecommendedRecipe rr = RecommendedRecipe.builder()
+                                .id(1L)
+                                .recipe(recipe)
+                                .build();
+                when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
 
-        assertTrue(rr.isCooked());
-        assertEquals(3, recipe.getTotalCookCount());
-        verify(recommendedRecipeRepository).save(rr);
-    }
+                recommendationAppService.markAsCooked(1L);
 
-    @Test
-    void shouldInitializeRecipeCookCountWhenMarkingAsCooked() {
-        Recipe recipe = Recipe.builder()
-                .id(100L)
-                .build();
-        RecommendedRecipe rr = RecommendedRecipe.builder()
-                .id(1L)
-                .recipe(recipe)
-                .build();
-        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
+                assertTrue(rr.isCooked());
+                assertEquals(3, recipe.getTotalCookCount());
+                verify(recommendedRecipeRepository).save(rr);
+        }
 
-        recommendationAppService.markAsCooked(1L);
+        @Test
+        void shouldInitializeRecipeCookCountWhenMarkingAsCooked() {
+                Recipe recipe = Recipe.builder()
+                                .id(100L)
+                                .build();
+                RecommendedRecipe rr = RecommendedRecipe.builder()
+                                .id(1L)
+                                .recipe(recipe)
+                                .build();
+                when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
 
-        assertTrue(rr.isCooked());
-        assertEquals(1, recipe.getTotalCookCount());
-        verify(recommendedRecipeRepository).save(rr);
-    }
+                recommendationAppService.markAsCooked(1L);
 
-    @Test
-    void shouldNotIncrementCookCountWhenRecommendationAlreadyCooked() {
-        Recipe recipe = Recipe.builder()
-                .id(100L)
-                .totalCookCount(3)
-                .build();
-        RecommendedRecipe rr = RecommendedRecipe.builder()
-                .id(1L)
-                .recipe(recipe)
-                .build();
-        rr.setCooked(true);
-        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
+                assertTrue(rr.isCooked());
+                assertEquals(1, recipe.getTotalCookCount());
+                verify(recommendedRecipeRepository).save(rr);
+        }
 
-        recommendationAppService.markAsCooked(1L);
+        @Test
+        void shouldNotIncrementCookCountWhenRecommendationAlreadyCooked() {
+                Recipe recipe = Recipe.builder()
+                                .id(100L)
+                                .totalCookCount(3)
+                                .build();
+                RecommendedRecipe rr = RecommendedRecipe.builder()
+                                .id(1L)
+                                .recipe(recipe)
+                                .build();
+                rr.setCooked(true);
+                when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.of(rr));
 
-        assertEquals(3, recipe.getTotalCookCount());
-        verify(recommendedRecipeRepository, never()).save(any());
-    }
+                recommendationAppService.markAsCooked(1L);
 
-    @Test
-    void shouldThrowWhenCookedRecommendationDoesNotExist() {
-        when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.empty());
+                assertEquals(3, recipe.getTotalCookCount());
+                verify(recommendedRecipeRepository, never()).save(any());
+        }
 
-        assertThrows(ResourceNotFoundException.class,
-                () -> recommendationAppService.markAsCooked(1L));
-    }
+        @Test
+        void shouldThrowWhenCookedRecommendationDoesNotExist() {
+                when(recommendedRecipeRepository.findById(1L)).thenReturn(Optional.empty());
 
-    @Test
-    void shouldPersistMenuAlternativesAndCourses() {
-        User user = User.builder().id("user-1").build();
-        Recipe soup = Recipe.builder().id(1L).title("Soup").servings(1).build();
-        Recipe main = Recipe.builder().id(2L).title("Main").servings(1).build();
+                assertThrows(ResourceNotFoundException.class,
+                                () -> recommendationAppService.markAsCooked(1L));
+        }
 
-        MenuRecommendationRequest request = new MenuRecommendationRequest();
-        request.setInventoryGroupId(10L);
-        request.setSelectedCategories(List.of(RecipeCategory.CORBALAR, RecipeCategory.ANA_YEMEKLER));
-        request.setAiModel("FREE");
+        @Test
+        void shouldPersistMenuAlternativesAndCourses() {
+                User user = User.builder().id("user-1").build();
+                Recipe soup = Recipe.builder().id(1L).title("Soup").servings(1).build();
+                Recipe main = Recipe.builder().id(2L).title("Main").servings(1).build();
 
-        MenuRecommendationResult result = MenuRecommendationResult.builder()
-                .aiGenerated(false)
-                .menus(List.of(
-                        menu(1, soup, main),
-                        menu(2, soup, main),
-                        menu(3, soup, main)
-                ))
-                .build();
+                MenuRecommendationRequest request = new MenuRecommendationRequest();
+                request.setInventoryGroupId(10L);
+                request.setSelectedCategories(List.of(RecipeCategory.CORBALAR, RecipeCategory.ANA_YEMEKLER));
+                request.setAiModel("FREE");
 
-        when(userService.findById("user-1")).thenReturn(Optional.of(user));
-        when(inventoryService.getUserInventory("user-1", 10L)).thenReturn(List.of());
-        when(recommendationService.getMenuRecommendations(eq(user), anyList(), eq(request.getSelectedCategories()), any(), eq("FREE"), any()))
-                .thenReturn(result);
-        when(recommendationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(ingredientMatchService.getMatchedIngredientNames(any(), anyList())).thenReturn(List.of());
-        when(ingredientMatchService.getMissingIngredientNames(any(), anyList())).thenReturn(List.of());
+                MenuRecommendationResult result = MenuRecommendationResult.builder()
+                                .aiGenerated(false)
+                                .menus(List.of(
+                                                menu(1, soup, main),
+                                                menu(2, soup, main),
+                                                menu(3, soup, main)))
+                                .build();
 
-        MenuRecommendationResponse response = recommendationAppService.getMenuRecommendations("user-1", request);
+                when(userService.findById("user-1")).thenReturn(Optional.of(user));
+                when(inventoryService.getUserInventory("user-1", 10L)).thenReturn(List.of());
+                when(recommendationService.getMenuRecommendations(eq(user), anyList(),
+                                eq(request.getSelectedCategories()), any(), eq("FREE"), any()))
+                                .thenReturn(result);
+                when(recommendationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+                when(ingredientMatchService.getMatchedIngredientNames(any(), anyList())).thenReturn(List.of());
+                when(ingredientMatchService.getMissingIngredientNames(any(), anyList())).thenReturn(List.of());
 
-        assertEquals(3, response.getMenus().size());
+                MenuRecommendationResponse response = recommendationAppService.getMenuRecommendations("user-1",
+                                request);
 
-        ArgumentCaptor<Recommendation> recommendationCaptor = ArgumentCaptor.forClass(Recommendation.class);
-        verify(recommendationRepository).save(recommendationCaptor.capture());
-        Recommendation savedRecommendation = recommendationCaptor.getValue();
-        assertEquals(2, savedRecommendation.getRecommendedRecipes().size());
-        assertEquals(3, savedRecommendation.getMenus().size());
-        assertEquals(2, savedRecommendation.getMenus().get(0).getCourses().size());
-    }
+                assertEquals(3, response.getMenus().size());
 
-    @Test
-    void shouldReturnMenuHistoryWithPersistedMenus() {
-        Recipe recipe = Recipe.builder().id(1L).title("Soup").servings(1).totalCookCount(4).build();
-        RecommendedRecipe recommendedRecipe = RecommendedRecipe.builder()
-                .id(11L)
-                .recipe(recipe)
-                .build();
-        recommendedRecipe.setCooked(true);
+                ArgumentCaptor<Recommendation> recommendationCaptor = ArgumentCaptor.forClass(Recommendation.class);
+                verify(recommendationRepository).save(recommendationCaptor.capture());
+                Recommendation savedRecommendation = recommendationCaptor.getValue();
+                assertEquals(2, savedRecommendation.getRecommendedRecipes().size());
+                assertEquals(3, savedRecommendation.getMenus().size());
+                assertEquals(2, savedRecommendation.getMenus().get(0).getCourses().size());
+        }
 
-        RecommendationMenu menu = RecommendationMenu.builder()
-                .rank(1)
-                .title("Menu 1")
-                .totalKcal(300.0)
-                .build();
-        menu.addCourse(RecommendationMenuCourse.builder()
-                .category(RecipeCategory.CORBALAR)
-                .recommendedRecipe(recommendedRecipe)
-                .build());
+        @Test
+        void shouldReturnMenuHistoryWithPersistedMenus() {
+                Recipe recipe = Recipe.builder().id(1L).title("Soup").servings(1).totalCookCount(4).build();
+                RecommendedRecipe recommendedRecipe = RecommendedRecipe.builder()
+                                .id(11L)
+                                .recipe(recipe)
+                                .build();
+                recommendedRecipe.setCooked(true);
 
-        Recommendation recommendation = Recommendation.builder()
-                .id(100L)
-                .aiModel("FREE")
-                .isAiGenerated(false)
-                .build();
-        recommendation.addRecommendedRecipe(recommendedRecipe);
-        recommendation.addMenu(menu);
+                RecommendationMenu menu = RecommendationMenu.builder()
+                                .rank(1)
+                                .title("Menu 1")
+                                .totalKcal(300.0)
+                                .build();
+                menu.addCourse(RecommendationMenuCourse.builder()
+                                .category(RecipeCategory.CORBALAR)
+                                .recommendedRecipe(recommendedRecipe)
+                                .build());
 
-        when(recommendationService.getRecommendationHistory("user-1")).thenReturn(List.of(recommendation));
-        when(inventoryService.getUserInventory("user-1")).thenReturn(List.of());
-        when(ingredientMatchService.getMatchedIngredientNames(any(), anyList())).thenReturn(List.of());
-        when(ingredientMatchService.getMissingIngredientNames(any(), anyList())).thenReturn(List.of("Lentil"));
+                Recommendation recommendation = Recommendation.builder()
+                                .id(100L)
+                                .aiModel("FREE")
+                                .isAiGenerated(false)
+                                .build();
+                recommendation.addRecommendedRecipe(recommendedRecipe);
+                recommendation.addMenu(menu);
 
-        List<MenuRecommendationHistoryResponse> history = recommendationAppService.getMenuRecommendationHistory("user-1");
+                when(recommendationService.getRecommendationHistory("user-1")).thenReturn(List.of(recommendation));
+                when(inventoryService.getUserInventory("user-1")).thenReturn(List.of());
+                when(ingredientMatchService.getMatchedIngredientNames(any(), anyList())).thenReturn(List.of());
+                when(ingredientMatchService.getMissingIngredientNames(any(), anyList())).thenReturn(List.of("Lentil"));
 
-        assertEquals(1, history.size());
-        assertEquals(1, history.get(0).getMenus().size());
-        MenuRecommendationResponse.MenuCourseRecipeDto course = history.get(0).getMenus().get(0).getCourses().get(RecipeCategory.CORBALAR);
-        assertNotNull(course);
-        assertEquals(11L, course.getRecommendationRecipeId());
-        assertTrue(course.isCooked());
-        assertEquals(4, course.getTotalCookCount());
-    }
+                List<MenuRecommendationHistoryResponse> history = recommendationAppService
+                                .getMenuRecommendationHistory("user-1");
 
-    @Test
-    void shouldSkipLegacyRecommendationsInMenuHistory() {
-        Recommendation legacyRecommendation = Recommendation.builder().id(100L).build();
+                assertEquals(1, history.size());
+                assertEquals(1, history.get(0).getMenus().size());
+                MenuRecommendationResponse.MenuCourseRecipeDto course = history.get(0).getMenus().get(0).getCourses()
+                                .get(RecipeCategory.CORBALAR);
+                assertNotNull(course);
+                assertEquals(11L, course.getRecommendationRecipeId());
+                assertTrue(course.isCooked());
+                assertEquals(4, course.getTotalCookCount());
+        }
 
-        when(recommendationService.getRecommendationHistory("user-1")).thenReturn(List.of(legacyRecommendation));
-        when(inventoryService.getUserInventory("user-1")).thenReturn(List.of());
+        @Test
+        void shouldSkipLegacyRecommendationsInMenuHistory() {
+                Recommendation legacyRecommendation = Recommendation.builder().id(100L).build();
 
-        List<MenuRecommendationHistoryResponse> history = recommendationAppService.getMenuRecommendationHistory("user-1");
+                when(recommendationService.getRecommendationHistory("user-1"))
+                                .thenReturn(List.of(legacyRecommendation));
+                when(inventoryService.getUserInventory("user-1")).thenReturn(List.of());
 
-        assertTrue(history.isEmpty());
-    }
+                List<MenuRecommendationHistoryResponse> history = recommendationAppService
+                                .getMenuRecommendationHistory("user-1");
 
-    private MenuRecommendationResult.MenuAlternative menu(int rank, Recipe soup, Recipe main) {
-        return MenuRecommendationResult.MenuAlternative.builder()
-                .rank(rank)
-                .title("Menu " + rank)
-                .courses(Map.of(
-                        RecipeCategory.CORBALAR, soup,
-                        RecipeCategory.ANA_YEMEKLER, main
-                ))
-                .insight("Balanced menu")
-                .totalKcal(500.0)
-                .totalProtein(30.0)
-                .totalCarbs(40.0)
-                .totalFat(20.0)
-                .totalPreparationTime(45)
-                .build();
-    }
+                assertTrue(history.isEmpty());
+        }
+
+        private MenuRecommendationResult.MenuAlternative menu(int rank, Recipe soup, Recipe main) {
+                return MenuRecommendationResult.MenuAlternative.builder()
+                                .rank(rank)
+                                .title("Menu " + rank)
+                                .courses(Map.of(
+                                                RecipeCategory.CORBALAR, soup,
+                                                RecipeCategory.ANA_YEMEKLER, main))
+                                .insight("Balanced menu")
+                                .totalKcal(500.0)
+                                .totalProtein(30.0)
+                                .totalCarbs(40.0)
+                                .totalFat(20.0)
+                                .totalPreparationTime(45)
+                                .build();
+        }
 }

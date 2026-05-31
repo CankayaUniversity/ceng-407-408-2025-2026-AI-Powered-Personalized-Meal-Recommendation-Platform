@@ -24,7 +24,7 @@ export const DefinitionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const fetchEnums = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await definitionService.getEnumDefinitions(i18n.language);
+      const data = await definitionService.getEnumDefinitions();
       setEnums(data);
       setError(null);
     } catch (err) {

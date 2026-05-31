@@ -25,7 +25,7 @@ export const MemberSelection: React.FC<MemberSelectionProps> = ({
     <div className="mt-8 border-t border-card-border/40 pt-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <p className="meal-overline tracking-[0.18em] text-terracotta">Group Members</p>
+          <p className="meal-overline tracking-[0.18em] text-terracotta">{t('inventory.members.overline')}</p>
           <h3 className="text-xl font-bold text-foreground">{t('consumption.member.title')}</h3>
         </div>
       </div>
@@ -60,7 +60,7 @@ export const MemberSelection: React.FC<MemberSelectionProps> = ({
                     {groupUser.firstName || groupUser.name}
                   </p>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">
-                    Member
+                    {t('common.member')}
                   </p>
                 </div>
               </div>

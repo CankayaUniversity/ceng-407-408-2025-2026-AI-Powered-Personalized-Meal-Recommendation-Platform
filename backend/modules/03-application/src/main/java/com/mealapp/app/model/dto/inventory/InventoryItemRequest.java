@@ -8,14 +8,14 @@ import lombok.Data;
 @Data
 public class InventoryItemRequest {
 
-    @NotNull(message = "Malzeme seçimi zorunludur")
+    @NotNull(message = "{validation.inventory.item.ingredient.required}")
     private Long ingredientId;
 
-    @NotNull(message = "Miktar zorunludur")
-    @jakarta.validation.constraints.Min(value = 0, message = "Miktar negatif olamaz")
+    @NotNull(message = "{validation.inventory.item.quantity.required}")
+    @jakarta.validation.constraints.Min(value = 0, message = "{validation.inventory.item.quantity.min}")
     private Double quantity;
 
-    @NotBlank(message = "Birim zorunludur")
+    @NotBlank(message = "{validation.inventory.item.unit.required}")
     private String unit;
 
     /**

@@ -61,7 +61,7 @@ public class RecipeController {
     public RecipeResponse getRecipeById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         String userId = jwt != null ? jwt.getSubject() : null;
         Recipe recipe = recipeService.findVisibleById(id, userId, isAdmin(jwt))
-            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + id));
+            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", id));
         RecipeResponse response = recipeMapper.toResponse(recipe, userId);
         enrichImageUrl(response);
         return response;
@@ -226,7 +226,7 @@ public class RecipeController {
                                             @AuthenticationPrincipal Jwt jwt,
                                             @RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            throw new MealAppDomainException("Yüklenecek dosya bulunamadı.");
+            throw MealAppDomainException.withCode("domain.file.required");
         }
 
         recipeService.uploadRecipeImage(
@@ -240,7 +240,7 @@ public class RecipeController {
 
         RecipeResponse response = recipeService.findVisibleById(id, jwt.getSubject(), isAdmin(jwt))
                 .map(r -> recipeMapper.toResponse(r, jwt.getSubject()))
-                .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + id));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", id));
 
         enrichImageUrl(response);
         return response;

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.mealapp.domain.common.ai.AiResponseParser;
+import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.ai.PromptEngine;
 import com.mealapp.domain.consumption.service.DailyConsumptionService;
 import com.mealapp.domain.inventory.entity.Inventory;
@@ -89,12 +90,12 @@ public class RecommendationService {
             String apiKey
     ) {
         if (user == null || user.getId() == null || user.getId().isBlank()) {
-            throw new IllegalArgumentException("Authenticated user is required for menu recommendations.");
+            throw MealAppDomainException.withCode("domain.auth.user_missing");
         }
 
         List<RecipeCategory> categories = normalizeCategories(selectedCategories);
         if (categories.isEmpty()) {
-            throw new IllegalArgumentException("At least one recipe category must be selected.");
+            throw MealAppDomainException.withCode("domain.recommendation.menu_categories_required");
         }
 
         List<Inventory> currentInventory = safeInventory(inventory);

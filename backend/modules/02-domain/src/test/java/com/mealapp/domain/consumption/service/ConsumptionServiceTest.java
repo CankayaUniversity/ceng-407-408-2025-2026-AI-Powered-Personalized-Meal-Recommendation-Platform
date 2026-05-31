@@ -99,7 +99,7 @@ class ConsumptionServiceTest {
                 () -> consumptionService.consume(itemId, userAmounts)
         );
 
-        assertEquals("Her kullanıcı için 0'dan büyük geçerli bir tüketim miktarı girilmelidir.", exception.getMessage());
+        assertEquals("domain.consumption.member_amount_positive", exception.getMessageCode());
         verify(inventoryRepository, never()).save(any());
         verify(dailyConsumptionService, never()).logConsumption(any(DailyConsumption.class), anyBoolean());
     }

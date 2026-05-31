@@ -1,0 +1,3 @@
+jobrunr:
+  database:
+    type: mem

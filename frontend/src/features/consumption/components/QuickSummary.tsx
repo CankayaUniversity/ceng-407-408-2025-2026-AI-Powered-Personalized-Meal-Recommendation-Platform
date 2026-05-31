@@ -46,7 +46,7 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
     <div className="mt-4 rounded-[2rem] meal-highlight-frame bg-card p-6 text-foreground shadow-brand-hero">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="meal-overline tracking-[0.18em] text-foreground/45">Quick Summary</p>
+          <p className="meal-overline tracking-[0.18em] text-foreground/45">{t('consumption.summary.quick')}</p>
           <h3 className="meal-section-title mt-2 text-2xl text-foreground">
             {summaryTitle}
           </h3>
@@ -61,19 +61,19 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Calories</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">{t('consumption.summary.colCalories')}</p>
           <p className="mt-2 font-serif text-3xl font-bold">{formatCalories(nutritionPreview?.calories)}</p>
         </div>
         <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Protein</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">{t('consumption.summary.colProtein')}</p>
           <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.protein)}</p>
         </div>
         <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Carbs</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">{t('consumption.summary.colCarbs')}</p>
           <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.carbs)}</p>
         </div>
         <div className="rounded-[1.5rem] bg-foreground/[0.03] px-5 py-5">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">Fat</p>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-foreground/40">{t('consumption.summary.colFat')}</p>
           <p className="mt-2 font-serif text-3xl font-bold">{formatMacro(nutritionPreview?.fat)}</p>
         </div>
       </div>
@@ -84,9 +84,9 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
             <thead className="bg-foreground/[0.03]">
               <tr>
                 <th className="px-6 py-3 font-semibold text-foreground/50">{t('consumption.summary.colUser')}</th>
-                <th className="px-6 py-3 font-semibold text-foreground/50">Calories</th>
-                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Protein</th>
-                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">Carbs</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50">{t('consumption.summary.colCalories')}</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">{t('consumption.summary.colProtein')}</th>
+                <th className="px-6 py-3 font-semibold text-foreground/50 text-right">{t('consumption.summary.colCarbs')}</th>
                 <th className="px-6 py-3 font-semibold text-foreground/50 text-right">{t('consumption.summary.colFat')}</th>
               </tr>
             </thead>
@@ -125,7 +125,7 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
             {inventoryStatus?.isSufficient === false && (
               <div className="flex items-center gap-1.5 text-terracotta px-3 py-1 bg-terracotta/10 rounded-full animate-pulse">
                 <AlertTriangle size={12} />
-                <span className="text-[10px] font-black uppercase tracking-tighter">Stock Shortage</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter">{t('consumption.summary.stockShortage')}</span>
               </div>
             )}
           </div>
@@ -164,7 +164,7 @@ export const QuickSummary: React.FC<QuickSummaryProps> = ({
                     {displayAmount}{displayUnit}
                     {isMissing && (
                       <span className="ml-1 opacity-60 font-normal">
-                        (Stock: {isMissing.available >= 1000 ? `${(isMissing.available/1000).toFixed(1)}kg` : `${Math.round(isMissing.available)}g`})
+                        ({t('consumption.summary.stock')}: {isMissing.available >= 1000 ? `${(isMissing.available/1000).toFixed(1)}kg` : `${Math.round(isMissing.available)}g`})
                       </span>
                     )}
                   </span>

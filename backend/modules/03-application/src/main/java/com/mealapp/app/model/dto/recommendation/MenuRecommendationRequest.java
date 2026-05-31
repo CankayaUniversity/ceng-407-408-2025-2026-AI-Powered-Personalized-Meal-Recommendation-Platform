@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 public class MenuRecommendationRequest {
-    @NotEmpty(message = "At least one menu category must be selected.")
+    @NotEmpty(message = "{validation.menu.categories.required}")
     private List<RecipeCategory> selectedCategories;
     private Long inventoryGroupId;
     private String cravings;

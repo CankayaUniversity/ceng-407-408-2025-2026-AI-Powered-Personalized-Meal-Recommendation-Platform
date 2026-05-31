@@ -35,11 +35,11 @@ public class InventoryInvitationService {
             System.out.println("[DEBUG_LOG] inviter not found in DB: " + inviterId);
             // If user is not in our DB yet, they might be a first time user from Keycloak
             // We should still allow them if they are authenticated, but the service needs a User entity
-            throw new MealAppDomainException("Davet eden kullanıcı sistemde bulunamadı. Lütfen önce profilinizi tamamlayın.");
+            throw MealAppDomainException.withCode("domain.invitation.inviter_missing");
         }
 
         InventoryGroup group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new ResourceNotFoundException("Envanter grubu bulunamadı."));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.invitation.group_not_found"));
         System.out.println("[DEBUG_LOG] group found: " + group.getName());
 
         // Check if inviter is member of the group
@@ -55,13 +55,13 @@ public class InventoryInvitationService {
             
             System.out.println("[DEBUG_LOG] emailMatch check: " + emailMatch);
             if (!emailMatch) {
-                throw new MealAppDomainException("Sadece grup üyeleri başkalarını davet edebilir.");
+                throw MealAppDomainException.withCode("domain.invitation.member_only");
             }
         }
 
         // Cannot invite yourself
         if (inviteeEmail.equalsIgnoreCase(inviterEmail) || (inviter.getEmail() != null && inviteeEmail.equalsIgnoreCase(inviter.getEmail()))) {
-            throw new MealAppDomainException("Kendinizi ortak envantere davet edemezsiniz.");
+            throw MealAppDomainException.withCode("domain.invitation.self_invite");
         }
 
         // Check if invitee is already a member
@@ -69,7 +69,7 @@ public class InventoryInvitationService {
                 .anyMatch(u -> u != null && u.getEmail() != null && inviteeEmail.equalsIgnoreCase(u.getEmail()));
         System.out.println("[DEBUG_LOG] isAlreadyMember check: " + isAlreadyMember);
         if (isAlreadyMember) {
-            throw new MealAppDomainException(String.format("'%s' kullanıcısı zaten '%s' grubunun üyesi.", inviteeEmail, group.getName()));
+            throw MealAppDomainException.withCode("domain.invitation.already_member", inviteeEmail, group.getName());
         }
 
         // Check for existing invitations (PENDING, REJECTED, etc.)
@@ -98,11 +98,11 @@ public class InventoryInvitationService {
         userRepository.findByEmail(inviteeEmail).ifPresent(invitee -> {
             System.out.println("[DEBUG_LOG] invitee found in system, creating notification: " + invitee.getEmail());
             if (finalInvitation.getId() != null) {
-                notificationService.createNotification(
+                notificationService.createLocalizedNotification(
                         invitee,
-                        "Yeni Envanter Daveti",
-                        String.format("%s sizi '%s' envanter grubuna katılmaya davet etti.", 
-                                inviter.getName() != null ? inviter.getName() : inviter.getEmail(), group.getName()),
+                        "notification.inventory.invitation.title",
+                        "notification.inventory.invitation.message",
+                        List.of(inviter.getName() != null ? inviter.getName() : inviter.getEmail(), group.getName()),
                         Notification.NotificationType.INVITATION,
                         finalInvitation.getId().toString()
                 );
@@ -126,13 +126,15 @@ public class InventoryInvitationService {
                 continue;
             }
 
-            notificationService.createNotification(
+            notificationService.createLocalizedNotification(
                     user,
-                    "Yeni Envanter Daveti",
-                    String.format("%s sizi '%s' envanter grubuna katılmaya davet etti.", 
-                            (invitation.getInviter() != null && invitation.getInviter().getName() != null) ? invitation.getInviter().getName() : 
-                            (invitation.getInviter() != null ? invitation.getInviter().getEmail() : "Bir kullanıcı"), 
-                            invitation.getInventoryGroup() != null ? invitation.getInventoryGroup().getName() : "bir envanter"),
+                    "notification.inventory.invitation.title",
+                    "notification.inventory.invitation.message",
+                    List.of(
+                            (invitation.getInviter() != null && invitation.getInviter().getName() != null) ? invitation.getInviter().getName() :
+                                    (invitation.getInviter() != null ? invitation.getInviter().getEmail() : "MealAI"),
+                            invitation.getInventoryGroup() != null ? invitation.getInventoryGroup().getName() : "-"
+                    ),
                     Notification.NotificationType.INVITATION,
                     targetId
             );
@@ -146,18 +148,18 @@ public class InventoryInvitationService {
     @Transactional
     public void acceptInvitation(Long invitationId, String userEmail) {
         InventoryInvitation invitation = invitationRepository.findById(invitationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Davetiye bulunamadı."));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.invitation.not_found"));
 
         if (!invitation.getInviteeEmail().equalsIgnoreCase(userEmail)) {
-            throw new MealAppDomainException("Bu davetiyeyi kabul etme yetkiniz yok.");
+            throw MealAppDomainException.withCode("domain.invitation.accept_forbidden");
         }
 
         if (invitation.getStatus() != InventoryInvitation.InvitationStatus.PENDING) {
-            throw new MealAppDomainException("Davetiye artık bekliyor durumunda değil.");
+            throw MealAppDomainException.withCode("domain.invitation.not_pending");
         }
 
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı."));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found.simple"));
 
         InventoryGroup group = invitation.getInventoryGroup();
         
@@ -176,10 +178,10 @@ public class InventoryInvitationService {
     @Transactional
     public void rejectInvitation(Long invitationId, String userEmail) {
         InventoryInvitation invitation = invitationRepository.findById(invitationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Davetiye bulunamadı."));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.invitation.not_found"));
 
         if (!invitation.getInviteeEmail().equalsIgnoreCase(userEmail)) {
-            throw new MealAppDomainException("Bu davetiyeyi reddetme yetkiniz yok.");
+            throw MealAppDomainException.withCode("domain.invitation.reject_forbidden");
         }
 
         invitation.setStatus(InventoryInvitation.InvitationStatus.REJECTED);
@@ -189,7 +191,7 @@ public class InventoryInvitationService {
     @Transactional
     public void deleteInvitation(Long invitationId, String userEmail) {
         InventoryInvitation invitation = invitationRepository.findById(invitationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Davetiye bulunamadı."));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.invitation.not_found"));
 
         // Only inviter or invitee can delete/cancel
         boolean isInvitee = invitation.getInviteeEmail().equalsIgnoreCase(userEmail);
@@ -198,7 +200,7 @@ public class InventoryInvitationService {
                             invitation.getInviter().getId().equals(userEmail));
 
         if (!isInvitee && !isInviter) {
-            throw new MealAppDomainException("Bu davetiyeyi silme yetkiniz yok.");
+            throw MealAppDomainException.withCode("domain.invitation.cancel_forbidden");
         }
 
         invitationRepository.delete(invitation);

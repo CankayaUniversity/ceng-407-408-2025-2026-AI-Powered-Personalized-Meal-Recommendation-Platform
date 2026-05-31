@@ -380,7 +380,7 @@ const RecommendationPage: React.FC = () => {
     }
 
     if (selectedCategories.length === 0) {
-      showToast('Menü için en az bir kategori seçmelisiniz.', 'warning');
+      showToast(t('toasts.recommendations.menuCategoriesRequired'), 'warning');
       return;
     }
 

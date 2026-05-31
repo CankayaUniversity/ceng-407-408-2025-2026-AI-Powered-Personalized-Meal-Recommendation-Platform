@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ConsumptionController {
 
-    private static final String INVALID_DATE_RANGE_MESSAGE = "Başlangıç tarihi bitiş tarihinden sonra olamaz.";
+    private static final String INVALID_DATE_RANGE_MESSAGE_CODE = "domain.consumption.invalid_date_range";
 
     private final DailyConsumptionService dailyConsumptionService;
     private final UserService userService;
@@ -62,7 +62,7 @@ public class ConsumptionController {
             @RequestParam(defaultValue = "WEEKLY") String period
     ) {
         String userId = requireAuthenticatedUserId(jwt, null);
-        User user = userService.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı"));
+        User user = userService.findById(userId).orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found.simple"));
 
         DateRange dateRange = resolveAnalysisDateRange(startDate, endDate, period);
         LocalDate start = dateRange.start();
@@ -200,13 +200,13 @@ public class ConsumptionController {
         
         if (request.getRecipeId() != null) {
             Recipe recipe = recipeService.findById(request.getRecipeId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı"));
+                    .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found.simple"));
             consumption.setRecipe(recipe);
             consumption.setPortionMultiplier(request.getPortionMultiplier());
             consumption.setPortionSize(request.getPortionSize());
         } else if (request.getIngredientId() != null) {
             Ingredient ingredient = ingredientService.findById(request.getIngredientId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Malzeme bulunamadı"));
+                    .orElseThrow(() -> ResourceNotFoundException.withCode("domain.ingredient.not_found.simple"));
             consumption.setIngredient(ingredient);
             // portionAmount ve portionUnit doğrudan entity'de yok, 
             // ama enrichConsumption sırasında portionGrams hesaplanırken gerekebilir.
@@ -248,19 +248,19 @@ public class ConsumptionController {
         String authenticatedUserId = requireAuthenticatedUserId(jwt, request.getUserId());
         
         if (request.getRecipeId() != null && request.getIngredientId() != null) {
-            throw new MealAppDomainException("Aynı kayıtta hem tarif hem de malzeme seçilemez.");
+            throw MealAppDomainException.withCode("domain.consumption.single_source");
         }
 
         Recipe recipe = null;
         if (request.getRecipeId() != null) {
             recipe = recipeService.findById(request.getRecipeId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı ID: " + request.getRecipeId()));
+                    .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", request.getRecipeId()));
         }
 
         Ingredient ingredient = null;
         if (request.getIngredientId() != null) {
             ingredient = ingredientService.findByIdWithUnits(request.getIngredientId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Malzeme bulunamadı ID: " + request.getIngredientId()));
+                    .orElseThrow(() -> ResourceNotFoundException.withCode("domain.ingredient.not_found", request.getIngredientId()));
         }
 
         InventoryGroup inventoryGroup = null;
@@ -283,7 +283,7 @@ public class ConsumptionController {
                 Recipe memberRecipe = null;
                 if (member.getRecipeId() != null) {
                     memberRecipe = recipeService.findById(member.getRecipeId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Üye tarifi bulunamadı ID: " + member.getRecipeId()));
+                            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", member.getRecipeId()));
                 } else if (recipe != null) {
                     memberRecipe = recipe;
                 }
@@ -291,7 +291,7 @@ public class ConsumptionController {
                 Ingredient memberIngredient = null;
                 if (member.getIngredientId() != null) {
                     memberIngredient = ingredientService.findByIdWithUnits(member.getIngredientId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Üye malzemesi bulunamadı ID: " + member.getIngredientId()));
+                            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.ingredient.not_found", member.getIngredientId()));
                 } else if (ingredient != null) {
                     memberIngredient = ingredient;
                 }
@@ -488,7 +488,7 @@ public class ConsumptionController {
             return fallbackUserId.trim();
         }
 
-        throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+        throw MealAppDomainException.withCode("domain.auth.user_missing");
     }
 
     private DateRange resolveAnalysisDateRange(LocalDate startDate, LocalDate endDate, String period) {
@@ -520,7 +520,7 @@ public class ConsumptionController {
 
     private void validateDateRange(LocalDate start, LocalDate end) {
         if (start.isAfter(end)) {
-            throw new IllegalArgumentException(INVALID_DATE_RANGE_MESSAGE);
+            throw MealAppDomainException.withCode(INVALID_DATE_RANGE_MESSAGE_CODE);
         }
     }
 
@@ -535,7 +535,7 @@ public class ConsumptionController {
             return ingredient.getName();
         }
 
-        throw new MealAppDomainException("Tüketim kaydı için bir tarif, malzeme veya yemek adı girilmelidir.");
+        throw MealAppDomainException.withCode("domain.consumption.entry_required");
     }
 
     private DailyConsumption.PortionSize resolvePortionSize(ConsumptionRequest request, Double grams) {

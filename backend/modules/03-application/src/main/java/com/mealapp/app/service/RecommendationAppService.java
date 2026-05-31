@@ -6,6 +6,7 @@ import com.mealapp.app.model.dto.recommendation.MenuRecommendationRequest;
 import com.mealapp.app.model.dto.recommendation.MenuRecommendationHistoryResponse;
 import com.mealapp.app.model.dto.recommendation.MenuRecommendationResponse;
 import com.mealapp.app.model.mapper.recommendation.RecommendationMapper;
+import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.service.InventoryService;
@@ -66,7 +67,7 @@ public class RecommendationAppService {
     public RecommendationResponse getRecommendations(RecommendationRequest request) {
         // 1. Kullanıcıyı bul
         User user = userService.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + request.getUserId()));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", request.getUserId()));
 
         // Request ile gelen tercihler varsa geçici olarak uygula (AI prompt için)
         applyRequestPreferences(user, request);
@@ -110,7 +111,7 @@ public class RecommendationAppService {
     @Transactional
     public MenuRecommendationResponse getMenuRecommendations(String authenticatedUserId, MenuRecommendationRequest request) {
         User user = userService.findById(authenticatedUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", authenticatedUserId));
 
         List<Inventory> userInventory = request.getInventoryGroupId() == null
                 ? inventoryService.getUserInventory(authenticatedUserId)
@@ -164,11 +165,11 @@ public class RecommendationAppService {
     @Transactional
     public void rateRecommendation(String userId, Long recommendedRecipeId, Integer rating, String comment) {
         RecommendedRecipe rr = recommendedRecipeRepository.findById(recommendedRecipeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Önerilen tarif bulunamadı ID: " + recommendedRecipeId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recommendation.recipe.not_found", recommendedRecipeId));
 
         if (rating != null) {
             if (rating < 1 || rating > 10) {
-                throw new IllegalArgumentException("Puan 1 ile 10 arasında olmalıdır.");
+                throw MealAppDomainException.withCode("domain.recipe.rating_range");
             }
             rr.setUserRating(rating);
             
@@ -186,7 +187,7 @@ public class RecommendationAppService {
     @Transactional
     public void markAsCooked(Long recommendedRecipeId) {
         RecommendedRecipe rr = recommendedRecipeRepository.findById(recommendedRecipeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Önerilen tarif bulunamadı ID: " + recommendedRecipeId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recommendation.recipe.not_found", recommendedRecipeId));
 
         if (!rr.isCooked()) {
             rr.setCooked(true);
@@ -254,7 +255,7 @@ public class RecommendationAppService {
         } catch (Exception e) {
             // Şifre çözme hatası durumunda (geçersiz anahtar vb.) güvenli bir şekilde loglayıp boş dönebiliriz.
             // Ama kullanıcıya "API anahtarı geçersiz" uyarısı vermek için hata da fırlatılabilir.
-            throw new IllegalArgumentException("API anahtarı çözülemedi. Lütfen anahtarınızı kontrol edin.", e);
+            throw MealAppDomainException.withCode("domain.recommendation.api_key_decrypt_failed");
         }
     }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import amblem from '../../assets/meal_amblem.png';
 
 interface LoadingSpinnerProps {
@@ -12,6 +13,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   message,
   fullScreen = false
 }) => {
+  const { t } = useTranslation();
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-16 h-16',
@@ -35,7 +37,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           size === 'md' ? 'w-10 h-10' : 
           size === 'lg' ? 'w-16 h-16' : 'w-20 h-20'
         }`}>
-          <img src={amblem} alt="Loading..." className="meal-brand-amblem-img" />
+          <img src={amblem} alt={t('common.alts.loading')} className="meal-brand-amblem-img" />
         </div>
       </div>
       

@@ -55,7 +55,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
     <div className="meal-card rounded-[2rem] bg-foreground/[0.02] p-5 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="meal-overline text-foreground/40 tracking-[0.18em]">Entry Type</p>
+          <p className="meal-overline text-foreground/40 tracking-[0.18em]">{t('consumption.search.entryType')}</p>
           <h3 className="meal-section-title mt-2 text-2xl text-foreground">{t('consumption.search.selectMode')}</h3>
         </div>
         <div className="inline-flex rounded-full border border-card-border bg-card p-1">

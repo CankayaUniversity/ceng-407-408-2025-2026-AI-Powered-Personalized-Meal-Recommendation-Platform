@@ -17,7 +17,7 @@ public class ConsumptionRequest {
 
     private String foodName;
 
-    @NotNull(message = "Öğün tipi zorunludur")
+    @NotNull(message = "{validation.consumption.meal_type.required}")
     private DailyConsumption.MealType mealType;
 
     private DailyConsumption.PortionSize portionSize;
@@ -56,7 +56,7 @@ public class ConsumptionRequest {
      * Malzeme kayıtlarında kullanıcının girdiği miktar.
      * Gram dönüşümü backend'de UnitConverterService ile yapılır.
      */
-    @Positive(message = "Miktar sıfırdan büyük olmalıdır")
+    @Positive(message = "{validation.consumption.portion_amount.positive}")
     private Double portionAmount;
 
     /**
@@ -67,7 +67,7 @@ public class ConsumptionRequest {
     /**
      * Tarif kayıtlarında uygulanacak porsiyon katsayısı.
      */
-    @Positive(message = "Porsiyon katsayısı sıfırdan büyük olmalıdır")
+    @Positive(message = "{validation.consumption.portion_multiplier.positive}")
     private Double portionMultiplier;
 
     /**

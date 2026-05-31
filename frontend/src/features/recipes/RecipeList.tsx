@@ -116,6 +116,7 @@ const RecipeRating: React.FC<{
   const { user } = useAuth();
   const recipeService = useRecipeService();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     setRating(initialRating);
@@ -135,10 +136,10 @@ const RecipeRating: React.FC<{
         comment: ''
       });
       if (onRate) onRate(value);
-      showToast('Puanınız kaydedildi.', 'success');
+      showToast(t('toasts.recommendations.ratingSaved'), 'success');
     } catch (err: any) {
       setRating(oldRating);
-      showToast(err.message || 'Puan kaydedilemedi.', 'error');
+      showToast(err.message || t('toasts.recommendations.ratingError'), 'error');
     }
   };
 
@@ -171,12 +172,12 @@ const RecipeRating: React.FC<{
           ))}
           {averageRating !== undefined && showText && (
               <span className="ml-2 text-xs font-bold text-foreground-muted">
-            ({averageRating.toFixed(1)}) <span className="font-normal opacity-60 ml-0.5">• {ratingCount} oy</span>
+            ({averageRating.toFixed(1)}) <span className="font-normal opacity-60 ml-0.5">• {t('recipes.rating.votes', { count: ratingCount })}</span>
           </span>
           )}
         </div>
         {rating > 0 && !readOnly && showText && (
-            <p className="text-[10px] font-black uppercase tracking-widest text-terracotta">Puanınız: {rating}/5</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-terracotta">{t('recipes.rating.yourRating', { rating })}</p>
         )}
       </div>
   );
@@ -219,7 +220,7 @@ const RecipeList: React.FC = () => {
   const handleToggleFavorite = async (recipe: RecipeFamilyRef, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
-      showToast('Favorilere eklemek için giriş yapmalısınız.', 'info');
+      showToast(t('toasts.recipes.loginRequiredFavorite'), 'info');
       return;
     }
 
@@ -242,9 +243,9 @@ const RecipeList: React.FC = () => {
         }
       }
 
-      showToast(isFav ? 'Favorilere eklendi.' : 'Favorilerden çıkarıldı.', 'success');
+      showToast(isFav ? t('toasts.recipes.favoriteAdded') : t('toasts.recipes.favoriteRemoved'), 'success');
     } catch (err) {
-      showToast('İşlem başarısız oldu.', 'error');
+      showToast(t('toasts.recipes.operationFailed'), 'error');
     }
   };
 
@@ -466,7 +467,7 @@ const RecipeList: React.FC = () => {
     { key: RecipeCategory.HAMUR_ISLERI_VE_BOREKLER, label: t('recipes.categories.hamur_isleri_ve_borekler') },
     { key: RecipeCategory.TATLILAR_VE_PASTALAR, label: t('recipes.categories.tatlilar_ve_pastalar') },
     { key: RecipeCategory.SALATALAR_VE_MEZELER, label: t('recipes.categories.salatalar_ve_mezeler') },
-    { key: RecipeCategory.ATISTIRMALIKLAR_VE_APARATIFLER, label: t('recipes.categories.atistirmamalilar_ve_aparatifler') },
+    { key: RecipeCategory.ATISTIRMALIKLAR_VE_APARATIFLER, label: t('recipes.categories.atistirmaliklar_ve_aparatifler') },
     { key: RecipeCategory.ICECEKLER, label: t('recipes.categories.icecekler') },
     {
       key: 'favorites',
@@ -491,7 +492,7 @@ const RecipeList: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 px-5 py-3 glass-card rounded-2xl text-sm font-bold border-card-border hover:text-terracotta transition-all">
-              <Filter size={18} /> Filtrele
+              <Filter size={18} /> {t('recipes.filter')}
             </button>
             <button
                 onClick={() => openRecipeModal()}
@@ -533,7 +534,7 @@ const RecipeList: React.FC = () => {
 
         {/* Recipe Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {loading && <div className="col-span-full py-20 text-center italic text-foreground-muted animate-pulse">Lezzetler yükleniyor...</div>}
+          {loading && <div className="col-span-full py-20 text-center italic text-foreground-muted animate-pulse">{t('recipes.loading')}</div>}
 
           {!loading && recipes.map((recipe) => (
               <div
@@ -550,7 +551,7 @@ const RecipeList: React.FC = () => {
                   />
                   <div className="absolute top-5 left-5 flex flex-col gap-2">
                     <div className="glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
-                      {recipe.category ? t(`recipes.categories.${recipe.category.toLowerCase()}`) : 'Gurme'}
+                      {recipe.category ? t(`recipes.categories.${recipe.category.toLowerCase()}`) : t('recipes.gourmet')}
                     </div>
                     {/* dietType kontrolü DietType.NONE Enum referansı ile güvenli hale getirildi */}
                     {recipe.dietType && recipe.dietType !== DietType.NONE && (
@@ -586,7 +587,7 @@ const RecipeList: React.FC = () => {
                         <button
                             onClick={(e) => handleCookThis(recipe, e)}
                             className="p-2.5 bg-moss-forest text-white rounded-xl hover:bg-moss-forest/90 transition-colors shadow-lg"
-                            title="Bu Tarifi Yap"
+                            title={t('recipes.cookThis')}
                         >
                           <UtensilsCrossed size={18} />
                         </button>
@@ -617,10 +618,10 @@ const RecipeList: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2 text-foreground-muted" title={t('recipes.modal.timeLabel')}>
-                      <Clock size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{recipe.preparationTimeMinutes || 30} DK</span>
+                      <Clock size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{t('recipes.units.minutesShort', { count: recipe.preparationTimeMinutes || 30 })}</span>
                     </div>
                     <div className="flex items-center gap-2 text-foreground-muted" title={t('recipes.modal.servingsLabel')}>
-                      <Plus size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{recipe.servings || 2} KİŞİ</span>
+                      <Plus size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{t('recipes.units.servingsShort', { count: recipe.servings || 2 })}</span>
                     </div>
                     <div className="flex items-center gap-2 text-foreground-muted" title={t('recipes.modal.caloriesLabel')}>
                       <Flame size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{Math.round(recipe.totalCalories || 0)} KCAL</span>
@@ -647,7 +648,7 @@ const RecipeList: React.FC = () => {
             <ChevronRight size={20} className="rotate-180" />
           </button>
           <div className="glass-card px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-foreground-muted">
-            SAYFA <span className="text-espresso-midnight dark:text-white text-sm ml-2">{page + 1}</span>
+            {t('recipes.page')} <span className="text-espresso-midnight dark:text-white text-sm ml-2">{page + 1}</span>
           </div>
           <button
               className="p-4 glass-card border-card-border rounded-2xl disabled:opacity-30 hover:text-terracotta transition-all"
@@ -697,7 +698,7 @@ const RecipeList: React.FC = () => {
                                   className="px-6 py-4 bg-moss-forest text-white rounded-2xl hover:bg-moss-forest/90 transition-all hover:scale-105 flex items-center gap-2 font-bold shadow-lg shadow-moss-forest/20"
                               >
                                 <UtensilsCrossed size={20} />
-                                Bu Tarifi Yap
+                                {t('recipes.cookThis')}
                               </button>
                           )}
                           {user && (
@@ -717,10 +718,10 @@ const RecipeList: React.FC = () => {
                       </div>
                       <div className="flex gap-4 mt-4">
                         <div className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10" title={t('recipes.modal.timeLabel')}>
-                          <Clock size={18} className="text-terracotta" /> {selectedRecipe.preparationTimeMinutes || 30} DK
+                          <Clock size={18} className="text-terracotta" /> {t('recipes.units.minutesShort', { count: selectedRecipe.preparationTimeMinutes || 30 })}
                         </div>
                         <div className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10" title={t('recipes.modal.servingsLabel')}>
-                          <Users size={18} className="text-terracotta" /> {selectedRecipe.servings || 2} KİŞİ
+                          <Users size={18} className="text-terracotta" /> {t('recipes.units.servingsShort', { count: selectedRecipe.servings || 2 })}
                         </div>
                         <div className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10" title={t('recipes.modal.caloriesLabel')}>
                           <Flame size={18} className="text-terracotta" /> {Math.round(selectedRecipe.totalCalories || 0)} KCAL
@@ -740,11 +741,11 @@ const RecipeList: React.FC = () => {
                             <div className="relative group/versions">
                               <button className="flex items-center gap-2 text-white/90 text-sm font-bold bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all">
                                 <History size={16} className="text-terracotta" />
-                                VERSİYON {selectedRecipe.versionNumber ?? recipeVersions.find(v => v.id === selectedRecipe.id)?.versionNumber ?? recipeVersions.findIndex(v => v.id === selectedRecipe.id) + 1}
+                                {t('recipes.version.label', { number: selectedRecipe.versionNumber ?? recipeVersions.find(v => v.id === selectedRecipe.id)?.versionNumber ?? recipeVersions.findIndex(v => v.id === selectedRecipe.id) + 1 })}
                               </button>
                               <div className="absolute top-full right-0 mt-2 w-64 glass-card-dark rounded-2xl border border-white/10 shadow-2xl opacity-0 invisible group-hover/versions:opacity-100 group-hover/versions:visible transition-all z-50 overflow-hidden">
                                 <div className="p-4 border-b border-white/5 bg-white/5">
-                                  <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Tüm Versiyonlar</p>
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-white/50">{t('recipes.version.all')}</p>
                                 </div>
                                 <div className="max-h-64 overflow-y-auto">
                                   {recipeVersions.map((v, idx) => (
@@ -759,7 +760,9 @@ const RecipeList: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-2">
                                             <p className="text-sm font-bold text-white truncate">
-                                              {v.parentId ? `Revizyon V${v.versionNumber ?? idx + 1}` : `Yayındaki V${v.versionNumber ?? idx + 1}`}
+                                              {v.parentId
+                                                  ? t('recipes.version.revision', { number: v.versionNumber ?? idx + 1 })
+                                                  : t('recipes.version.published', { number: v.versionNumber ?? idx + 1 })}
                                             </p>
                                             {v.status === 'APPROVED' && <CheckCircle2 size={12} className="text-moss-sage" />}
                                             {v.status === 'PENDING' && <Clock3 size={12} className="text-yellow-400" />}
@@ -767,7 +770,9 @@ const RecipeList: React.FC = () => {
                                             {v.status === 'SUPERSEDED' && <History size={12} className="text-zinc-300" />}
                                           </div>
                                           <p className="text-[10px] text-white/40 font-medium">
-                                            {v.createdAt ? new Date(v.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Tarih Belirtilmemiş'}
+                                            {v.createdAt
+                                                ? new Date(v.createdAt).toLocaleDateString(i18n.language?.startsWith('tr') ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                                : t('recipes.version.dateUnspecified')}
                                           </p>
                                         </div>
                                       </button>
@@ -790,9 +795,9 @@ const RecipeList: React.FC = () => {
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-12">
                           <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-terracotta/5 rounded-[2rem] border border-terracotta/10 gap-6">
                             <div className="space-y-1 text-center md:text-left">
-                              <h4 className="text-lg font-bold text-espresso-midnight dark:text-white">Bu tarifi nasıl buldunuz?</h4>
+                              <h4 className="text-lg font-bold text-espresso-midnight dark:text-white">{t('recipes.rating.prompt')}</h4>
                               <p className="text-xs text-foreground-muted uppercase tracking-widest font-black">
-                                Genel Ortalanma: {selectedRecipe.averageRating?.toFixed(1) || '0.0'} / 10
+                                {t('recipes.rating.average', { rating: selectedRecipe.averageRating?.toFixed(1) || '0.0' })}
                               </p>
                             </div>
                             <RecipeRating
@@ -807,7 +812,7 @@ const RecipeList: React.FC = () => {
                           <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
                             <div className="lg:col-span-4 space-y-8">
                               <h3 className="text-xl font-bold flex items-center gap-3 text-espresso-midnight dark:text-white">
-                                <ChefHat size={24} className="text-terracotta" /> Malzemeler
+                                <ChefHat size={24} className="text-terracotta" /> {t('recipes.ingredientsLabel')}
                               </h3>
                               <ul className="space-y-3">
                                 {(recipeDetail?.ingredients || []).map((ing: any, idx: number) => (
@@ -833,7 +838,7 @@ const RecipeList: React.FC = () => {
                                       </div>
                                       <p className="pt-1">{step}</p>
                                     </div>
-                                )) || <p className="italic opacity-50">Tarif detayları henüz eklenmemiş.</p>}
+                                )) || <p className="italic opacity-50">{t('recipes.noDetails')}</p>}
                               </div>
                             </div>
                           </div>

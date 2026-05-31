@@ -105,7 +105,9 @@
         "noPantryMatch": "This recipe was chosen mostly for goal and craving alignment.",
         "missing": "Might still need",
         "missingNone": "You can prepare this recipe almost entirely with current stock.",
-        "cook": "Cook This Recipe"
+        "cook": "Cook This Recipe",
+        "cooked": "You Cooked This Recipe!",
+        "usageCount": "Cooked {{count}} time(s)"
       },
       "feedback": {
         "overline": "Feedback Loop",
@@ -121,6 +123,10 @@
       "common": {
         "page": "Results"
       }
+    },
+    "menuSelection": {
+      "title": "Menu categories",
+      "selected": "{{count}} selected"
     },
     "menu": {
       "overline": "Smart Menu",
@@ -176,6 +182,7 @@
       "users_label": "Powered"
     },
     "features": {
+      "overline": "Intelligent Core",
       "title": "Data-Driven, Personalized Kitchen for You",
       "title_highlight": "Data-Driven",
       "subtitle": "\"An approach that goes beyond static lists and deeply analyzes every detail from your allergens to your diet goals.\"",
@@ -215,7 +222,9 @@
     },
     "mockup": {
       "tag": "Gourmet & Healthy",
-      "recommended": "Recommended Menu"
+      "recommended": "Recommended Menu",
+      "macroMatch": "Macro Match",
+      "perfectScore": "98% Perfect"
     }
   },
   "about": {
@@ -442,6 +451,8 @@
       "meals": "Total Meals",
       "criticalStock": "Critical Stock",
       "bmiValue": "BMI Value",
+      "bmiLabel": "BMI",
+      "userDna": "User DNA",
       "activeGoal": "Active Goal"
     },
     "dietaryGoal": {
@@ -470,6 +481,8 @@
     },
     "daily": {
       "title": "Daily Summary",
+      "protein": "Protein",
+      "carbs": "Carbs",
       "fat": "Fat",
       "noProfile": "Profile preferences not set.",
       "tracking": "Nutrition Tracking"
@@ -507,15 +520,35 @@
     "cancel": "CANCEL",
     "general": "General",
     "unnamed": "Unnamed",
+    "member": "Member",
     "select": "Select",
+    "retry": "Try Again",
+    "defaultErrorTitle": "An Error Occurred",
     "calculating": "Calculating...",
     "loading": "Loading...",
     "category": "Category",
     "accept": "Accept",
     "reject": "Reject",
     "close": "Close",
+    "edit": "Edit",
     "error": "An error occurred",
-    "page": "Page"
+    "encryptionDecryptFailed": "Data could not be decrypted.",
+    "page": "Page",
+    "alts": {
+      "loading": "Loading...",
+      "mealAi": "MealAI",
+      "mealAiEmblem": "MealAI emblem",
+      "mealAiLogo": "MealAI logo",
+      "user": "User",
+      "healthyBowl": "Healthy bowl"
+    },
+    "units": {
+      "gram": "Gram",
+      "kg": "Kg",
+      "ml": "Ml",
+      "l": "L",
+      "piece": "Piece"
+    }
   },
   "auth": {
     "loginRequired": "You Must Log In to View This Page",
@@ -527,7 +560,10 @@
     "retry": "Try Again",
     "guestModeInfo": "About Guest Mode",
     "guestModeAlert": "To enable Guest Mode, set the 'enabled' value to false in src/keycloak-config.json.",
-    "guestModeActive": "Guest Mode is currently active. You can access all features."
+    "guestModeActive": "Guest Mode is currently active. You can access all features.",
+    "accessDeniedTitle": "Access Denied",
+    "accessDeniedDescription": "You do not have the required permission to access this section. Please contact an administrator.",
+    "back": "Go Back"
   },
   "layout": {
     "addMeal": "ADD MEAL",
@@ -691,6 +727,25 @@
     "newRecipe": "New Recipe",
     "searchPlaceholder": "Search recipe, ingredient or cuisine...",
     "page": "PAGE",
+    "gourmet": "Gourmet",
+    "cookThis": "Cook This Recipe",
+    "units": {
+      "minutesShort": "{{count}} min",
+      "servingsShort": "{{count}} servings"
+    },
+    "rating": {
+      "votes": "{{count}} vote(s)",
+      "yourRating": "Your rating: {{rating}}/5",
+      "prompt": "How did you like this recipe?",
+      "average": "Average rating: {{rating}} / 10"
+    },
+    "version": {
+      "label": "VERSION {{number}}",
+      "all": "All Versions",
+      "revision": "Revision V{{number}}",
+      "published": "Published V{{number}}",
+      "dateUnspecified": "Date not specified"
+    },
     "categories": {
       "all": "All",
       "ana_yemekler": "Main Course",
@@ -726,6 +781,14 @@
       "titleLabel": "Recipe Title",
       "titlePlaceholder": "E.g: Mom's Meatballs, Vegetable Gratin...",
       "timeLabel": "Preparation Time (Min)",
+      "imageLabel": "Recipe Image",
+      "imagePreviewAlt": "Recipe preview",
+      "imageAddTitle": "Add an appetizing photo",
+      "imageAddDesc": "A delicious-looking recipe photo can improve approval chances.",
+      "imageSelect": "Select Image",
+      "imageChange": "Change Image",
+      "imageCancel": "Cancel",
+      "loadingExisting": "Loading existing data...",
       "servingsLabel": "Servings",
       "caloriesLabel": "Calories (Kcal)",
       "categoryLabel": "Category",
@@ -739,10 +802,13 @@
       "submitForApproval": "SUBMIT FOR APPROVAL",
       "saveChanges": "SAVE CHANGES",
       "sending": "Sending...",
-      "ingredientPlaceholder": "Select ingredient..."
+      "ingredientPlaceholder": "Select ingredient...",
+      "emptyIngredients": "No ingredients added yet"
     }
   },
   "inventory": {
+    "noIngredientsFound": "No ingredients found.",
+    "quickAdjust": "Quick Adjust Amount",
     "loading": "Loading Inventory",
     "header": {
       "title": "Manage your stock by location.",
@@ -752,11 +818,13 @@
       "invitations": "Invitations"
     },
     "groupList": {
+      "overline": "Location Selector",
       "title": "Select where it is",
       "itemCount": "{{count}} Items"
     },
     "itemList": {
       "defaultGroupName": "Selected Area",
+      "currentInventory": "Current Inventory",
       "edit": "Edit",
       "addItem": "ADD ITEM",
       "showing": "{{count}} ITEMS SHOWN",
@@ -775,6 +843,8 @@
       "quickAdjust": "Quick Adjust Amount"
     },
     "groupModal": {
+      "updateOverline": "Update Location",
+      "newOverline": "New Location",
       "editTitle": "Edit Location",
       "addTitle": "Add New Location",
       "nameLabel": "Location Name",
@@ -784,6 +854,7 @@
       "create": "CREATE"
     },
     "consumptionModal": {
+      "overline": "Consuming Item",
       "peopleLabel": "Consumers & Quantities",
       "totalConsumption": "Total Consumption",
       "processing": "PROCESSING...",
@@ -795,6 +866,7 @@
       "calculating": "Calculating..."
     },
     "members": {
+      "overline": "Group Members",
       "title": "Location Members",
       "subtitle": "Who are you sharing this inventory with?",
       "inviteTitle": "Invite New Member",
@@ -802,10 +874,18 @@
       "searchPlaceholder": "Email or name..."
     },
     "invitations": {
+      "overline": "Invitations",
       "modalTitle": "Inventory Invitations",
       "loading": "Loading invitations...",
       "empty": "You have no pending invitations right now.",
       "from": "From: {{email}}"
+    },
+    "units": {
+      "gram": "Gram",
+      "kg": "Kg",
+      "ml": "Ml",
+      "l": "L",
+      "piece": "Piece"
     },
     "utils": {
       "home": "Home",
@@ -839,15 +919,23 @@
       "snack": "Snack"
     },
     "location": {
+      "overline": "Meal Context",
       "title": "Where and at which meal did you eat?",
-      "outside": "Outside"
+      "outside": "Outside",
+      "definitionsLoading": "Definitions loading..."
     },
     "member": {
       "title": "Who are you logging for?"
     },
     "summary": {
+      "quick": "Quick Summary",
       "colUser": "User",
+      "colCalories": "Calories",
+      "colProtein": "Protein",
+      "colCarbs": "Carbs",
       "colFat": "Fat",
+      "stockShortage": "Stock Shortage",
+      "stock": "Stock",
       "deductionTitle": "Ingredients to Deduct from Inventory",
       "outsideNote": "Outside / Other selected. Only daily consumption summary will be updated.",
       "locationNote": "Automatic deduction will be made from {{location}} stock.",
@@ -863,6 +951,7 @@
       "portion": "Portion"
     },
     "search": {
+      "entryType": "Entry Type",
       "recipePlaceholder": "Lentil soup, menemen...",
       "ingredientPlaceholder": "Yogurt, banana, almond...",
       "noResults": "No results found. Try a shorter or different search.",
@@ -873,8 +962,17 @@
       "selectFromBelow": "Select one or more from the results below."
     },
     "panel": {
+      "badge": "Smart Consumption",
       "title": "Quickly log what you ate and auto-deduct from stock if needed.",
       "subtitle": "If you select Home or Office, the recipe ingredients will be automatically deducted from the selected location. For Outside / Other, only calories and macros are logged.",
+      "mode": "Mode",
+      "location": "Location",
+      "selected": "Selected",
+      "selectionWaiting": "Awaiting selection",
+      "selectionReadyOne": "1 item ready",
+      "selectionReadyMany": "{{count}} items ready",
+      "successPartial": "{{saved}} item(s) saved, {{failed}} item(s) waiting again",
+      "successAll": "{{count}} item(s) saved successfully",
       "memberFallback": "Member #{{id}}",
       "awaitingSelection": "Awaiting your selection",
       "itemsSelected": "{{count}} items selected",
@@ -887,10 +985,12 @@
     "recommendations": {
       "loadError": "Could not load recommendation data.",
       "inventoryRequired": "You must select a non-empty inventory location before generating recommendations.",
+      "menuCategoriesRequired": "You must select at least one category for a menu.",
       "generationError": "Could not generate recommendations.",
       "generationSuccess": "{{count}} AI recommendations ready.",
       "ratingSaved": "Your comment and rating have been saved.",
-      "ratingError": "Could not save rating."
+      "ratingError": "Could not save rating.",
+      "cookMarked": "Recipe marked as cooked and added to your stats!"
     },
     "inventory": {
       "loadError": "Could not load inventory.",
@@ -912,6 +1012,7 @@
       "inviteSent": "Invitation sent to {{name}}.",
       "inviteError": "Could not send invitation.",
       "memberRemoved": "Member removed.",
+      "memberAmountRequired": "Enter an amount greater than zero for every selected user.",
       "shoppingListError": "Could not load shopping list.",
       "invitationAccepted": "Invitation accepted",
       "invitationAcceptError": "Error accepting invitation",
@@ -941,7 +1042,12 @@
     "profile": {
       "loadError": "Load failed.",
       "saveSuccess": "Profile updated successfully.",
-      "saveError": "An error occurred while saving."
+      "saveError": "An error occurred while saving.",
+      "invalidImage": "Please select a valid image file.",
+      "imageTooLarge": "Image size must be under 10MB. Please select a smaller file.",
+      "photoUpdated": "Profile photo updated successfully.",
+      "imageUploadError": "An error occurred while uploading the image.",
+      "refreshing": "Refreshing data..."
     },
     "recipes": {
       "loadError": "Could not load recipes",
@@ -949,7 +1055,15 @@
       "approveSuccess": "Recipe approved successfully.",
       "approveError": "Error while approving recipe.",
       "rejectSuccess": "Recipe rejected.",
-      "rejectError": "Error while rejecting recipe."
+      "rejectError": "Error while rejecting recipe.",
+      "loginRequiredFavorite": "You must log in to add favorites.",
+      "favoriteAdded": "Added to favorites.",
+      "favoriteRemoved": "Removed from favorites.",
+      "operationFailed": "Operation failed.",
+      "detailsBeforeSaveError": "Recipe details could not be loaded. Please try again before saving.",
+      "detailsRequiredBeforeSave": "Recipe details must be loaded before saving.",
+      "titleRequired": "Please enter a title.",
+      "submittedForApproval": "Draft submitted for approval."
     },
     "dashboard": {
       "syncError": "Could not sync data."

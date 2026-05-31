@@ -1,8 +1,10 @@
 package com.mealapp.infrastructure.storage;
 
 import com.mealapp.infrastructure.test.AbstractSpringTest;
+import com.mealapp.domain.recipe.service.UnitConverterService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -13,6 +15,9 @@ class MinioFileStorageServiceTest extends AbstractSpringTest {
 
     @Autowired
     private MinioFileStorageService fileStorageService;
+
+    @MockitoBean
+    private UnitConverterService unitConverterService;
 
     @Test
     void testUploadAndGetUrlAndDelete() {

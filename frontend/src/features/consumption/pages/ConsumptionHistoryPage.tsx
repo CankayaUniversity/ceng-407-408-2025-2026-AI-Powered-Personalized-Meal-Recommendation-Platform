@@ -403,7 +403,7 @@ const ConsumptionHistoryPage: React.FC = () => {
                             <div className="p-1.5 bg-terracotta/10 text-terracotta rounded-lg">
                               <Activity size={14} />
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">VKI / BMI</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-muted">{t('dashboard.stats.bmiLabel')}</span>
                           </div>
                           <span className="text-lg font-serif font-bold text-terracotta">{userProfile.bmi}</span>
                         </div>

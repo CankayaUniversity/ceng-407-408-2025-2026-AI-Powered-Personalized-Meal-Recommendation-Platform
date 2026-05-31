@@ -76,7 +76,7 @@ public class AdminController {
     public IngredientDTO getIngredient(@PathVariable Long id) {
         return ingredientService.findById(id)
                 .map(ingredientMapper::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Malzeme bulunamadı"));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.ingredient.not_found.simple"));
     }
 
     @PutMapping("/ingredients/{id}")
@@ -116,7 +116,7 @@ public class AdminController {
     public RecipeResponse getRecipe(@PathVariable Long id) {
         return recipeService.findActiveById(id)
                 .map(recipeMapper::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı"));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found.simple"));
     }
 
     @PutMapping("/recipes/{id}")
@@ -134,7 +134,7 @@ public class AdminController {
         List<RecipeIngredient> ingredients = request.getIngredients().stream()
                 .map(ri -> RecipeIngredient.builder()
                         .ingredient(ingredientService.findById(ri.getIngredientId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Malzeme bulunamadı: " + ri.getIngredientId())))
+                                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.ingredient.not_found", ri.getIngredientId())))
                         .amount(ri.getAmount())
                         .unit(ri.getUnit())
                         .grams(ri.getGrams())

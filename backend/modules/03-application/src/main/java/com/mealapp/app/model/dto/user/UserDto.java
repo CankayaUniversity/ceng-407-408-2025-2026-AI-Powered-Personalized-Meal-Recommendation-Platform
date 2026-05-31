@@ -11,12 +11,12 @@ import java.util.List;
  */
 @Data
 public class UserDto {
-    @NotBlank(message = "Kullanıcı ID zorunludur")
+    @NotBlank(message = "{validation.user.id.required}")
     private String id;
 
     private String name;
 
-    @Email(message = "Geçerli bir e-posta adresi giriniz")
+    @Email(message = "{validation.user.email.invalid}")
     private String email;
 
     private String profileImageUrl;

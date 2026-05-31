@@ -90,7 +90,7 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
       <div className="flex flex-col gap-10 lg:flex-row">
         <div className="flex-1 space-y-8">
           <div>
-            <p className="meal-overline">Group Members</p>
+            <p className="meal-overline">{t('inventory.members.overline')}</p>
             <h3 className="meal-section-title mt-1 text-3xl">{t('inventory.members.title')}</h3>
             <p className="mt-2 text-sm text-foreground-muted">{t('inventory.members.subtitle')}</p>
           </div>

@@ -99,7 +99,7 @@ public class InventoryController {
             @Valid @RequestBody InventoryItemRequest request
     ) {
         Ingredient ingredient = ingredientRepository.findById(request.getIngredientId())
-                .orElseThrow(() -> new MealAppDomainException("Malzeme bulunamadı"));
+                .orElseThrow(() -> MealAppDomainException.withCode("domain.ingredient.not_found.simple"));
 
         Double grams = request.getGrams();
         if (grams == null) {
@@ -135,7 +135,7 @@ public class InventoryController {
             @Valid @RequestBody InventoryItemRequest request
     ) {
         Ingredient ingredient = ingredientRepository.findById(request.getIngredientId())
-                .orElseThrow(() -> new MealAppDomainException("Malzeme bulunamadı"));
+                .orElseThrow(() -> MealAppDomainException.withCode("domain.ingredient.not_found.simple"));
 
         Double grams = request.getGrams();
         if (grams == null) {
@@ -186,7 +186,7 @@ public class InventoryController {
 
     private String extractEmail(Jwt jwt) {
         if (jwt == null) {
-            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+            throw MealAppDomainException.withCode("domain.auth.user_missing");
         }
 
         // Try all possible email claims (Keycloak standard is 'email')
@@ -205,8 +205,7 @@ public class InventoryController {
         }
 
         if (email == null || email.isBlank()) {
-            throw new MealAppDomainException("Kullanıcı e-posta bilgisi JWT token içerisinde bulunamadı. " +
-                    "Lütfen Keycloak profilinizde e-posta adresinizin tanımlı olduğundan emin olun.");
+            throw MealAppDomainException.withCode("domain.auth.email_missing");
         }
         return email;
     }
@@ -274,7 +273,7 @@ public class InventoryController {
 
     private String requireAuthenticatedUserId(Jwt jwt) {
         if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
-            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+            throw MealAppDomainException.withCode("domain.auth.user_missing");
         }
 
         return jwt.getSubject();

@@ -138,9 +138,9 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
   const selectionLabel = useMemo(() => {
     const totalCount = selectedItems.length + Object.values(memberSelections).reduce((acc, items) => acc + items.length, 0);
-    if (totalCount === 0) return 'Secim bekleniyor';
-    return totalCount === 1 ? '1 oge hazir' : `${totalCount} oge hazir`;
-  }, [selectedItems, memberSelections]);
+    if (totalCount === 0) return t('consumption.panel.selectionWaiting');
+    return totalCount === 1 ? t('consumption.panel.selectionReadyOne') : t('consumption.panel.selectionReadyMany', { count: totalCount });
+  }, [selectedItems, memberSelections, t]);
 
   const nutritionPreview = nutritionPreviewFromHook;
 
@@ -159,8 +159,8 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
   
   const successTitle = submitSummary
     ? submitSummary.failedNames.length > 0
-        ? `${submitSummary.responses.length} oge kaydedildi, ${submitSummary.failedNames.length} oge tekrar bekliyor`
-        : `${submitSummary.responses.length} oge basariyla kaydedildi`
+        ? t('consumption.panel.successPartial', { saved: submitSummary.responses.length, failed: submitSummary.failedNames.length })
+        : t('consumption.panel.successAll', { count: submitSummary.responses.length })
     : null;
 
   if (!user) return null;
@@ -172,7 +172,7 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
           <div>
             <div className="meal-badge-neon px-4 text-[11px] font-bold tracking-[0.22em]">
               <Sparkles size={14} />
-              Smart Consumption
+              {t('consumption.panel.badge')}
             </div>
             <h2 className="meal-section-title mt-4 text-4xl lg:text-5xl text-foreground">{t('consumption.panel.title')}</h2>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-foreground-muted">
@@ -182,15 +182,15 @@ const SmartConsumptionPanel: React.FC<SmartConsumptionPanelProps> = ({ onConsump
 
           <div className="flex flex-wrap gap-2">
             <div className="meal-metric-card flex items-center gap-3 px-4 py-2.5">
-              <p className="meal-overline text-[10px] tracking-[0.18em]">Mode</p>
+              <p className="meal-overline text-[10px] tracking-[0.18em]">{t('consumption.panel.mode')}</p>
               <p className="font-serif text-sm font-bold text-foreground">{activeEntryModeLabel}</p>
             </div>
             <div className="meal-metric-card flex items-center gap-3 px-4 py-2.5">
-              <p className="meal-overline text-[10px] tracking-[0.18em]">Location</p>
+              <p className="meal-overline text-[10px] tracking-[0.18em]">{t('consumption.panel.location')}</p>
               <p className="font-serif text-sm font-bold text-foreground">{locationLabel(selectedGroup)}</p>
             </div>
             <div className="meal-metric-card flex items-center gap-3 border-terracotta/20 px-4 py-2.5">
-              <p className="meal-overline text-[10px] tracking-[0.18em]">Selected</p>
+              <p className="meal-overline text-[10px] tracking-[0.18em]">{t('consumption.panel.selected')}</p>
               <p className="font-serif text-sm font-bold text-terracotta">{selectionLabel}</p>
             </div>
           </div>

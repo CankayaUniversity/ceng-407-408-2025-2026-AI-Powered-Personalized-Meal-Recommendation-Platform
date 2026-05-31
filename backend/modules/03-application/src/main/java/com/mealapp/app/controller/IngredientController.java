@@ -2,6 +2,7 @@ package com.mealapp.app.controller;
 
 import com.mealapp.app.model.dto.recipe.*;
 import com.mealapp.app.model.mapper.recipe.IngredientMapper;
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.service.IngredientService;
 import com.mealapp.domain.recipe.service.UnitConverterService;
@@ -41,7 +42,7 @@ public class IngredientController {
             @RequestParam String unit
     ) {
         Ingredient ingredient = ingredientService.findByIdWithUnits(id)
-                .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.ingredient.not_found.simple"));
 
         Double grams = unitConverterService.convertToGrams(amount, unit, ingredient);
         Map<String, Double> unitWeights = unitConverterService.getAllUnitWeights(ingredient);

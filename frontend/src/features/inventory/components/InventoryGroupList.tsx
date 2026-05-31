@@ -19,7 +19,7 @@ export const InventoryGroupList: React.FC<InventoryGroupListProps> = ({
     <section className="space-y-4">
       <div className="flex items-center justify-between px-2">
         <div>
-          <p className="meal-overline text-foreground/40">Location Selector</p>
+          <p className="meal-overline text-foreground/40">{t('inventory.groupList.overline')}</p>
           <h2 className="meal-section-title mt-1 text-2xl">{t('inventory.groupList.title')}</h2>
         </div>
       </div>

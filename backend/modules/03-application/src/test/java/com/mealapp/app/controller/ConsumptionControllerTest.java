@@ -755,6 +755,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
         when(userService.findById("system-user")).thenReturn(Optional.of(user));
 
         mockMvc.perform(get("/api/v1/consumptions/analysis")
+                        .header("Accept-Language", "tr")
                         .param("period", "CUSTOM")
                         .param("startDate", "2026-04-16")
                         .param("endDate", "2026-04-15"))
@@ -767,6 +768,7 @@ class ConsumptionControllerTest extends AbstractMockMvcTest {
     @Test
     void shouldRejectInvalidDateRangeForHistory() throws Exception {
         mockMvc.perform(get("/api/v1/consumptions/history")
+                        .header("Accept-Language", "tr")
                         .param("startDate", "2026-04-16")
                         .param("endDate", "2026-04-15"))
                 .andExpect(status().isBadRequest())

@@ -1,6 +1,7 @@
 package com.mealapp.domain.consumption.service;
 
 import com.mealapp.domain.common.exception.MealAppDomainException;
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.repository.InventoryRepository;
@@ -34,16 +35,16 @@ public class ConsumptionService {
     @Transactional
     public void consume(Long itemId, java.util.Map<String, Double> userAmounts) {
         if (userAmounts == null || userAmounts.isEmpty()) {
-            throw new MealAppDomainException("Tüketim için en az bir kullanıcı ve miktar gönderilmelidir.");
+            throw MealAppDomainException.withCode("domain.consumption.members_required");
         }
 
         Inventory inventory = inventoryRepository.findById(itemId)
-                .orElseThrow(() -> new MealAppDomainException("Envanter öğesi bulunamadı: " + itemId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.inventory.item.not_found", itemId));
 
         for (Map.Entry<String, Double> entry : userAmounts.entrySet()) {
             Double amount = entry.getValue();
             if (amount == null || !Double.isFinite(amount) || amount <= 0) {
-                throw new MealAppDomainException("Her kullanıcı için 0'dan büyük geçerli bir tüketim miktarı girilmelidir.");
+                throw MealAppDomainException.withCode("domain.consumption.member_amount_positive");
             }
         }
 
@@ -53,7 +54,7 @@ public class ConsumptionService {
                 .sum();
 
         if (inventory.getQuantity() < totalAmount) {
-            throw new MealAppDomainException("Yetersiz stok!");
+            throw MealAppDomainException.withCode("domain.inventory.stock_insufficient.simple");
         }
 
         // 1. Stoktan düş (Miktar 0 olsa bile silme)
@@ -68,7 +69,7 @@ public class ConsumptionService {
             Double userAmount = entry.getValue();
 
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new MealAppDomainException("Kullanıcı bulunamadı: " + userId));
+                    .orElseThrow(() -> MealAppDomainException.withCode("domain.user.not_found", userId));
 
             double portionGrams = userAmount;
             if (ingredient != null

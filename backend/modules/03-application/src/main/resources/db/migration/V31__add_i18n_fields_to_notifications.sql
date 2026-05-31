@@ -1,0 +1,4 @@
+ALTER TABLE notifications
+    ADD COLUMN IF NOT EXISTS title_code VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS message_code VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS message_args VARCHAR(1000);

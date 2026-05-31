@@ -55,7 +55,7 @@ export const ConsumptionModal: React.FC<ConsumptionModalProps> = ({
                 <Users size={28} />
               </div>
               <div>
-                <p className="meal-overline text-foreground/40">Consuming Item</p>
+                <p className="meal-overline text-foreground/40">{t('inventory.consumptionModal.overline')}</p>
                 <h3 className="meal-section-title mt-1 text-3xl font-serif text-foreground">{consumingItem.ingredient?.name}</h3>
                 <p className="mt-1 text-sm font-medium text-foreground-muted flex items-center gap-1.5">
                   {t('inventory.consumptionModal.currentStock')}: <span className="text-foreground font-black">{consumingItem.quantity} {consumingItem.unit}</span>

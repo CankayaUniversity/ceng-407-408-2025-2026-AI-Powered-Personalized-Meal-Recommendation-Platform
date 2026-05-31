@@ -6,6 +6,7 @@ import com.mealapp.app.model.dto.inventory.InventoryInvitationResponse;
 import com.mealapp.app.model.dto.notification.NotificationResponse;
 import com.mealapp.app.model.mapper.recipe.IngredientMapper;
 import com.mealapp.app.model.mapper.user.UserMapper;
+import com.mealapp.app.util.MessageUtil;
 import com.mealapp.domain.inventory.entity.Inventory;
 import com.mealapp.domain.inventory.entity.InventoryGroup;
 import com.mealapp.domain.inventory.entity.InventoryInvitation;
@@ -28,6 +29,7 @@ public class InventoryMapper {
     private final UserMapper userMapper;
     private final InventoryInvitationRepository invitationRepository;
     private final RecipeRepository recipeRepository;
+    private final MessageUtil messageUtil;
 
     public InventoryGroupResponse toGroupResponse(InventoryGroup group, int lowStockCount) {
         List<InventoryItemResponse> itemResponses = group.getItems() == null
@@ -122,8 +124,8 @@ public class InventoryMapper {
 
         return NotificationResponse.builder()
                 .id(notification.getId())
-                .title(notification.getTitle())
-                .message(notification.getMessage())
+                .title(resolveNotificationText(notification.getTitleCode(), notification.getTitle(), null))
+                .message(resolveNotificationText(notification.getMessageCode(), notification.getMessage(), notification.getMessageArgs()))
                 .type(notification.getType())
                 .targetId(notification.getTargetId())
                 .status(notification.getStatus())
@@ -135,6 +137,37 @@ public class InventoryMapper {
 
     public List<NotificationResponse> toNotificationResponses(List<Notification> notifications) {
         return notifications.stream().map(this::toNotificationResponse).toList();
+    }
+
+    private String resolveNotificationText(String code, String fallback, String encodedArgs) {
+        if (code == null || code.isBlank()) {
+            return fallback;
+        }
+        return messageUtil.getMessage(code, decodeArgs(encodedArgs));
+    }
+
+    private Object[] decodeArgs(String encodedArgs) {
+        if (encodedArgs == null || encodedArgs.isBlank()) {
+            return new Object[0];
+        }
+        List<String> args = new java.util.ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean escaped = false;
+        for (char ch : encodedArgs.toCharArray()) {
+            if (escaped) {
+                current.append(ch);
+                escaped = false;
+            } else if (ch == '\\') {
+                escaped = true;
+            } else if (ch == '|') {
+                args.add(current.toString());
+                current.setLength(0);
+            } else {
+                current.append(ch);
+            }
+        }
+        args.add(current.toString());
+        return args.toArray();
     }
 
     public InventoryInvitationResponse toInvitationResponse(InventoryInvitation invitation) {

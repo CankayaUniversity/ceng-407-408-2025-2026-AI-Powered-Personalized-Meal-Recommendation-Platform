@@ -40,7 +40,7 @@ export const InventoryGroupModal: React.FC<InventoryGroupModalProps> = ({
                   <Home size={24} />
                 </div>
                 <div>
-                  <p className="meal-overline text-foreground/40">{editingGroupId ? 'Update Location' : 'New Location'}</p>
+                  <p className="meal-overline text-foreground/40">{editingGroupId ? t('inventory.groupModal.updateOverline') : t('inventory.groupModal.newOverline')}</p>
                   <h3 className="meal-section-title mt-1 text-2xl text-foreground">{editingGroupId ? t('inventory.groupModal.editTitle') : t('inventory.groupModal.addTitle')}</h3>
                 </div>
               </div>

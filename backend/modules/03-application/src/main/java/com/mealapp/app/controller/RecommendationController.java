@@ -89,7 +89,7 @@ public class RecommendationController {
 
     private String requireAuthenticatedUserId(Jwt jwt) {
         if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
-            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+            throw MealAppDomainException.withCode("domain.auth.user_missing");
         }
 
         return jwt.getSubject();

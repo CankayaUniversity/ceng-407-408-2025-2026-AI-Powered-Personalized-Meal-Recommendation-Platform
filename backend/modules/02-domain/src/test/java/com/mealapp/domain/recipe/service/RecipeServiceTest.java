@@ -633,10 +633,11 @@ class RecipeServiceTest {
 
         assertNotNull(result);
         assertEquals(RecipeStatus.PENDING, result.getStatus());
-        verify(notificationService).createNotification(
+        verify(notificationService).createLocalizedNotification(
             eq(admin), 
             anyString(), 
-            anyString(), 
+            anyString(),
+            anyList(),
             eq(com.mealapp.domain.notification.entity.Notification.NotificationType.RECIPE_APPROVAL), 
             eq("100")
         );

@@ -55,7 +55,7 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
         <div className="meal-card meal-highlight-frame shadow-brand-card flex flex-col justify-between">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="meal-overline">Current Inventory</p>
+              <p className="meal-overline">{t('inventory.itemList.currentInventory')}</p>
               <h3 className="meal-section-title mt-1 text-2xl sm:text-3xl">{activeGroupName || t('inventory.itemList.defaultGroupName')}</h3>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -192,14 +192,14 @@ export const InventoryItemList: React.FC<InventoryItemListProps> = ({
                                 <button 
                                   onClick={() => onEditItem(item)} 
                                   className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
-                                  title="Düzenle"
+                                  title={t('inventory.itemList.edit')}
                                 >
                                   <Pencil size={16} />
                                 </button>
                                 <button 
                                   onClick={() => onDeleteItem(item.id)} 
                                   className="p-2 rounded-xl text-foreground/20 hover:text-terracotta hover:bg-terracotta/5 transition-all"
-                                  title="Sil"
+                                  title={t('admin.ingredients.delete')}
                                 >
                                   <Trash2 size={16} />
                                 </button>

@@ -89,6 +89,7 @@ class GlobalExceptionHandlerTest {
     @Test
     void handleHttpMessageNotReadableShouldReturnBadRequest() {
         when(request.getRequestURI()).thenReturn(REQUEST_PATH);
+        when(messageUtil.getMessage("error.unreadable_request")).thenReturn("Unreadable request");
 
         ResponseEntity<ApiErrorResponse> response =
                 handler.handleHttpMessageNotReadable(
@@ -97,7 +98,7 @@ class GlobalExceptionHandlerTest {
                 );
 
         ApiErrorResponse body = assertStatusAndPath(response, HttpStatus.BAD_REQUEST);
-        assertFalse(body.getMessage().isBlank());
+        assertEquals("Unreadable request", body.getMessage());
     }
 
     @Test

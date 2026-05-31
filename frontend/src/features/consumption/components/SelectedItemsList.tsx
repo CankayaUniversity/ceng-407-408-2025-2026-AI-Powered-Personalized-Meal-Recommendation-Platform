@@ -63,7 +63,7 @@ export const SelectedItemsList: React.FC<SelectedItemsListProps> = ({
       <div className="mt-2 flex items-start gap-2 rounded-xl bg-terracotta/5 border border-terracotta/10 px-3 py-2 text-terracotta">
         <AlertTriangle size={14} className="mt-0.5 shrink-0" />
         <div className="flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-tight leading-none mb-1">Stock Shortage</p>
+          <p className="text-[10px] font-bold uppercase tracking-tight leading-none mb-1">{t('consumption.summary.stockShortage')}</p>
           <p className="text-[10px] opacity-80 leading-tight">
             Missing: {status.missing.join(', ')}
           </p>

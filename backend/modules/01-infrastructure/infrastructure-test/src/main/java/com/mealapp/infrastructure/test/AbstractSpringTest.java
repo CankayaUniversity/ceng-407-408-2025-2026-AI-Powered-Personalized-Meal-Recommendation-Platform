@@ -52,5 +52,7 @@ public abstract class AbstractSpringTest extends Assertions {
         registry.add("spring.datasource.url", () -> PostgresSingleton.INSTANCE.getJdbcUrl());
         registry.add("spring.datasource.username", () -> PostgresSingleton.INSTANCE.getUsername());
         registry.add("spring.datasource.password", () -> PostgresSingleton.INSTANCE.getPassword());
+        registry.add("jobrunr.database.type", () -> "mem");
+        registry.add("com.mealapp.infrastructure.super-admin.enabled", () -> "false");
     }
 }

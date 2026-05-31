@@ -35,13 +35,13 @@ const AboutPage: React.FC = () => {
                     <div className="meal-brand-amblem-container about-hero-amblem-box bg-transparent border-none shadow-none">
                         <img 
                             src={amblem} 
-                            alt="MealAI Amblem" 
+                            alt={t('common.alts.mealAiEmblem')}
                             className="meal-brand-amblem-img"
                         />
                         <div className="h-20 meal-brand-logo-container bg-transparent border-none shadow-none">
                             <img 
                                 src={isDark ? logoDark : logoLight} 
-                                alt="MealAI Logo" 
+                                alt={t('common.alts.mealAiLogo')}
                                 className="meal-brand-logo-img" 
                             />
                         </div>

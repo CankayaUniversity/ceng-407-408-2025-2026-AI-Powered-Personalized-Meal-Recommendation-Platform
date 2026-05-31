@@ -30,14 +30,14 @@ export const LocationAndMealSelector: React.FC<LocationAndMealSelectorProps> = (
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
       <div>
-        <p className="meal-overline tracking-[0.18em] text-foreground/50">Meal Context</p>
+        <p className="meal-overline tracking-[0.18em] text-foreground/50">{t('consumption.location.overline')}</p>
         <h3 className="text-xl font-bold text-foreground">{t('consumption.location.title')}</h3>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         {loading && mealOptions.length === 0 && (
           <div className="flex items-center gap-2 text-xs text-foreground/40 animate-pulse">
             <Loader2 size={14} className="animate-spin" />
-            Tanımlar yükleniyor...
+            {t('consumption.location.definitionsLoading')}
           </div>
         )}
         <div className="flex flex-wrap gap-2 rounded-2xl bg-card p-1.5">

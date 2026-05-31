@@ -1,5 +1,6 @@
 package com.mealapp.domain.user.service;
 
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.common.storage.FileStorageService;
 import com.mealapp.domain.user.dto.UserSyncRequest;
 import com.mealapp.domain.user.entity.User;
@@ -37,7 +38,7 @@ public class UserService {
      */
     public String uploadProfileImage(String userId, InputStream inputStream, String originalFilename, String contentType) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + userId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", userId));
 
         // Dosya adı formatı: users/{userId}/profile_{timestamp}.{ext}
         String extension = "";
@@ -117,7 +118,7 @@ public class UserService {
 
         int updatedRows = userRepository.relinkUserId(oldId, newId);
         if (updatedRows == 0) {
-            throw new IllegalArgumentException("Relink edilecek kullanıcı bulunamadı: " + oldId);
+            throw ResourceNotFoundException.withCode("domain.user.not_found", oldId);
         }
 
         userRepository.flush();
@@ -173,7 +174,7 @@ public class UserService {
                     user.setAllergies(allergies);
                     return userRepository.save(user);
                 })
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + id));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", id));
     }
 
     /**
@@ -185,6 +186,6 @@ public class UserService {
                     user.setRole(role);
                     return userRepository.save(user);
                 })
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + id));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", id));
     }
 }

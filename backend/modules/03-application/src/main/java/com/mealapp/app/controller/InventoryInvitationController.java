@@ -67,7 +67,7 @@ public class InventoryInvitationController {
 
     private String extractEmail(Jwt jwt) {
         if (jwt == null) {
-            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+            throw MealAppDomainException.withCode("domain.auth.user_missing");
         }
         
         // Try all possible email claims (Keycloak standard is 'email')
@@ -89,15 +89,14 @@ public class InventoryInvitationController {
         // but Keycloak usually sends it regardless unless configured otherwise.
         
         if (email == null || email.isBlank()) {
-            throw new MealAppDomainException("Kullanıcı e-posta bilgisi JWT token içerisinde bulunamadı. " +
-                    "Lütfen Keycloak profilinizde e-posta adresinizin tanımlı olduğundan emin olun.");
+            throw MealAppDomainException.withCode("domain.auth.email_missing");
         }
         return email;
     }
 
     private String requireAuthenticatedUserId(Jwt jwt) {
         if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
-            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+            throw MealAppDomainException.withCode("domain.auth.user_missing");
         }
         return jwt.getSubject();
     }

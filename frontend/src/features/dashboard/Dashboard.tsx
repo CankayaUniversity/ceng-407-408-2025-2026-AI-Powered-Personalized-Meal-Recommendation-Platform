@@ -206,7 +206,7 @@ const Dashboard: React.FC = () => {
     return (
         <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
           <Loader2 size={40} className="animate-spin text-terracotta" />
-          <p className="font-serif text-xl text-foreground-muted italic">Veriler senkronize ediliyor...</p>
+          <p className="font-serif text-xl text-foreground-muted italic">{t('toasts.profile.refreshing')}</p>
         </div>
     );
   }
@@ -232,7 +232,7 @@ const Dashboard: React.FC = () => {
                 {profile?.bmi && (
                   <div className="flex items-center gap-3 px-4 py-2 rounded-3xl bg-terracotta text-white shadow-brand-soft border border-terracotta/20 animate-in zoom-in duration-500">
                     <div className="flex flex-col">
-                      <span className="text-[9px] font-bold uppercase tracking-[0.15em] opacity-80 leading-none mb-0.5">VKI / BMI</span>
+                      <span className="text-[9px] font-bold uppercase tracking-[0.15em] opacity-80 leading-none mb-0.5">{t('dashboard.stats.bmiLabel')}</span>
                       <span className="text-xl font-serif font-bold leading-none">{profile.bmi}</span>
                     </div>
                   </div>
@@ -368,7 +368,7 @@ const Dashboard: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: 'Protein', val: dailySummary?.totalProtein || 0, color: 'text-terracotta' },
+                { label: t('dashboard.daily.protein'), val: dailySummary?.totalProtein || 0, color: 'text-terracotta' },
                 { label: t('dashboard.daily.carbs'), val: dailySummary?.totalCarbs || 0, color: 'text-foreground dark:text-white' },
                 { label: t('dashboard.daily.fat'), val: dailySummary?.totalFat || 0, color: 'text-sage' }
               ].map((macro, i) => (
@@ -386,7 +386,7 @@ const Dashboard: React.FC = () => {
               <div className="p-2.5 bg-sage/10 text-sage rounded-xl">
                 <ShieldCheck size={20} />
               </div>
-              <h3 className="meal-section-title text-xl">User DNA</h3>
+              <h3 className="meal-section-title text-xl">{t('dashboard.stats.userDna')}</h3>
             </div>
             <div className="flex flex-wrap gap-2">
               {profileSignals.length > 0 ? profileSignals.map((s, i) => (

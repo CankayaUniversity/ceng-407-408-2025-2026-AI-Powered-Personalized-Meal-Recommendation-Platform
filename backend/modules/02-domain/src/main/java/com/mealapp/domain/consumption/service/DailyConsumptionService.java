@@ -2,6 +2,8 @@ package com.mealapp.domain.consumption.service;
 
 import com.mealapp.domain.consumption.entity.DailyConsumption;
 import com.mealapp.domain.consumption.repository.DailyConsumptionRepository;
+import com.mealapp.domain.common.exception.MealAppDomainException;
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.inventory.service.InventoryService;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.IngredientNutrition;
@@ -362,10 +364,10 @@ public class DailyConsumptionService {
 
     public void deleteConsumption(String userId, Long id) {
         DailyConsumption consumption = dailyConsumptionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tüketim kaydı bulunamadı."));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.consumption.not_found"));
         
         if (!consumption.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Bu kaydı silme yetkiniz yok.");
+            throw MealAppDomainException.withCode("domain.consumption.delete_unauthorized");
         }
         
         dailyConsumptionRepository.delete(consumption);

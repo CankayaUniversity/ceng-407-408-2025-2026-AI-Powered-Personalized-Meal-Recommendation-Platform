@@ -26,6 +26,7 @@ import ConsumptionHistoryPage from './features/consumption/pages/ConsumptionHist
 import AdminPanel from './features/admin/AdminPanel';
 import keycloakConfig from './keycloak-config.json';
 import type { AuthService } from './infrastructure/services/auth/AuthService';
+import i18n from './i18n';
 
 // Initialize Service Registry
 const registry = new ServiceRegistry();
@@ -61,6 +62,7 @@ httpClient.interceptors.request.use(async (config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  config.headers['Accept-Language'] = i18n.resolvedLanguage || i18n.language || 'en';
   return config;
 });
 

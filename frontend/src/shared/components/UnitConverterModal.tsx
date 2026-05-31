@@ -288,7 +288,7 @@ const UnitConverterModal: React.FC = () => {
                                             <span className="text-xs font-bold uppercase tracking-widest text-foreground/60">{unit}</span>
                                             <div className="flex items-baseline gap-1">
                                                 <span className="text-lg font-serif font-bold text-terracotta">{weight}</span>
-                                                <span className="text-[9px] font-black text-foreground/30">GRAM</span>
+                                                <span className="text-[9px] font-black text-foreground/30">{t('common.units.gram')}</span>
                                             </div>
                                         </div>
                                     ))

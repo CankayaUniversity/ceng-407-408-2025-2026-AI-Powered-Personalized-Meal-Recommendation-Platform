@@ -65,7 +65,7 @@ export const ShoppingListModal: React.FC<ShoppingListModalProps> = ({
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`p-3 rounded-full transition-all ${showFilters ? 'bg-terracotta text-white shadow-lg shadow-terracotta/20' : 'hover:bg-foreground/5 text-foreground/40'}`}
-              title="Filtrele"
+              title={t('recipes.filter')}
             >
               <Filter size={20} />
             </button>

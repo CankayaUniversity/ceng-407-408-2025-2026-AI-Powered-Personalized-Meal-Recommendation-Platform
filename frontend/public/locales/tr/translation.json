@@ -105,7 +105,9 @@
         "noPantryMatch": "Bu tarif daha çok hedef ve craving uyumundan seçildi.",
         "missing": "Hala gerekebilir",
         "missingNone": "Bu tarifi neredeyse tamamen mevcut stok ile kurabiliyorsun.",
-        "cook": "Bu Tarifi Yap"
+        "cook": "Bu Tarifi Yap",
+        "cooked": "Bu Tarifi Yaptınız!",
+        "usageCount": "{{count}} kez yapıldı"
       },
       "feedback": {
         "overline": "Geri Bildirim Döngüsü",
@@ -121,6 +123,10 @@
       "common": {
         "page": "Sonuçlar"
       }
+    },
+    "menuSelection": {
+      "title": "Menü kategorileri",
+      "selected": "{{count}} seçili"
     },
     "menu": {
       "overline": "Akıllı Menü",
@@ -176,6 +182,7 @@
       "users_label": "Powered"
     },
     "features": {
+      "overline": "Akıllı Çekirdek",
       "title": "Veriyle Yönetilen, Sizin İçin Kişiselleşen Mutfak",
       "title_highlight": "Veriyle Yönetilen",
       "subtitle": "\"Statik listelerin ötesine geçerek; alerjenlerinizden diyet hedeflerinize kadar her detayı derinlemesine analiz eden bir yaklaşım.\"",
@@ -215,7 +222,9 @@
     },
     "mockup": {
       "tag": "Gurme & Sağlıklı",
-      "recommended": "Önerilen Menü"
+      "recommended": "Önerilen Menü",
+      "macroMatch": "Makro Uyumu",
+      "perfectScore": "%98 Mükemmel"
     }
   },
   "about": {
@@ -442,6 +451,8 @@
       "meals": "Öğün Sayısı",
       "criticalStock": "Kritik Stok",
       "bmiValue": "BMI Değeri",
+      "bmiLabel": "VKI / BMI",
+      "userDna": "Kullanıcı DNA'sı",
       "activeGoal": "Aktif Hedef"
     },
     "dietaryGoal": {
@@ -470,6 +481,8 @@
     },
     "daily": {
       "title": "Günlük Özet",
+      "protein": "Protein",
+      "carbs": "Karb",
       "fat": "Yağ",
       "noProfile": "Profil tercihleri ayarlanmamış.",
       "tracking": "Beslenme Takibi"
@@ -507,15 +520,35 @@
     "cancel": "İPTAL",
     "general": "Genel",
     "unnamed": "İsimsiz",
+    "member": "Üye",
     "select": "Seçiniz",
+    "retry": "Tekrar Dene",
+    "defaultErrorTitle": "Bir Hata Oluştu",
     "calculating": "Hesaplanıyor...",
     "loading": "Yükleniyor...",
     "category": "Kategori",
     "accept": "Kabul Et",
     "reject": "Reddet",
     "close": "Kapat",
+    "edit": "Düzenle",
     "error": "Hata oluştu",
-    "page": "Sayfa"
+    "encryptionDecryptFailed": "Veri çözülemedi.",
+    "page": "Sayfa",
+    "alts": {
+      "loading": "Yükleniyor...",
+      "mealAi": "MealAI",
+      "mealAiEmblem": "MealAI amblemi",
+      "mealAiLogo": "MealAI logosu",
+      "user": "Kullanıcı",
+      "healthyBowl": "Sağlıklı kase"
+    },
+    "units": {
+      "gram": "Gram",
+      "kg": "Kg",
+      "ml": "Ml",
+      "l": "L",
+      "piece": "Adet"
+    }
   },
   "auth": {
     "loginRequired": "Bu Sayfayı Görmek İçin Giriş Yapmalısınız",
@@ -527,7 +560,10 @@
     "retry": "Tekrar Dene",
     "guestModeInfo": "Misafir Modu Hakkında Bilgi",
     "guestModeAlert": "Misafir Modu'na geçmek için src/keycloak-config.json dosyasındaki 'enabled' değerini false yapın.",
-    "guestModeActive": "Şu an Misafir Modu aktif. Tüm özelliklere erişebilirsiniz."
+    "guestModeActive": "Şu an Misafir Modu aktif. Tüm özelliklere erişebilirsiniz.",
+    "accessDeniedTitle": "Erişim Engellendi",
+    "accessDeniedDescription": "Bu bölüme erişmek için gerekli yetkiye sahip değilsiniz. Lütfen yönetici ile iletişime geçin.",
+    "back": "Geri Dön"
   },
   "layout": {
     "addMeal": "ÖĞÜN EKLE",
@@ -691,6 +727,25 @@
     "newRecipe": "Yeni Tarif",
     "searchPlaceholder": "Tarif, malzeme veya mutfak tipi ara...",
     "page": "SAYFA",
+    "gourmet": "Gurme",
+    "cookThis": "Bu Tarifi Yap",
+    "units": {
+      "minutesShort": "{{count}} dk",
+      "servingsShort": "{{count}} kişi"
+    },
+    "rating": {
+      "votes": "{{count}} oy",
+      "yourRating": "Puanınız: {{rating}}/5",
+      "prompt": "Bu tarifi nasıl buldunuz?",
+      "average": "Genel Ortalama: {{rating}} / 10"
+    },
+    "version": {
+      "label": "VERSİYON {{number}}",
+      "all": "Tüm Versiyonlar",
+      "revision": "Revizyon V{{number}}",
+      "published": "Yayındaki V{{number}}",
+      "dateUnspecified": "Tarih belirtilmemiş"
+    },
     "categories": {
       "all": "Hepsi",
       "ana_yemekler": "Ana Yemekler",
@@ -726,6 +781,14 @@
       "titleLabel": "Tarif Başlığı",
       "titlePlaceholder": "Örn: Anne Köftesi, Sebzeli Graten...",
       "timeLabel": "Hazırlama Süresi (Dk)",
+      "imageLabel": "Tarif Görseli",
+      "imagePreviewAlt": "Tarif önizlemesi",
+      "imageAddTitle": "Lezzetli Bir Kare Ekleyin",
+      "imageAddDesc": "Tarifinizin iştah kabartıcı görünmesi onay şansını artırır.",
+      "imageSelect": "Görsel Seç",
+      "imageChange": "Görseli Değiştir",
+      "imageCancel": "İptal",
+      "loadingExisting": "Mevcut veriler yükleniyor...",
       "servingsLabel": "Kaç Kişilik?",
       "caloriesLabel": "Kalori (Kcal)",
       "categoryLabel": "Kategori",
@@ -739,10 +802,13 @@
       "submitForApproval": "ONAYA GÖNDER",
       "saveChanges": "DEĞİŞİKLİKLERİ KAYDET",
       "sending": "Gönderiliyor...",
-      "ingredientPlaceholder": "Malzeme seçin..."
+      "ingredientPlaceholder": "Malzeme seçin...",
+      "emptyIngredients": "Henüz malzeme eklenmedi"
     }
   },
   "inventory": {
+    "noIngredientsFound": "Malzeme bulunamadı.",
+    "quickAdjust": "Hızlı Miktar Ayarla",
     "loading": "Envanter Yükleniyor",
     "header": {
       "title": "Stoklarını lokasyon bazlı yönet.",
@@ -752,11 +818,13 @@
       "invitations": "Davetler"
     },
     "groupList": {
+      "overline": "Lokasyon Seçici",
       "title": "Nerede olduğunu seç",
       "itemCount": "{{count}} Ürün"
     },
     "itemList": {
       "defaultGroupName": "Seçili Alan",
+      "currentInventory": "Mevcut Envanter",
       "edit": "Düzenle",
       "addItem": "ÜRÜN EKLE",
       "showing": "{{count}} ÜRÜN GÖSTERİLİYOR",
@@ -775,6 +843,8 @@
       "quickAdjust": "Hızlı Miktar Ayarla"
     },
     "groupModal": {
+      "updateOverline": "Lokasyonu Güncelle",
+      "newOverline": "Yeni Lokasyon",
       "editTitle": "Lokasyonu Düzenle",
       "addTitle": "Yeni Lokasyon Ekle",
       "nameLabel": "Lokasyon Adı",
@@ -784,6 +854,7 @@
       "create": "OLUŞTUR"
     },
     "consumptionModal": {
+      "overline": "Tüketilen Ürün",
       "peopleLabel": "Tüketiciler & Miktarlar",
       "totalConsumption": "Toplam Tüketim",
       "processing": "İŞLENİYOR...",
@@ -795,6 +866,7 @@
       "calculating": "Hesaplanıyor..."
     },
     "members": {
+      "overline": "Grup Üyeleri",
       "title": "Lokasyon Üyeleri",
       "subtitle": "Bu envanteri kimlerle paylaşıyorsunuz?",
       "inviteTitle": "Yeni Üye Davet Et",
@@ -802,10 +874,18 @@
       "searchPlaceholder": "E-posta veya isim..."
     },
     "invitations": {
+      "overline": "Davetler",
       "modalTitle": "Envanter Davetleri",
       "loading": "Davetler yükleniyor...",
       "empty": "Şu an bekleyen davetiniz yok.",
       "from": "Kimden: {{email}}"
+    },
+    "units": {
+      "gram": "Gram",
+      "kg": "Kg",
+      "ml": "Ml",
+      "l": "L",
+      "piece": "Adet"
     },
     "utils": {
       "home": "Ev",
@@ -839,15 +919,23 @@
       "snack": "Atıştırmalık"
     },
     "location": {
+      "overline": "Öğün Bağlamı",
       "title": "Nerede ve hangi öğünde yediniz?",
-      "outside": "Dışarıda"
+      "outside": "Dışarıda",
+      "definitionsLoading": "Tanımlar yükleniyor..."
     },
     "member": {
       "title": "Kim için kayıt yapıyorsunuz?"
     },
     "summary": {
+      "quick": "Hızlı Özet",
       "colUser": "Kullanıcı",
+      "colCalories": "Kalori",
+      "colProtein": "Protein",
+      "colCarbs": "Karb",
       "colFat": "Yağ",
+      "stockShortage": "Stok Yetersiz",
+      "stock": "Stok",
       "deductionTitle": "Envanterden Düşülecek Malzemeler",
       "outsideNote": "Dışarıda / Diğer seçildi. Yalnızca günlük tüketim özeti güncellenecek.",
       "locationNote": "{{location}} stoğundan otomatik düşüm yapılacak.",
@@ -863,6 +951,7 @@
       "portion": "Porsiyon"
     },
     "search": {
+      "entryType": "Giriş Tipi",
       "recipePlaceholder": "Mercimek çorbası, menemen...",
       "ingredientPlaceholder": "Yoğurt, muz, badem...",
       "noResults": "Sonuç bulunamadı. Daha kısa veya farklı bir arama deneyin.",
@@ -873,8 +962,17 @@
       "selectFromBelow": "Aşağıdaki sonuçlardan bir veya birkaç tane seçin."
     },
     "panel": {
+      "badge": "Akıllı Tüketim",
       "title": "Ne yediğinizi hızlıca kaydedin, gerekirse stoktan otomatik düşün.",
       "subtitle": "Ev veya Ofis seçerseniz tarif malzemeleri seçili lokasyondan otomatik düşülür. Dışarıda / Diğer için yalnızca kalori ve makrolar kaydedilir.",
+      "mode": "Mod",
+      "location": "Lokasyon",
+      "selected": "Seçili",
+      "selectionWaiting": "Seçim bekleniyor",
+      "selectionReadyOne": "1 öge hazır",
+      "selectionReadyMany": "{{count}} öge hazır",
+      "successPartial": "{{saved}} öge kaydedildi, {{failed}} öge tekrar bekliyor",
+      "successAll": "{{count}} öge başarıyla kaydedildi",
       "memberFallback": "Üye #{{id}}",
       "awaitingSelection": "Seçiminiz bekleniyor",
       "itemsSelected": "{{count}} ürün seçildi",
@@ -887,10 +985,12 @@
     "recommendations": {
       "loadError": "Öneri verileri yüklenemedi.",
       "inventoryRequired": "Öneri oluşturmak için önce dolu bir envanter lokasyonu seçmelisin.",
+      "menuCategoriesRequired": "Menü için en az bir kategori seçmelisiniz.",
       "generationError": "Öneriler oluşturulamadı.",
       "generationSuccess": "{{count}} AI önerisi hazır.",
       "ratingSaved": "Yorum ve puanın kaydedildi.",
-      "ratingError": "Puan kaydedilemedi."
+      "ratingError": "Puan kaydedilemedi.",
+      "cookMarked": "Tarif pişirildi olarak işaretlendi ve istatistiklere eklendi!"
     },
     "inventory": {
       "loadError": "Envanter bilgileri alınamadı.",
@@ -912,6 +1012,7 @@
       "inviteSent": "{{name}} kullanıcısına davet gönderildi.",
       "inviteError": "Davet gönderilemedi.",
       "memberRemoved": "Üye çıkarıldı.",
+      "memberAmountRequired": "Her seçili kullanıcı için 0'dan büyük bir miktar girin.",
       "shoppingListError": "Alışveriş listesi yüklenemedi.",
       "invitationAccepted": "Davet kabul edildi",
       "invitationAcceptError": "Davet kabul edilirken hata oluştu",
@@ -941,7 +1042,12 @@
     "profile": {
       "loadError": "Yükleme başarısız.",
       "saveSuccess": "Profil başarıyla güncellendi.",
-      "saveError": "Kaydedilirken bir hata oluştu."
+      "saveError": "Kaydedilirken bir hata oluştu.",
+      "invalidImage": "Lütfen geçerli bir görsel dosyası seçin.",
+      "imageTooLarge": "Görsel boyutu 10MB'dan küçük olmalıdır. Lütfen daha küçük bir dosya seçin.",
+      "photoUpdated": "Profil fotoğrafı başarıyla güncellendi.",
+      "imageUploadError": "Görsel yüklenirken bir hata oluştu.",
+      "refreshing": "Veriler tazeleniyor..."
     },
     "recipes": {
       "loadError": "Tarifler yüklenemedi",
@@ -949,7 +1055,15 @@
       "approveSuccess": "Tarif başarıyla onaylandı.",
       "approveError": "Tarif onaylanırken hata oluştu.",
       "rejectSuccess": "Tarif reddedildi.",
-      "rejectError": "Tarif reddedilirken hata oluştu."
+      "rejectError": "Tarif reddedilirken hata oluştu.",
+      "loginRequiredFavorite": "Favorilere eklemek için giriş yapmalısınız.",
+      "favoriteAdded": "Favorilere eklendi.",
+      "favoriteRemoved": "Favorilerden çıkarıldı.",
+      "operationFailed": "İşlem başarısız oldu.",
+      "detailsBeforeSaveError": "Tarif detayları yüklenemedi. Kaydetmeden önce tekrar deneyin.",
+      "detailsRequiredBeforeSave": "Tarif detayları yüklenmeden kaydetme yapılamaz.",
+      "titleRequired": "Lütfen bir başlık girin.",
+      "submittedForApproval": "Taslak onaya gönderildi."
     },
     "dashboard": {
       "syncError": "Veriler senkronize edilemedi."

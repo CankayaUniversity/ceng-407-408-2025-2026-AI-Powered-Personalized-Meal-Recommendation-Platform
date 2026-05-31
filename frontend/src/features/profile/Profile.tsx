@@ -181,12 +181,12 @@ const Profile: React.FC = () => {
 
     // Basic validation
     if (!file.type.startsWith('image/')) {
-      showToast('Lütfen geçerli bir görsel dosyası seçin.', 'error');
+      showToast(t('toasts.profile.invalidImage'), 'error');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      showToast('Görsel boyutu 10MB\'dan küçük olmalıdır. Lütfen daha küçük bir dosya seçin.', 'warning');
+      showToast(t('toasts.profile.imageTooLarge'), 'warning');
       return;
     }
 
@@ -199,10 +199,10 @@ const Profile: React.FC = () => {
       setTimeout(() => {
         setProfile(updatedUser);
         applyProfile(updatedUser);
-        showToast('Profil fotoğrafı başarıyla güncellendi.', 'success');
+        showToast(t('toasts.profile.photoUpdated'), 'success');
       }, 50);
     } catch (err) {
-      showToast(err instanceof ApiError ? err.message : 'Görsel yüklenirken bir hata oluştu.', 'error');
+      showToast(err instanceof ApiError ? err.message : t('toasts.profile.imageUploadError'), 'error');
     } finally {
       setUploading(false);
     }
@@ -230,7 +230,7 @@ const Profile: React.FC = () => {
               type="button"
               onClick={() => {
                 window.location.reload();
-                showToast("Veriler tazeleniyor...", "info");
+                showToast(t('toasts.profile.refreshing'), "info");
               }}
               className="btn-secondary flex items-center gap-2 group"
           >

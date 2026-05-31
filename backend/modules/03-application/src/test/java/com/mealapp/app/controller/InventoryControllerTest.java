@@ -94,7 +94,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
         when(inventoryService.upsertInventoryItem(anyString(), anyLong(), anyLong(), anyDouble(), anyString(), any()))
                 .thenReturn(inventory);
 
-        // Test: 5 paket = 5 * 500 = 2500g
+        // Test: 5 paket = 5 * 100 = 500g
         mockMvc.perform(post("/api/v1/inventory-groups/1/items")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -110,7 +110,7 @@ class InventoryControllerTest extends AbstractMockMvcTest {
                 eq("system-user"),
                 eq(1L),
                 eq(2L),
-                eq(2500.0), // 5 * 500
+                eq(500.0), // 5 * 100
                 eq("g"), // Artık 'paket' değil 'g' bekliyoruz
                 eq(InventoryService.UpdateMode.SET)
         );

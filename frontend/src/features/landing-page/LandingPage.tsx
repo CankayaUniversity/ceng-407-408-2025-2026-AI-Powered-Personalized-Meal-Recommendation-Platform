@@ -69,12 +69,12 @@ const LandingPage: React.FC = () => {
                 <div className="glass-card flex items-center justify-between px-8 py-4 rounded-[2rem] border-white/40 dark:border-white/5 shadow-brand-card">
                     <div className="flex items-center gap-3 group cursor-pointer">
                         <div className="meal-brand-amblem-container navbar-amblem-box bg-transparent border-none shadow-none">
-                            <img src={amblem} alt="MealAI Amblem" className="meal-brand-amblem-img" />
+                            <img src={amblem} alt={t('common.alts.mealAiEmblem')} className="meal-brand-amblem-img" />
                         </div>
                         <div className="h-16 meal-brand-logo-container bg-transparent border-none shadow-none">
                             <img 
                                 src={isDark ? logoDark : logoLight} 
-                                alt="MealAI" 
+                                alt={t('common.alts.mealAi')}
                                 className="meal-brand-logo-img" 
                             />
                         </div>
@@ -138,7 +138,7 @@ const LandingPage: React.FC = () => {
                         <div className="flex -space-x-3">
                             {[1, 2, 3, 4].map(i => (
                                 <div key={i} className="w-12 h-12 rounded-full border-4 border-alabaster dark:border-[#1A1817] bg-card-border overflow-hidden shadow-lg">
-                                    <img src={`https://i.pravatar.cc/150?u=mealai${i}`} alt="User" />
+                                    <img src={`https://i.pravatar.cc/150?u=mealai${i}`} alt={t('common.alts.user')} />
                                 </div>
                             ))}
                         </div>
@@ -159,7 +159,7 @@ const LandingPage: React.FC = () => {
                             <div className="h-64 relative overflow-hidden">
                                 <img
                                     src="https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&q=80&w=1000"
-                                    alt="Healthy Bowl"
+                                    alt={t('common.alts.healthyBowl')}
                                     className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-[1.04]"
                                 />
                                 <div className="absolute top-5 left-5 glass-card-dark px-3 py-1.5 rounded-xl text-[10px] font-black uppercase text-terracotta dark:text-white">
@@ -181,10 +181,10 @@ const LandingPage: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-6">
                                     <div className="flex items-center gap-2 text-foreground-muted">
-                                        <Activity size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">Macro Match</span>
+                                        <Activity size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{t('landing.mockup.macroMatch')}</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-foreground-muted">
-                                        <Zap size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">98% Perfect</span>
+                                        <Zap size={16} className="text-terracotta"/> <span className="text-xs font-bold uppercase tracking-widest">{t('landing.mockup.perfectScore')}</span>
                                     </div>
                                 </div>
                                 <div className="pt-6 border-t border-card-border flex items-center justify-between">
@@ -206,7 +206,7 @@ const LandingPage: React.FC = () => {
             <section className="bg-white/40 dark:bg-white/[0.02] py-32 px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="max-w-3xl space-y-6 mb-20">
-                        <p className="meal-overline">Intelligent Core</p>
+                        <p className="meal-overline">{t('landing.features.overline')}</p>
                         <h2 className="text-5xl md:text-6xl font-serif font-bold text-espresso-midnight dark:text-white leading-tight">
                             {t('landing.features.title').split(t('landing.features.title_highlight'))[0]}
                             <span className="text-terracotta italic font-normal italic">{t('landing.features.title_highlight')}</span>
@@ -291,12 +291,12 @@ const LandingPage: React.FC = () => {
                 <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                     <div className="flex items-center gap-4">
                         <div className="meal-brand-amblem-container footer-amblem-box bg-transparent border-none shadow-none">
-                            <img src={amblem} alt="MealAI Amblem" className="meal-brand-amblem-img" />
+                            <img src={amblem} alt={t('common.alts.mealAiEmblem')} className="meal-brand-amblem-img" />
                         </div>
                         <div className="h-14 meal-brand-logo-container bg-transparent border-none shadow-none">
                             <img 
                                 src={isDark ? logoDark : logoLight} 
-                                alt="MealAI" 
+                                alt={t('common.alts.mealAi')}
                                 className="meal-brand-logo-img" 
                             />
                         </div>

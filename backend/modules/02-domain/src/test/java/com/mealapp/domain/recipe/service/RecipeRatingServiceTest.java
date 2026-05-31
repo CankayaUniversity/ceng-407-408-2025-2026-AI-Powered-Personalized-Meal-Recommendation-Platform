@@ -1,5 +1,6 @@
 package com.mealapp.domain.recipe.service;
 
+import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeRating;
@@ -73,22 +74,20 @@ class RecipeRatingServiceTest {
     @Test
     void rateRecipe_WhenInvalidRating_ShouldThrowException() {
         // When & Then
-        assertThrows(IllegalArgumentException.class, () -> 
-            recipeRatingService.rateRecipe("user-1", 1L, 11, "Çok iyi")
-        );
-        
-        assertThrows(IllegalArgumentException.class, () -> 
-            recipeRatingService.rateRecipe("user-1", 1L, 0, "Kötü")
-        );
+        MealAppDomainException tooHigh = assertThrows(MealAppDomainException.class,
+                () -> recipeRatingService.rateRecipe("user-1", 1L, 11, "Çok iyi"));
+        assertEquals("domain.recipe.rating_range", tooHigh.getMessageCode());
+
+        MealAppDomainException tooLow = assertThrows(MealAppDomainException.class,
+                () -> recipeRatingService.rateRecipe("user-1", 1L, 0, "Kötü"));
+        assertEquals("domain.recipe.rating_range", tooLow.getMessageCode());
     }
 
     @Test
     void rateRecipe_WhenUserNotFound_ShouldThrowException() {
         when(userService.findById("user-1")).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> 
-            recipeRatingService.rateRecipe("user-1", 1L, 5, "Not")
-        );
+        assertThrows(ResourceNotFoundException.class, () -> recipeRatingService.rateRecipe("user-1", 1L, 5, "Not"));
     }
 
     @Test
@@ -97,12 +96,12 @@ class RecipeRatingServiceTest {
         String userId = "user-1";
         Long recipeId = 1L;
         Integer ratingValue = 8;
-        
+
         when(userService.findById(userId)).thenReturn(Optional.of(user));
         when(recipeService.findById(recipeId)).thenReturn(Optional.of(recipe));
         when(recipeRatingRepository.findByUserIdAndRecipeId(userId, recipeId)).thenReturn(Collections.emptyList());
         when(recipeRatingRepository.save(any(RecipeRating.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        
+
         // Mocking for updateRecipeRatingStats
         RecipeRating r1 = RecipeRating.builder().rating(10).build();
         RecipeRating r2 = RecipeRating.builder().rating(8).build();

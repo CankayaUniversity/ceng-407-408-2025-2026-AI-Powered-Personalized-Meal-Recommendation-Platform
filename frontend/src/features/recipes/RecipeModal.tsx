@@ -108,7 +108,7 @@ const RecipeModal: React.FC = () => {
                 } catch (err) {
                     console.error("Failed to fetch recipe details:", err);
                     if (!cancelled) {
-                        showToast('Tarif detayları yüklenemedi. Kaydetmeden önce tekrar deneyin.', 'error');
+                        showToast(t('toasts.recipes.detailsBeforeSaveError'), 'error');
                     }
                 } finally {
                     if (!cancelled) {
@@ -147,7 +147,7 @@ const RecipeModal: React.FC = () => {
         const file = e.target.files?.[0];
         if (file) {
             if (!file.type.startsWith('image/')) {
-                showToast('Lütfen geçerli bir görsel dosyası seçin.', 'error');
+                showToast(t('toasts.profile.invalidImage'), 'error');
                 return;
             }
             setImageFile(file);
@@ -239,12 +239,12 @@ const RecipeModal: React.FC = () => {
 
     const handleSubmit = async (isPublishing: boolean) => {
         if (recipeToEdit && (!hasLoadedEditDetails || isLoadingDetails)) {
-            showToast('Tarif detayları yüklenmeden kaydetme yapılamaz.', 'error');
+            showToast(t('toasts.recipes.detailsRequiredBeforeSave'), 'error');
             return;
         }
 
         if (!title.trim()) {
-            showToast('Lütfen bir başlık girin.', 'error');
+            showToast(t('toasts.recipes.titleRequired'), 'error');
             return;
         }
 
@@ -284,7 +284,7 @@ const RecipeModal: React.FC = () => {
                     }
 
                     await recipeService.sendToApproval(savedRecipe?.id ?? targetId);
-                    showToast('Taslak onaya gönderildi.', 'success');
+                    showToast(t('toasts.recipes.submittedForApproval'), 'success');
                 } else {
                     savedRecipe = await recipeService.updateRecipe(targetId, request);
 
@@ -359,7 +359,7 @@ const RecipeModal: React.FC = () => {
                             <div className="flex flex-col items-center justify-center py-20 gap-4">
                                 <Loader2 size={40} className="animate-spin text-terracotta" />
                                 <p className="text-sm font-bold text-foreground-muted animate-pulse uppercase tracking-widest">
-                                    Mevcut veriler yükleniyor...
+                                    {t('recipes.modal.loadingExisting')}
                                 </p>
                             </div>
                         ) : (
@@ -375,12 +375,12 @@ const RecipeModal: React.FC = () => {
                                     {/* Image Upload Area */}
                                     <div className="md:col-span-2 space-y-3">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-foreground/40 ml-1">
-                                            TARİF GÖRSELİ
+                                            {t('recipes.modal.imageLabel')}
                                         </label>
                                         <div className="flex gap-6 items-center">
                                             <div className="relative w-32 h-32 rounded-[2rem] overflow-hidden border-2 border-dashed border-card-border bg-black/5 dark:bg-white/5 flex items-center justify-center group shrink-0">
                                                 {imagePreview ? (
-                                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                                    <img src={imagePreview} alt={t('recipes.modal.imagePreviewAlt')} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <ImageIcon size={32} className="text-foreground/20" />
                                                 )}
@@ -390,11 +390,11 @@ const RecipeModal: React.FC = () => {
                                                 </label>
                                             </div>
                                             <div className="flex-1 space-y-2">
-                                                <p className="text-sm font-bold text-espresso-midnight dark:text-white">Lezzetli Bir Kare Ekleyin</p>
-                                                <p className="text-xs text-foreground-muted">Tarifinizin iştah kabartıcı görünmesi onay şansını artırır.</p>
+                                                <p className="text-sm font-bold text-espresso-midnight dark:text-white">{t('recipes.modal.imageAddTitle')}</p>
+                                                <p className="text-xs text-foreground-muted">{t('recipes.modal.imageAddDesc')}</p>
                                                 <div className="flex items-center gap-2">
                                                     <label className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/5 border border-card-border rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer hover:border-terracotta transition-colors">
-                                                        {imageFile ? 'GÖRSELİ DEĞİŞTİR' : 'GÖRSEL SEÇ'}
+                                                        {imageFile ? t('recipes.modal.imageChange') : t('recipes.modal.imageSelect')}
                                                         <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
                                                     </label>
                                                     {imageFile && (
@@ -405,7 +405,7 @@ const RecipeModal: React.FC = () => {
                                                             }}
                                                             className="px-4 py-2 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-colors rounded-xl"
                                                         >
-                                                            İPTAL
+                                                            {t('recipes.modal.imageCancel')}
                                                         </button>
                                                     )}
                                                 </div>
@@ -520,7 +520,7 @@ const RecipeModal: React.FC = () => {
                                                 <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center mx-auto text-foreground/20">
                                                     <Plus size={24} />
                                                 </div>
-                                                <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest">Henüz malzeme eklenmedi</p>
+                                                <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest">{t('recipes.modal.emptyIngredients')}</p>
                                             </div>
                                         )}
                                         {ingredients.map((ing, index) => (

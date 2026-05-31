@@ -227,13 +227,13 @@ const LayoutContent: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <div className={`flex items-center ${expanded ? 'pl-4 p-8 mb-6 justify-start' : 'p-4 mb-4 justify-center'}`}>
                         <Link to="/" className="flex items-center gap-1 group">
                             <div className="meal-brand-amblem-container sidebar-amblem-box bg-transparent border-none shadow-none">
-                                <img src={amblem} alt="MealAI Amblem" className="meal-brand-amblem-img" />
+                                <img src={amblem} alt={t('common.alts.mealAiEmblem')} className="meal-brand-amblem-img" />
                             </div>
                             {expanded && (
                                 <div className="h-14 meal-brand-logo-container animate-in fade-in slide-in-from-left-2 bg-transparent border-none shadow-none">
                                     <img
                                         src={isDark ? logoDark : logoLight}
-                                        alt="MealAI"
+                                        alt={t('common.alts.mealAi')}
                                         className="meal-brand-logo-img"
                                     />
                                 </div>

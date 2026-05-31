@@ -29,6 +29,15 @@ public class Notification {
     @Column(nullable = false, length = 500)
     private String message;
 
+    @Column(name = "title_code")
+    private String titleCode;
+
+    @Column(name = "message_code")
+    private String messageCode;
+
+    @Column(name = "message_args", length = 1000)
+    private String messageArgs;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private NotificationType type;

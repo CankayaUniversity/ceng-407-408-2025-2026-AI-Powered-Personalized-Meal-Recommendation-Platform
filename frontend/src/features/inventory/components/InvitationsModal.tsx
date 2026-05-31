@@ -32,7 +32,7 @@ export const InvitationsModal: React.FC<InvitationsModalProps> = ({
                 <Users size={24} />
               </div>
               <div>
-                <p className="meal-overline text-foreground/40">Invitations</p>
+                <p className="meal-overline text-foreground/40">{t('inventory.invitations.overline')}</p>
                 <h3 className="meal-section-title mt-1 text-2xl text-foreground">{t('inventory.invitations.modalTitle')}</h3>
               </div>
             </div>

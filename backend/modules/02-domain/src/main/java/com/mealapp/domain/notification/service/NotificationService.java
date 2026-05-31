@@ -1,5 +1,7 @@
 package com.mealapp.domain.notification.service;
 
+import com.mealapp.domain.common.exception.MealAppDomainException;
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.notification.entity.Notification;
 import com.mealapp.domain.notification.repository.NotificationRepository;
 import com.mealapp.domain.user.entity.User;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,33 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
+    @Transactional
+    public Notification createLocalizedNotification(
+            User user,
+            String titleCode,
+            String messageCode,
+            List<String> messageArgs,
+            Notification.NotificationType type,
+            String targetId
+    ) {
+        if (targetId != null && notificationRepository.existsByUserIdAndTargetIdAndTypeAndStatus(
+                user.getId(), targetId, type, Notification.NotificationStatus.UNREAD)) {
+            return null;
+        }
+        Notification notification = Notification.builder()
+                .user(user)
+                .title(titleCode)
+                .message(messageCode)
+                .titleCode(titleCode)
+                .messageCode(messageCode)
+                .messageArgs(encodeArgs(messageArgs))
+                .type(type)
+                .targetId(targetId)
+                .status(Notification.NotificationStatus.UNREAD)
+                .build();
+        return notificationRepository.save(notification);
+    }
+
     public List<Notification> getNotificationsForUser(String userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
@@ -48,10 +78,10 @@ public class NotificationService {
     @Transactional
     public void markAsRead(Long notificationId, String userId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.notification.not_found"));
 
         if (!notification.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to mark this notification as read");
+            throw MealAppDomainException.withCode("domain.notification.mark_read_unauthorized");
         }
 
         notification.setStatus(Notification.NotificationStatus.READ);
@@ -68,10 +98,10 @@ public class NotificationService {
     @Transactional
     public void deleteNotification(Long notificationId, String userId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.notification.not_found"));
 
         if (!notification.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized to delete this notification");
+            throw MealAppDomainException.withCode("domain.notification.delete_unauthorized");
         }
 
         notificationRepository.delete(notification);
@@ -107,5 +137,38 @@ public class NotificationService {
             }
         }
         notificationRepository.saveAll(notifications);
+    }
+
+    @Transactional
+    public void updateLocalizedNotificationsForTarget(
+            String targetId,
+            Notification.NotificationType type,
+            String titleCode,
+            String messageCode,
+            List<String> messageArgs,
+            String newTargetId
+    ) {
+        List<Notification> notifications = notificationRepository.findByTargetIdAndType(targetId, type);
+        for (Notification notification : notifications) {
+            notification.setTitle(titleCode);
+            notification.setMessage(messageCode);
+            notification.setTitleCode(titleCode);
+            notification.setMessageCode(messageCode);
+            notification.setMessageArgs(encodeArgs(messageArgs));
+            notification.setStatus(Notification.NotificationStatus.READ);
+            if (newTargetId != null) {
+                notification.setTargetId(newTargetId);
+            }
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    private String encodeArgs(List<String> args) {
+        if (args == null || args.isEmpty()) {
+            return null;
+        }
+        return args.stream()
+                .map(arg -> arg == null ? "" : arg.replace("\\", "\\\\").replace("|", "\\|"))
+                .collect(Collectors.joining("|"));
     }
 }

@@ -1,5 +1,6 @@
 package com.mealapp.domain.recipe.service;
 
+import com.mealapp.domain.common.exception.MealAppDomainException;
 import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.recipe.entity.Recipe;
 import com.mealapp.domain.recipe.entity.RecipeRating;
@@ -29,14 +30,14 @@ public class RecipeRatingService {
     @Transactional
     public RecipeRating rateRecipe(String userId, Long recipeId, Integer rating, String comment) {
         if (rating < 1 || rating > 10) {
-            throw new IllegalArgumentException("Puan 1 ile 10 arasında olmalıdır.");
+            throw MealAppDomainException.withCode("domain.recipe.rating_range");
         }
 
         User user = userService.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı: " + userId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", userId));
 
         Recipe recipe = recipeService.findById(recipeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", recipeId));
 
         // Eğer kullanıcı daha önce bu tarife puan verdiyse onu güncelle, yoksa yeni oluştur.
         RecipeRating recipeRating = recipeRatingRepository.findByUserIdAndRecipeId(userId, recipeId)

@@ -119,7 +119,7 @@ public class InventoryService {
 
         List<User> admins = userRepository.findAllAdmins();
         if (admins.isEmpty()) {
-            throw new MealAppDomainException("Sistemde admin bulunamadı. Test envanteri oluşturulamıyor.");
+            throw MealAppDomainException.withCode("domain.inventory.admin_required");
         }
 
         InventoryGroup testGroup = InventoryGroup.builder()
@@ -224,7 +224,7 @@ public class InventoryService {
         InventoryGroup group = getRequiredGroup(userId, groupId);
 
         if (inventoryGroupRepository.countByUsersId(userId) <= 1) {
-            throw new MealAppDomainException("En az bir envanter lokasyonu bulunmalıdır.");
+            throw MealAppDomainException.withCode("domain.inventory.group_required");
         }
 
         inventoryGroupRepository.delete(group);
@@ -282,13 +282,13 @@ public class InventoryService {
     @Transactional
     public Inventory updateInventoryItem(String userId, Long inventoryGroupId, Long itemId, Long ingredientId, Double quantity, String unit, UpdateMode updateMode) {
         Inventory item = inventoryRepository.findByIdAndInventoryGroupUsersIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
-                .orElseThrow(() -> new ResourceNotFoundException("Envanter malzemesi bulunamadı ID: " + itemId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.inventory.item.not_found", itemId));
 
         if (!item.getIngredient().getId().equals(ingredientId)) {
             inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
                     .filter(existing -> !existing.getId().equals(itemId))
                     .ifPresent(existing -> {
-                        throw new MealAppDomainException("Bu malzeme seçili lokasyonda zaten mevcut.");
+                        throw MealAppDomainException.withCode("domain.inventory.item_exists");
                     });
         }
 
@@ -317,7 +317,7 @@ public class InventoryService {
      */
     public void deleteInventoryItem(String userId, Long inventoryGroupId, Long itemId) {
         Inventory item = inventoryRepository.findByIdAndInventoryGroupUsersIdAndInventoryGroupId(itemId, userId, inventoryGroupId)
-                .orElseThrow(() -> new ResourceNotFoundException("Envanter malzemesi bulunamadı ID: " + itemId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.inventory.item.not_found", itemId));
         inventoryRepository.delete(item);
     }
 
@@ -368,9 +368,9 @@ public class InventoryService {
         }
         
         if (totalAvailableInTargetUnit < quantityToDeduct) {
-            throw new com.mealapp.domain.common.exception.InsufficientStockException(
-                    String.format("Envanterinizde '%s' malzemesi için yeterli stok yok. Mevcut: %.2f %s, Gerekli: %.2f %s",
-                            ingredient.getName(), totalAvailableInTargetUnit, unit, quantityToDeduct, unit));
+            throw com.mealapp.domain.common.exception.InsufficientStockException.withCode(
+                    "domain.inventory.stock_insufficient",
+                    ingredient.getName(), String.format("%.2f", totalAvailableInTargetUnit), unit, String.format("%.2f", quantityToDeduct), unit);
         }
 
         double remainingToDeduct = quantityToDeduct;
@@ -418,9 +418,8 @@ public class InventoryService {
         Ingredient ingredient = getRequiredIngredient(ingredientId);
 
         Inventory inventory = inventoryRepository.findByInventoryGroupUsersIdAndInventoryGroupIdAndIngredientId(userId, inventoryGroupId, ingredientId)
-                .orElseThrow(() -> new com.mealapp.domain.common.exception.InsufficientStockException(
-                        String.format("HATA: '%s' lokasyonunda '%s' malzemesi bulunamadı! Lütfen önce envanterinize bu malzemeyi ekleyin.",
-                                group.getName(), ingredient.getName())));
+                .orElseThrow(() -> com.mealapp.domain.common.exception.InsufficientStockException.withCode(
+                        "domain.inventory.stock_missing_at_location", group.getName(), ingredient.getName()));
 
         double currentQuantity = inventory.getQuantity() != null ? inventory.getQuantity() : 0.0;
         
@@ -428,9 +427,9 @@ public class InventoryService {
         double currentInRequestedUnit = unitConverterService.convertUnits(ingredient, currentQuantity, inventory.getUnit(), unit);
 
         if (currentInRequestedUnit < quantityToDeduct) {
-            throw new com.mealapp.domain.common.exception.InsufficientStockException(
-                    String.format("STOK YETERSİZ: '%s' lokasyonunda '%s' malzemesinden sadece %.2f %s var, ancak %.2f %s tüketilmeye çalışılıyor.",
-                            group.getName(), ingredient.getName(), currentInRequestedUnit, unit, quantityToDeduct, unit));
+            throw com.mealapp.domain.common.exception.InsufficientStockException.withCode(
+                    "domain.inventory.stock_insufficient_at_location",
+                    group.getName(), ingredient.getName(), String.format("%.2f", currentInRequestedUnit), unit, String.format("%.2f", quantityToDeduct), unit);
         }
 
         // Düşülecek miktarı envanter birimine dönüştür
@@ -465,12 +464,12 @@ public class InventoryService {
 
     public InventoryGroup getRequiredGroup(String userId, Long groupId) {
         return inventoryGroupRepository.findByIdAndUsersId(groupId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Envanter lokasyonu bulunamadı ID: " + groupId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.inventory.group.not_found", groupId));
     }
 
     public InventoryGroup getRequiredGroupWithUsers(String userId, Long groupId) {
         return inventoryGroupRepository.findByIdAndUsersIdWithUsers(groupId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Envanter lokasyonu bulunamadı ID: " + groupId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.inventory.group.not_found", groupId));
     }
 
     @Transactional(readOnly = true)
@@ -517,7 +516,7 @@ public class InventoryService {
 
     private Ingredient getRequiredIngredient(Long ingredientId) {
         return ingredientRepository.findByIdWithUnits(ingredientId)
-                .orElseThrow(() -> new ResourceNotFoundException("Malzeme bulunamadı ID: " + ingredientId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.ingredient.not_found", ingredientId));
     }
 
     private void ensureGroupNameAvailable(String userId, String name, Long currentGroupId) {
@@ -526,13 +525,13 @@ public class InventoryService {
                 : inventoryGroupRepository.existsByUsersIdAndNameIgnoreCaseAndIdNot(userId, name, currentGroupId);
 
         if (exists) {
-            throw new MealAppDomainException("Bu isimde bir envanter lokasyonu zaten mevcut.");
+            throw MealAppDomainException.withCode("domain.inventory.group_duplicate");
         }
     }
 
     private String normalizeGroupName(String name) {
         if (name == null || name.isBlank()) {
-            throw new MealAppDomainException("Envanter lokasyonu adı boş olamaz.");
+            throw MealAppDomainException.withCode("domain.inventory.group_name_required");
         }
 
         return name.trim();
@@ -548,7 +547,7 @@ public class InventoryService {
 
     private String normalizeUnit(String unit) {
         if (unit == null || unit.isBlank()) {
-            throw new MealAppDomainException("Birim bilgisi boş olamaz.");
+            throw MealAppDomainException.withCode("domain.inventory.unit_required");
         }
 
         return unit.trim();
@@ -562,11 +561,11 @@ public class InventoryService {
         InventoryGroup group = getRequiredGroupWithUsers(userId, groupId);
         
         if (userId.equals(userIdToRemove)) {
-            throw new MealAppDomainException("Kendinizi lokasyondan çıkaramazsınız.");
+            throw MealAppDomainException.withCode("domain.inventory.self_remove");
         }
 
         User userToRemove = userRepository.findById(userIdToRemove)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + userIdToRemove));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", userIdToRemove));
 
         group.getUsers().removeIf(u -> u.getId().equals(userIdToRemove));
         userToRemove.getInventoryGroups().removeIf(g -> g.getId().equals(groupId));

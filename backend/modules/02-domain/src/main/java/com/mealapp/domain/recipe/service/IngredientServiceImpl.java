@@ -1,5 +1,6 @@
 package com.mealapp.domain.recipe.service;
 
+import com.mealapp.domain.common.exception.ResourceNotFoundException;
 import com.mealapp.domain.recipe.entity.Ingredient;
 import com.mealapp.domain.recipe.entity.IngredientNutrition;
 import com.mealapp.domain.recipe.repository.IngredientRepository;
@@ -66,7 +67,7 @@ public class IngredientServiceImpl implements IngredientService {
     @Override
     public Ingredient updateIngredient(Long id, String name, String category, Double density, String physicalState, String preferredUnit, Double calories, Double protein, Double carbs, Double fat) {
         Ingredient ingredient = ingredientRepository.findById(id)
-                .orElseThrow(() -> new com.mealapp.domain.common.exception.ResourceNotFoundException("Malzeme bulunamadı"));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.ingredient.not_found.simple"));
 
         ingredient.setName(name);
         if (category != null) {

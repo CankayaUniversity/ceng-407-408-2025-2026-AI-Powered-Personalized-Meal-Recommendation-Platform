@@ -77,7 +77,7 @@ public class UserController {
                 userService.relinkUserId(existingByEmail.getId(), authenticatedUserId);
 
                 User relinkedUser = userService.findById(authenticatedUserId)
-                        .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı relink işleminden sonra bulunamadı ID: " + authenticatedUserId));
+                        .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", authenticatedUserId));
 
                 updateUserFields(relinkedUser, request, authenticatedEmail);
                 User saved = userService.save(relinkedUser);
@@ -133,7 +133,7 @@ public class UserController {
         assertSameUser(authenticatedUserId, id);
 
         if (file.isEmpty()) {
-            throw new MealAppDomainException("Yüklenecek dosya bulunamadı.");
+            throw MealAppDomainException.withCode("domain.file.required");
         }
 
         String fileName = userService.uploadProfileImage(
@@ -144,7 +144,7 @@ public class UserController {
         );
 
         User user = userService.findById(authenticatedUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", authenticatedUserId));
 
         UserDto dto = userMapper.toDto(user);
         if (dto.getProfileImageUrl() != null) {
@@ -163,7 +163,7 @@ public class UserController {
         assertSameUser(authenticatedUserId, id);
 
         User user = userService.findById(authenticatedUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Kullanıcı bulunamadı ID: " + authenticatedUserId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.user.not_found", authenticatedUserId));
         
         UserDto dto = userMapper.toDto(user);
         if (dto.getProfileImageUrl() != null) {
@@ -185,7 +185,7 @@ public class UserController {
 
     private String requireAuthenticatedUserId(Jwt jwt) {
         if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
-            throw new MealAppDomainException("Kimliği doğrulanmış kullanıcı bilgisi bulunamadı.");
+            throw MealAppDomainException.withCode("domain.auth.user_missing");
         }
 
         return jwt.getSubject();
@@ -193,7 +193,7 @@ public class UserController {
 
     private void assertSameUser(String authenticatedUserId, String requestedUserId) {
         if (!authenticatedUserId.equals(requestedUserId)) {
-            throw new MealAppDomainException("İstek yapılan kullanıcı kimliği oturumdaki kullanıcı ile eşleşmiyor.");
+            throw MealAppDomainException.withCode("domain.auth.user_mismatch");
         }
     }
 
@@ -202,7 +202,7 @@ public class UserController {
         String normalizedRequestEmail = normalizeEmail(requestEmail);
 
         if (tokenEmail != null && normalizedRequestEmail != null && !tokenEmail.equals(normalizedRequestEmail)) {
-            throw new MealAppDomainException("İstek gövdesindeki e-posta oturumdaki kullanıcı ile eşleşmiyor.");
+            throw MealAppDomainException.withCode("domain.auth.email_mismatch");
         }
 
         return tokenEmail != null ? tokenEmail : normalizedRequestEmail;

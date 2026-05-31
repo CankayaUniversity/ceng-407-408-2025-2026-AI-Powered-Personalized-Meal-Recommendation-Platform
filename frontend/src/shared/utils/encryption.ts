@@ -1,3 +1,5 @@
+import i18n from '../../i18n';
+
 /**
  * API Key gibi hassas verileri istemci tarafında şifrelemek ve sunucuya göndermek için yardımcı araçlar.
  * AES-GCM algoritmasını kullanır.
@@ -84,6 +86,6 @@ export async function decryptText(encryptedBase64: string): Promise<string> {
     return decoder.decode(decryptedContent);
   } catch (error) {
     console.error('Decryption failed:', error);
-    throw new Error('Veri çözülemedi.');
+    throw new Error(i18n.t('common.encryptionDecryptFailed'));
   }
 }

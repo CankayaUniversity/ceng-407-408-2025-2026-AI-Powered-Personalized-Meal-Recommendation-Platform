@@ -85,7 +85,7 @@ class InventoryInvitationServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(100L, result.getId());
-        verify(notificationService).createNotification(any(), anyString(), anyString(), any(), eq("100"));
+        verify(notificationService).createLocalizedNotification(any(), anyString(), anyString(), anyList(), any(), eq("100"));
     }
 
     @Test
@@ -127,7 +127,7 @@ class InventoryInvitationServiceTest {
         MealAppDomainException exception = assertThrows(MealAppDomainException.class, () -> 
             invitationService.inviteUser("user-1", "inviter@example.com", 1L, "invitee@example.com")
         );
-        assertTrue(exception.getMessage().contains("Davet eden kullanıcı sistemde bulunamadı"));
+        assertEquals("domain.invitation.inviter_missing", exception.getMessageCode());
     }
 
     @Test
@@ -140,7 +140,7 @@ class InventoryInvitationServiceTest {
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> 
             invitationService.inviteUser("user-1", "inviter@example.com", 1L, "invitee@example.com")
         );
-        assertTrue(exception.getMessage().contains("Envanter grubu bulunamadı"));
+        assertEquals("domain.invitation.group_not_found", exception.getMessageCode());
     }
 
     @Test
@@ -156,6 +156,7 @@ class InventoryInvitationServiceTest {
         MealAppDomainException exception = assertThrows(MealAppDomainException.class, () -> 
             invitationService.inviteUser("user-1", "inviter@example.com", 1L, "invitee@example.com")
         );
-        assertEquals("'invitee@example.com' kullanıcısı zaten 'Test Group' grubunun üyesi.", exception.getMessage());
+        assertEquals("domain.invitation.already_member", exception.getMessageCode());
+        assertArrayEquals(new Object[]{"invitee@example.com", "Test Group"}, exception.getMessageArgs());
     }
 }

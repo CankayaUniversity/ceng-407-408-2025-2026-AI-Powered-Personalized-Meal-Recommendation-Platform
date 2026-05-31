@@ -7,10 +7,10 @@ import lombok.Data;
 @Data
 public class InventoryGroupRequest {
 
-    @NotBlank(message = "Lokasyon adı zorunludur")
-    @Size(max = 100, message = "Lokasyon adı en fazla 100 karakter olabilir")
+    @NotBlank(message = "{validation.inventory.group.name.required}")
+    @Size(max = 100, message = "{validation.inventory.group.name.max}")
     private String name;
 
-    @Size(max = 50, message = "İkon en fazla 50 karakter olabilir")
+    @Size(max = 50, message = "{validation.inventory.group.icon.max}")
     private String icon;
 }

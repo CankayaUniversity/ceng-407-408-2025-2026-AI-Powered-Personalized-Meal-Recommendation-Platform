@@ -289,7 +289,7 @@ const InventoryPage: React.FC = () => {
     }, {});
 
     if (Object.keys(userAmounts).length !== selectedUserIds.length) {
-      showToast('Her seçili kullanıcı için 0\'dan büyük bir miktar girin.', 'error');
+      showToast(t('toasts.inventory.memberAmountRequired'), 'error');
       return;
     }
 

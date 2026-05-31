@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message(ex.getMessage())
+                .message(resolveMessage(ex))
                 .status(HttpStatus.NOT_FOUND.value())
                 .path(request.getRequestURI())
                 .build();
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
         log.warn("Stok yetersiz: {}", ex.getMessage());
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
-                .message(ex.getMessage())
+                .message(resolveMessage(ex))
                 .path(request.getRequestURI())
                 .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MealAppDomainException.class)
     public ResponseEntity<ApiErrorResponse> handleDomainException(MealAppDomainException ex, HttpServletRequest request) {
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message(ex.getMessage())
+                .message(resolveMessage(ex))
                 .status(HttpStatus.BAD_REQUEST.value())
                 .path(request.getRequestURI())
                 .build();
@@ -104,7 +104,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message("Validasyon hatası: Alan kısıtları ihlal edildi.")
+                .message(messageUtil.getMessage("error.validation"))
                 .status(HttpStatus.BAD_REQUEST.value())
                 .path(request.getRequestURI())
                 .build();
@@ -127,7 +127,7 @@ public class GlobalExceptionHandler {
             return handleDomainException(domainException, request);
         }
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message("İşlem sırasında beklenmeyen bir hata oluştu.")
+                .message(messageUtil.getMessage("error.transaction"))
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .path(request.getRequestURI())
                 .build();
@@ -140,7 +140,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message(ex.getMessage() != null ? ex.getMessage() : "Geçersiz istek")
+                .message(resolveIllegalArgumentMessage(ex))
                 .status(HttpStatus.BAD_REQUEST.value())
                 .path(request.getRequestURI())
                 .build();
@@ -153,7 +153,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
         ApiErrorResponse error = ApiErrorResponse.builder()
-                .message("İstek gövdesi okunamadı veya alan tipleri geçersiz. Lütfen gönderdiğiniz verileri kontrol edin.")
+                .message(messageUtil.getMessage("error.unreadable_request"))
                 .status(HttpStatus.BAD_REQUEST.value())
                 .path(request.getRequestURI())
                 .build();
@@ -172,5 +172,20 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .build();
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private String resolveMessage(MealAppDomainException ex) {
+        if (ex.getMessageCode() == null || ex.getMessageCode().isBlank()) {
+            return ex.getMessage();
+        }
+        return messageUtil.getMessage(ex.getMessageCode(), ex.getMessageArgs());
+    }
+
+    private String resolveIllegalArgumentMessage(IllegalArgumentException ex) {
+        String message = ex.getMessage();
+        if (message == null || message.isBlank()) {
+            return messageUtil.getMessage("error.bad_request");
+        }
+        return message;
     }
 }

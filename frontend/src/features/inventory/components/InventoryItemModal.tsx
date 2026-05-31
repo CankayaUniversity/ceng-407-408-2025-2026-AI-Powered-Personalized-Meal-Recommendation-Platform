@@ -62,7 +62,7 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                   <Utensils size={28} />
                 </div>
                 <div>
-                  <p className="meal-overline text-foreground/40">{editingItemId ? 'Update Item' : 'Add Item'}</p>
+                  <p className="meal-overline text-foreground/40">{editingItemId ? t('inventory.edit') : t('inventory.addNew')}</p>
                   <h3 className="meal-section-title mt-1 text-3xl font-serif text-foreground">{editingItemId ? t('inventory.edit') : t('inventory.addNew')}</h3>
                 </div>
               </div>
@@ -229,11 +229,11 @@ export const InventoryItemModal: React.FC<InventoryItemModalProps> = ({
                               ))
                             ) : (
                               <>
-                                <option value="GRAM">Gram</option>
-                                <option value="KG">Kg</option>
-                                <option value="ML">Ml</option>
-                                <option value="L">L</option>
-                                <option value="ADET">Adet</option>
+                                <option value="GRAM">{t('inventory.units.gram')}</option>
+                                <option value="KG">{t('inventory.units.kg')}</option>
+                                <option value="ML">{t('inventory.units.ml')}</option>
+                                <option value="L">{t('inventory.units.l')}</option>
+                                <option value="ADET">{t('inventory.units.piece')}</option>
                               </>
                             )}
                           </select>

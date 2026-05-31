@@ -82,7 +82,7 @@ public class RecipeService {
     @Transactional
     public Recipe updateRecipe(Long id, Recipe updatedData, List<RecipeIngredient> ingredients, String userId, boolean isAdmin) {
         Recipe existing = recipeRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + id));
+            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", id));
         assertCanEdit(existing, userId, isAdmin);
 
         RecipeStatus requestedStatus = updatedData.getStatus() != null ? updatedData.getStatus() : RecipeStatus.PENDING;
@@ -171,11 +171,11 @@ public class RecipeService {
     @Transactional
     public void sendToApproval(Long recipeId, String userId) {
         Recipe requestedRecipe = recipeRepository.findById(recipeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
+            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", recipeId));
         Recipe recipe = resolveApprovalCandidate(requestedRecipe, userId);
 
         if (userId == null || !userId.equals(recipe.getCreatedBy())) {
-            throw new MealAppDomainException("Bu işlemi yapmak için yetkiniz yok.");
+            throw MealAppDomainException.withCode("domain.recipe.approval_forbidden");
         }
 
         if (recipe.getStatus() == RecipeStatus.DRAFT || recipe.getStatus() == RecipeStatus.REJECTED) {
@@ -190,10 +190,10 @@ public class RecipeService {
         }
 
         if (recipe.getStatus() == RecipeStatus.PENDING) {
-            throw new MealAppDomainException("Tarif zaten onay bekliyor.");
+            throw MealAppDomainException.withCode("domain.recipe.approval_pending");
         }
 
-        throw new MealAppDomainException("Sadece taslak veya reddedilmiş tarifler onaya gönderilebilir.");
+        throw MealAppDomainException.withCode("domain.recipe.approval_invalid_status");
     }
 
     private Recipe resolveApprovalCandidate(Recipe requestedRecipe, String userId) {
@@ -211,14 +211,12 @@ public class RecipeService {
         List<User> admins = Optional.ofNullable(userRepository.findAllAdmins()).orElse(List.of());
         log.info("Tarif onayı için adminler bilgilendiriliyor. Bulunan admin sayısı: {}", admins.size());
         
-        String title = "Yeni Tarif Onay Bekliyor";
-        String message = recipe.getTitle() + " başlıklı tarif onayınızı bekliyor.";
-        
         for (User admin : admins) {
-            Notification n = notificationService.createNotification(
+            Notification n = notificationService.createLocalizedNotification(
                 admin, 
-                title, 
-                message, 
+                "notification.recipe.approval.request.title",
+                "notification.recipe.approval.request.message",
+                List.of(recipe.getTitle()),
                 Notification.NotificationType.RECIPE_APPROVAL, 
                 recipe.getId().toString()
             );
@@ -353,7 +351,7 @@ public class RecipeService {
                     .orElse(null); // Taslaklar için esnek olalım
                 
                 if (ingredient == null && recipe.getStatus() == RecipeStatus.APPROVED) {
-                    throw new MealAppDomainException("Onaylı tarif için geçerli malzeme gerekli (ID): " + ri.getIngredient().getId());
+                    throw MealAppDomainException.withCode("domain.recipe.ingredient_required_by_id", ri.getIngredient().getId());
                 }
             } else if (ri.getIngredient() != null && ri.getIngredient().getName() != null) {
                 // İsim verilmişse isim üzerinden bul
@@ -362,7 +360,7 @@ public class RecipeService {
                     .orElse(null);
                 
                 if (ingredient == null && recipe.getStatus() == RecipeStatus.APPROVED) {
-                    throw new MealAppDomainException("Onaylı tarif için geçerli malzeme gerekli (İsim): " + ingredientName);
+                    throw MealAppDomainException.withCode("domain.recipe.ingredient_required_by_name", ingredientName);
                 }
             } else {
                 ingredient = null;
@@ -375,7 +373,7 @@ public class RecipeService {
                  // Eğer malzeme yoksa, bu ingredient kaydını DB'ye eklemeyebiliriz veya hata verebiliriz.
                  // Mevcut tabloda ingredient_id nullable=false olduğu için bir dummy veya hata şart.
                  // Şimdilik hata vermeye devam edelim ama sadece APPROVED için.
-                 throw new MealAppDomainException("Onaylı tarifler için geçerli malzeme veritabanında kayıtlı olmalıdır.");
+                 throw MealAppDomainException.withCode("domain.recipe.ingredient_not_registered");
             }
             
             // PENDING (Onay Bekleyen) tariflerde malzeme yoksa, isminden bulmaya çalışıyoruz. 
@@ -428,15 +426,15 @@ public class RecipeService {
     @Transactional
     public void approveRecipe(Long recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
+            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", recipeId));
 
         if (recipe.getStatus() != RecipeStatus.PENDING) {
-            throw new MealAppDomainException("Sadece onay bekleyen tarifler onaylanabilir.");
+            throw MealAppDomainException.withCode("domain.recipe.approval_only_pending");
         }
         
         if (recipe.getParentId() != null) {
             Recipe original = recipeRepository.findById(recipe.getParentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Orijinal tarif bulunamadı: " + recipe.getParentId()));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", recipe.getParentId()));
             
             // Verileri kopyala
             original.setTitle(recipe.getTitle());
@@ -475,11 +473,12 @@ public class RecipeService {
             recipeRepository.save(recipe);
             
             // Bildirimleri güncelle
-            notificationService.updateNotificationsForTarget(
-                recipeId.toString(), 
+            notificationService.updateLocalizedNotificationsForTarget(
+                recipeId.toString(),
                 Notification.NotificationType.RECIPE_APPROVAL,
-                "Tarif Güncellemesi Onaylandı",
-                original.getTitle() + " için gönderdiğiniz güncelleme isteği onaylandı ve yayınlandı.",
+                "notification.recipe.approval.update_approved.title",
+                "notification.recipe.approval.update_approved.message",
+                List.of(original.getTitle()),
                 original.getId().toString()
             );
         } else {
@@ -487,11 +486,12 @@ public class RecipeService {
             recipeRepository.save(recipe);
             
             // Bildirimleri güncelle
-            notificationService.updateNotificationsForTarget(
-                recipeId.toString(), 
+            notificationService.updateLocalizedNotificationsForTarget(
+                recipeId.toString(),
                 Notification.NotificationType.RECIPE_APPROVAL,
-                "Tarif Onaylandı",
-                recipe.getTitle() + " başlıklı tarif onaylandı ve yayınlandı.",
+                "notification.recipe.approval.approved.title",
+                "notification.recipe.approval.approved.message",
+                List.of(recipe.getTitle()),
                 null
             );
         }
@@ -503,7 +503,7 @@ public class RecipeService {
     @Transactional
     public void rejectRecipe(Long recipeId) {
         Recipe recipe = recipeRepository.findById(recipeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
+            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", recipeId));
 
         if (recipe.getParentId() != null) {
             // Eğer bir güncellemeyi reddediyorsak, sadece bu güncelleme kaydını silebiliriz
@@ -515,11 +515,12 @@ public class RecipeService {
         recipeRepository.save(recipe);
 
         // Bildirimleri güncelle
-        notificationService.updateNotificationsForTarget(
-            recipeId.toString(), 
+        notificationService.updateLocalizedNotificationsForTarget(
+            recipeId.toString(),
             Notification.NotificationType.RECIPE_APPROVAL,
-            "Tarif Reddedildi",
-            recipe.getTitle() + " başlıklı tarif isteği reddedildi.",
+            "notification.recipe.approval.rejected.title",
+            "notification.recipe.approval.rejected.message",
+            List.of(recipe.getTitle()),
             null
         );
     }
@@ -534,7 +535,7 @@ public class RecipeService {
 
     public String uploadRecipeImage(Long recipeId, InputStream inputStream, String originalFilename, String contentType, String userId, boolean isAdmin) {
         Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + recipeId));
+                .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", recipeId));
         assertCanEdit(recipe, userId, isAdmin);
 
         // Dosya adı formatı: recipes/{recipeId}/image_{timestamp}.{ext}
@@ -701,7 +702,7 @@ public class RecipeService {
     @Transactional
     public Recipe findPreferred(Long id, String userId, boolean isAdmin) {
         Recipe recipe = findVisibleById(id, userId, isAdmin)
-            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı: " + id));
+            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found", id));
         if (userId != null && recipe.getParentId() == null) {
             return findLatestUserRevision(id, userId)
                 .filter(revision -> canView(revision, userId, isAdmin))
@@ -757,14 +758,14 @@ public class RecipeService {
             return;
         }
         if (recipe == null || !recipe.isActive() || recipe.getStatus() == RecipeStatus.SUPERSEDED) {
-            throw new ResourceNotFoundException("Tarif bulunamadı");
+            throw ResourceNotFoundException.withCode("domain.recipe.not_found.simple");
         }
         boolean isOwner = userId != null && userId.equals(recipe.getCreatedBy());
         boolean isPublishedRoot = recipe.getParentId() == null && recipe.getStatus() == RecipeStatus.APPROVED;
         if (isPublishedRoot || isOwner) {
             return;
         }
-        throw new ResourceNotFoundException("Tarif bulunamadı");
+        throw ResourceNotFoundException.withCode("domain.recipe.not_found.simple");
     }
 
     /**
@@ -773,7 +774,7 @@ public class RecipeService {
     @Transactional
     public List<Recipe> findAllVersions(Long id, String userId, boolean isAdmin) {
         Recipe recipe = findVisibleById(id, userId, isAdmin)
-            .orElseThrow(() -> new ResourceNotFoundException("Tarif bulunamadı"));
+            .orElseThrow(() -> ResourceNotFoundException.withCode("domain.recipe.not_found.simple"));
         
         // Eğer parentId varsa o bir versiyondur, root tarifin id'sini bulmalıyız
         Long rootId = recipe.getParentId() != null ? recipe.getParentId() : recipe.getId();

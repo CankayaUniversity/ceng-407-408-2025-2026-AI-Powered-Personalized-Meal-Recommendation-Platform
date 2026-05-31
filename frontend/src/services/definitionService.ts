@@ -8,11 +8,9 @@ export const getDefinitionService = (api: AxiosInstance) => ({
   /**
    * Sistemdeki tüm enum tanımlarını backend'den getirir
    */
-  getEnumDefinitions: async (language?: string): Promise<EnumDefinitions> => {
+  getEnumDefinitions: async (): Promise<EnumDefinitions> => {
     try {
-      const response = await api.get<EnumDefinitions>('/v1/definitions/enums', {
-        headers: language ? { 'Accept-Language': language } : undefined
-      });
+      const response = await api.get<EnumDefinitions>('/v1/definitions/enums');
       return response.data;
     } catch (error) {
       console.error('Enum tanımları yüklenirken hata oluştu:', error);
